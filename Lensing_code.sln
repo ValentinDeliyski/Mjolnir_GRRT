@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32228.430
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lensing_code", "Lensing_code.vcxproj", "{03E8F250-D678-4C3C-B7CD-594BD12EA6B0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{03E8F250-D678-4C3C-B7CD-594BD12EA6B0}.Debug|x64.ActiveCfg = Debug|x64
+		{03E8F250-D678-4C3C-B7CD-594BD12EA6B0}.Debug|x64.Build.0 = Debug|x64
+		{03E8F250-D678-4C3C-B7CD-594BD12EA6B0}.Debug|x86.ActiveCfg = Debug|Win32
+		{03E8F250-D678-4C3C-B7CD-594BD12EA6B0}.Debug|x86.Build.0 = Debug|Win32
+		{03E8F250-D678-4C3C-B7CD-594BD12EA6B0}.Release|x64.ActiveCfg = Release|x64
+		{03E8F250-D678-4C3C-B7CD-594BD12EA6B0}.Release|x64.Build.0 = Release|x64
+		{03E8F250-D678-4C3C-B7CD-594BD12EA6B0}.Release|x86.ActiveCfg = Release|Win32
+		{03E8F250-D678-4C3C-B7CD-594BD12EA6B0}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C3678CC0-453A-44FB-8D56-9BF8AA88DD14}
+	EndGlobalSection
+EndGlobal
