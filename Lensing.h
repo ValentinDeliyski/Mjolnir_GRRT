@@ -1,6 +1,6 @@
 #pragma once
 
-int Lens(double initial_conditions[], double M, double alpha_metric, double a, double r_throat, RK45 Coeff_deriv[][6],
+int Lens(double initial_conditions[], double M, double metric_parameter, double a, double r_throat, RK45 Coeff_deriv[][6],
          RK45 Coeff_sol[], RK45 Coeff_test_sol[], double max_error, double safety_factor, double r_in, double r_out,
          bool lens_from_file, std::ofstream data[], std::ofstream momentum_data[], Spacetimes e_metric, c_Kerr Kerr_class,
          c_RBH RBH_class, c_Wormhole Wormhole_class) {
@@ -15,7 +15,7 @@ int Lens(double initial_conditions[], double M, double alpha_metric, double a, d
     double State_vector[6] = { r_obs, theta_obs, phi_obs, 0 , p_theta_0, p_r_0 };
     double State_vector_test[6]{}, Old_state[6]{};
 
-    double Flux{}, redshift{}, Delta_phi{}, Image_coordiantes[3]{};
+    double Flux{}, redshift{}, Image_coordiantes[3]{};
 
     int const Vector_size = sizeof(State_vector) / sizeof(double);
     int const RK45_size = 7;
@@ -43,12 +43,11 @@ int Lens(double initial_conditions[], double M, double alpha_metric, double a, d
     double step = INIT_STEPSIZE;
     double affine_parameter = 0;
 
-    int equator_crossings = 0;
+    int Image_Order = 0;
 
     bool continue_integration = false;
-    bool outside_disc = true;
-    bool found_disc = false;
-
+    bool inside_disc = false;
+    bool found_disc[4]{};
 
     while (integration_count < max_integration_count) {
 
@@ -77,7 +76,7 @@ int Lens(double initial_conditions[], double M, double alpha_metric, double a, d
 
             }
 
-            get_EOM(e_metric, inter_State_vector, J, Derivatives, iteration, r_throat, a, alpha_metric, M,
+            get_EOM(e_metric, inter_State_vector, J, Derivatives, iteration, r_throat, a, metric_parameter, M,
                     Kerr_class, RBH_class, Wormhole_class);
 
             iteration += 1;
@@ -131,66 +130,54 @@ int Lens(double initial_conditions[], double M, double alpha_metric, double a, d
 
             if (integration_count == 1) {
 
-                found_disc = false;
+                for (int index = 0; index <= 3; index++) {
 
-                equator_crossings = 1;
+                    found_disc[index] = false;
+
+                }
+
+                Image_Order = 0;
 
                 r2[x] = State_vector[e_r] * cos(State_vector[e_phi] + State_vector[e_phi_FD]) * sin(State_vector[e_theta]);
                 r2[y] = State_vector[e_r] * sin(State_vector[e_phi] + State_vector[e_phi_FD]) * sin(State_vector[e_theta]);
                 r2[z] = State_vector[e_r] * cos(State_vector[e_theta]);
 
-                double photon_tangent[3] = { r1[x] - r2[x], r1[y] - r2[y], r1[z] - r2[z] };
-                double photon_LOS_parameter = -dot_product(r1, r1) / dot_product(r1, photon_tangent);
+                double photon_tangent[3]         = { r1[x] - r2[x], r1[y] - r2[y], r1[z] - r2[z] };
+                double photon_LOS_parameter      = -dot_product(r1, r1) / dot_product(r1, photon_tangent);
                 double obs_plane_intersection[3] = { r1[x] + photon_LOS_parameter * photon_tangent[x],
                                                      r1[y] + photon_LOS_parameter * photon_tangent[y],
                                                      r1[z] + photon_LOS_parameter * photon_tangent[z] };
 
                 Rorate_to_obs_plane(theta_obs, phi_obs, obs_plane_intersection, Image_coordiantes);
 
-                Flux = 0;
-                redshift = 1e-10;
-                Delta_phi = 0;
-
             }
 
-            if (cos(State_vector[e_theta]) * cos(Old_state[e_theta]) < 0) {
+            if (cos(State_vector[e_theta]) * cos(Old_state[e_theta]) < 0) {     
 
-                equator_crossings += 1;
+                inside_disc = State_vector[e_r] * State_vector[e_r] > r_in * r_in &&
+                              State_vector[e_r] * State_vector[e_r] < r_out * r_out;
+                                    
+                if (inside_disc) {
 
-                bool inside_disk = State_vector[e_r] * State_vector[e_r] > r_in * r_in &&
-                                   State_vector[e_r] * State_vector[e_r] < r_out * r_out &&
-                                   outside_disc == true;
+                    redshift = Redshift(e_metric, J, M, r_throat, a, metric_parameter, State_vector[e_r], State_vector[e_theta],
+                                        r_obs, theta_obs, Kerr_class, RBH_class, Wormhole_class);
 
-                if (inside_disk) {
+                    Flux = get_flux(e_metric, M, r_throat, a, metric_parameter, State_vector[e_r], r_in, State_vector[e_theta],
+                                    Kerr_class, RBH_class, Wormhole_class);
 
-                    outside_disc = false;
+                    write_to_file(Image_coordiantes, redshift, Flux, State_vector, metric_parameter, J,
+                                  Image_Order, lens_from_file, data, momentum_data);
 
-                    redshift = Redshift(e_metric, J, M, r_throat, a, alpha_metric, State_vector[e_r], State_vector[e_theta],
-                                               r_obs, theta_obs, Kerr_class, RBH_class, Wormhole_class);
+                    found_disc[Image_Order] = true;
 
-                    Flux = get_flux(e_metric, M, r_throat, a, alpha_metric, State_vector[e_r], r_in, State_vector[e_theta],
-                                           Kerr_class, RBH_class, Wormhole_class);
-                    if (e_metric != Kerr) {
-
-                        Delta_phi = fabs(State_vector[e_phi]) + J_0_correction_function(State_vector[e_theta], theta_obs);
-
-                    }
-                    else {
-
-                        Delta_phi = (equator_crossings - 1) * M_PI;
-
-                    }
-
-                    write_to_file(Image_coordiantes, redshift, Flux, State_vector, alpha_metric, J,
-                                  Delta_phi, lens_from_file, data, momentum_data);
-
-                    found_disc = true;
                 }
+
+                Image_Order += 1;
 
             }
             else {
 
-                outside_disc = true;
+                inside_disc = false;
 
             }
 
@@ -242,12 +229,15 @@ int Lens(double initial_conditions[], double M, double alpha_metric, double a, d
             }
 
             if (terminate_integration) {
- 
-                if (found_disc == false) {
 
-                    write_to_file(Image_coordiantes, redshift, Flux, State_vector, alpha_metric, J,
-                                  Delta_phi, lens_from_file, data, momentum_data);
+                for (int Image_Order_Scan = 0; Image_Order_Scan <= 3; Image_Order_Scan +=1) {
 
+                    if (found_disc[Image_Order_Scan] == false) {
+
+                        write_to_file(Image_coordiantes, 0., 0., State_vector, metric_parameter, J,
+                                      Image_Order_Scan, lens_from_file, data, momentum_data);
+
+                    }
                 }
 
                 integration_count = 0;

@@ -30,7 +30,6 @@ int open_output_files(Spacetimes e_metric, std::ofstream data[4], std::ofstream 
 		momentum_data[2].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_momentum_data2.txt", std::ios::trunc);
 		momentum_data[3].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_momentum_data3.txt", std::ios::trunc);
 
-
 		break;
 
 	case Kerr:
@@ -44,7 +43,6 @@ int open_output_files(Spacetimes e_metric, std::ofstream data[4], std::ofstream 
 		momentum_data[1].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_momentum_data1.txt", std::ios::trunc);
 		momentum_data[2].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_momentum_data2.txt", std::ios::trunc);
 		momentum_data[3].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_momentum_data3.txt", std::ios::trunc);
-
 
 		break;
 
@@ -93,52 +91,61 @@ int get_geodesic_data(double J_data[500], double p_theta_data[500], int* Data_nu
 }
 
 int write_to_file(double Image_coordiantes[3], double redshift, double Flux, double State_vector[6], double parameter, double J,
-				  double Delta_phi, bool lens_from_file, std::ofstream data[4], std::ofstream momentum_data[4]) {
+				  int Image_oder, bool lens_from_file, std::ofstream data[4], std::ofstream momentum_data[4]) {
 
-	if (Delta_phi <= M_PI) {
 
-		data[0] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
+	switch (Image_oder) {
 
-		if (lens_from_file) {
+		case 0:
 
-			momentum_data[0] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
+			data[0] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
 
-		}
+			if (lens_from_file) {
 
-	}
-	else if (Delta_phi > M_PI && Delta_phi <= 2 * M_PI) {
+				momentum_data[0] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
 
-		data[1] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
+			}
 
-		if (lens_from_file) {
+			break;
 
-			momentum_data[1] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
+		case 1:
 
-		}
+			data[1] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
 
-	}
-	else if (Delta_phi > 2 * M_PI && Delta_phi <= 3 * M_PI) {
+			if (lens_from_file) {
 
-		data[2] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
+				momentum_data[1] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
 
-		if (lens_from_file) {
+			}
 
-			momentum_data[2] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
+			break;
 
-		}
+		case 2:
 
-	}
-	else if (Delta_phi > 3 * M_PI && Delta_phi <= 4 * M_PI) {
+			data[2] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
 
-		data[3] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
+			if (lens_from_file) {
 
-		if (lens_from_file) {
+				momentum_data[2] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
 
-			momentum_data[3] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
+			}
 
-		}
+			break;
+
+		case 3:
+
+			data[3] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
+
+			if (lens_from_file) {
+
+				momentum_data[3] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
+
+			}
+			
+			break;
 
 	}
 
 	return 0;
+
 }

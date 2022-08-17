@@ -158,7 +158,7 @@ typedef class tag_Kerr {
             Derivatives[e_phi     + iteration * 6] = 1.0 / (delta * rho2) * (P * a + delta * (J / sin2 - a));
             Derivatives[e_phi_FD  + iteration * 6] = 0.0;
 
-            double theta_term_1 = -(delta * inter_State_vector[5 + iteration * 6] * inter_State_vector[5 + iteration * 6] + inter_State_vector[4 + iteration * 6] * inter_State_vector[4 + iteration * 6]) * a * a * cos1 * sin1 / (rho2 * rho2);
+            double theta_term_1 = -(delta * inter_State_vector[e_p_r + iteration * 6] * inter_State_vector[e_p_r + iteration * 6] + inter_State_vector[e_p_theta + iteration * 6] * inter_State_vector[e_p_theta + iteration * 6]) * a * a * cos1 * sin1 / (rho2 * rho2);
             double theta_term_2 = F * a * a * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - a * a * cos1 * sin1) / rho2;
 
             Derivatives[e_p_theta + iteration * 6] = theta_term_1 + theta_term_2;
@@ -324,7 +324,7 @@ typedef class tag_Regular_Black_Hole {
 
 	private:
 
-		double a;
+		double metric_parameter;
 		double M;
 
 		double r_horizon;
@@ -335,12 +335,12 @@ typedef class tag_Regular_Black_Hole {
 
 		tag_Regular_Black_Hole (double x) {
 
-			a = x;
+            metric_parameter = x;
 			M = 1.0;
 
-			r_ph	  = sqrt(pow(6 * M, 2) - pow(a, 2));
-			r_ISCO	  = sqrt(pow(3 * M, 2) - pow(a, 2));
-			r_horizon = sqrt(pow(2 * M, 2) - pow(a, 2));
+			r_ph	  = sqrt(pow(6 * M, 2) - pow(metric_parameter, 2));
+			r_ISCO	  = sqrt(pow(3 * M, 2) - pow(metric_parameter, 2));
+			r_horizon = sqrt(pow(2 * M, 2) - pow(metric_parameter, 2));
 		}
 
 		double get_r_horizon() { return r_horizon; };
@@ -348,12 +348,12 @@ typedef class tag_Regular_Black_Hole {
 		double get_r_ph()	   { return r_ph; };
 
         int metric(double metric[4][4], double* N_metric, double* omega_metric,
-                   double M, double a, double r, double theta) {
+                   double M, double metric_parameter, double r, double theta) {
 
             double r2 = r * r;
             double sin_theta = sin(theta);
             double cos_theta = cos(theta);
-            double rho = sqrt(r2 + a * a);
+            double rho = sqrt(r2 + metric_parameter * metric_parameter);
 
             metric[0][0] = -(1 - 2 * M / rho);
             metric[0][3] = 0.0;
@@ -369,16 +369,16 @@ typedef class tag_Regular_Black_Hole {
         }
 
         int metric_first_derivatives(class tag_Regular_Black_Hole RBH_class, double dr_metric[4][4], double* dr_N,
-                                     double* dr_omega, double M, double a, double r, double theta) {
+                                     double* dr_omega, double M, double metric_parameter, double r, double theta) {
 
             double metric[4][4], N, omega;
 
-            RBH_class.metric(metric, &N, &omega, M, a, r, theta);
+            RBH_class.metric(metric, &N, &omega, M, metric_parameter, r, theta);
 
             double r2 = r * r;
             double sin_theta = sin(theta);
             double cos_theta = cos(theta);
-            double rho = sqrt(r2 + a * a);
+            double rho = sqrt(r2 + metric_parameter * metric_parameter);
             double rho3 = rho * rho * rho;
 
             dr_metric[0][0] = -2 * M * r / rho3;
@@ -395,20 +395,20 @@ typedef class tag_Regular_Black_Hole {
         }
 
         int metric_second_derivatives(class tag_Regular_Black_Hole RBH_class, double d2r_metric[4][4], double* d2r_N,
-                                      double* d2r_omega, double M, double a, double r, double theta) {
+                                      double* d2r_omega, double M, double metric_parameter, double r, double theta) {
 
             double metric[4][4], N, omega;
 
-            RBH_class.metric(metric, &N, &omega, M, a, r, theta);
+            RBH_class.metric(metric, &N, &omega, M, metric_parameter, r, theta);
 
             double dr_metric[4][4], dr_N, dr_omega;
 
-            RBH_class.metric_first_derivatives(RBH_class, dr_metric, &dr_N, &dr_omega, M, a, r, theta);
+            RBH_class.metric_first_derivatives(RBH_class, dr_metric, &dr_N, &dr_omega, M, metric_parameter, r, theta);
 
             double r2 = r * r;
             double sin_theta = sin(theta);
             double cos_theta = cos(theta);
-            double rho = sqrt(r2 + a * a);
+            double rho = sqrt(r2 + metric_parameter * metric_parameter);
             double rho3 = rho * rho * rho;
             double rho5 = rho * rho * rho * rho * rho;
 
@@ -426,12 +426,12 @@ typedef class tag_Regular_Black_Hole {
         }
 
         int intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                          int photon, double r_obs, double theta_obs, double metric[4][4], double M, double a) {
+                                          int photon, double r_obs, double theta_obs, double metric[4][4], double M, double metric_parameter){
 
             *J = -J_data[photon] * sin(theta_obs);
             *p_theta = p_theta_data[photon];
 
-            double rho = sqrt(r_obs * r_obs + a * a);
+            double rho = sqrt(r_obs * r_obs + metric_parameter * metric_parameter);
             double rad_potential = 1 - (1 - 2 * M / rho) * *J * *J / (rho * rho);
 
             *p_r = sqrt(rad_potential) * metric[1][1];
@@ -439,10 +439,10 @@ typedef class tag_Regular_Black_Hole {
             return 0;
         }
 
-        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration, double a, double M) {
+        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration, double metric_parameter, double M) {
 
             double r = inter_State_vector[0 + iteration * 6];
-            double rho = sqrt(r * r + a * a);
+            double rho = sqrt(r * r + metric_parameter * metric_parameter);
 
             double sin1 = sin(inter_State_vector[1 + iteration * 6]);
             double sin2 = sin1 * sin1;

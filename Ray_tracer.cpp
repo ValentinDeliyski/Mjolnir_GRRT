@@ -1,6 +1,6 @@
 /***************************************************************************************************
 |                                                                                                  |
-|                            ---------  Numerical Ray Tracer  ---------                            | 
+|                          ---------  Numerical Ray Tracer  ---------                              | 
 |                                                                                                  |
 |    * @Version: 3.0                                                                               |
 |    * @Author: Valentin Deliyski                                                                  |
@@ -30,7 +30,7 @@ Spacetimes e_metric = Kerr;
 
 int main() {
 
-    bool lens_from_file = 0;
+    bool lens_from_file = false;
 
     double max_error     = RK45_ACCURACY;
     double safety_factor = SAFETY;
@@ -38,13 +38,13 @@ int main() {
     double r_obs, theta_obs, phi_obs;
 
         r_obs = 10'000;
-        theta_obs = 20. / 180 * M_PI;
+        theta_obs = 85. / 180 * M_PI;
         phi_obs = 0;
 
-    double M, a, r_throat, alpha_metric;
+    double M, a, r_throat, metric_parameter;
 
         M = 1.0;
-        alpha_metric = 0.0;
+        metric_parameter = 0.0;
         a = 0.98;
 
     /*
@@ -52,8 +52,8 @@ int main() {
     */
 
     c_Kerr Kerr_class(a);
-    c_RBH RBH_class(a);
-    c_Wormhole Wormhole_class(alpha_metric);
+    c_RBH RBH_class(metric_parameter);
+    c_Wormhole Wormhole_class(metric_parameter);
 
         r_throat = Wormhole_class.get_r_throat();
 
@@ -77,7 +77,7 @@ int main() {
 
                 r_ISCO = Kerr_class.get_r_ISCO();
                     
-                r_in  = r_ISCO;
+                r_in  = 4.5;
                 r_out = 50;
 
                 break;
@@ -86,8 +86,8 @@ int main() {
 
                 r_ISCO = RBH_class.get_r_ISCO();
 
-                r_in  = 4.5;
-                r_out = 50 * r_ISCO;
+                r_in  = 3.2;
+                r_out = 50;
 
                 break;
 
@@ -114,7 +114,7 @@ int main() {
 
     double metric[4][4], N_obs, omega_obs;
 
-        get_metric(e_metric, metric, &N_obs, &omega_obs, M, r_throat, a, alpha_metric, r_obs, theta_obs,
+        get_metric(e_metric, metric, &N_obs, &omega_obs, M, r_throat, a, metric_parameter, r_obs, theta_obs,
                    Kerr_class, RBH_class, Wormhole_class);
 
     double J, p_theta_0, p_r_0;
@@ -137,12 +137,12 @@ int main() {
            */
 
             get_initial_conditions_from_file(e_metric, &J, J_data, &p_theta_0, p_theta_data, &p_r_0,
-                                             photon, r_obs, theta_obs, metric, N_obs, omega_obs, M ,a, alpha_metric,
+                                             photon, r_obs, theta_obs, metric, N_obs, omega_obs, M ,a, metric_parameter,
                                              Kerr_class, RBH_class, Wormhole_class);
 
             double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
-            Lens(initial_conditions, M, alpha_metric, a, r_throat, Coeff_deriv, Coeff_sol, Coeff_test_sol,
+            Lens(initial_conditions, M, metric_parameter, a, r_throat, Coeff_deriv, Coeff_sol, Coeff_test_sol,
                  max_error, safety_factor, r_in, r_out, lens_from_file,data, momentum_data, e_metric,
                  Kerr_class, RBH_class, Wormhole_class);
 
@@ -158,17 +158,17 @@ int main() {
         double V_angle_max = 0.0017;
         double H_angle_max = 0.006;
 
-        for (double V_angle = -0.0055; V_angle <= 0.0055; V_angle += 20e-6) {
+        for (double V_angle = -0.0015; V_angle <= 0.0025; V_angle += 5e-6) {
 
             std::cout << std::fixed << std::setprecision(6) << V_angle << " ";
 
-            for (double H_angle = -0.0055; H_angle <= 0.0055; H_angle += 20e-6) {
+            for (double H_angle = -0.0055; H_angle <= 0.0055; H_angle += 5e-6) {
 
                 get_intitial_conditions_from_angles(&J, &p_theta_0, &p_r_0, metric, V_angle, H_angle);
 
                 double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
-                Lens(initial_conditions, M, alpha_metric, a, r_throat, Coeff_deriv, Coeff_sol, Coeff_test_sol,
+                Lens(initial_conditions, M, metric_parameter, a, r_throat, Coeff_deriv, Coeff_sol, Coeff_test_sol,
                      max_error, safety_factor, r_in, r_out, lens_from_file,data, momentum_data, e_metric,
                      Kerr_class, RBH_class, Wormhole_class);
 

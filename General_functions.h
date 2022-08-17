@@ -189,38 +189,6 @@ int get_metric_second_derivatives(Spacetimes e_metric, double d2r_metric[4][4], 
 
 }
 
-double J_0_correction_function(double theta, double theta_obs) {
-
-    double theta_delta = fabs(theta - theta_obs);
-
-     if (theta_delta  < 2 * M_PI && theta_delta > M_PI) {
-
-         return M_PI;
-
-    }
-    else if (theta_delta < 3 * M_PI && theta_delta > 2 * M_PI) {
-
-         return 2 * M_PI;
-
-    }
-    else if (theta_delta < 4 * M_PI && theta_delta > 3 * M_PI) {
-
-         return 3 * M_PI;
-
-    }
-    else if (theta_delta < 5 * M_PI && theta_delta > 4 * M_PI) {
-
-        return 4 * M_PI;
-
-     }
-    else {
-
-         return 0;
-
-     }
-
-}
-
 int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r, double metric[4][4],
                                         double V_angle, double H_angle) {
 
@@ -454,7 +422,7 @@ double get_flux(Spacetimes e_metric, double M, double r_throat, double a,
 }
 
 int get_EOM(Spacetimes e_metric, double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6],
-            int iteration, double r_throat, double a, double alpha_metric, double M,
+            int iteration, double r_throat, double a, double metric_parameter, double M,
             c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     switch (e_metric) {
@@ -467,13 +435,13 @@ int get_EOM(Spacetimes e_metric, double inter_State_vector[7 * 6], double J, dou
 
     case Wormhole:
 
-        Wormhole_class.EOM(inter_State_vector, J, Derivatives, iteration, r_throat, a, alpha_metric);
+        Wormhole_class.EOM(inter_State_vector, J, Derivatives, iteration, r_throat, a, metric_parameter);
 
         break;
 
     case Reg_Black_Hole:
 
-        RBH_class.EOM(inter_State_vector, J, Derivatives, iteration, a, M);
+        RBH_class.EOM(inter_State_vector, J, Derivatives, iteration, metric_parameter, M);
 
         break;
 
