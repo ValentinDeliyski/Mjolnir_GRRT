@@ -119,6 +119,8 @@ int main() {
 
     Return_Value_enums Integration_status = OK;
 
+    print_ASCII_art();
+
     if (lens_from_file) {
 
         /*
