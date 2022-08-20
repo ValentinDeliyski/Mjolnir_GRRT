@@ -48,7 +48,7 @@ int open_output_files(Spacetimes e_metric, std::ofstream data[4], std::ofstream 
 
 	}
 	
-	return 0;
+	return OK;
 
 }
 
@@ -61,7 +61,7 @@ int close_output_files(std::ofstream data[4], std::ofstream momentum_data[4]) {
 
 	}
 
-	return 0;
+	return OK;
 
 }
 
@@ -69,7 +69,7 @@ int get_geodesic_data(double J_data[500], double p_theta_data[500], int* Data_nu
 
 	std::ifstream geodesic_data;
 
-	geodesic_data.open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Polarization\\Schwarzschild_Impact_parameters\\Direct_image\\geodesic_data_20_deg_Sch_r6_500_photons.txt", std::ios::in);
+	geodesic_data.open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Polarization\\Schwarzschild_Impact_parameters\\First_relativistic\\geodesic_data_20_deg_Sch_r6_198_photons.txt", std::ios::in);
 
 	while (true) {
 
@@ -87,7 +87,7 @@ int get_geodesic_data(double J_data[500], double p_theta_data[500], int* Data_nu
 
 	geodesic_data.close();
 
-	return 0;
+	return OK;
 }
 
 int write_to_file(double Image_coordiantes[3], double redshift, double Flux, double State_vector[6], double parameter, double J,
@@ -96,7 +96,7 @@ int write_to_file(double Image_coordiantes[3], double redshift, double Flux, dou
 
 	switch (Image_oder) {
 
-		case 0:
+		case direct:
 
 			data[0] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
 
@@ -108,7 +108,7 @@ int write_to_file(double Image_coordiantes[3], double redshift, double Flux, dou
 
 			break;
 
-		case 1:
+		case first:
 
 			data[1] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
 
@@ -120,7 +120,7 @@ int write_to_file(double Image_coordiantes[3], double redshift, double Flux, dou
 
 			break;
 
-		case 2:
+		case second:
 
 			data[2] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
 
@@ -132,7 +132,7 @@ int write_to_file(double Image_coordiantes[3], double redshift, double Flux, dou
 
 			break;
 
-		case 3:
+		case third:
 
 			data[3] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
 
@@ -146,6 +146,6 @@ int write_to_file(double Image_coordiantes[3], double redshift, double Flux, dou
 
 	}
 
-	return 0;
+	return OK;
 
 }

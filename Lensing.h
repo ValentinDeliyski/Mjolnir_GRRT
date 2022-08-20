@@ -1,9 +1,7 @@
 #pragma once
 
-int Lens(double initial_conditions[], double M, double metric_parameter, double a, double r_throat, RK45 Coeff_deriv[][6],
-         RK45 Coeff_sol[], RK45 Coeff_test_sol[], double max_error, double safety_factor, double r_in, double r_out,
-         bool lens_from_file, std::ofstream data[], std::ofstream momentum_data[], Spacetimes e_metric, c_Kerr Kerr_class,
-         c_RBH RBH_class, c_Wormhole Wormhole_class) {
+Return_Value_enums Lens(double initial_conditions[], double M, double metric_parameter, double a, double r_throat, double r_in, double r_out, bool lens_from_file,
+                        std::ofstream data[], std::ofstream momentum_data[], Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     double r_obs     = initial_conditions[e_r];
     double theta_obs = initial_conditions[e_theta];
@@ -18,9 +16,8 @@ int Lens(double initial_conditions[], double M, double metric_parameter, double 
     double Flux{}, redshift{}, Image_coordiantes[3]{};
 
     int const Vector_size = sizeof(State_vector) / sizeof(double);
-    int const RK45_size = 7;
 
-    for (int vector_indexer = 0; vector_indexer <= Vector_size - 1; vector_indexer += 1) {
+    for (int vector_indexer = e_r; vector_indexer <= e_p_r; vector_indexer += 1) {
 
         State_vector_test[vector_indexer] = State_vector[vector_indexer];
         Old_state[vector_indexer] = State_vector[vector_indexer];
@@ -35,108 +32,34 @@ int Lens(double initial_conditions[], double M, double metric_parameter, double 
 
     double inter_State_vector[RK45_size * Vector_size]{}, Derivatives[RK45_size * Vector_size]{}, error[Vector_size]{};
 
-    int integration_count, max_integration_count;
-
-    integration_count = 0;
-    max_integration_count = 7600000;
+    int integration_count{}, Image_Order{};
 
     double step = INIT_STEPSIZE;
-    double affine_parameter = 0;
-
-    int Image_Order = 0;
+    double affine_parameter{};
 
     bool continue_integration = false;
-    bool inside_disc = false;
-    bool found_disc[4]{};
+    bool found_disc[ORDER_NUM]{};
 
-    while (integration_count < max_integration_count) {
+    Return_Value_enums RK45_Status = OK, Disc_model_status = OK;
 
-        int iteration = 0;
+    while (RK45_Status == OK && integration_count < MAX_INTEGRATION_COUNT) {
 
-        if (continue_integration == false) {
-
-            for (int vector_indexer = 0; vector_indexer <= Vector_size - 1; vector_indexer += 1) {
-
-                State_vector[vector_indexer] = Old_state[vector_indexer];
-
-            }
-        }
-
-        while (iteration <= RK45_size - 1) { //runs trough the EOM evaluations in-between t and t + step
-
-            for (int vector_indexer = 0; vector_indexer <= Vector_size - 1; vector_indexer += 1) { //runs trough the state vector components
-
-                inter_State_vector[vector_indexer + iteration * Vector_size] = State_vector[vector_indexer];
-
-                for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) { //runs trough tough the Dormand-Prince coeficients matrix and adds on the contributions from the derivatives at the points between t and t + step;
-
-                    inter_State_vector[vector_indexer + iteration * Vector_size] += -step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * Vector_size];
-
-                }
-
-            }
-
-            get_EOM(e_metric, inter_State_vector, J, Derivatives, iteration, r_throat, a, metric_parameter, M,
-                    Kerr_class, RBH_class, Wormhole_class);
-
-            iteration += 1;
-
-        }
-
-        for (int vector_indexer = 0; vector_indexer <= Vector_size - 1; vector_indexer += 1) {
-
-            State_vector_test[vector_indexer] = State_vector[vector_indexer];
-
-            for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) {
-
-                State_vector[vector_indexer] += -step * Coeff_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * Vector_size];
-                State_vector_test[vector_indexer] += -step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * Vector_size];
-
-            }
-
-            error[vector_indexer] = State_vector[vector_indexer] - State_vector_test[vector_indexer];
-
-        }
-
-        if (my_max(error) < max_error)
-        {
-            step = 0.8 * step * pow(max_error / (my_max(error) + safety_factor), 0.2);
-
-            double z = State_vector[e_r] * cos(State_vector[e_theta]);
-
-            bool near_disk = z * z < 0.1 * 0.1 &&
-                             State_vector[e_r] * State_vector[e_r] < 1.1 * 1.1 * r_out * r_out;
-
-            if (near_disk)
-            {
-                step = 0.06 * step * pow(max_error / (my_max(error) + safety_factor), 0.2);
-            }
-
-            integration_count += 1;
-            affine_parameter += step;
-
-            continue_integration = true;
-
-        }
-        else
-        {
-
-            step = 0.8 * step * pow(max_error / (my_max(error) + safety_factor), 0.25);
-            continue_integration = false;
-
-        }
+        RK45_Status = RK45_EOM(State_vector, Derivatives, &step, r_throat, a, metric_parameter, M, J, Kerr_class, e_metric, RBH_class, Wormhole_class, &continue_integration);
 
         if (continue_integration == true) {
 
             if (integration_count == 1) {
 
-                for (int index = 0; index <= 3; index++) {
+                for (int index = 0; index <= ORDER_NUM - 1; index++) {
 
                     found_disc[index] = false;
 
                 }
 
-                Image_Order = 0;
+                redshift = 0;
+                Flux     = 0;
+
+                Image_Order = direct;
 
                 r2[x] = State_vector[e_r] * cos(State_vector[e_phi] + State_vector[e_phi_FD]) * sin(State_vector[e_theta]);
                 r2[y] = State_vector[e_r] * sin(State_vector[e_phi] + State_vector[e_phi_FD]) * sin(State_vector[e_theta]);
@@ -151,36 +74,32 @@ int Lens(double initial_conditions[], double M, double metric_parameter, double 
                 Rorate_to_obs_plane(theta_obs, phi_obs, obs_plane_intersection, Image_coordiantes);
 
             }
-
-            if (cos(State_vector[e_theta]) * cos(Old_state[e_theta]) < 0) {     
-
-                inside_disc = State_vector[e_r] * State_vector[e_r] > r_in * r_in &&
-                              State_vector[e_r] * State_vector[e_r] < r_out * r_out;
                                     
-                if (inside_disc) {
+            if (Inside_disc(State_vector, Old_state, r_in, r_out)) {
 
-                    redshift = Redshift(e_metric, J, M, r_throat, a, metric_parameter, State_vector[e_r], State_vector[e_theta],
-                                        r_obs, theta_obs, Kerr_class, RBH_class, Wormhole_class);
+                Disc_model_status = Evaluate_Disk_Model(Novikov_Thorne, State_vector, Kerr, J, M, r_throat, a, metric_parameter, r_obs, theta_obs,
+                                                        r_in, r_out, &redshift, &Flux, Kerr_class, RBH_class, Wormhole_class);
 
-                    Flux = get_flux(e_metric, M, r_throat, a, metric_parameter, State_vector[e_r], r_in, State_vector[e_theta],
-                                    Kerr_class, RBH_class, Wormhole_class);
+                if (Disc_model_status != OK) {
 
-                    write_to_file(Image_coordiantes, redshift, Flux, State_vector, metric_parameter, J,
-                                  Image_Order, lens_from_file, data, momentum_data);
+                    std::cout << "Error Evaluating Disc Model!" << '\n';
 
-                    found_disc[Image_Order] = true;
+                    return ERROR;
 
                 }
+
+               write_to_file(Image_coordiantes, redshift, Flux, State_vector, metric_parameter, J,
+                             Image_Order, lens_from_file, data, momentum_data);
+
+               found_disc[Image_Order] = true;
+
+            }
+
+            if (crossed_equatior(State_vector, Old_state)) {
 
                 Image_Order += 1;
 
             }
-            else {
-
-                inside_disc = false;
-
-            }
-
 
             for (int vector_indexer = 0; vector_indexer <= Vector_size - 1; vector_indexer += 1) {
 
@@ -224,15 +143,15 @@ int Lens(double initial_conditions[], double M, double metric_parameter, double 
 
                 std::cout << "Wrong metric!" << '\n';
 
-                return -1;
+                return ERROR;
 
             }
 
             if (terminate_integration) {
 
-                for (int Image_Order_Scan = 0; Image_Order_Scan <= 3; Image_Order_Scan +=1) {
+                for (int Image_Order_Scan = direct; Image_Order_Scan <= third; Image_Order_Scan +=1) {
 
-                    if (found_disc[Image_Order_Scan] == false) {
+                    if (found_disc[Image_Order_Scan] == false && lens_from_file == false) {
 
                         write_to_file(Image_coordiantes, 0., 0., State_vector, metric_parameter, J,
                                       Image_Order_Scan, lens_from_file, data, momentum_data);
@@ -246,9 +165,12 @@ int Lens(double initial_conditions[], double M, double metric_parameter, double 
 
             }
 
+            integration_count += 1;
+
         }
 
     }
 
-    return 0;
+    return RK45_Status;
+
 }

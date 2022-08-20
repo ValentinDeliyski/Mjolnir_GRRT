@@ -46,12 +46,12 @@ int Rorate_to_obs_plane(double theta_obs, double phi_obs, double Image_point[3],
         }
     }
 
-    return 0;
+    return OK;
 }
 
-double my_max(double vector[6]) {
+double my_max(double vector[]) {
 
-    int index_max = 6 - 1;
+    int index_max = e_Coord_Number - 1;
 
     for (int index = 0; index <= index_max; index += 1) {
 
@@ -74,6 +74,22 @@ double my_max(double vector[6]) {
     }
 
     return max;
+}
+
+bool crossed_equatior(double State_vector[], double Old_State_Vector[]) {
+
+    return cos(State_vector[e_theta]) * cos(Old_State_Vector[e_theta]) < 0;
+
+}
+
+bool Inside_disc(double State_Vector[], double Old_State_Vector[], double r_in, double r_out) {
+
+    bool inside_disc = State_Vector[e_r] * State_Vector[e_r] > r_in * r_in &&
+                       State_Vector[e_r] * State_Vector[e_r] < r_out * r_out &&
+                       crossed_equatior(State_Vector, Old_State_Vector);
+
+
+    return inside_disc;
 }
 
 double dot_product(double vector_1[3], double vector_2[3]) {
@@ -114,7 +130,7 @@ int get_metric(Spacetimes e_metric, double metric[4][4], double* N_metric, doubl
 
     }
 
-    return 0;
+    return OK;
 }
 
 int get_metric_fist_derivatives(Spacetimes e_metric, double dr_metric[4][4], double* dr_N_metric, double* dr_omega,
@@ -149,7 +165,7 @@ int get_metric_fist_derivatives(Spacetimes e_metric, double dr_metric[4][4], dou
 
     }
 
-    return 0;
+    return OK;
 
 }
 
@@ -185,7 +201,7 @@ int get_metric_second_derivatives(Spacetimes e_metric, double d2r_metric[4][4], 
 
     }
 
-    return 0;
+    return OK;
 
 }
 
@@ -205,7 +221,7 @@ int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r,
     *p_theta = sqrt(metric[2][2]) * sin(V_angle) / E;
     *p_r = sqrt(metric[1][1]) * cos(H_angle + 2 * M_PI) * cos(V_angle) / E;
 
-    return 0;
+    return OK;
 }
 
 int get_initial_conditions_from_file(Spacetimes e_metric, double* J, double J_data[], double* p_theta, double p_theta_data[],
@@ -234,7 +250,7 @@ int get_initial_conditions_from_file(Spacetimes e_metric, double* J, double J_da
         break;
     }
 
-    return 0;
+    return OK;
 
 }
 
@@ -445,7 +461,45 @@ int get_EOM(Spacetimes e_metric, double inter_State_vector[7 * 6], double J, dou
 
         break;
 
+    
+    default:
+
+        std::cout << "Wrong metric!" << '\n';
+
+        return ERROR;
     }
 
-    return 0;
+    return OK;
+}
+
+Return_Value_enums Evaluate_Disk_Model(Disk_Models e_Disk_Model, double State_vector[], Spacetimes e_metric, double J, double M, double r_throat,
+                        double a, double metric_parameter, double r_obs, double theta_obs, double r_in, double r_out,
+                        double* redshift, double* Flux, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+
+    switch (e_Disk_Model) {
+
+        case Novikov_Thorne:
+
+            *redshift = Redshift(e_metric, J, M, r_throat, a, metric_parameter, State_vector[e_r], State_vector[e_theta],
+                                 r_obs, theta_obs, Kerr_class, RBH_class, Wormhole_class);
+
+            *Flux = get_flux(e_metric, M, r_throat, a, metric_parameter, State_vector[e_r], r_in, State_vector[e_theta],
+                             Kerr_class, RBH_class, Wormhole_class);
+
+            break;
+
+        case Optically_Thin_Toroidal:
+
+            break;
+
+        default:
+
+            std::cout << "Wrong Disc Model!" << '\n';
+
+            return ERROR;
+
+    }
+
+    return OK;
+
 }

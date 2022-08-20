@@ -1,12 +1,20 @@
 #pragma once
+
 #define _USE_MATH_DEFINES
 
-typedef double const RK45;
+#include <string>
 
-RK45 INIT_STEPSIZE	   = 1e-5;
-RK45 INTEGRAL_ACCURACY = 5e-6;
-RK45 RK45_ACCURACY	   = 1e-10;
-RK45 SAFETY			   = 1e-16;
+typedef double const RK45;
+typedef int const RK45_int;
+
+RK45 INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important
+RK45 INTEGRAL_ACCURACY = 5e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
+RK45 RK45_ACCURACY	   = 1e-10; // Seems to be an opitimal tradeoff between accuracy and performace 
+RK45 SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
+RK45 SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
+
+RK45_int RK45_size			  = 7;		 // Number of integration sub-steps
+RK45_int MAX_INTEGRATION_COUNT = 7600000; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
 RK45 Coeff_deriv[7][6] =
 {
@@ -33,12 +41,13 @@ typedef enum tag_Spacetimes {
 
 typedef enum tag_Coord_enums {
 
-	e_r		  = 0,
-	e_theta   = 1,
-	e_phi	  = 2,
-	e_phi_FD  = 3,
-	e_p_theta = 4,
-	e_p_r	  = 5
+	e_r		       = 0,
+	e_theta        = 1,
+	e_phi	       = 2,
+	e_phi_FD       = 3,
+	e_p_theta      = 4,
+	e_p_r		   = 5,
+	e_Coord_Number = 6
 
 }Coord_enums;
 
@@ -49,3 +58,34 @@ typedef enum tag_XYZ_enums {
 	z = 2
 
 }XYZ_enums;
+
+typedef enum tag_Image_Orders {
+
+	direct	  = 0,
+	first     = 1,
+	second	  = 2,
+	third     = 3,
+	ORDER_NUM
+
+}Order_enums;
+
+typedef enum tag_Return_Values {
+
+	OK    = 0,
+	ERROR = 1
+
+}Return_Value_enums;
+
+std::string Return_Value_String[] = {
+
+	"OK",
+	"ERROR"
+
+};
+
+typedef enum tag_Disk_Model {
+
+	Novikov_Thorne			= 0,
+	Optically_Thin_Toroidal = 1 // TO DO
+
+}Disk_Models;

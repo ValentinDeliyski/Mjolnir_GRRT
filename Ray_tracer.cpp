@@ -24,28 +24,26 @@
 #include "Spacetimes.h"
 #include "IO_files.h"
 #include "General_functions.h"
+#include "RK45.h"
 #include "Lensing.h"
 
 Spacetimes e_metric = Kerr;
 
 int main() {
 
-    bool lens_from_file = false;
-
-    double max_error     = RK45_ACCURACY;
-    double safety_factor = SAFETY;
+    bool lens_from_file = true;
 
     double r_obs, theta_obs, phi_obs;
 
         r_obs = 10'000;
-        theta_obs = 85. / 180 * M_PI;
+        theta_obs = 20. / 180 * M_PI;
         phi_obs = 0;
 
     double M, a, r_throat, metric_parameter;
 
         M = 1.0;
         metric_parameter = 0.0;
-        a = 0.98;
+        a = 0.000001;
 
     /*
     Define classes that hold the spacetime properites
@@ -104,7 +102,7 @@ int main() {
 
                 std::cout << "Wrong metric!" << '\n';
 
-                return -1;
+                return ERROR;
 
             }
     
@@ -119,6 +117,8 @@ int main() {
 
     double J, p_theta_0, p_r_0;
 
+    Return_Value_enums Integration_status = OK;
+
     if (lens_from_file) {
 
         /*
@@ -128,26 +128,27 @@ int main() {
         double J_data[500]{}, p_theta_data[500]{};
         int Data_number = 0;
 
-            get_geodesic_data(J_data, p_theta_data, &Data_number);
+        get_geodesic_data(J_data, p_theta_data, &Data_number);
 
-        for (int photon = 0; photon <= Data_number; photon += 1) {
+        if (Integration_status == OK) {
 
-           /*
-           Feed those initial conditions to the lenser
-           */
+            for (int photon = 0; photon <= Data_number; photon += 1) {
 
-            get_initial_conditions_from_file(e_metric, &J, J_data, &p_theta_0, p_theta_data, &p_r_0,
-                                             photon, r_obs, theta_obs, metric, N_obs, omega_obs, M ,a, metric_parameter,
-                                             Kerr_class, RBH_class, Wormhole_class);
+                    /*
+                    Feed those initial conditions to the lenser
+                    */
 
-            double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
+                get_initial_conditions_from_file(e_metric, &J, J_data, &p_theta_0, p_theta_data, &p_r_0,
+                        photon, r_obs, theta_obs, metric, N_obs, omega_obs, M, a, metric_parameter,
+                        Kerr_class, RBH_class, Wormhole_class);
 
-            Lens(initial_conditions, M, metric_parameter, a, r_throat, Coeff_deriv, Coeff_sol, Coeff_test_sol,
-                 max_error, safety_factor, r_in, r_out, lens_from_file,data, momentum_data, e_metric,
-                 Kerr_class, RBH_class, Wormhole_class);
+                double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
+                Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
+                                     lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class);
+
+            }
         }
-
     }
     else{
 
@@ -157,28 +158,31 @@ int main() {
 
         double V_angle_max = 0.0017;
         double H_angle_max = 0.006;
+        
+        if (Integration_status == OK) {
 
-        for (double V_angle = -0.0015; V_angle <= 0.0025; V_angle += 5e-6) {
+            for (double V_angle = -0.0015; V_angle <= 0.0025; V_angle += 5e-6) {
 
-            std::cout << std::fixed << std::setprecision(6) << V_angle << " ";
+                std::cout << std::fixed << std::setprecision(6) << V_angle << " ";
 
-            for (double H_angle = -0.0055; H_angle <= 0.0055; H_angle += 5e-6) {
+                for (double H_angle = -0.0055; H_angle <= 0.0055; H_angle += 5e-6) {
 
-                get_intitial_conditions_from_angles(&J, &p_theta_0, &p_r_0, metric, V_angle, H_angle);
+                    get_intitial_conditions_from_angles(&J, &p_theta_0, &p_r_0, metric, V_angle, H_angle);
 
-                double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
+                    double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
-                Lens(initial_conditions, M, metric_parameter, a, r_throat, Coeff_deriv, Coeff_sol, Coeff_test_sol,
-                     max_error, safety_factor, r_in, r_out, lens_from_file,data, momentum_data, e_metric,
-                     Kerr_class, RBH_class, Wormhole_class);
+                    Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
+                                         lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class);
+
+                }
 
             }
-
         }
-
     }            
 
     close_output_files(data, momentum_data);
 
-    return 0;
+    std::cout << "Program Status = " << Return_Value_String[Integration_status];
+
+    return Integration_status;
 }
