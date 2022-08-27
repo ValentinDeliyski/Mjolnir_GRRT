@@ -1,58 +1,71 @@
 #pragma once
 
-int open_output_files(Spacetimes e_metric, std::ofstream data[4], std::ofstream momentum_data[4]) {
+#include <filesystem>
+#include <string>
 
-	switch (e_metric) {
+int open_output_files(Spacetimes e_metric, std::ofstream data[], std::ofstream momentum_data[], bool truncate) {
 
-	case Wormhole:
+	int const File_number = sizeof(File_Names) / sizeof(std::string);
 
-		data[0].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\WH_data0.txt", std::ios::trunc);
-		data[1].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\WH_data1.txt", std::ios::trunc);
-		data[2].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\WH_data2.txt", std::ios::trunc);
-		data[3].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\WH_data3.txt", std::ios::trunc);
+	std::filesystem::path dir("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity");
+	std::filesystem::path file[File_number];
+	std::filesystem::path full_path[File_number];
+	std::filesystem::path file_extention(".txt");
 
-		momentum_data[0].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\WH_momentum_data0.txt", std::ios::trunc);
-		momentum_data[1].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\WH_momentum_data1.txt", std::ios::trunc);
-		momentum_data[2].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\WH_momentum_data2.txt", std::ios::trunc);
-		momentum_data[3].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\WH_momentum_data3.txt", std::ios::trunc);
+	for (int File_Index = 0; File_Index <= File_number - 1; File_Index += 1) {
 
-		break;
-	
-	case Reg_Black_Hole:
+		file[File_Index] = File_Names[File_Index];
 
-		data[0].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_data0.txt", std::ios::trunc);
-		data[1].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_data1.txt", std::ios::trunc);
-		data[2].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_data2.txt", std::ios::trunc);
-		data[3].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_data3.txt", std::ios::trunc);
+		file[File_Index].replace_extension(file_extention);
 
-		momentum_data[0].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_momentum_data0.txt", std::ios::trunc);
-		momentum_data[1].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_momentum_data1.txt", std::ios::trunc);
-		momentum_data[2].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_momentum_data2.txt", std::ios::trunc);
-		momentum_data[3].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\RBH_momentum_data3.txt", std::ios::trunc);
-
-		break;
-
-	case Kerr:
-
-		data[0].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_data0.txt", std::ios::app);
-		data[1].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_data1.txt", std::ios::app);
-		data[2].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_data2.txt", std::ios::app);
-		data[3].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_data3.txt", std::ios::app);
-
-		momentum_data[0].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_momentum_data0.txt", std::ios::trunc);
-		momentum_data[1].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_momentum_data1.txt", std::ios::trunc);
-		momentum_data[2].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_momentum_data2.txt", std::ios::trunc);
-		momentum_data[3].open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Kerr_momentum_data3.txt", std::ios::trunc);
-
-		break;
+		full_path[File_Index] = dir / file[File_Index];
 
 	}
-	
+
+	auto open_type = std::ios::app;
+
+	if (truncate) {
+
+		open_type = std::ios::trunc;
+
+	}
+
+	for (int File_Index = 0; File_Index <= ORDER_NUM - 1; File_Index += 1) {
+
+		switch (e_metric) {
+
+		case Kerr:
+
+			data[File_Index].open(full_path[File_Index + 0 * 4], open_type);
+
+			momentum_data[File_Index].open(full_path[File_Index + 1 * 4], open_type);
+
+			break;
+
+		case Wormhole:
+
+			data[File_Index].open(full_path[File_Index + 2 * 4], open_type);
+
+			momentum_data[File_Index].open(full_path[File_Index + 3 * 4], open_type);
+
+			break;
+
+		case Reg_Black_Hole:
+
+			data[File_Index].open(full_path[File_Index + 4 * 4], open_type);
+
+			momentum_data[File_Index].open(full_path[File_Index + 5 * 4], open_type);
+
+			break;
+
+		}
+	}
+
 	return OK;
 
 }
 
-int close_output_files(std::ofstream data[4], std::ofstream momentum_data[4]) {
+int close_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
 	for (int i = 0; i <= 3; i++) {
 	
@@ -65,7 +78,7 @@ int close_output_files(std::ofstream data[4], std::ofstream momentum_data[4]) {
 
 }
 
-int get_geodesic_data(double J_data[500], double p_theta_data[500], int* Data_number) {
+int get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) {
 
 	std::ifstream geodesic_data;
 
@@ -90,8 +103,8 @@ int get_geodesic_data(double J_data[500], double p_theta_data[500], int* Data_nu
 	return OK;
 }
 
-int write_to_file(double Image_coordiantes[3], double redshift, double Flux, double State_vector[6], double parameter, double J,
-				  int Image_oder, bool lens_from_file, std::ofstream data[4], std::ofstream momentum_data[4]) {
+int write_to_file(double Image_coordiantes[], double redshift, double Flux, double State_vector[], double parameter, double J,
+				  int Image_oder, bool lens_from_file, std::ofstream data[], std::ofstream momentum_data[]) {
 
 
 	switch (Image_oder) {

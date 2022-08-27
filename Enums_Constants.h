@@ -9,11 +9,13 @@ typedef int const RK45_int;
 
 RK45 INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important
 RK45 INTEGRAL_ACCURACY = 5e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
-RK45 RK45_ACCURACY	   = 1e-10; // Seems to be an opitimal tradeoff between accuracy and performace 
+RK45 RK45_ACCURACY	   = 1e-7;  // 1e-9 Seems to be an opitimal tradeoff between accuracy and performace 
 RK45 SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
 RK45 SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
 
-RK45_int RK45_size			  = 7;		 // Number of integration sub-steps
+RK45 TOROIDAL_DISK_BOUNDY_DENSITY = 8e-6;
+
+RK45_int RK45_size			   = 7;		 // Number of integration sub-steps
 RK45_int MAX_INTEGRATION_COUNT = 7600000; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
 RK45 Coeff_deriv[7][6] =
@@ -72,7 +74,7 @@ typedef enum tag_Image_Orders {
 typedef enum tag_Return_Values {
 
 	OK    = 0,
-	ERROR = 1
+	ERROR = 255
 
 }Return_Value_enums;
 
@@ -86,6 +88,49 @@ std::string Return_Value_String[] = {
 typedef enum tag_Disk_Model {
 
 	Novikov_Thorne			= 0,
-	Optically_Thin_Toroidal = 1 // TO DO
+	Optically_Thin_Toroidal = 1 
 
 }Disk_Models;
+
+typedef enum tag_Disk_Intersection {
+
+	Outside_Disk  = 0,
+	Inside_Disk   = 1,
+	Entering_Disk = 2,
+	Exiting_Disk  = 3
+
+}Disk_Intersection;
+
+std::string File_Names[] = {
+
+	"Kerr_Data0",
+	"Kerr_Data1",
+	"Kerr_Data2",
+	"Kerr_Data3",
+
+	"Kerr_Momentum_Data0",
+	"Kerr_Momentum_Data1",
+	"Kerr_Momentum_Data2",
+	"Kerr_Momentum_Data3",
+
+	"Wormhole_Data0",
+	"Wormhole_Data1",
+	"Wormhole_Data2",
+	"Wormhole_Data3",
+
+	"Wormhole_Momentum_Data0",
+	"Wormhole_Momentum_Data1",
+	"Wormhole_Momentum_Data2",
+	"Wormhole_Momentum_Data3",
+
+	"RBH_Data0",
+	"RBH_Data1",
+	"RBH_Data2",
+	"RBH_Data3",
+
+	"RBH_Momentum_Data0",
+	"RBH_Momentum_Data1",
+	"RBH_Momentum_Data2",
+	"RBH_Momentum_Data3"
+
+};

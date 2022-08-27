@@ -28,22 +28,24 @@
 #include "Lensing.h"
 
 Spacetimes e_metric = Kerr;
+Disk_Models disk_model = Optically_Thin_Toroidal;
 
 int main() {
 
-    bool lens_from_file = true;
+    bool lens_from_file = false;
+    bool truncate       = false;
 
     double r_obs, theta_obs, phi_obs;
 
         r_obs = 10'000;
-        theta_obs = 20. / 180 * M_PI;
+        theta_obs = 85. / 180 * M_PI;
         phi_obs = 0;
 
     double M, a, r_throat, metric_parameter;
 
         M = 1.0;
         metric_parameter = 0.0;
-        a = 0.000001;
+        a = 0.98;
 
     /*
     Define classes that hold the spacetime properites
@@ -51,7 +53,7 @@ int main() {
 
     c_Kerr Kerr_class(a);
     c_RBH RBH_class(metric_parameter);
-    c_Wormhole Wormhole_class(metric_parameter);
+    c_Wormhole Wormhole_class(metric_parameter,a);
 
         r_throat = Wormhole_class.get_r_throat();
 
@@ -61,10 +63,10 @@ int main() {
         
     std::ofstream data[4], momentum_data[4];
 
-        open_output_files(e_metric, data, momentum_data);
+        open_output_files(e_metric, data, momentum_data, truncate);
 
     /*
-    Get the ISCO orbits from the spacetime classes and set the inner disc radius
+    Get the ISCO orbits from the spacetime classes and set the inner Novikov-Thorne disk radius
     */
 
     double r_in, r_out, r_ISCO;
@@ -84,7 +86,7 @@ int main() {
 
                 r_ISCO = RBH_class.get_r_ISCO();
 
-                r_in  = 3.2;
+                r_in  = 4.5;
                 r_out = 50;
 
                 break;
@@ -93,7 +95,7 @@ int main() {
 
                 r_ISCO = Wormhole_class.get_r_ISCO();
 
-                r_in  = r_ISCO;
+                r_in  = 1;
                 r_out = 50 * r_ISCO;
 
                 break;
@@ -104,7 +106,18 @@ int main() {
 
                 return ERROR;
 
-            }
+        }
+
+    /*
+    Set the Optically Thin Toroidal Disk model parameters
+    */
+
+    double disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega;
+
+        disk_alpha = 3;
+        disk_height_scale = 0.1;
+        disk_rad_cutoff = 4 * M;
+        disk_omega = sqrt(1. / 12) * M;
     
     /*
     Get the metric at the observer to feed into the initial conditions functions
@@ -112,7 +125,7 @@ int main() {
 
     double metric[4][4], N_obs, omega_obs;
 
-        get_metric(e_metric, metric, &N_obs, &omega_obs, M, r_throat, a, metric_parameter, r_obs, theta_obs,
+        get_metric(e_metric, metric, &N_obs, &omega_obs, r_obs, theta_obs,
                    Kerr_class, RBH_class, Wormhole_class);
 
     double J, p_theta_0, p_r_0;
@@ -120,6 +133,9 @@ int main() {
     Return_Value_enums Integration_status = OK;
 
     print_ASCII_art();
+
+    std::cout << "Observer Radial Position [M] = " << r_obs << '\n';
+    std::cout << "Observer Inclination [deg] = " << int(theta_obs / M_PI * 180) << '\n';
 
     if (lens_from_file) {
 
@@ -140,16 +156,21 @@ int main() {
                     Feed those initial conditions to the lenser
                     */
 
-                get_initial_conditions_from_file(e_metric, &J, J_data, &p_theta_0, p_theta_data, &p_r_0,
-                        photon, r_obs, theta_obs, metric, N_obs, omega_obs, M, a, metric_parameter,
-                        Kerr_class, RBH_class, Wormhole_class);
+                get_initial_conditions_from_file(e_metric, &J, J_data, &p_theta_0, p_theta_data, &p_r_0, photon, r_obs, 
+                                                 theta_obs, metric, N_obs, omega_obs,
+                                                 Kerr_class, RBH_class, Wormhole_class);
 
                 double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
                 Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
-                                     lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class);
+                                          lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class,
+                                          disk_model, disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega);
 
+    
+                print_progress(photon, Data_number, lens_from_file);
             }
+
+            std::cout << '\n';
         }
     }
     else{
@@ -158,23 +179,35 @@ int main() {
         Setup a viewing window for the observer and loop trough it
         */
 
-        double V_angle_max = 0.0017;
-        double H_angle_max = 0.006;
+        double V_angle_min = -0.0015;
+        double V_angle_max = 0.0025;
+
+        double H_angle_min = -0.0055;
+        double H_angle_max = 0.0055;
+
+        double Scan_Step = 5e-6;
+   
+        int progress = 0;
         
+        int V_num = floor(log10f((V_angle_max - V_angle_min) * 10000) + 1);
+
         if (Integration_status == OK) {
 
-            for (double V_angle = -0.0015; V_angle <= 0.0025; V_angle += 5e-6) {
+            for (double V_angle = V_angle_min; V_angle <= V_angle_max; V_angle += Scan_Step) {
 
-                std::cout << std::fixed << std::setprecision(6) << V_angle << " ";
+                print_progress(progress, int((V_angle_max - V_angle_min) / Scan_Step), lens_from_file);
 
-                for (double H_angle = -0.0055; H_angle <= 0.0055; H_angle += 5e-6) {
+                progress += 1;
+
+                for (double H_angle = H_angle_min; H_angle <= H_angle_max; H_angle += Scan_Step) {
 
                     get_intitial_conditions_from_angles(&J, &p_theta_0, &p_r_0, metric, V_angle, H_angle);
 
                     double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
                     Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
-                                         lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class);
+                                              lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class,
+                                              disk_model, disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega);
 
                 }
 

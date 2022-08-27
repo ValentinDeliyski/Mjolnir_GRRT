@@ -29,13 +29,13 @@ typedef class tag_Kerr {
 			r_ISCO = M * (3 + Z_2 - sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
 		}
 
+        double get_spin()            { return a; };
 		double get_r_ISCO()			 { return r_ISCO; };
 		double get_r_horizon()		 { return r_horizon; };
 		double get_r_ph_prograde()   { return r_ph_prograde; };
 		double get_r_ph_retrograde() { return r_ph_retrograde; };
 
-        int metric(double metric[4][4], double* N_metric, double* omega_metric,
-                   double M, double a, double r, double theta) {
+        int metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
 
             double r2 = r * r;
             double sin_theta = sin(theta);
@@ -45,6 +45,7 @@ typedef class tag_Kerr {
 
             metric[0][0] = -(1 - 2 * M * r / rho2);
             metric[0][3] = -2 * M * r * a * sin_theta * sin_theta / rho2;
+            metric[3][0] = metric[0][3];
             metric[1][1] = rho2 / delta;
             metric[2][2] = rho2;
             metric[3][3] = (r2 + a * a + 2 * M * r * a * a / rho2 * sin_theta * sin_theta) * sin_theta * sin_theta;
@@ -54,15 +55,30 @@ typedef class tag_Kerr {
             *N_metric = sqrt(rho2 * delta / sigma2);
             *omega_metric = 2 * a * r / sigma2;
 
-            return 0;
+            return OK;
+        }
+
+        int inverse_metric(double inv_metric[4][4], double metric[4][4], double r, double theta) {
+
+            double g2 = metric[0][3] * metric[0][3] - metric[3][3] * metric[0][0];
+
+            inv_metric[0][0] = -metric[3][3] / g2;
+            inv_metric[0][3] = metric[0][3] / g2;
+            inv_metric[3][0] = inv_metric[0][3];
+            inv_metric[1][1] = 1. / metric[1][1];
+            inv_metric[2][2] = 1. / metric[2][2];
+            inv_metric[3][3] = -metric[0][0] / g2;
+
+            return OK;
+
         }
 
         int metric_first_derivatives(class tag_Kerr Kerr_class, double dr_metric[4][4], double* dr_N, double* dr_omega,
-                                     double M, double a, double r, double theta) {
+                                     double r, double theta) {
 
             double metric[4][4], N, omega;
 
-            Kerr_class.metric(metric, &N, &omega, M, a, r, theta);
+            Kerr_class.metric(metric, &N, &omega, r, theta);
 
             double r2 = r * r;
             double sin_theta = sin(theta);
@@ -82,20 +98,20 @@ typedef class tag_Kerr {
             *dr_N = N * (r / rho2 + (r - M) / delta - dr_sigma2 / 2 / sigma2);
             *dr_omega = omega / r * (1 - r * dr_sigma2 / sigma2);
 
-            return 0;
+            return OK;
 
         }
 
         int metric_second_derivatives(class tag_Kerr Kerr_class, double d2r_metric[4][4], double* d2r_N, double* d2r_omega,
-                                      double M, double a, double r, double theta) {
+                                     double r, double theta) {
 
             double metric[4][4], N, omega;
 
-            Kerr_class.metric(metric, &N, &omega, M, a, r, theta);
+            Kerr_class.metric(metric, &N, &omega, r, theta);
 
             double dr_metric[4][4], dr_N, dr_omega;
 
-            Kerr_class.metric_first_derivatives(Kerr_class, dr_metric, &dr_N, &dr_omega, M, a, r, theta);
+            Kerr_class.metric_first_derivatives(Kerr_class, dr_metric, &dr_N, &dr_omega, r, theta);
 
             double r2 = r * r;
             double sin_theta = sin(theta);
@@ -116,12 +132,12 @@ typedef class tag_Kerr {
             *d2r_N = dr_N * dr_N / N + N / rho2 * (1 - 2 * r2 / rho2 + rho2 / delta * (1 - (r - M) * (r - M) / delta) - rho2 / sigma2 / 2 * (d2r_sigma2 - dr_sigma2 * dr_sigma2 / sigma2));
             *d2r_omega = -omega / r2 * (1 - r * dr_omega / omega + r * dr_sigma2 / sigma2) * (1 - r * dr_sigma2 / sigma2);
 
-            return 0;
+            return OK;
 
         }
 
         int intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r, 
-                                          int photon, double r_obs, double theta_obs, double metric[4][4], double M, double a) {
+                                          int photon, double r_obs, double theta_obs, double metric[4][4]) {
 
             *J = -J_data[photon] * sin(theta_obs);
             *p_theta = p_theta_data[photon];
@@ -133,18 +149,18 @@ typedef class tag_Kerr {
 
             *p_r = sqrt(rad_potential) / delta;
 
-            return 0;
+            return OK;
         }
 
-        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration, double a, double M) {
+        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration) {
 
-            double r = inter_State_vector[0 + iteration * 6];
+            double r = inter_State_vector[e_r + iteration * 6];
             double r2 = r * r;
 
-            double sin1 = sin(inter_State_vector[1 + iteration * 6]);
+            double sin1 = sin(inter_State_vector[e_theta + iteration * 6]);
             double sin2 = sin1 * sin1;
 
-            double cos1 = cos(inter_State_vector[1 + iteration * 6]);
+            double cos1 = cos(inter_State_vector[e_theta + iteration * 6]);
             double cos2 = cos1 * cos1;
 
             double rho2 = r2 + a * a * cos2;
@@ -156,7 +172,7 @@ typedef class tag_Kerr {
             Derivatives[e_r       + iteration * 6] = delta / rho2 * inter_State_vector[5 + iteration * 6];
             Derivatives[e_theta   + iteration * 6] = 1.0 / rho2 * inter_State_vector[4 + iteration * 6];
             Derivatives[e_phi     + iteration * 6] = 1.0 / (delta * rho2) * (P * a + delta * (J / sin2 - a));
-            Derivatives[e_phi_FD  + iteration * 6] = 0.0;
+            Derivatives[e_phi_FD  + iteration * 6] = 0;
 
             double theta_term_1 = -(delta * inter_State_vector[e_p_r + iteration * 6] * inter_State_vector[e_p_r + iteration * 6] + inter_State_vector[e_p_theta + iteration * 6] * inter_State_vector[e_p_theta + iteration * 6]) * a * a * cos1 * sin1 / (rho2 * rho2);
             double theta_term_2 = F * a * a * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - a * a * cos1 * sin1) / rho2;
@@ -168,7 +184,7 @@ typedef class tag_Kerr {
 
             Derivatives[e_p_r     + iteration * 6] = r_term_1 + r_term_2;
 
-            return 0;
+            return OK;
         }
 
 
@@ -180,6 +196,7 @@ typedef class tag_Wormhole {
 
 		double alpha_metric;
 		double r_throat;
+        double a;
 		double M;
 
 		double r_ISCO;
@@ -187,9 +204,10 @@ typedef class tag_Wormhole {
 
 	public:
 
-		tag_Wormhole(double x) {
+		tag_Wormhole(double x, double spin) {
 
 			alpha_metric = x;
+            a = spin;
 			M = 1.0;
 			r_throat = M;
 
@@ -197,18 +215,19 @@ typedef class tag_Wormhole {
 			r_ph   = M / 2 * (1 + sqrt(1 + 8 * alpha_metric));
 		}
 
-		double get_r_throat() { return r_throat; };
-		double get_r_ISCO() { return r_ISCO; };
-		double get_r_ph()   { return r_ph; };
+        double get_metric_parameter() { return alpha_metric; };
+		double get_r_throat()         { return r_throat; };
+		double get_r_ISCO()           { return r_ISCO; };
+		double get_r_ph()             { return r_ph; };
+        double get_spin()             { return a; };
 
-        int metric(double metric[4][4], double* N_metric, double* omega, double M,
-                   double r_throat, double a, double alpha, double l, double theta) {
+        int metric(double metric[4][4], double* N_metric, double* omega, double l, double theta) {
 
             double r = sqrt(l * l + r_throat * r_throat);
             double r2 = r * r;
             double sin_theta = sin(theta);
 
-            double exponent = -M / r - alpha * M * M / r2;
+            double exponent = -M / r - alpha_metric * M * M / r2;
 
             *N_metric = exp(exponent);
             *omega = 2 * a * M * M / r2 / r;
@@ -223,17 +242,17 @@ typedef class tag_Wormhole {
         }
 
         int metric_first_derivatives(class tag_Wormhole Wormhole_class, double dr_metric[4][4], double* dr_N, double* dr_omega,
-                                     double M, double r_throat, double a, double alpha, double l, double theta) {
+                                     double l, double theta) {
 
             double metric[4][4], N, omega;
 
-            Wormhole_class.metric(metric, &N, &omega, M, r_throat, a, alpha, l, theta);
+            Wormhole_class.metric(metric, &N, &omega, l, theta);
 
             double r = sqrt(l * l + r_throat * r_throat);
             double r2 = r * r;
             double sin_theta = sin(theta);
 
-            *dr_N = N * (1 / r2 + 2 * alpha / (r2 * r));
+            *dr_N = N * (1 / r2 + 2 * alpha_metric / (r2 * r));
             *dr_omega = -3 * omega / r;
 
             dr_metric[0][0] = -2 * N * *dr_N + 2 * r * omega * (omega + r * *dr_omega) * sin_theta * sin_theta;
@@ -246,21 +265,21 @@ typedef class tag_Wormhole {
         }
 
         int metric_second_derivatives(class tag_Wormhole Wormhole_class, double d2r_metric[4][4], double* d2r_N, double* d2r_omega,
-                                      double M, double r_throat, double a, double alpha, double l, double theta) {
+                                      double l, double theta) {
 
             double metric[4][4], N, omega;
 
-            Wormhole_class.metric(metric, &N, &omega, M, r_throat, a, alpha, l, theta);
+            Wormhole_class.metric(metric, &N, &omega, l, theta);
 
             double dr_metric[4][4], dr_N, dr_omega;
 
-            Wormhole_class.metric_first_derivatives(Wormhole_class, dr_metric, &dr_N, &dr_omega, M, r_throat, a, alpha, l, theta);
+            Wormhole_class.metric_first_derivatives(Wormhole_class, dr_metric, &dr_N, &dr_omega, l, theta);
 
             double r = sqrt(l * l + r_throat * r_throat);
             double r2 = r * r;
             double sin_theta = sin(theta);
 
-            *d2r_N = dr_N * (1 / r2 + 2 * alpha / (r2 * r)) - N * (2. / (r2 * r) + double(3) * double(2) * alpha / (r2 * r2));
+            *d2r_N = dr_N * (1 / r2 + 2 * alpha_metric / (r2 * r)) - N * (2. / (r2 * r) + double(3) * double(2) * alpha_metric / (r2 * r2));
             *d2r_omega = -3 * dr_omega / r + 3 * omega / r2;
 
             d2r_metric[0][0] = -2 * dr_N * dr_N - 2 * N * *d2r_N + 2 * ((omega + r * dr_omega) * (omega + r * dr_omega) + r * omega * (dr_omega + dr_omega + r * *d2r_omega)) * sin_theta * sin_theta;
@@ -285,8 +304,7 @@ typedef class tag_Wormhole {
             return 0;
         }
 
-        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6],
-                int iteration, double r_throat, double a, double alpha_metric) {
+        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration) {
 
             double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * 6] * inter_State_vector[0 + iteration * 6] + r_throat * r_throat);
             double d_ell_r = inter_State_vector[0 + iteration * 6] / sqrt_r2;
@@ -343,12 +361,13 @@ typedef class tag_Regular_Black_Hole {
 			r_horizon = sqrt(pow(2 * M, 2) - pow(metric_parameter, 2));
 		}
 
-		double get_r_horizon() { return r_horizon; };
-		double get_r_ISCO()	   { return r_ISCO; };
-		double get_r_ph()	   { return r_ph; };
+        double get_metric_parameter() { return metric_parameter; };
+		double get_r_horizon()        { return r_horizon; };
+		double get_r_ISCO()	          { return r_ISCO; };
+		double get_r_ph()	          { return r_ph; };
 
         int metric(double metric[4][4], double* N_metric, double* omega_metric,
-                   double M, double metric_parameter, double r, double theta) {
+                   double r, double theta) {
 
             double r2 = r * r;
             double sin_theta = sin(theta);
@@ -369,11 +388,11 @@ typedef class tag_Regular_Black_Hole {
         }
 
         int metric_first_derivatives(class tag_Regular_Black_Hole RBH_class, double dr_metric[4][4], double* dr_N,
-                                     double* dr_omega, double M, double metric_parameter, double r, double theta) {
+                                     double* dr_omega, double r, double theta) {
 
             double metric[4][4], N, omega;
 
-            RBH_class.metric(metric, &N, &omega, M, metric_parameter, r, theta);
+            RBH_class.metric(metric, &N, &omega, r, theta);
 
             double r2 = r * r;
             double sin_theta = sin(theta);
@@ -395,15 +414,15 @@ typedef class tag_Regular_Black_Hole {
         }
 
         int metric_second_derivatives(class tag_Regular_Black_Hole RBH_class, double d2r_metric[4][4], double* d2r_N,
-                                      double* d2r_omega, double M, double metric_parameter, double r, double theta) {
+                                      double* d2r_omega, double r, double theta) {
 
             double metric[4][4], N, omega;
 
-            RBH_class.metric(metric, &N, &omega, M, metric_parameter, r, theta);
+            RBH_class.metric(metric, &N, &omega, r, theta);
 
             double dr_metric[4][4], dr_N, dr_omega;
 
-            RBH_class.metric_first_derivatives(RBH_class, dr_metric, &dr_N, &dr_omega, M, metric_parameter, r, theta);
+            RBH_class.metric_first_derivatives(RBH_class, dr_metric, &dr_N, &dr_omega, r, theta);
 
             double r2 = r * r;
             double sin_theta = sin(theta);
@@ -426,7 +445,7 @@ typedef class tag_Regular_Black_Hole {
         }
 
         int intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                          int photon, double r_obs, double theta_obs, double metric[4][4], double M, double metric_parameter){
+                                          int photon, double r_obs, double theta_obs, double metric[4][4]){
 
             *J = -J_data[photon] * sin(theta_obs);
             *p_theta = p_theta_data[photon];
@@ -439,7 +458,7 @@ typedef class tag_Regular_Black_Hole {
             return 0;
         }
 
-        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration, double metric_parameter, double M) {
+        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration) {
 
             double r = inter_State_vector[0 + iteration * 6];
             double rho = sqrt(r * r + metric_parameter * metric_parameter);
@@ -466,3 +485,4 @@ typedef class tag_Regular_Black_Hole {
         }
 
 }c_RBH;
+   
