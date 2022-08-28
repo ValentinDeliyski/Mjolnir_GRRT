@@ -15,7 +15,7 @@ RK45 SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division b
 
 RK45 TOROIDAL_DISK_BOUNDY_DENSITY = 8e-6;
 
-RK45_int RK45_size			   = 7;		 // Number of integration sub-steps
+RK45_int RK45_size			   = 7;		  // Number of integration sub-steps
 RK45_int MAX_INTEGRATION_COUNT = 7600000; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
 RK45 Coeff_deriv[7][6] =
@@ -41,17 +41,19 @@ typedef enum tag_Spacetimes {
 
 }Spacetimes;
 
-typedef enum tag_Coord_enums {
+typedef enum tag_State_enums {
 
-	e_r		       = 0,
-	e_theta        = 1,
-	e_phi	       = 2,
-	e_phi_FD       = 3,
-	e_p_theta      = 4,
-	e_p_r		   = 5,
-	e_Coord_Number = 6
+	e_r		        = 0,
+	e_theta         = 1,
+	e_phi	        = 2,
+	e_phi_FD        = 3,
+	e_p_theta       = 4,
+	e_p_r		    = 5,
+	e_Intensity	    = 6,
+	e_Optical_Depth = 7,
+	e_State_Number  = 8
 
-}Coord_enums;
+}State_enums;
 
 typedef enum tag_XYZ_enums {
 

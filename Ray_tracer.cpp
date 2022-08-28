@@ -1,6 +1,6 @@
 /***************************************************************************************************
 |                                                                                                  |
-|                          ---------  Numerical Ray Tracer  ---------                              | 
+|                      ---------  Gravitational Ray Tracer  ---------                              | 
 |                                                                                                  |
 |    * @Version: 3.0                                                                               |
 |    * @Author: Valentin Deliyski                                                                  |
@@ -11,6 +11,10 @@
 |        ** Kerr Black Holes                                                                       |
 |        ** Static Regular Black Holes                                                             |
 |        ** Rotating Traversable Wormholes                                                         |
+|                                                                                                  |
+|    * @Supported Disk Models                                                                      |
+|        ** Novikov-Thorne                                                                         |
+|        ** Generic Optically Thin Disk With Arbitrary Density, Emission and Absorbtion Profiles   |
 |                                                                                                  |
 ***************************************************************************************************/
 
@@ -28,7 +32,7 @@
 #include "Lensing.h"
 
 Spacetimes e_metric = Kerr;
-Disk_Models disk_model = Optically_Thin_Toroidal;
+Disk_Models disk_model = Novikov_Thorne;
 
 int main() {
 
@@ -75,7 +79,7 @@ int main() {
 
             case Kerr:
 
-                r_ISCO = Kerr_class.get_r_ISCO();
+                r_ISCO = Kerr_class.get_ISCO();
                     
                 r_in  = 4.5;
                 r_out = 50;
@@ -84,7 +88,7 @@ int main() {
 
             case Reg_Black_Hole:
 
-                r_ISCO = RBH_class.get_r_ISCO();
+                r_ISCO = RBH_class.get_ISCO();
 
                 r_in  = 4.5;
                 r_out = 50;
@@ -93,7 +97,7 @@ int main() {
 
             case Wormhole:
 
-                r_ISCO = Wormhole_class.get_r_ISCO();
+                r_ISCO = Wormhole_class.get_ISCO();
 
                 r_in  = 1;
                 r_out = 50 * r_ISCO;
@@ -134,8 +138,8 @@ int main() {
 
     print_ASCII_art();
 
-    std::cout << "Observer Radial Position [M] = " << r_obs << '\n';
-    std::cout << "Observer Inclination [deg] = " << int(theta_obs / M_PI * 180) << '\n';
+    std::cout << "Observer Radial Position [GM/c^2] = " << r_obs << '\n';
+    std::cout << "Observer Inclination [deg] = "   << int(theta_obs / M_PI * 180) << '\n';
 
     if (lens_from_file) {
 

@@ -11,20 +11,20 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
     double p_theta_0 = initial_conditions[e_p_theta];
     double p_r_0     = initial_conditions[e_p_r];
 
+    // Initialize arrays that store the Flux, Intensity, Redshift from the disk and the image coordinates for each light ray
+    double Flux_Novikov_Thorne{}, Intensity_Toroidal_Disk{}, redshift{}, Image_coordiantes[3]{};
+
     // Initialize initial State Vector
-    double State_vector[6] = { r_obs, theta_obs, phi_obs, 0 , p_theta_0, p_r_0 };   
+    double State_vector[e_State_Number] = { r_obs, theta_obs, phi_obs, 0 , p_theta_0, p_r_0, Intensity_Toroidal_Disk, 0 };
 
     // Initialize a vector that stores the old state and the test state, used for estimating errors
-    double State_vector_test[6]{}, Old_state[6]{};   
+    double State_vector_test[e_State_Number]{}, Old_state[e_State_Number]{};
     
     // Storing the number of elements in the state vector for readability in later code
     int const Vector_size = sizeof(State_vector) / sizeof(double);  
 
     // Initialize arrays that store the states and derivatives of the intermidiate integration steps
     double inter_State_vector[RK45_size * Vector_size]{}, Derivatives[RK45_size * Vector_size]{}; 
-
-    // Initialize arrays that store the Flux, Intensity, Redshift from the disk and the image coordinates for each light ray
-    double Flux_Novikov_Thorne{}, Intensity_Toroidal_Disk{}, redshift{}, Image_coordiantes[3]{};
 
     // Set the old State Vector and the Test State Vector to the Initial State Vector
     for (int vector_indexer = e_r; vector_indexer <= e_p_r; vector_indexer += 1) {
@@ -56,9 +56,9 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
 
     while (RK45_Status == OK && integration_count < MAX_INTEGRATION_COUNT) {
 
-        RK45_Status = RK45_EOM(State_vector, Derivatives, &step, r_throat, a, metric_parameter, M, J, 
-                               Kerr_class, e_metric, RBH_class, Wormhole_class, &continue_integration, Disk_Model,
-                               disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega, &Intensity_Toroidal_Disk, r_obs, theta_obs);
+        RK45_Status = RK45_EOM(State_vector, Derivatives, &step, J, Kerr_class, e_metric, RBH_class, Wormhole_class, &continue_integration,
+                               Disk_Model, disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega, &Intensity_Toroidal_Disk,
+                               r_obs, theta_obs);
 
         // If error estimate, returned from RK45_EOM < RK45_ACCURACY
         if (continue_integration == true) {
@@ -73,8 +73,7 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
                 }
 
                 redshift = 0;
-                Flux_Novikov_Thorne     = 0;
-                Intensity_Toroidal_Disk = 0;
+                Flux_Novikov_Thorne = 0;
 
                 n_equator_crossings = 0;
 
@@ -127,7 +126,7 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
 
             // Evaluate logical flags for terminating the integration
 
-            bool scatter            = State_vector[e_r] > r_out && Derivatives[e_r] < 0;
+            bool scatter            = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
             bool scatter_other_side = State_vector[e_r] < -sqrt(r_out * r_out + r_throat * r_throat);
 
             bool hit_horizon_kerr = State_vector[e_r] - Kerr_class.get_r_horizon() < 0.05;
@@ -189,7 +188,7 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
 
                     case Optically_Thin_Toroidal:
 
-                        write_to_file(Image_coordiantes, 0., Intensity_Toroidal_Disk, State_vector, metric_parameter, J,
+                        write_to_file(Image_coordiantes, 0., State_vector[e_Intensity], State_vector, metric_parameter, J,
                                       direct, lens_from_file, data, momentum_data);
 
                         integration_count = 0;

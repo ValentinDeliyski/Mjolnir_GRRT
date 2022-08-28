@@ -30,7 +30,7 @@ typedef class tag_Kerr {
 		}
 
         double get_spin()            { return a; };
-		double get_r_ISCO()			 { return r_ISCO; };
+		double get_ISCO()			 { return r_ISCO; };
 		double get_r_horizon()		 { return r_horizon; };
 		double get_r_ph_prograde()   { return r_ph_prograde; };
 		double get_r_ph_retrograde() { return r_ph_retrograde; };
@@ -56,21 +56,6 @@ typedef class tag_Kerr {
             *omega_metric = 2 * a * r / sigma2;
 
             return OK;
-        }
-
-        int inverse_metric(double inv_metric[4][4], double metric[4][4], double r, double theta) {
-
-            double g2 = metric[0][3] * metric[0][3] - metric[3][3] * metric[0][0];
-
-            inv_metric[0][0] = -metric[3][3] / g2;
-            inv_metric[0][3] = metric[0][3] / g2;
-            inv_metric[3][0] = inv_metric[0][3];
-            inv_metric[1][1] = 1. / metric[1][1];
-            inv_metric[2][2] = 1. / metric[2][2];
-            inv_metric[3][3] = -metric[0][0] / g2;
-
-            return OK;
-
         }
 
         int metric_first_derivatives(class tag_Kerr Kerr_class, double dr_metric[4][4], double* dr_N, double* dr_omega,
@@ -152,15 +137,15 @@ typedef class tag_Kerr {
             return OK;
         }
 
-        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration) {
+        int EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
-            double r = inter_State_vector[e_r + iteration * 6];
+            double r = inter_State_vector[e_r + iteration * e_State_Number];
             double r2 = r * r;
 
-            double sin1 = sin(inter_State_vector[e_theta + iteration * 6]);
+            double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
             double sin2 = sin1 * sin1;
 
-            double cos1 = cos(inter_State_vector[e_theta + iteration * 6]);
+            double cos1 = cos(inter_State_vector[e_theta + iteration * e_State_Number]);
             double cos2 = cos1 * cos1;
 
             double rho2 = r2 + a * a * cos2;
@@ -169,20 +154,20 @@ typedef class tag_Kerr {
             double delta = r2 - 2 * M * r + a * a;
             double F = P * P - delta * ((J - a) * (J - a) + cos2 * (J * J / sin2 - a * a));
 
-            Derivatives[e_r       + iteration * 6] = delta / rho2 * inter_State_vector[5 + iteration * 6];
-            Derivatives[e_theta   + iteration * 6] = 1.0 / rho2 * inter_State_vector[4 + iteration * 6];
-            Derivatives[e_phi     + iteration * 6] = 1.0 / (delta * rho2) * (P * a + delta * (J / sin2 - a));
-            Derivatives[e_phi_FD  + iteration * 6] = 0;
+            Derivatives[e_r       + iteration * e_State_Number] = delta / rho2 * inter_State_vector[5 + iteration * e_State_Number];
+            Derivatives[e_theta   + iteration * e_State_Number] = 1.0 / rho2 * inter_State_vector[4 + iteration * e_State_Number];
+            Derivatives[e_phi     + iteration * e_State_Number] = 1.0 / (delta * rho2) * (P * a + delta * (J / sin2 - a));
+            Derivatives[e_phi_FD  + iteration * e_State_Number] = 0;
 
-            double theta_term_1 = -(delta * inter_State_vector[e_p_r + iteration * 6] * inter_State_vector[e_p_r + iteration * 6] + inter_State_vector[e_p_theta + iteration * 6] * inter_State_vector[e_p_theta + iteration * 6]) * a * a * cos1 * sin1 / (rho2 * rho2);
+            double theta_term_1 = -(delta * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] + inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number]) * a * a * cos1 * sin1 / (rho2 * rho2);
             double theta_term_2 = F * a * a * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - a * a * cos1 * sin1) / rho2;
 
-            Derivatives[e_p_theta + iteration * 6] = theta_term_1 + theta_term_2;
+            Derivatives[e_p_theta + iteration * e_State_Number] = theta_term_1 + theta_term_2;
 
-            double r_term_1 = inter_State_vector[e_p_r + iteration * 6] * inter_State_vector[e_p_r + iteration * 6] / (rho2) * (M - r * (1 - delta / rho2)) + inter_State_vector[e_p_theta + iteration * 6] * inter_State_vector[e_p_theta + iteration * 6] * r / (rho2 * rho2);
+            double r_term_1 = inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] / (rho2) * (M - r * (1 - delta / rho2)) + inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] * r / (rho2 * rho2);
             double r_term_2 = (2 * P * r - (r - M) * ((J - a) * (J - a) + cos2 * (J * J / (sin2)-a * a))) / (delta * rho2) - F * (rho2 * (r - M) + r * delta) / (delta * delta * rho2 * rho2);
 
-            Derivatives[e_p_r     + iteration * 6] = r_term_1 + r_term_2;
+            Derivatives[e_p_r     + iteration * e_State_Number] = r_term_1 + r_term_2;
 
             return OK;
         }
@@ -217,7 +202,7 @@ typedef class tag_Wormhole {
 
         double get_metric_parameter() { return alpha_metric; };
 		double get_r_throat()         { return r_throat; };
-		double get_r_ISCO()           { return r_ISCO; };
+		double get_ISCO()             { return r_ISCO; };
 		double get_r_ph()             { return r_ph; };
         double get_spin()             { return a; };
 
@@ -304,10 +289,10 @@ typedef class tag_Wormhole {
             return 0;
         }
 
-        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration) {
+        int EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
-            double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * 6] * inter_State_vector[0 + iteration * 6] + r_throat * r_throat);
-            double d_ell_r = inter_State_vector[0 + iteration * 6] / sqrt_r2;
+            double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * e_State_Number] * inter_State_vector[0 + iteration * e_State_Number] + r_throat * r_throat);
+            double d_ell_r = inter_State_vector[0 + iteration * e_State_Number] / sqrt_r2;
 
             double omega = 2 * a / (sqrt_r2 * sqrt_r2 * sqrt_r2);
             double d_ell_omega = -3 * omega / sqrt_r2 * d_ell_r;
@@ -318,20 +303,20 @@ typedef class tag_Wormhole {
 
             double N2 = N * N;
 
-            double sin1 = sin(inter_State_vector[1 + iteration * 6]);
+            double sin1 = sin(inter_State_vector[1 + iteration * e_State_Number]);
             double sin2 = sin1 * sin1;
 
-            Derivatives[e_r       + iteration * 6] = 1.0 / (1 + r_throat / sqrt_r2) * inter_State_vector[5 + iteration * 6];
-            Derivatives[e_theta   + iteration * 6] = 1.0 / (sqrt_r2 * sqrt_r2) * inter_State_vector[4 + iteration * 6];
-            Derivatives[e_phi     + iteration * 6] = J / (sqrt_r2 * sqrt_r2 * sin2);
-            Derivatives[e_phi_FD  + iteration * 6] = omega * (1 - omega * J) / N2;
-            Derivatives[e_p_theta + iteration * 6] = (cos(inter_State_vector[1 + iteration * 6]) / sin1) / (sqrt_r2 * sqrt_r2) * J * J / sin2;
+            Derivatives[e_r       + iteration * e_State_Number] = 1.0 / (1 + r_throat / sqrt_r2) * inter_State_vector[5 + iteration * e_State_Number];
+            Derivatives[e_theta   + iteration * e_State_Number] = 1.0 / (sqrt_r2 * sqrt_r2) * inter_State_vector[4 + iteration * e_State_Number];
+            Derivatives[e_phi     + iteration * e_State_Number] = J / (sqrt_r2 * sqrt_r2 * sin2);
+            Derivatives[e_phi_FD  + iteration * e_State_Number] = omega * (1 - omega * J) / N2;
+            Derivatives[e_p_theta + iteration * e_State_Number] = (cos(inter_State_vector[1 + iteration * e_State_Number]) / sin1) / (sqrt_r2 * sqrt_r2) * J * J / sin2;
 
-            double term_1 = -1.0 / ((1 + r_throat / sqrt_r2) * (1 + r_throat / sqrt_r2)) * r_throat * inter_State_vector[0 + iteration * 6] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * inter_State_vector[5 + iteration * 6] * inter_State_vector[5 + iteration * 6] / 2;
-            double term_2 = 1.0 / (sqrt_r2 * sqrt_r2 * sqrt_r2) * (inter_State_vector[4 + iteration * 6] * inter_State_vector[4 + iteration * 6] + J * J / sin2) * d_ell_r;
+            double term_1 = -1.0 / ((1 + r_throat / sqrt_r2) * (1 + r_throat / sqrt_r2)) * r_throat * inter_State_vector[0 + iteration * e_State_Number] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] / 2;
+            double term_2 = 1.0 / (sqrt_r2 * sqrt_r2 * sqrt_r2) * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2) * d_ell_r;
             double term_3 = -(1.0 / (N2 * N) * d_ell_N * ((1 - omega * J) * (1 - omega * J)) - 1.0 / N2 * (-d_ell_omega * (1 - omega * J) * J));
 
-            Derivatives[e_p_r      + iteration * 6] = term_1 + term_2 + term_3;
+            Derivatives[e_p_r      + iteration * e_State_Number] = term_1 + term_2 + term_3;
 
             return 0;
         }
@@ -363,7 +348,7 @@ typedef class tag_Regular_Black_Hole {
 
         double get_metric_parameter() { return metric_parameter; };
 		double get_r_horizon()        { return r_horizon; };
-		double get_r_ISCO()	          { return r_ISCO; };
+		double get_ISCO()	          { return r_ISCO; };
 		double get_r_ph()	          { return r_ph; };
 
         int metric(double metric[4][4], double* N_metric, double* omega_metric,
@@ -458,28 +443,27 @@ typedef class tag_Regular_Black_Hole {
             return 0;
         }
 
-        int EOM(double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration) {
+        int EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
-            double r = inter_State_vector[0 + iteration * 6];
+            double r = inter_State_vector[0 + iteration * e_State_Number];
             double rho = sqrt(r * r + metric_parameter * metric_parameter);
 
-            double sin1 = sin(inter_State_vector[1 + iteration * 6]);
+            double sin1 = sin(inter_State_vector[1 + iteration * e_State_Number]);
             double sin2 = sin1 * sin1;
 
-            double cos1 = cos(inter_State_vector[1 + iteration * 6]);
+            double cos1 = cos(inter_State_vector[1 + iteration * e_State_Number]);
             double cos2 = cos1 * cos1;
 
+            Derivatives[e_r       + iteration * e_State_Number] = (1 - 2 * M / rho) * inter_State_vector[5 + iteration * 6];
+            Derivatives[e_theta   + iteration * e_State_Number] = 1.0 / (rho * rho) * inter_State_vector[4 + iteration * 6];
+            Derivatives[e_phi     + iteration * e_State_Number] = J / (rho * rho * sin2);
+            Derivatives[e_phi_FD  + iteration * e_State_Number] = 0.0;
+            Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (rho * rho * sin1 * sin2) * J * J;
 
-            Derivatives[e_r       + iteration * 6] = (1 - 2 * M / rho) * inter_State_vector[5 + iteration * 6];
-            Derivatives[e_theta   + iteration * 6] = 1.0 / (rho * rho) * inter_State_vector[4 + iteration * 6];
-            Derivatives[e_phi     + iteration * 6] = J / (rho * rho * sin2);
-            Derivatives[e_phi_FD  + iteration * 6] = 0.0;
-            Derivatives[e_p_theta + iteration * 6] = cos1 / (rho * rho * sin1 * sin2) * J * J;
+            double r_term_1 = -M * r / (rho * rho * rho) * (1.0 / ((1 - 2 * M / rho) * (1 - 2 * M / rho)) + inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number]);
+            double r_term_2 = r / (rho * rho * rho * rho) * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
 
-            double r_term_1 = -M * r / (rho * rho * rho) * (1.0 / ((1 - 2 * M / rho) * (1 - 2 * M / rho)) + inter_State_vector[e_p_r + iteration * 6] * inter_State_vector[e_p_r + iteration * 6]);
-            double r_term_2 = r / (rho * rho * rho * rho) * (inter_State_vector[e_p_theta + iteration * 6] * inter_State_vector[e_p_theta + iteration * 6] + J * J / sin2);
-
-            Derivatives[e_p_r     + iteration * 6] = r_term_1 + r_term_2;
+            Derivatives[e_p_r     + iteration * e_State_Number] = r_term_1 + r_term_2;
 
             return 0;
         }

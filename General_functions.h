@@ -51,7 +51,7 @@ int Rorate_to_obs_plane(double theta_obs, double phi_obs, double Image_point[3],
 
 double my_max(double vector[]) {
 
-    int index_max = e_Coord_Number - 1;
+    int index_max = e_State_Number - 1;
 
     for (int index = 0; index <= index_max; index += 1) {
 
@@ -85,6 +85,42 @@ bool crossed_equatior(double State_vector[], double Old_State_Vector[]) {
 double dot_product(double vector_1[3], double vector_2[3]) {
 
     return vector_1[0] * vector_2[0] + vector_1[1] * vector_2[1] + vector_1[2] * vector_2[2];
+
+}
+
+int invert_metric(double inv_metric[4][4], double metric[4][4]) {
+
+    double g2 = metric[0][3] * metric[0][3] - metric[3][3] * metric[0][0];
+
+    inv_metric[0][0] = -metric[3][3] / g2;
+    inv_metric[0][3] = metric[0][3] / g2;
+    inv_metric[3][0] = inv_metric[0][3];
+    inv_metric[1][1] = 1. / metric[1][1];
+    inv_metric[2][2] = 1. / metric[2][2];
+    inv_metric[3][3] = -metric[0][0] / g2;
+
+    return OK;
+
+}
+
+double get_ISCO(Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+
+    switch (e_metric) {
+
+    case Kerr:
+
+        return Kerr_class.get_ISCO();
+
+    case Wormhole:
+
+        return Wormhole_class.get_ISCO();
+
+    case Reg_Black_Hole:
+
+        return RBH_class.get_ISCO();
+
+
+    }
 
 }
 
@@ -246,9 +282,9 @@ double Keplerian_angular_velocity(Spacetimes e_metric, double r, double theta,
 
     double dr_metric[4][4], dr_N, dr_omega;
 
-    if (r < Kerr_class.get_r_ISCO()) {
+    if (r < get_ISCO(e_metric, Kerr_class, RBH_class, Wormhole_class)) {
 
-        r = Kerr_class.get_r_ISCO();
+        r = get_ISCO(e_metric, Kerr_class, RBH_class, Wormhole_class);
         theta = M_PI_2;
 
     }
@@ -327,9 +363,9 @@ double Redshift(Spacetimes e_metric, Disk_Models Disk_Model, double J, double St
 
         double inv_metric[4][4];
 
-        Kerr_class.inverse_metric(inv_metric, metric_source, r_source, theta_source);
+        invert_metric(inv_metric, metric_source);
 
-        u_t = 1.0 / sqrt(-(inv_metric[0][0] - 2 * inv_metric[0][3] * ell + inv_metric[3][3] * ell * ell));
+        u_t = -1.0 / sqrt(-(inv_metric[0][0] - 2 * inv_metric[0][3] * ell + inv_metric[3][3] * ell * ell));
         u_phi = -u_t * ell;
 
         /*
@@ -337,13 +373,13 @@ double Redshift(Spacetimes e_metric, Disk_Models Disk_Model, double J, double St
         and add a radial component to norm the 4-velocity
         */
 
-        if (r_source < Kerr_class.get_r_ISCO()) {
+        if (r_source < get_ISCO(e_metric, Kerr_class, RBH_class, Wormhole_class)) {
 
             double inv_metric_ISCO[4][4]{};
 
-            Kerr_class.inverse_metric(inv_metric_ISCO, metric_ISCO, Kerr_class.get_r_ISCO(), theta_source);
+            invert_metric(inv_metric_ISCO, metric_ISCO);
 
-            rho = Kerr_class.get_r_ISCO() * fabs(sin(State_Vector[e_theta]));
+            rho = get_ISCO(e_metric, Kerr_class, RBH_class, Wormhole_class) * fabs(sin(State_Vector[e_theta]));
             ell = pow(rho, 3. / 2) / (1 + rho);
 
             u_t = 1.0 / sqrt(-(inv_metric_ISCO[0][0] - 2 * inv_metric_ISCO[0][3] * ell + inv_metric_ISCO[3][3] * ell * ell));
@@ -397,8 +433,8 @@ double Flux_integrand(Spacetimes e_metric, double r, double theta, double* metri
 
 }
 
-double solve_integral(Spacetimes e_metric, double lower_bound, double upper_bound, double theta, double tolerance,
-                      c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+double solve_Flux_integral(Spacetimes e_metric, double lower_bound, double upper_bound, double theta, double tolerance,
+                          c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     double metric_det, E_disk, L_disk;
 
@@ -447,10 +483,10 @@ double solve_integral(Spacetimes e_metric, double lower_bound, double upper_boun
     }
     else {
 
-        double L_value = solve_integral(e_metric, lower_bound, mid_point, theta, tolerance / 2,
-                                        Kerr_class, RBH_class, Wormhole_class);
-        double R_value = solve_integral(e_metric, mid_point, upper_bound, theta, tolerance / 2,
-                                        Kerr_class, RBH_class, Wormhole_class);
+        double L_value = solve_Flux_integral(e_metric, lower_bound, mid_point, theta, tolerance / 2,
+                                             Kerr_class, RBH_class, Wormhole_class);
+        double R_value = solve_Flux_integral(e_metric, mid_point, upper_bound, theta, tolerance / 2,
+                                             Kerr_class, RBH_class, Wormhole_class);
 
         integral = L_value + R_value;
 
@@ -482,14 +518,14 @@ double get_flux(Spacetimes e_metric, double r, double r_in, double theta,
 
     }
         
-    double Flux_integral = solve_integral(e_metric, r_in, r, theta, INTEGRAL_ACCURACY,
-                                          Kerr_class, RBH_class, Wormhole_class);
+    double Flux_integral = solve_Flux_integral(e_metric, r_in, r, theta, INTEGRAL_ACCURACY,
+                                               Kerr_class, RBH_class, Wormhole_class);
 
     return Flux_coeff * Flux_integral;
 
 }
 
-double get_Radiative_Transfer(double State_Vector[], double alpha, double Height_Scale , double r_cut, double omega, double redshift) {
+int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double alpha, double Height_Scale , double r_cut, double omega, double redshift) {
 
     double r = State_Vector[e_r];
     double h = cos(State_Vector[e_theta]);
@@ -497,15 +533,20 @@ double get_Radiative_Transfer(double State_Vector[], double alpha, double Height
     double Height_Cutoff = h * h / Height_Scale / Height_Scale / 2;
     double Radial_Cutoff = (r - r_cut) * (r - r_cut) / omega / omega;
 
-    double d_Intensity = pow(r, -alpha) * exp(-Height_Cutoff);
+    double emission = pow(r, -alpha) * exp(-Height_Cutoff);
 
     if (State_Vector[e_r] < r_cut) {
 
-        d_Intensity *= exp(-Radial_Cutoff);
+        emission *= exp(-Radial_Cutoff);
 
     }
 
-    return  redshift * redshift * d_Intensity;
+    double absorbtion = r * redshift * redshift * emission;
+
+    Derivatives[e_Intensity + iteration * e_State_Number]     = -redshift * redshift * emission*exp(-State_Vector[e_Optical_Depth]);
+    Derivatives[e_Optical_Depth + iteration * e_State_Number] = -absorbtion / redshift;
+
+    return  OK;
 
 }
 
@@ -614,8 +655,8 @@ Disk_Intersection Disk_event(Disk_Models e_Disk_Model, double State_Vector[], do
     case(Novikov_Thorne):
 
         inside_disk = State_Vector[e_r] * State_Vector[e_r] > r_in * r_in &&
-            State_Vector[e_r] * State_Vector[e_r] < r_out * r_out &&
-            crossed_equatior(State_Vector, Old_State_Vector);
+                      State_Vector[e_r] * State_Vector[e_r] < r_out * r_out &&
+                      crossed_equatior(State_Vector, Old_State_Vector);
 
         if (inside_disk) {
 
@@ -623,6 +664,8 @@ Disk_Intersection Disk_event(Disk_Models e_Disk_Model, double State_Vector[], do
         }
 
         return Outside_Disk;
+
+    /*
 
     case(Optically_Thin_Toroidal):
 
@@ -641,7 +684,8 @@ Disk_Intersection Disk_event(Disk_Models e_Disk_Model, double State_Vector[], do
         }
 
         return Outside_Disk;
-
+        */
     }
 
+    
 }
