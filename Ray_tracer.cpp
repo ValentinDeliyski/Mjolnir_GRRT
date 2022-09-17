@@ -2,7 +2,7 @@
 |                                                                                                  |
 |                      ---------  Gravitational Ray Tracer  ---------                              | 
 |                                                                                                  |
-|    * @Version: 3.0                                                                               |
+|    * @Version: 3.1                                                                               |
 |    * @Author: Valentin Deliyski                                                                  |
 |    * @Description: This program numeriaclly integrates the equations of motion                   |
 |    for null geodesics in a curved spacetime and and projects them onto an observer's screen      |
@@ -18,21 +18,27 @@
 |                                                                                                  |
 ***************************************************************************************************/
 
-#include "Enums_Constants.h"
+#define _USE_MATH_DEFINES
+
+#include <string>
 
 #include <iostream>
 #include <iomanip> 
 #include <fstream>
-#include <math.h>
+#include <cmath>
 
+#include "Enumerations.h"
+#include "Constants.h"
 #include "Spacetimes.h"
 #include "IO_files.h"
+
+#include "Disk_Models.h"
 #include "General_functions.h"
-#include "RK45.h"
+
 #include "Lensing.h"
 
-Spacetimes e_metric = Kerr;
-Disk_Models disk_model = Novikov_Thorne;
+e_Spacetimes e_metric = Kerr;
+Disk_Models e_Disk_Model = Optically_Thin_Toroidal;
 
 int main() {
 
@@ -81,7 +87,7 @@ int main() {
 
                 r_ISCO = Kerr_class.get_ISCO();
                     
-                r_in  = 4.5;
+                r_in  = 6;
                 r_out = 50;
 
                 break;
@@ -112,16 +118,22 @@ int main() {
 
         }
 
+
+    Novikov_Thorne_Model NT_Model(r_in, r_out);
+
     /*
     Set the Optically Thin Toroidal Disk model parameters
     */
 
-    double disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega;
+    double disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega, disk_magnetization;
 
         disk_alpha = 3;
         disk_height_scale = 0.1;
         disk_rad_cutoff = 4 * M;
         disk_omega = sqrt(1. / 12) * M;
+        disk_magnetization = 0.01;
+
+    Optically_Thin_Toroidal_Model OTT_Model(disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega);
     
     /*
     Get the metric at the observer to feed into the initial conditions functions
@@ -168,7 +180,7 @@ int main() {
 
                 Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
                                           lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class,
-                                          disk_model, disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega);
+                                          e_Disk_Model, NT_Model, OTT_Model);
 
     
                 print_progress(photon, Data_number, lens_from_file);
@@ -197,7 +209,7 @@ int main() {
 
         if (Integration_status == OK) {
 
-            for (double V_angle = V_angle_min; V_angle <= V_angle_max; V_angle += Scan_Step) {
+            for (double V_angle = 0; V_angle >= -V_angle_max; V_angle -= Scan_Step) {
 
                 print_progress(progress, int((V_angle_max - V_angle_min) / Scan_Step), lens_from_file);
 
@@ -211,7 +223,7 @@ int main() {
 
                     Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
                                               lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class,
-                                              disk_model, disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega);
+                                              e_Disk_Model, NT_Model, OTT_Model);
 
                 }
 
@@ -220,6 +232,13 @@ int main() {
     }            
 
     close_output_files(data, momentum_data);
+
+    std::string Return_Value_String[] = {
+
+        "OK",
+        "ERROR"
+
+    };
 
     std::cout << "Program Status = " << Return_Value_String[Integration_status];
 
