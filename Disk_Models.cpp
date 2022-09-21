@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Constants.h"
 #include "Enumerations.h"
+#include "Constants.h"
 #include "Spacetimes.h"
 #include "Disk_Models.h"
 #include "General_functions.h"
@@ -11,14 +11,20 @@
 #include <fstream>
 #include <cmath>
 
-Novikov_Thorne_Model::tag_Novikov_Thorne_Model(double x, double y) {
+/***************************************************
+|                                                  |
+| Novikov-Thorne Model Class Functions Definitions |
+|                                                  |
+***************************************************/
+
+tag_Novikov_Thorne_Model::tag_Novikov_Thorne_Model(double x, double y) {
 
     r_in = x;
     r_out = y;
 
 };
 
-double Novikov_Thorne_Model::Keplerian_angular_velocity(e_Spacetimes e_metric, double r,
+double tag_Novikov_Thorne_Model::Keplerian_angular_velocity(e_Spacetimes e_metric, double r,
                                                         c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     double dr_metric[4][4], dr_N, dr_omega;
@@ -30,13 +36,13 @@ double Novikov_Thorne_Model::Keplerian_angular_velocity(e_Spacetimes e_metric, d
     }
 
     get_metric_fist_derivatives(e_metric, dr_metric, &dr_N, &dr_omega, r, M_PI_2,
-        Kerr_class, RBH_class, Wormhole_class);
+                                Kerr_class, RBH_class, Wormhole_class);
 
     return (-dr_metric[0][3] + sqrt(dr_metric[0][3] * dr_metric[0][3] - dr_metric[0][0] * dr_metric[3][3])) / dr_metric[3][3];
 
 }
 
-double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(e_Spacetimes e_metric, double r, double Kepler,
+double tag_Novikov_Thorne_Model::dr_Keplerian_angular_velocity(e_Spacetimes e_metric, double r, double Kepler,
                                                            c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     double dr_metric[4][4], dr_N, dr_omega;
@@ -55,7 +61,7 @@ double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(e_Spacetimes e_metric
 
 }
 
-double Novikov_Thorne_Model::Redshift(e_Spacetimes e_metric, double J, double State_Vector[], double r_obs, double theta_obs,
+double tag_Novikov_Thorne_Model::Redshift(e_Spacetimes e_metric, double J, double State_Vector[], double r_obs, double theta_obs,
                                       c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     double r_source = State_Vector[e_r];
@@ -87,15 +93,11 @@ double Novikov_Thorne_Model::Redshift(e_Spacetimes e_metric, double J, double St
 
     double U_source[4] = { gamma, 0, 0, gamma * Kepler };
 
-    /*
-    Compute the redshift
-    */
-
     return  (-U_obs[0] + U_obs[3] * J) / (-U_source[0] + U_source[3] * J);
 
 }
 
-double Novikov_Thorne_Model::disk_Energy(e_Spacetimes e_metric, double r,
+double tag_Novikov_Thorne_Model::disk_Energy(e_Spacetimes e_metric, double r,
                                          c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
 
@@ -113,7 +115,7 @@ double Novikov_Thorne_Model::disk_Energy(e_Spacetimes e_metric, double r,
 
 }
 
-double Novikov_Thorne_Model::disk_Angular_Momentum(e_Spacetimes e_metric, double r,
+double tag_Novikov_Thorne_Model::disk_Angular_Momentum(e_Spacetimes e_metric, double r,
                                                    c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     double metric[4][4], N, omega;
@@ -130,7 +132,7 @@ double Novikov_Thorne_Model::disk_Angular_Momentum(e_Spacetimes e_metric, double
 
 }
 
-double Novikov_Thorne_Model::Flux_integrand(e_Spacetimes e_metric, double r,
+double tag_Novikov_Thorne_Model::Flux_integrand(e_Spacetimes e_metric, double r,
                                             c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     double metric[4][4], N, omega;
@@ -162,7 +164,7 @@ double Novikov_Thorne_Model::Flux_integrand(e_Spacetimes e_metric, double r,
 
 }
 
-double Novikov_Thorne_Model::solve_Flux_integral(e_Spacetimes e_metric, double lower_bound, double upper_bound, double tolerance,
+double tag_Novikov_Thorne_Model::solve_Flux_integral(e_Spacetimes e_metric, double lower_bound, double upper_bound, double tolerance,
                                                  c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     double mid_point = (lower_bound + upper_bound) / 2;
@@ -222,7 +224,7 @@ double Novikov_Thorne_Model::solve_Flux_integral(e_Spacetimes e_metric, double l
     return integral;
 }
 
-double Novikov_Thorne_Model::get_flux(e_Spacetimes e_metric, double r, double r_in,
+double tag_Novikov_Thorne_Model::get_flux(e_Spacetimes e_metric, double r, double r_in,
                                       c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     double metric[4][4], N, omega;
@@ -256,20 +258,108 @@ double Novikov_Thorne_Model::get_flux(e_Spacetimes e_metric, double r, double r_
 
 }
 
-double Novikov_Thorne_Model::get_r_in() { return r_in; };
+double tag_Novikov_Thorne_Model::get_r_in()  { return r_in; };
+double tag_Novikov_Thorne_Model::get_r_out() { return r_out; };
 
-double Novikov_Thorne_Model::get_r_out() { return r_out; };
+/************************************************************
+|                                                           |
+| Optically Thin Toroidal Model Class Functions Definitions |
+|                                                           |
+************************************************************/
 
-Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model(double alpha, double height_scale, double rad_cutoff, double omega) {
+tag_Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model(double alpha, double height_scale, double rad_cutoff, double omega,
+                                                                double magnetization, double mag_field[3]) {
 
     DISK_ALPHA = alpha;
     DISK_HEIGHT_SCALE = height_scale;
     DISK_RAD_CUTOFF = rad_cutoff;
     DISK_OMEGA = omega;
+    DISK_MAGNETIZATION = magnetization;
+    MAG_FIELD_GEOMETRY[0] = mag_field[0];
+    MAG_FIELD_GEOMETRY[1] = mag_field[1];
+    MAG_FIELD_GEOMETRY[2] = mag_field[2];
 
 }
 
-double Optically_Thin_Toroidal_Model::get_disk_alpha()        { return DISK_ALPHA; };
-double Optically_Thin_Toroidal_Model::get_disk_height_scale() { return DISK_HEIGHT_SCALE; };
-double Optically_Thin_Toroidal_Model::get_disk_rad_cutoff()   { return DISK_RAD_CUTOFF; };;
-double Optically_Thin_Toroidal_Model::get_disk_omega()        { return DISK_OMEGA; };
+double tag_Optically_Thin_Toroidal_Model::get_disk_alpha()         { return DISK_ALPHA; };
+double tag_Optically_Thin_Toroidal_Model::get_disk_height_scale()  { return DISK_HEIGHT_SCALE; };
+double tag_Optically_Thin_Toroidal_Model::get_disk_rad_cutoff()    { return DISK_RAD_CUTOFF; };;
+double tag_Optically_Thin_Toroidal_Model::get_disk_omega()         { return DISK_OMEGA; };
+double tag_Optically_Thin_Toroidal_Model::get_disk_magnetization() { return DISK_MAGNETIZATION; };
+
+int tag_Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], double State_Vector[], e_Spacetimes e_metric,
+                                                     c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+
+    double r_source = State_Vector[e_r];
+    double theta_source = M_PI_2;
+
+    double metric_source[4][4], N_source, omega_source;
+
+    get_metric(e_metric, metric_source, &N_source, &omega_source, r_source, theta_source,
+               Kerr_class, RBH_class, Wormhole_class);
+
+    double rho = r_source * fabs(sin(theta_source));
+    double ell = pow(rho, 3. / 2) / (1 + rho);
+
+    double u_t{}, u_phi{};
+
+    double inv_metric[4][4];
+
+    invert_metric(inv_metric, metric_source);
+
+    u_t = -1.0 / sqrt(-(inv_metric[0][0] + 2 * inv_metric[0][3] * ell + inv_metric[3][3] * ell * ell));
+    u_phi = -u_t * ell;
+
+    /*
+    Convert U_source to contravariant components
+    */
+
+    Disk_velocity[0] = inv_metric[0][0] * u_t + inv_metric[0][3] * u_phi;
+    Disk_velocity[1] = 0;
+    Disk_velocity[2] = 0;
+    Disk_velocity[3] = inv_metric[3][3] * u_phi + inv_metric[3][0] * u_t;
+
+    return OK;
+
+}
+
+double tag_Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]) {
+
+    double r = State_Vector[e_r];
+    double h = r*cos(State_Vector[e_theta]);
+
+
+    double Height_Cutoff = h * h / (2 * r * sin(State_Vector[e_theta]) * r * sin(State_Vector[e_theta]));
+    double Radial_Cutoff = (r - DISK_RAD_CUTOFF) * (r - DISK_RAD_CUTOFF) / DISK_OMEGA / DISK_OMEGA;
+
+    double electron_density = N_ELECTRON_CGS * pow(r, -DISK_ALPHA) * exp(-Height_Cutoff);
+
+    //if (State_Vector[e_r] < DISK_RAD_CUTOFF) {
+
+    //    electron_density *= exp(-Radial_Cutoff);
+
+    //}
+
+    return electron_density;
+
+}
+
+double tag_Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], double State_vector[]) {
+
+    /*
+    
+    Everything is in GCS!
+    
+    */
+
+    double electron_density = get_disk_density(State_vector);
+
+    double B_CGS = sqrt(DISK_MAGNETIZATION * C_LIGHT_CGS * C_LIGHT_CGS * electron_density * M_PROTON_CGS * 4 * M_PI);
+
+    B_field[x] = B_CGS * MAG_FIELD_GEOMETRY[x];
+    B_field[y] = B_CGS * MAG_FIELD_GEOMETRY[y];
+    B_field[z] = B_CGS * MAG_FIELD_GEOMETRY[z];
+
+    return B_CGS;
+
+}

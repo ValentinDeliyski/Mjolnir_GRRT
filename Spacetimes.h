@@ -4,6 +4,8 @@
     
     #define SPACETIMES
 
+    #include "Enumerations.h"
+
     typedef class tag_Kerr {
 
 	    private:
@@ -114,5 +116,26 @@
             int EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
 
     }c_RBH;
+
+    typedef class tag_observer {
+
+    private:
+
+        double r_obs;
+        double theta_obs;
+        double phi_obs;
+
+    public:
+
+        tag_observer(double r, double theta, double phi);
+
+        double get_r_obs();
+        double get_theta_obs();
+        double get_phi_obs();
+
+        int get_obs_velocity(double Obs_velocity[4],
+                             e_Spacetimes e_metric, c_Kerr Kerr_class, c_Wormhole Wormhole_class, c_RBH RBH_class);
+
+    }c_Observer;
    
 #endif

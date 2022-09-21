@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Constants.h"
 #include "Enumerations.h"
+#include "Constants.h"
 #include "Spacetimes.h"
 #include "Disk_Models.h"
 #include "General_functions.h"
@@ -12,14 +12,12 @@
 #include <cmath>
 
 Return_Value_enums RK45_EOM(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
-    c_Kerr Kerr_class, e_Spacetimes e_metric, c_RBH RBH_class, c_Wormhole Wormhole_class,
-    Disk_Models Disk_Model, Optically_Thin_Toroidal_Model OTT_Model,
-    double r_obs, double theta_obs) {
+                            c_Kerr Kerr_class, e_Spacetimes e_metric, c_RBH RBH_class, c_Wormhole Wormhole_class,
+                            c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model) {
 
     int iteration = 0;
     bool EOM_Status = OK;
 
-    double redshift{};
     double state_error[e_State_Number]{};
     double State_vector_test[e_State_Number]{};
     double inter_State_vector[RK45_size * e_State_Number]{};
@@ -41,12 +39,12 @@ Return_Value_enums RK45_EOM(double State_Vector[], double Derivatives[], double*
         }
 
         EOM_Status = get_EOM(e_metric, inter_State_vector, J, Derivatives, iteration,
-            Kerr_class, RBH_class, Wormhole_class);
+                             Kerr_class, RBH_class, Wormhole_class);
 
-        redshift = Redshift(e_metric, Disk_Model, J, inter_State_vector,
-            r_obs, theta_obs, Kerr_class, RBH_class, Wormhole_class);
 
-        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration, OTT_Model, redshift);
+        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration,J, OTT_Model,
+                               Kerr_class, e_metric,RBH_class,Wormhole_class, Observer_class);
+
 
         iteration += 1;
 

@@ -2,12 +2,13 @@
 
 #ifndef CONSTANTS
 
+    #define CONSTANTS
+
     #define _USE_MATH_DEFINES
 
     typedef double const RK45;
     typedef int const RK45_int;
 
-    #define CONSTANTS
 
     RK45 INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important
     RK45 INTEGRAL_ACCURACY = 5e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
@@ -60,7 +61,7 @@
     double const M_ELECTRON_CGS = 9.1094e-28;
     double const Q_ELECTRON_CGS = 4.8032e-10;
     double const T_ELECTRON_CGS = 1e11;
-    double const N_ELECTRON_CGS = 1e6;
+    double const N_ELECTRON_CGS = 2e6;
 
     double const M_PROTON_CGS = 1.67262192e-24;
 
@@ -68,5 +69,7 @@
     double const BOLTZMANN_CONST_CGS = 1.380649e-16;
 
     double const OBS_FREQUENCY_CGS = 230e9;
+
+    double const CGS_JANSKY = 1e+23;
 
 #endif

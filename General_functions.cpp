@@ -1,13 +1,11 @@
 #pragma once
 
-#include "Constants.h"
 #include "Enumerations.h"
+#include "Constants.h"
 #include "Spacetimes.h"
 #include "Disk_Models.h"
 
 #include <iostream>
-#include <iomanip> 
-#include <fstream>
 #include <cmath>
 
 int Rorate_to_obs_plane(double theta_obs, double phi_obs, double Image_point[3], double rotated_Image_point[3]) {
@@ -129,12 +127,18 @@ double get_ISCO(e_Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wor
 
         return RBH_class.get_ISCO();
 
+    default:
+
+        std::cout << "Wrong metric!" << '\n';
+
+        return ERROR;
+
     }
 
 }
 
 int get_metric(e_Spacetimes e_metric, double metric[4][4], double* N_metric, double* omega, double r, double theta,
-    c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+               c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     switch (e_metric) {
 
@@ -160,7 +164,7 @@ int get_metric(e_Spacetimes e_metric, double metric[4][4], double* N_metric, dou
 
         std::cout << "Wrong metric!" << '\n';
 
-        return -1;
+        return ERROR;
 
     }
 
@@ -174,7 +178,7 @@ double get_metric_det(double metric[4][4]) {
 }
 
 int get_metric_fist_derivatives(e_Spacetimes e_metric, double dr_metric[4][4], double* dr_N_metric, double* dr_omega,
-    double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+                                double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     switch (e_metric) {
 
@@ -209,7 +213,7 @@ int get_metric_fist_derivatives(e_Spacetimes e_metric, double dr_metric[4][4], d
 }
 
 int get_metric_second_derivatives(e_Spacetimes e_metric, double d2r_metric[4][4], double* d2r_N_metric, double* d2r_omega,
-    double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+                                  double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     switch (e_metric) {
 
@@ -244,7 +248,7 @@ int get_metric_second_derivatives(e_Spacetimes e_metric, double d2r_metric[4][4]
 }
 
 int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r, double metric[4][4],
-    double V_angle, double H_angle) {
+                                        double V_angle, double H_angle) {
 
     double g2, gamma, ksi, L_z, E;
 
@@ -263,9 +267,9 @@ int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r,
 }
 
 int get_initial_conditions_from_file(e_Spacetimes e_metric, double* J, double J_data[], double* p_theta, double p_theta_data[],
-    double* p_r, int photon, double r_obs, double theta_obs, double metric[4][4],
-    double N_metric, double omega_metric,
-    c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+                                     double* p_r, int photon, double r_obs, double theta_obs, double metric[4][4],
+                                     double N_metric, double omega_metric,
+                                     c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     switch (e_metric) {
 
@@ -292,140 +296,277 @@ int get_initial_conditions_from_file(e_Spacetimes e_metric, double* J, double J_
 
 }
 
-double Redshift(e_Spacetimes e_metric, Disk_Models Disk_Model, double J, double State_Vector[], double r_obs, double theta_obs,
-    c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+double Redshift(e_Spacetimes e_metric, double J, double State_Vector[], double U_source[],
+                c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_Observer Observer_class) {
 
-    double r_source = State_Vector[e_r];
-    double theta_source = State_Vector[e_theta];
+    double U_obs[4];
 
-    double metric_source[4][4], N_source, omega_source;
+    Observer_class.get_obs_velocity(U_obs, e_metric, Kerr_class, Wormhole_class, RBH_class);
 
-    get_metric(e_metric, metric_source, &N_source, &omega_source, r_source, theta_source,
-        Kerr_class, RBH_class, Wormhole_class);
-
-    double metric_obs[4][4], N_obs, omega_obs;
-
-    get_metric(e_metric, metric_obs, &N_obs, &omega_obs, r_obs, theta_obs,
-        Kerr_class, RBH_class, Wormhole_class);
-
-    double metric_ISCO[4][4]{}, N_ISCO{}, omega_ISCO{};
-
-    get_metric(e_metric, metric_ISCO, &N_ISCO, &omega_ISCO, r_source, theta_source,
-        Kerr_class, RBH_class, Wormhole_class);
-
-    double U_obs[4] = { 1.0 / N_obs, 0 ,0 , omega_obs / N_obs };
-
-    if (Disk_Model == Optically_Thin_Toroidal) {
-
-        /*
-        Here u_t, u_r, u_theta, u_phi are covariant components
-        */
-
-        double rho = r_source * fabs(sin(State_Vector[e_theta]));
-        double ell = pow(rho, 3. / 2) / (1 + rho);
-
-        double u_t{}, u_r{}, u_phi{};
-
-        double inv_metric[4][4];
-
-        invert_metric(inv_metric, metric_source);
-
-        u_t = -1.0 / sqrt(-(inv_metric[0][0] - 2 * inv_metric[0][3] * ell + inv_metric[3][3] * ell * ell));
-        u_phi = -u_t * ell;
-
-        /*
-        If the disk extends below ISCO, keep u_t and u_phi equal to their ISCO values
-        and add a radial component to norm the 4-velocity
-        */
-
-        if (r_source < get_ISCO(e_metric, Kerr_class, RBH_class, Wormhole_class)) {
-
-            double inv_metric_ISCO[4][4]{};
-
-            invert_metric(inv_metric_ISCO, metric_ISCO);
-
-            rho = get_ISCO(e_metric, Kerr_class, RBH_class, Wormhole_class) * fabs(sin(State_Vector[e_theta]));
-            ell = pow(rho, 3. / 2) / (1 + rho);
-
-            u_t = 1.0 / sqrt(-(inv_metric_ISCO[0][0] - 2 * inv_metric_ISCO[0][3] * ell + inv_metric_ISCO[3][3] * ell * ell));
-            u_phi = -u_t * ell;
-            u_r = sqrt(metric_source[1][1] * (-1 - inv_metric[0][0] * u_t * u_t - inv_metric[3][3] * u_phi * u_phi));
-
-        }
-
-        /*
-        U_source is given in contravariant components
-        */
-
-        double U_source[4] = { inv_metric[0][0] * u_t + inv_metric[0][3] * u_phi,
-                               inv_metric[1][1] * u_r                           ,
-                               0                                                ,
-                               inv_metric[3][3] * u_phi + inv_metric[3][0] * u_t };
-
-        return  (-U_obs[0] + U_obs[3] * J) / (-U_source[0] + U_source[1] * State_Vector[e_p_r] + U_source[3] * J);
-
-    }
-
-    return ERROR;
+    return  (-U_obs[0] + U_obs[3] * J) / (-U_source[0] * 1 + 
+                                           U_source[1] * State_Vector[e_p_r] + 
+                                           U_source[2] * State_Vector[e_p_theta] + 
+                                           U_source[3] * J);
 
 }
 
+double get_photon_t_momentum(double State_vector[], double J, double metric[4][4]) {
 
-int Loretnz_boost() {
+    /*
+    
+    State_vector hold covariant momentum components
+    
+    */
 
+    double p_r = State_vector[e_p_r];
+    double p_theta = State_vector[e_p_theta];
+    double p_phi = J;
+    
+    double inv_metric[4][4];
 
+    invert_metric(inv_metric, metric);
 
+    double inv_g2 = inv_metric[e_t_coord][e_phi_coord] * inv_metric[e_t_coord][e_phi_coord] 
+                  - inv_metric[e_phi_coord][e_phi_coord] * inv_metric[e_t_coord][e_t_coord];
 
+    double root = p_phi * p_phi * inv_g2 / inv_metric[e_t_coord][e_t_coord] / inv_metric[e_t_coord][e_t_coord]
+                + inv_metric[e_theta_coord][e_theta_coord] / inv_metric[e_t_coord][e_t_coord] * p_theta * p_theta
+                + inv_metric[e_r_coord][e_r_coord] / inv_metric[e_t_coord][e_t_coord] * p_r * p_r;
+
+    double p_t = -inv_metric[0][3] / inv_metric[0][0] * p_phi - sqrt(root);
+
+    /*
+    
+    Returns covatiant component
+    
+    */
+
+    return p_t;
+
+}
+
+int get_ZAMO_tetrad(double e_t[4], double e_r[4], double e_theta[4], double e_phi[4], double metric[4][4]) {
+
+    double ksi = 1.0 / sqrt(-metric[0][0] + metric[0][3] * metric[0][3] / metric[3][3]);
+    double sigma = -metric[0][3] / metric[3][3] * ksi;
+
+    e_t[e_t_coord] = ksi;
+    e_t[e_r_coord] = 0;
+    e_t[e_theta_coord] = 0;
+    e_t[e_phi_coord] = sigma;
+
+    e_r[e_t_coord] = 0;
+    e_r[e_r_coord] = 1.0 / sqrt(metric[1][1]);
+    e_r[e_theta_coord] = 0;
+    e_r[e_phi_coord] = 0;
+
+    e_theta[e_t_coord] = 0;
+    e_theta[e_r_coord] = 0;
+    e_theta[e_theta_coord] = 1.0 / sqrt(metric[2][2]);
+    e_theta[e_phi_coord] = 0;
+
+    e_phi[e_t_coord] = 0;
+    e_phi[e_r_coord] = 0;
+    e_phi[e_theta_coord] = 0;
+    e_phi[e_phi_coord] = 1.0 / sqrt(metric[3][3]);
+
+    return OK;
+
+}
+
+int Contravariant_coord_to_ZAMO(double metric[4][4], double Contravariant_Vector[4], double ZAMO_Vector[4]) {
+
+    double alpha = sqrt(-metric[0][0] + metric[0][3] * metric[0][3] / metric[3][3]);
+    double beta = metric[0][3] / metric[3][3];
+
+    ZAMO_Vector[0] = alpha * Contravariant_Vector[0];
+    ZAMO_Vector[1] = sqrt(metric[1][1]) * Contravariant_Vector[1];
+    ZAMO_Vector[2] = sqrt(metric[2][2]) * Contravariant_Vector[2];
+    ZAMO_Vector[3] = sqrt(metric[3][3]) * (Contravariant_Vector[3] + beta* Contravariant_Vector[0]);
+
+    return OK;
+
+}
+
+int Lorentz_boost_matrix(double Boost_matrix[4][4], double U_source[4], double metric[4][4]) {
+
+    double V_r_ZAMO     = U_source[1]/U_source[0];
+    double V_theta_ZAMO = U_source[2]/U_source[0];
+    double V_phi_ZAMO   = U_source[3]/U_source[0];
+
+    double V_squared = V_r_ZAMO * V_r_ZAMO + V_theta_ZAMO * V_theta_ZAMO + V_phi_ZAMO * V_phi_ZAMO;
+
+    double gamma = 1.0 / sqrt(1 - V_squared);
+
+    Boost_matrix[0][0] = gamma;
+    Boost_matrix[0][1] = gamma * V_r_ZAMO;
+    Boost_matrix[0][2] = gamma * V_theta_ZAMO;
+    Boost_matrix[0][3] = gamma * V_phi_ZAMO;
+
+    for (int index = 1; index <= 3; index += 1) {
+
+        Boost_matrix[index][0] = Boost_matrix[0][index];
+
+    }
+
+    Boost_matrix[1][1] = 1 + (gamma - 1) * V_r_ZAMO * V_r_ZAMO / V_squared;
+    Boost_matrix[1][2] = (gamma - 1) * V_r_ZAMO * V_theta_ZAMO / V_squared;
+    Boost_matrix[1][3] = (gamma - 1) * V_r_ZAMO * V_phi_ZAMO / V_squared;
+
+    Boost_matrix[2][1] = Boost_matrix[1][2];
+    Boost_matrix[3][1] = Boost_matrix[1][3];
+
+    Boost_matrix[2][2] = 1 + (gamma - 1) * V_theta_ZAMO * V_theta_ZAMO / V_squared;
+    Boost_matrix[2][3] = (gamma - 1) * V_theta_ZAMO * V_phi_ZAMO / V_squared;
+
+    Boost_matrix[3][2] = Boost_matrix[2][3];
+
+    Boost_matrix[3][3] = 1 + (gamma - 1) * V_phi_ZAMO * V_phi_ZAMO / V_squared;
 
 
     return OK;
 }
 
-int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, Optically_Thin_Toroidal_Model OTT_Model, double redshift) {
+int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J,
+                           Optically_Thin_Toroidal_Model OTT_Model, c_Kerr Kerr_class, e_Spacetimes e_metric,
+                           c_RBH RBH_class, c_Wormhole Wormhole_class, c_Observer Observer_class) {
 
     double r = State_Vector[e_r];
-    double h = cos(State_Vector[e_theta]);
+    double theta = State_Vector[e_theta];
+    double h = r*cos(theta);
 
     double Height_Scale = OTT_Model.get_disk_height_scale();
     double r_cut        = OTT_Model.get_disk_rad_cutoff();
     double omega        = OTT_Model.get_disk_omega();
     double alpha        = OTT_Model.get_disk_alpha();
 
-    double Height_Cutoff = h * h / Height_Scale / Height_Scale / 2;
+    double Height_Cutoff = h * h / (2 * r * sin(theta) * r * sin(theta));
     double Radial_Cutoff = (r - r_cut) * (r - r_cut) / omega / omega;
 
-    double electron_density =  pow(r, -alpha) * exp(-Height_Cutoff);
+    double electron_density = N_ELECTRON_CGS * pow(r/2, -alpha) * exp(-Height_Cutoff);
 
-    if (State_Vector[e_r] < r_cut) {
+    /*
+    
+    Get Disk Cooridinate Velocity
+    
+    */
 
-        electron_density *= exp(-Radial_Cutoff);
+    double U_source_coord[4]{};
+
+    OTT_Model.get_disk_velocity(U_source_coord, State_Vector, e_metric, Kerr_class, RBH_class, Wormhole_class);
+
+    /*
+    
+    Transform U_source To The ZAMO Frame
+    
+    */
+
+    double metric[4][4]{}, N_metric{}, Omega_metric{};
+
+    get_metric(e_metric, metric, &N_metric, &Omega_metric, r, theta, Kerr_class, RBH_class, Wormhole_class);
+
+    double U_source_ZAMO[4]{};
+
+    Contravariant_coord_to_ZAMO(metric, U_source_coord, U_source_ZAMO);
+
+    /*
+
+    Boost U_source_ZAMO To The Fluid Frame
+
+    */
+
+    double Boost_matrix[4][4];
+
+    Lorentz_boost_matrix(Boost_matrix, U_source_ZAMO, metric);
+
+    double U_source_Boosted[4]{};
+
+    for (int row = 0; row <= 3; row += 1) {
+
+        for (int column = 0; column <= 3; column += 1) {
+
+            U_source_Boosted[row] += Boost_matrix[row][column] * U_source_ZAMO[column];
+
+        }
+    }
+
+    /*
+    
+    Get Sin Of The Angle Between The Local Fluid Velocity And Magnetic Field In The ZAMO Frame
+    
+    */
+
+    double U_source_local[3] = { U_source_Boosted[1] / U_source_Boosted[0],U_source_Boosted[2] / U_source_Boosted[0] ,U_source_Boosted[3] / U_source_Boosted[0] };
+
+    double B_field_local[3];
+
+    double B_CGS = OTT_Model.get_magnetic_field(B_field_local, State_Vector);
+
+    double cos_angle{}, sin_angle{};
+
+    if (B_CGS != 0) {
+
+        cos_angle = dot_product(B_field_local, U_source_local) / sqrt(dot_product(B_field_local, B_field_local)) / sqrt(dot_product(U_source_local, U_source_local));
+        sin_angle = sqrt(1 - cos_angle * cos_angle);
 
     }
+
+    /*
+    
+    Get The Synchotron Frequency And Electron Temperature
+    
+    */
 
     double T_electron_cgs = T_ELECTRON_CGS * 2 / r;
     double T_electron_dim = BOLTZMANN_CONST_CGS * T_electron_cgs / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
 
-    double B_CGS = sqrt(0.01 * C_LIGHT_CGS * C_LIGHT_CGS * electron_density * M_PROTON_CGS * 4 * M_PI);
-
     double f_cyclo = Q_ELECTRON_CGS * B_CGS / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
-    double f_s = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim; // Lorentz boost needed to calculate angle between photon and B-field
 
-    if (r < 6) {
+    double f_s = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim * sin_angle;
 
-        int test = 1;
+    /*
+   
+    Calculate The Emission Function
+    
+    */
+
+    double X{};
+
+    if (f_s != 0) {
+
+        X = OBS_FREQUENCY_CGS / f_s;
 
     }
 
-    double absorbtion = r * redshift * redshift * electron_density; 
-    Derivatives[e_Intensity + iteration * e_State_Number] = -redshift * redshift * electron_density * exp(-State_Vector[e_Optical_Depth]);
+    double X_term = (sqrt(X) + pow(2, 11.0 / 12) * pow(X, 1.0 / 6)) * (sqrt(X) + pow(2, 11.0 / 12) * pow(X, 1.0 / 6));
+
+    double const_coeff = sqrt(2) * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 27 / C_LIGHT_CGS;
+
+    double emission = electron_density * const_coeff * f_cyclo * sin_angle * X_term * exp(-pow(X, 1.0 / 3));
+
+    /*
+
+    Get The Redshift
+
+    */
+
+    double redshift = Redshift(e_metric, J, State_Vector, U_source_coord,
+                               Kerr_class, RBH_class, Wormhole_class, Observer_class);
+
+    double abs_const_coeff = C_LIGHT_CGS * C_LIGHT_CGS / 2 / BOLTZMANN_CONST_CGS / OBS_FREQUENCY_CGS / OBS_FREQUENCY_CGS;
+
+    double absorbtion = abs_const_coeff * redshift * redshift * emission / T_electron_cgs;
+    Derivatives[e_Intensity + iteration * e_State_Number] = -redshift * redshift * emission * exp(-State_Vector[e_Optical_Depth]) * CGS_JANSKY;
+    double test_2 = Derivatives[e_Intensity + iteration * e_State_Number];
     Derivatives[e_Optical_Depth + iteration * e_State_Number] = -absorbtion / redshift;
+    double test_3 = Derivatives[e_Optical_Depth + iteration * e_State_Number];
 
     return  OK;
 
 }
 
 int get_EOM(e_Spacetimes e_metric, double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration,
-    c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+            c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
 
     switch (e_metric) {
 
@@ -517,7 +658,7 @@ void print_progress(int current, int max, bool lens_from_file) {
 }
 
 Disk_Intersection Disk_event(Disk_Models e_Disk_Model, double State_Vector[], double Old_State_Vector[],
-    Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model) {
+                             Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model) {
 
     bool inside_disk{};
 

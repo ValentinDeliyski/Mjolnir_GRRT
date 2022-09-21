@@ -52,15 +52,26 @@
             double DISK_HEIGHT_SCALE;
             double DISK_RAD_CUTOFF;
             double DISK_OMEGA;
+            double DISK_MAGNETIZATION;
+            double MAG_FIELD_GEOMETRY[3];
 
         public:
 
-            tag_Optically_Thin_Toroidal_Model(double alpha, double height_scale, double rad_cutoff, double omega);
+            tag_Optically_Thin_Toroidal_Model(double alpha, double height_scale, double rad_cutoff, double omega,
+                                              double magnetization, double mag_field[3]);
 
             double get_disk_alpha();
             double get_disk_height_scale();
             double get_disk_rad_cutoff();
             double get_disk_omega();
+            double get_disk_magnetization();
+
+            int get_disk_velocity(double Disk_velocity[], double State_vector[], e_Spacetimes e_metric,
+                                  c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class);
+
+            double get_disk_density(double State_vector[]);
+
+            double get_magnetic_field(double B_field[3], double State_vector[]);
 
     }Optically_Thin_Toroidal_Model;
 

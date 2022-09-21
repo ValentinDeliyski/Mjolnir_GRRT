@@ -26,6 +26,16 @@
 
 	}State_enums;
 
+	typedef enum tag_Spacetime_coords {
+
+		e_t_coord     = 0,
+		e_r_coord     = 1,
+		e_theta_coord = 2,
+		e_phi_coord   = 3
+
+
+	}Spacetime_coords;
+
 	typedef enum tag_XYZ_enums {
 
 		x = 0,

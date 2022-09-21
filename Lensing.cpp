@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Constants.h"
 #include "Enumerations.h"
+#include "Constants.h"
+
 #include "Spacetimes.h"
 #include "Disk_Models.h"
 #include "IO_files.h"
@@ -11,22 +12,19 @@
 
 Return_Value_enums RK45_EOM(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
                             c_Kerr Kerr_class, e_Spacetimes e_metric, c_RBH RBH_class, c_Wormhole Wormhole_class,
-                            Disk_Models Disk_Model, Optically_Thin_Toroidal_Model OTT_Model,
-                            double r_obs, double theta_obs);
+                             c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model);
 
 Return_Value_enums Lens(double initial_conditions[], double M, double metric_parameter, double a, double r_throat, double r_in, double r_out, bool lens_from_file,
                         std::ofstream data[], std::ofstream momentum_data[], 
-                        e_Spacetimes e_metric, 
-                                              c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class,
-                        Disk_Models e_Disk_Model, 
-                                                 Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model) {
+                        e_Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_Observer Observer_class,
+                        Disk_Models e_Disk_Model, Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model) {
 
-    double r_obs = initial_conditions[e_r];
+    double r_obs     = initial_conditions[e_r];
     double theta_obs = initial_conditions[e_theta];
-    double phi_obs = initial_conditions[e_phi];
-    double J = initial_conditions[3];
+    double phi_obs   = initial_conditions[e_phi];
+    double J         = initial_conditions[3];
     double p_theta_0 = initial_conditions[e_p_theta];
-    double p_r_0 = initial_conditions[e_p_r];
+    double p_r_0     = initial_conditions[e_p_r];
 
     // Initialize arrays that store the Flux, Intensity, Redshift from the disk and the image coordinates for each light ray
     double Flux_Novikov_Thorne{}, Intensity_Toroidal_Disk{}, redshift{}, Image_coordiantes[3]{};
@@ -73,8 +71,9 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
 
     while (RK45_Status == OK && integration_count < MAX_INTEGRATION_COUNT) {
 
-        RK45_Status = RK45_EOM(State_vector, Derivatives, &step, J, &continue_integration, Kerr_class, e_metric, RBH_class, Wormhole_class,
-            e_Disk_Model, OTT_Model, r_obs, theta_obs);
+        RK45_Status = RK45_EOM(State_vector, Derivatives, &step, J, &continue_integration, 
+                               Kerr_class, e_metric, RBH_class, Wormhole_class,
+                               Observer_class, OTT_Model);
 
         // If error estimate, returned from RK45_EOM < RK45_ACCURACY
         if (continue_integration == true) {
@@ -116,13 +115,13 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
                 Image_Order_Novikov_Thorne = n_equator_crossings;
 
                 redshift = NT_Model.Redshift(e_metric, J, State_vector, r_obs, theta_obs,
-                    Kerr_class, RBH_class, Wormhole_class);
+                                             Kerr_class, RBH_class, Wormhole_class);
 
                 Flux_Novikov_Thorne = NT_Model.get_flux(e_metric, State_vector[e_r], r_in,
                     Kerr_class, RBH_class, Wormhole_class);
 
                 write_to_file(Image_coordiantes, redshift, Flux_Novikov_Thorne, State_vector, metric_parameter, J,
-                    Image_Order_Novikov_Thorne, lens_from_file, data, momentum_data);
+                              Image_Order_Novikov_Thorne, lens_from_file, data, momentum_data);
 
                 found_disc[Image_Order_Novikov_Thorne] = true;
 

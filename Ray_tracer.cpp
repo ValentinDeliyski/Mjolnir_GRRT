@@ -27,9 +27,9 @@
 #include <fstream>
 #include <cmath>
 
-#include "Enumerations.h"
 #include "Constants.h"
 #include "Spacetimes.h"
+#include "Enumerations.h"
 #include "IO_files.h"
 
 #include "Disk_Models.h"
@@ -51,11 +51,14 @@ int main() {
         theta_obs = 85. / 180 * M_PI;
         phi_obs = 0;
 
+
+    c_Observer Observer_class(r_obs, theta_obs, phi_obs);
+
     double M, a, r_throat, metric_parameter;
 
         M = 1.0;
         metric_parameter = 0.0;
-        a = 0.98;
+        a = 0.94;
 
     /*
     Define classes that hold the spacetime properites
@@ -125,15 +128,16 @@ int main() {
     Set the Optically Thin Toroidal Disk model parameters
     */
 
-    double disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega, disk_magnetization;
+    double disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega, disk_magnetization, mag_field_geometry[3]{0.87, 0, 0.5};
 
-        disk_alpha = 3;
+        disk_alpha = 2;
         disk_height_scale = 0.1;
         disk_rad_cutoff = 4 * M;
         disk_omega = sqrt(1. / 12) * M;
         disk_magnetization = 0.01;
 
-    Optically_Thin_Toroidal_Model OTT_Model(disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega);
+
+    Optically_Thin_Toroidal_Model OTT_Model(disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega, disk_magnetization, mag_field_geometry);
     
     /*
     Get the metric at the observer to feed into the initial conditions functions
@@ -180,7 +184,7 @@ int main() {
 
                 Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
                                           lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class,
-                                          e_Disk_Model, NT_Model, OTT_Model);
+                                          Observer_class, e_Disk_Model, NT_Model, OTT_Model);
 
     
                 print_progress(photon, Data_number, lens_from_file);
@@ -195,13 +199,13 @@ int main() {
         Setup a viewing window for the observer and loop trough it
         */
 
-        double V_angle_min = -0.0015;
-        double V_angle_max = 0.0025;
+        double V_angle_min = -0.0008;
+        double V_angle_max = 0.0008;
 
-        double H_angle_min = -0.0055;
-        double H_angle_max = 0.0055;
+        double H_angle_min = -0.0020;
+        double H_angle_max = 0.0020;
 
-        double Scan_Step = 5e-6;
+        double Scan_Step = 2e-6;
    
         int progress = 0;
         
@@ -209,7 +213,7 @@ int main() {
 
         if (Integration_status == OK) {
 
-            for (double V_angle = 0; V_angle >= -V_angle_max; V_angle -= Scan_Step) {
+            for (double V_angle = V_angle_min; V_angle <= V_angle_max; V_angle += Scan_Step) {
 
                 print_progress(progress, int((V_angle_max - V_angle_min) / Scan_Step), lens_from_file);
 
@@ -223,7 +227,7 @@ int main() {
 
                     Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
                                               lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class,
-                                              e_Disk_Model, NT_Model, OTT_Model);
+                                              Observer_class, e_Disk_Model, NT_Model, OTT_Model);
 
                 }
 

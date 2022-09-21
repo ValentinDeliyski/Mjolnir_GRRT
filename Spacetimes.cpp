@@ -3,8 +3,57 @@
 #include <cmath>
 #include "Enumerations.h"
 #include "Spacetimes.h"
+#include "General_functions.h"
 
-c_Kerr::tag_Kerr(double x) {
+
+/***************************************
+|                                      |
+| Observer Class Functions Definitions |
+|                                      |
+***************************************/
+
+tag_observer::tag_observer(double r, double theta, double phi) {
+
+    r_obs = r;
+    theta_obs = theta;
+    phi_obs = phi;
+
+}
+
+double tag_observer::get_r_obs() { return r_obs; };
+double tag_observer::get_theta_obs() { return theta_obs; };
+double tag_observer::get_phi_obs() { return phi_obs; };
+
+int tag_observer::get_obs_velocity(double Obs_velocity[4],
+                                 e_Spacetimes e_metric, c_Kerr Kerr_class, c_Wormhole Wormhole_class, c_RBH RBH_class) {
+
+
+    double metric_obs[4][4], N_obs, omega_obs;
+
+    get_metric(e_metric, metric_obs, &N_obs, &omega_obs, r_obs, theta_obs,
+               Kerr_class, RBH_class, Wormhole_class);
+    /*
+    Obs_velocity is given in contravatiant components 
+    */
+
+
+    Obs_velocity[0] = 1.0 / N_obs;
+    Obs_velocity[1] = 0;
+    Obs_velocity[2] = 0;
+    Obs_velocity[3] = omega_obs / N_obs;
+
+    return OK;
+
+}
+
+
+/**********************************************
+|                                             |
+| Kerr Black Hole Class Functions Definitions |
+|                                             |
+**********************************************/
+
+tag_Kerr::tag_Kerr(double x) {
 
     a = x;
     M = 1.0;
@@ -19,13 +68,13 @@ c_Kerr::tag_Kerr(double x) {
     r_ISCO = M * (3 + Z_2 - sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
 }
 
-double c_Kerr::get_spin() { return a; };
-double c_Kerr::get_ISCO() { return r_ISCO; };
-double c_Kerr::get_r_horizon() { return r_horizon; };
-double c_Kerr::get_r_ph_prograde() { return r_ph_prograde; };
-double c_Kerr::get_r_ph_retrograde() { return r_ph_retrograde; };
+double tag_Kerr::get_r_ph_retrograde() { return r_ph_retrograde; };
+double tag_Kerr::get_r_ph_prograde()   { return r_ph_prograde; };
+double tag_Kerr::get_r_horizon()       { return r_horizon; };
+double tag_Kerr::get_ISCO()            { return r_ISCO; };
+double tag_Kerr::get_spin()            { return a; };
 
-int c_Kerr::metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int tag_Kerr::metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -48,7 +97,7 @@ int c_Kerr::metric(double metric[4][4], double* N_metric, double* omega_metric, 
     return OK;
 }
 
-int c_Kerr::metric_first_derivatives(class tag_Kerr Kerr_class, double dr_metric[4][4], double* dr_N, double* dr_omega,
+int tag_Kerr::metric_first_derivatives(class tag_Kerr Kerr_class, double dr_metric[4][4], double* dr_N, double* dr_omega,
                                      double r, double theta) {
 
     double metric[4][4], N, omega;
@@ -77,7 +126,7 @@ int c_Kerr::metric_first_derivatives(class tag_Kerr Kerr_class, double dr_metric
 
 }
 
-int c_Kerr::metric_second_derivatives(class tag_Kerr Kerr_class, double d2r_metric[4][4], double* d2r_N, double* d2r_omega,
+int tag_Kerr::metric_second_derivatives(class tag_Kerr Kerr_class, double d2r_metric[4][4], double* d2r_N, double* d2r_omega,
                                       double r, double theta) {
 
     double metric[4][4], N, omega;
@@ -111,7 +160,7 @@ int c_Kerr::metric_second_derivatives(class tag_Kerr Kerr_class, double d2r_metr
 
 }
 
-int c_Kerr::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
+int tag_Kerr::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
                                           int photon, double r_obs, double theta_obs, double metric[4][4]) {
 
     *J = -J_data[photon] * sin(theta_obs);
@@ -127,7 +176,7 @@ int c_Kerr::intitial_conditions_from_file(double* J, double J_data[], double* p_
     return OK;
 }
 
-int c_Kerr::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int tag_Kerr::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
     double r = inter_State_vector[e_r + iteration * e_State_Number];
     double r2 = r * r;
@@ -163,7 +212,13 @@ int c_Kerr::EOM(double inter_State_vector[], double J, double Derivatives[], int
 
 }
 
-c_Wormhole::tag_Wormhole(double x, double spin) {
+/***************************************
+|                                      |
+| Wormhole Class Functions Definitions |
+|                                      |
+***************************************/
+
+tag_Wormhole::tag_Wormhole(double x, double spin) {
 
     alpha_metric = x;
     a = spin;
@@ -174,13 +229,13 @@ c_Wormhole::tag_Wormhole(double x, double spin) {
     r_ph = M / 2 * (1 + sqrt(1 + 8 * alpha_metric));
 }
 
-double c_Wormhole::get_metric_parameter() { return alpha_metric; };
-double c_Wormhole::get_r_throat() { return r_throat; };
-double c_Wormhole::get_ISCO() { return r_ISCO; };
-double c_Wormhole::get_r_ph() { return r_ph; };
-double c_Wormhole::get_spin() { return a; };
+double tag_Wormhole::get_metric_parameter() { return alpha_metric; };
+double tag_Wormhole::get_r_throat()         { return r_throat; };
+double tag_Wormhole::get_ISCO()             { return r_ISCO; };
+double tag_Wormhole::get_r_ph()             { return r_ph; };
+double tag_Wormhole::get_spin()             { return a; };
 
-int c_Wormhole::metric(double metric[4][4], double* N_metric, double* omega, double l, double theta) {
+int tag_Wormhole::metric(double metric[4][4], double* N_metric, double* omega, double l, double theta) {
 
         double r = sqrt(l * l + r_throat * r_throat);
         double r2 = r * r;
@@ -200,7 +255,7 @@ int c_Wormhole::metric(double metric[4][4], double* N_metric, double* omega, dou
         return 0;
     }
 
-int c_Wormhole::metric_first_derivatives(class tag_Wormhole Wormhole_class, double dr_metric[4][4], double* dr_N, double* dr_omega,
+int tag_Wormhole::metric_first_derivatives(class tag_Wormhole Wormhole_class, double dr_metric[4][4], double* dr_N, double* dr_omega,
                                         double l, double theta) {
 
         double metric[4][4], N, omega;
@@ -223,7 +278,7 @@ int c_Wormhole::metric_first_derivatives(class tag_Wormhole Wormhole_class, doub
         return 0;
     }
 
-int c_Wormhole::metric_second_derivatives(class tag_Wormhole Wormhole_class, double d2r_metric[4][4], double* d2r_N, double* d2r_omega,
+int tag_Wormhole::metric_second_derivatives(class tag_Wormhole Wormhole_class, double d2r_metric[4][4], double* d2r_N, double* d2r_omega,
                                           double l, double theta) {
 
         double metric[4][4], N, omega;
@@ -250,7 +305,7 @@ int c_Wormhole::metric_second_derivatives(class tag_Wormhole Wormhole_class, dou
         return 0;
     }
 
-int c_Wormhole::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
+int tag_Wormhole::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
                                               int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
 
     *J = -J_data[photon] * sin(theta_obs);
@@ -263,7 +318,7 @@ int c_Wormhole::intitial_conditions_from_file(double* J, double J_data[], double
     return 0;
 }
 
-int c_Wormhole::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int tag_Wormhole::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
      double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * e_State_Number] * inter_State_vector[0 + iteration * e_State_Number] + r_throat * r_throat);
      double d_ell_r = inter_State_vector[0 + iteration * e_State_Number] / sqrt_r2;
@@ -295,7 +350,13 @@ int c_Wormhole::EOM(double inter_State_vector[], double J, double Derivatives[],
     return 0;
 }
 
-c_RBH::tag_Regular_Black_Hole(double x) {
+/*************************************************
+|                                                |
+| Regular Black Hole Class Functions Definitions |
+|                                                |
+*************************************************/
+
+tag_Regular_Black_Hole::tag_Regular_Black_Hole(double x) {
 
     metric_parameter = x;
     M = 1.0;
@@ -306,12 +367,12 @@ c_RBH::tag_Regular_Black_Hole(double x) {
 
 }
 
-double c_RBH::get_metric_parameter() { return metric_parameter; };
-double c_RBH::get_r_horizon() { return r_horizon; };
-double c_RBH::get_ISCO() { return r_ISCO; };
-double c_RBH::get_r_ph() { return r_ph; };
+double tag_Regular_Black_Hole::get_metric_parameter() { return metric_parameter; };
+double tag_Regular_Black_Hole::get_r_horizon()        { return r_horizon; };
+double tag_Regular_Black_Hole::get_ISCO()             { return r_ISCO; };
+double tag_Regular_Black_Hole::get_r_ph()             { return r_ph; };
 
-int c_RBH::metric(double metric[4][4], double* N_metric, double* omega_metric,
+int tag_Regular_Black_Hole::metric(double metric[4][4], double* N_metric, double* omega_metric,
     double r, double theta) {
 
     double r2 = r * r;
@@ -332,7 +393,7 @@ int c_RBH::metric(double metric[4][4], double* N_metric, double* omega_metric,
     return 0;
 }
 
-int c_RBH::metric_first_derivatives(class tag_Regular_Black_Hole RBH_class, double dr_metric[4][4], double* dr_N,
+int tag_Regular_Black_Hole::metric_first_derivatives(class tag_Regular_Black_Hole RBH_class, double dr_metric[4][4], double* dr_N,
                                     double* dr_omega, double r, double theta) {
 
         double metric[4][4], N, omega;
@@ -358,7 +419,7 @@ int c_RBH::metric_first_derivatives(class tag_Regular_Black_Hole RBH_class, doub
 
 }
 
-int c_RBH::metric_second_derivatives(class tag_Regular_Black_Hole RBH_class, double d2r_metric[4][4], double* d2r_N,
+int tag_Regular_Black_Hole::metric_second_derivatives(class tag_Regular_Black_Hole RBH_class, double d2r_metric[4][4], double* d2r_N,
         double* d2r_omega, double r, double theta) {
 
         double metric[4][4], N, omega;
@@ -389,7 +450,7 @@ int c_RBH::metric_second_derivatives(class tag_Regular_Black_Hole RBH_class, dou
 
 }
 
-int c_RBH::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
+int tag_Regular_Black_Hole::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
         int photon, double r_obs, double theta_obs, double metric[4][4]) {
 
         *J = -J_data[photon] * sin(theta_obs);
@@ -403,7 +464,7 @@ int c_RBH::intitial_conditions_from_file(double* J, double J_data[], double* p_t
         return 0;
 }
 
-int c_RBH::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int tag_Regular_Black_Hole::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
     double r = inter_State_vector[0 + iteration * e_State_Number];
     double rho = sqrt(r * r + metric_parameter * metric_parameter);
@@ -427,4 +488,3 @@ int c_RBH::EOM(double inter_State_vector[], double J, double Derivatives[], int 
 
     return 0;
 }
-
