@@ -18,18 +18,18 @@
 
     int invert_metric(double inv_metric[4][4], double metric[4][4]);
 
-    double get_ISCO(e_Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class);
+    double get_ISCO(e_Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class);
 
     int get_metric(e_Spacetimes e_metric, double metric[4][4], double* N_metric, double* omega, double r, double theta,
-                   c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class);
+                   c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class);
 
     double get_metric_det(double metric[4][4]);
 
     int get_metric_fist_derivatives(e_Spacetimes e_metric, double dr_metric[4][4], double* dr_N_metric, double* dr_omega,
-                                    double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class);
+                                    double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class);
 
     int get_metric_second_derivatives(e_Spacetimes e_metric, double d2r_metric[4][4], double* d2r_N_metric, double* d2r_omega,
-                                      double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class);
+                                      double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class);
 
     int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r, double metric[4][4],
                                             double V_angle, double H_angle);
@@ -37,10 +37,10 @@
     int get_initial_conditions_from_file(e_Spacetimes e_metric, double* J, double J_data[], double* p_theta, double p_theta_data[],
                                          double* p_r, int photon, double r_obs, double theta_obs, double metric[4][4],
                                          double N_metric, double omega_metric,
-                                         c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class);
+                                         c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class);
 
     double Redshift(e_Spacetimes e_metric, double J, double State_Vector[], double U_source[],
-                    c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_Observer Observer_class);
+                    c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class, c_Observer Observer_class);
 
     double get_photon_t_momentum(double State_vector[], double J, double metric[4][4]);
 
@@ -52,10 +52,10 @@
 
     int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J, 
                                Optically_Thin_Toroidal_Model OTT_Model, c_Kerr Kerr_class, e_Spacetimes e_metric, 
-                               c_RBH RBH_class, c_Wormhole Wormhole_class, c_Observer Observer_class);
+                               c_RBH RBH_class, c_Wormhole Wormhole_class, c_Observer Observer_class, c_JNW_Naked_Singularity JNW_class);
 
     int get_EOM(e_Spacetimes e_metric, double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration,
-                c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class);
+                c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class);
 
     void print_ASCII_art();
 

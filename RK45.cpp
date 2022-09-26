@@ -12,7 +12,7 @@
 #include <cmath>
 
 Return_Value_enums RK45_EOM(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
-                            c_Kerr Kerr_class, e_Spacetimes e_metric, c_RBH RBH_class, c_Wormhole Wormhole_class,
+                            c_Kerr Kerr_class, e_Spacetimes e_metric, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class,
                             c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model) {
 
     int iteration = 0;
@@ -39,11 +39,11 @@ Return_Value_enums RK45_EOM(double State_Vector[], double Derivatives[], double*
         }
 
         EOM_Status = get_EOM(e_metric, inter_State_vector, J, Derivatives, iteration,
-                             Kerr_class, RBH_class, Wormhole_class);
+                             Kerr_class, RBH_class, Wormhole_class, JNW_class);
 
 
-        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration,J, OTT_Model,
-                               Kerr_class, e_metric,RBH_class,Wormhole_class, Observer_class);
+        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration, J, OTT_Model,
+                               Kerr_class, e_metric, RBH_class, Wormhole_class, Observer_class, JNW_class);
 
 
         iteration += 1;
@@ -66,6 +66,7 @@ Return_Value_enums RK45_EOM(double State_Vector[], double Derivatives[], double*
     }
 
     integration_error = my_max(state_error);
+
 
     if (integration_error < RK45_ACCURACY)
     {

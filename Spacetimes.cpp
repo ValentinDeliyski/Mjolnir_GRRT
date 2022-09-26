@@ -25,13 +25,13 @@ double tag_observer::get_theta_obs() { return theta_obs; };
 double tag_observer::get_phi_obs() { return phi_obs; };
 
 int tag_observer::get_obs_velocity(double Obs_velocity[4],
-                                 e_Spacetimes e_metric, c_Kerr Kerr_class, c_Wormhole Wormhole_class, c_RBH RBH_class) {
+                                 e_Spacetimes e_metric, c_Kerr Kerr_class, c_Wormhole Wormhole_class, c_RBH RBH_class, c_JNW_Naked_Singularity JNW_class) {
 
 
     double metric_obs[4][4], N_obs, omega_obs;
 
     get_metric(e_metric, metric_obs, &N_obs, &omega_obs, r_obs, theta_obs,
-               Kerr_class, RBH_class, Wormhole_class);
+               Kerr_class, RBH_class, Wormhole_class, JNW_class);
     /*
     Obs_velocity is given in contravatiant components 
     */
@@ -361,8 +361,8 @@ tag_Regular_Black_Hole::tag_Regular_Black_Hole(double x) {
     metric_parameter = x;
     M = 1.0;
 
-    r_ph = sqrt(pow(6 * M, 2) - pow(metric_parameter, 2));
-    r_ISCO = sqrt(pow(3 * M, 2) - pow(metric_parameter, 2));
+    r_ph = sqrt(pow(3 * M, 2) - pow(metric_parameter, 2));
+    r_ISCO = sqrt(pow(6 * M, 2) - pow(metric_parameter, 2));
     r_horizon = sqrt(pow(2 * M, 2) - pow(metric_parameter, 2));
 
 }
@@ -377,7 +377,6 @@ int tag_Regular_Black_Hole::metric(double metric[4][4], double* N_metric, double
 
     double r2 = r * r;
     double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
     double rho = sqrt(r2 + metric_parameter * metric_parameter);
 
     metric[0][0] = -(1 - 2 * M / rho);
@@ -390,7 +389,7 @@ int tag_Regular_Black_Hole::metric(double metric[4][4], double* N_metric, double
     *N_metric = -metric[0][0];
     *omega_metric = 0.0;
 
-    return 0;
+    return OK;
 }
 
 int tag_Regular_Black_Hole::metric_first_derivatives(class tag_Regular_Black_Hole RBH_class, double dr_metric[4][4], double* dr_N,
@@ -475,8 +474,8 @@ int tag_Regular_Black_Hole::EOM(double inter_State_vector[], double J, double De
     double cos1 = cos(inter_State_vector[1 + iteration * e_State_Number]);
     double cos2 = cos1 * cos1;
 
-    Derivatives[e_r + iteration * e_State_Number] = (1 - 2 * M / rho) * inter_State_vector[5 + iteration * 6];
-    Derivatives[e_theta + iteration * e_State_Number] = 1.0 / (rho * rho) * inter_State_vector[4 + iteration * 6];
+    Derivatives[e_r + iteration * e_State_Number] = (1 - 2 * M / rho) * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_theta + iteration * e_State_Number] = 1.0 / (rho * rho) * inter_State_vector[e_p_theta + iteration * e_State_Number];
     Derivatives[e_phi + iteration * e_State_Number] = J / (rho * rho * sin2);
     Derivatives[e_phi_FD + iteration * e_State_Number] = 0.0;
     Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (rho * rho * sin1 * sin2) * J * J;
@@ -487,4 +486,158 @@ int tag_Regular_Black_Hole::EOM(double inter_State_vector[], double J, double De
     Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
 
     return 0;
+}
+
+
+/**********************************************************************
+|                                                                     |
+| Janis-Newman-Winicour Naked Singularity Class Functions Definitions |
+|                                                                     |
+**********************************************************************/
+
+tag_JNW_Naked_Singularity::tag_JNW_Naked_Singularity(double gamma, double b) {
+
+    M = 1.0;
+    GAMMA = gamma;
+    r_SINGULARITY = b;
+
+    r_ISCO_inner = b;
+    r_ISCO_outer = b;
+
+    if (gamma > 1.0 / sqrt(5)) {
+
+        r_ISCO_outer = 1.0 / gamma * (3.0 * gamma + 1.0 + sqrt(5 * gamma * gamma - 1));
+        r_ISCO_inner = 1.0 / gamma * (3.0 * gamma + 1.0 - sqrt(5 * gamma * gamma - 1));
+
+    }
+
+    r_ph = 0;
+
+    if (gamma > 0.5) { // Weak naked singularity
+
+        r_ph = (2 * gamma + 1) * b / 2;
+
+    }
+
+};
+
+double tag_JNW_Naked_Singularity::get_r_ph()          { return r_ph; };
+double tag_JNW_Naked_Singularity::get_gamma()         { return GAMMA; };
+double tag_JNW_Naked_Singularity::get_r_ISCO_outer()  { return r_ISCO_outer; };
+double tag_JNW_Naked_Singularity::get_r_ISCO_inner()  { return r_ISCO_inner; };
+double tag_JNW_Naked_Singularity::get_r_singularity() { return r_SINGULARITY; };
+
+int tag_JNW_Naked_Singularity::metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    metric[0][0] = -pow(1 - r_SINGULARITY / r, GAMMA);
+    metric[1][1] = -1.0 / metric[0][0];
+    metric[2][2] = pow(1 - r_SINGULARITY / r, 1 - GAMMA) * r2;
+    metric[3][3] = metric[2][2] * sin_theta * sin_theta;
+    metric[0][3] = 0;
+    metric[3][0] = metric[0][3];
+
+    *N_metric = -metric[0][0];
+    *omega_metric = 0;
+
+    return OK;
+
+}
+
+
+int tag_JNW_Naked_Singularity::metric_first_derivatives(class tag_JNW_Naked_Singularity JNW_class, double dr_metric[4][4],
+    double* dr_N, double* dr_omega, double r, double theta) {
+
+    double metric[4][4], N, omega;
+
+    JNW_class.metric(metric, &N, &omega, r, theta);
+
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    dr_metric[0][0] = -GAMMA * pow(1 - r_SINGULARITY / r, GAMMA - 1) * r_SINGULARITY / r2;
+    dr_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * dr_metric[0][0];;
+    dr_metric[2][2] = 2 * r * pow(1 - r_SINGULARITY / r, 1 - GAMMA) + (1 - GAMMA) * pow(1 - r_SINGULARITY / r, -GAMMA) * r_SINGULARITY;
+    dr_metric[3][3] = dr_metric[2][2] * sin_theta * sin_theta;
+    dr_metric[0][3] = 0;
+    dr_metric[3][0] = dr_metric[0][3];
+
+    *dr_N = -dr_metric[0][0];
+    *dr_omega = 0.0;
+
+    return 0;
+
+};
+
+int tag_JNW_Naked_Singularity::metric_second_derivatives(class tag_JNW_Naked_Singularity JNW_class, double d2r_metric[4][4],
+    double* d2r_N, double* d2r_omega, double r, double theta) {
+
+    double metric[4][4], N, omega;
+
+    JNW_class.metric(metric, &N, &omega, r, theta);
+
+    double dr_metric[4][4], dr_N, dr_omega;
+
+    JNW_class.metric_first_derivatives(JNW_class, dr_metric, &dr_N, &dr_omega, r, theta);
+
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
+
+    d2r_metric[0][0] = -GAMMA * (GAMMA - 1) * pow(1 - r_SINGULARITY / r, GAMMA - 2) * r_SINGULARITY*r_SINGULARITY / r2/r2 + 2 * GAMMA * pow(1 - r_SINGULARITY / r, GAMMA - 1) * r_SINGULARITY / r2 / r;
+    d2r_metric[0][3] = 0.0;
+    d2r_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * d2r_metric[0][0] - 2.0 / (metric[0][0] * metric[0][0] * metric[0][0]) * dr_metric[0][0] * dr_metric[0][0];
+    d2r_metric[2][2] = 2 * pow(1 - r_SINGULARITY / r, 1 - GAMMA) + 2 * (1 - GAMMA) * pow(1 - r_SINGULARITY / r, -GAMMA) * r_SINGULARITY / r - (1 - GAMMA) * GAMMA * pow(1 - r_SINGULARITY / r, -GAMMA - 1) * r_SINGULARITY * r_SINGULARITY / r2;
+    d2r_metric[3][3] = d2r_metric[2][2] * sin_theta * sin_theta;
+
+    *d2r_N = -d2r_metric[0][0];
+    *d2r_omega = 0.0;
+
+    return OK;
+
+}
+
+int tag_JNW_Naked_Singularity::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
+    int photon, double r_obs, double theta_obs, double metric[4][4]) {
+
+    *J = -J_data[photon] * sin(theta_obs);
+    *p_theta = p_theta_data[photon];
+
+    double rad_potential = 1 - pow(1 - r_SINGULARITY / r_obs, 2 * GAMMA - 1) * *J * *J / (r_obs * r_obs);
+
+    *p_r = sqrt(rad_potential) * metric[1][1];
+
+    return OK;
+
+}
+
+int tag_JNW_Naked_Singularity::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration)
+{
+
+    double r = inter_State_vector[0 + iteration * e_State_Number];
+
+    double sin1 = sin(inter_State_vector[1 + iteration * e_State_Number]);
+    double sin2 = sin1 * sin1;
+
+    double cos1 = cos(inter_State_vector[1 + iteration * e_State_Number]);
+    double cos2 = cos1 * cos1;
+
+    double pow_gamma = pow(1 - r_SINGULARITY / r, GAMMA);
+    double pow_gamma_minus_1 = pow(1 - r_SINGULARITY / r, GAMMA - 1);
+
+    Derivatives[e_r       + iteration * e_State_Number] = pow_gamma * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_theta   + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
+    Derivatives[e_phi     + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r * sin2) * J;
+    Derivatives[e_phi_FD  + iteration * e_State_Number] = 0.0;
+    Derivatives[e_p_theta + iteration * e_State_Number] = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
+
+    double r_term_1 = -GAMMA * r_SINGULARITY / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma + inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number]);
+    double r_term_2 = 1.0 / r / r / r * pow_gamma_minus_1 * (1 - r_SINGULARITY / 2 / r * (GAMMA - 1) / (1 - r_SINGULARITY / r)) * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
+
+    Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
+
+    return OK;
+
 }

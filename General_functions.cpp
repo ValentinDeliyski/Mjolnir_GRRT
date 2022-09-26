@@ -111,7 +111,7 @@ int invert_metric(double inv_metric[4][4], double metric[4][4]) {
 
 }
 
-double get_ISCO(e_Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+double get_ISCO(e_Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNMW_class) {
 
     switch (e_metric) {
 
@@ -127,6 +127,10 @@ double get_ISCO(e_Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wor
 
         return RBH_class.get_ISCO();
 
+    case Naked_Singularity:
+
+        return JNMW_class.get_r_ISCO_outer();
+
     default:
 
         std::cout << "Wrong metric!" << '\n';
@@ -138,7 +142,7 @@ double get_ISCO(e_Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wor
 }
 
 int get_metric(e_Spacetimes e_metric, double metric[4][4], double* N_metric, double* omega, double r, double theta,
-               c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+               c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNMW_class) {
 
     switch (e_metric) {
 
@@ -160,6 +164,12 @@ int get_metric(e_Spacetimes e_metric, double metric[4][4], double* N_metric, dou
 
         break;
 
+    case Naked_Singularity:
+
+        JNMW_class.metric(metric, N_metric, omega, r, theta);
+
+        break;
+
     default:
 
         std::cout << "Wrong metric!" << '\n';
@@ -178,7 +188,7 @@ double get_metric_det(double metric[4][4]) {
 }
 
 int get_metric_fist_derivatives(e_Spacetimes e_metric, double dr_metric[4][4], double* dr_N_metric, double* dr_omega,
-                                double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+                                double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class) {
 
     switch (e_metric) {
 
@@ -200,6 +210,12 @@ int get_metric_fist_derivatives(e_Spacetimes e_metric, double dr_metric[4][4], d
 
         break;
 
+    case Naked_Singularity:
+
+        JNW_class.metric_first_derivatives(JNW_class, dr_metric, dr_N_metric, dr_omega, r, theta);
+
+        break;
+
     default:
 
         std::cout << "Wrong metric!" << '\n';
@@ -213,7 +229,7 @@ int get_metric_fist_derivatives(e_Spacetimes e_metric, double dr_metric[4][4], d
 }
 
 int get_metric_second_derivatives(e_Spacetimes e_metric, double d2r_metric[4][4], double* d2r_N_metric, double* d2r_omega,
-                                  double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+                                  double r, double theta, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class) {
 
     switch (e_metric) {
 
@@ -232,6 +248,12 @@ int get_metric_second_derivatives(e_Spacetimes e_metric, double d2r_metric[4][4]
     case Reg_Black_Hole:
 
         RBH_class.metric_second_derivatives(RBH_class, d2r_metric, d2r_N_metric, d2r_omega, r, theta);
+
+        break;
+
+    case Naked_Singularity:
+
+        JNW_class.metric_second_derivatives(JNW_class, d2r_metric, d2r_N_metric, d2r_omega, r, theta);
 
         break;
 
@@ -269,7 +291,7 @@ int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r,
 int get_initial_conditions_from_file(e_Spacetimes e_metric, double* J, double J_data[], double* p_theta, double p_theta_data[],
                                      double* p_r, int photon, double r_obs, double theta_obs, double metric[4][4],
                                      double N_metric, double omega_metric,
-                                     c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+                                     c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class){
 
     switch (e_metric) {
 
@@ -290,6 +312,12 @@ int get_initial_conditions_from_file(e_Spacetimes e_metric, double* J, double J_
         RBH_class.intitial_conditions_from_file(J, J_data, p_theta, p_theta_data, p_r, photon, r_obs, theta_obs, metric);
 
         break;
+
+    case Naked_Singularity:
+
+        JNW_class.intitial_conditions_from_file(J, J_data, p_theta, p_theta_data, p_r, photon, r_obs, theta_obs, metric);
+
+        break;
     }
 
     return OK;
@@ -297,11 +325,11 @@ int get_initial_conditions_from_file(e_Spacetimes e_metric, double* J, double J_
 }
 
 double Redshift(e_Spacetimes e_metric, double J, double State_Vector[], double U_source[],
-                c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_Observer Observer_class) {
+                c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class, c_Observer Observer_class) {
 
     double U_obs[4];
 
-    Observer_class.get_obs_velocity(U_obs, e_metric, Kerr_class, Wormhole_class, RBH_class);
+    Observer_class.get_obs_velocity(U_obs, e_metric, Kerr_class, Wormhole_class, RBH_class, JNW_class);
 
     return  (-U_obs[0] + U_obs[3] * J) / (-U_source[0] * 1 + 
                                            U_source[1] * State_Vector[e_p_r] + 
@@ -382,7 +410,7 @@ int Contravariant_coord_to_ZAMO(double metric[4][4], double Contravariant_Vector
     ZAMO_Vector[0] = alpha * Contravariant_Vector[0];
     ZAMO_Vector[1] = sqrt(metric[1][1]) * Contravariant_Vector[1];
     ZAMO_Vector[2] = sqrt(metric[2][2]) * Contravariant_Vector[2];
-    ZAMO_Vector[3] = sqrt(metric[3][3]) * (Contravariant_Vector[3] + beta* Contravariant_Vector[0]);
+    ZAMO_Vector[3] = sqrt(metric[3][3]) * (Contravariant_Vector[3] + beta * Contravariant_Vector[0]);
 
     return OK;
 
@@ -429,21 +457,28 @@ int Lorentz_boost_matrix(double Boost_matrix[4][4], double U_source[4], double m
 
 int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J,
                            Optically_Thin_Toroidal_Model OTT_Model, c_Kerr Kerr_class, e_Spacetimes e_metric,
-                           c_RBH RBH_class, c_Wormhole Wormhole_class, c_Observer Observer_class) {
+                           c_RBH RBH_class, c_Wormhole Wormhole_class, c_Observer Observer_class, c_JNW_Naked_Singularity JNW_class) {
 
-    double r = State_Vector[e_r];
+    double r_throat = Wormhole_class.get_r_throat(), r;
+
+    switch (e_metric) {
+
+        case Wormhole:
+
+            r = sqrt(State_Vector[e_r] * State_Vector[e_r] + r_throat * r_throat);
+
+            break;
+
+        default:
+         
+            r = State_Vector[e_r];
+
+            break;
+    }
+
     double theta = State_Vector[e_theta];
-    double h = r*cos(theta);
-
-    double Height_Scale = OTT_Model.get_disk_height_scale();
-    double r_cut        = OTT_Model.get_disk_rad_cutoff();
-    double omega        = OTT_Model.get_disk_omega();
-    double alpha        = OTT_Model.get_disk_alpha();
-
-    double Height_Cutoff = h * h / (2 * r * sin(theta) * r * sin(theta));
-    double Radial_Cutoff = (r - r_cut) * (r - r_cut) / omega / omega;
-
-    double electron_density = N_ELECTRON_CGS * pow(r/2, -alpha) * exp(-Height_Cutoff);
+    
+    double electron_density = OTT_Model.get_disk_density(State_Vector);
 
     /*
     
@@ -453,7 +488,7 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
 
     double U_source_coord[4]{};
 
-    OTT_Model.get_disk_velocity(U_source_coord, State_Vector, e_metric, Kerr_class, RBH_class, Wormhole_class);
+    OTT_Model.get_disk_velocity(U_source_coord, State_Vector, e_metric, Kerr_class, RBH_class, Wormhole_class, JNW_class);
 
     /*
     
@@ -463,10 +498,9 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
 
     double metric[4][4]{}, N_metric{}, Omega_metric{};
 
-    get_metric(e_metric, metric, &N_metric, &Omega_metric, r, theta, Kerr_class, RBH_class, Wormhole_class);
+    get_metric(e_metric, metric, &N_metric, &Omega_metric, r, theta, Kerr_class, RBH_class, Wormhole_class, JNW_class);
 
     double U_source_ZAMO[4]{};
-
     Contravariant_coord_to_ZAMO(metric, U_source_coord, U_source_ZAMO);
 
     /*
@@ -496,15 +530,15 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
     
     */
 
-    double U_source_local[3] = { U_source_Boosted[1] / U_source_Boosted[0],U_source_Boosted[2] / U_source_Boosted[0] ,U_source_Boosted[3] / U_source_Boosted[0] };
+    double U_source_local[3] = { U_source_Boosted[1] / U_source_Boosted[0], U_source_Boosted[2] / U_source_Boosted[0], U_source_Boosted[3] / U_source_Boosted[0] };
 
     double B_field_local[3];
 
     double B_CGS = OTT_Model.get_magnetic_field(B_field_local, State_Vector);
 
-    double cos_angle{}, sin_angle{};
+    double cos_angle = 1, sin_angle{};
 
-    if (B_CGS != 0) {
+    if (B_CGS != 0 && dot_product(U_source_local, U_source_local) != 0) {
 
         cos_angle = dot_product(B_field_local, U_source_local) / sqrt(dot_product(B_field_local, B_field_local)) / sqrt(dot_product(U_source_local, U_source_local));
         sin_angle = sqrt(1 - cos_angle * cos_angle);
@@ -517,12 +551,21 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
     
     */
 
-    double T_electron_cgs = T_ELECTRON_CGS * 2 / r;
+    double T_electron_cgs = T_ELECTRON_CGS * (1 + sqrt(1 - 0.94 * 0.94)) / r;
     double T_electron_dim = BOLTZMANN_CONST_CGS * T_electron_cgs / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
 
     double f_cyclo = Q_ELECTRON_CGS * B_CGS / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
-
     double f_s = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim * sin_angle;
+
+    /*
+
+    Get The Redshift
+
+    */
+
+    double redshift = Redshift(e_metric, J, State_Vector, U_source_coord,
+                               Kerr_class, RBH_class, Wormhole_class, JNW_class, Observer_class);
+
 
     /*
    
@@ -534,39 +577,40 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
 
     if (f_s != 0) {
 
-        X = OBS_FREQUENCY_CGS / f_s;
+        X = OBS_FREQUENCY_CGS / f_s / redshift;
 
     }
 
     double X_term = (sqrt(X) + pow(2, 11.0 / 12) * pow(X, 1.0 / 6)) * (sqrt(X) + pow(2, 11.0 / 12) * pow(X, 1.0 / 6));
 
-    double const_coeff = sqrt(2) * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 27 / C_LIGHT_CGS;
-
-    double emission = electron_density * const_coeff * f_cyclo * sin_angle * X_term * exp(-pow(X, 1.0 / 3));
+    double emission_coef = sqrt(2) * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 27 / C_LIGHT_CGS;
+    double emission = emission_coef * electron_density * f_cyclo * sin_angle * X_term * exp(-pow(X, 1.0 / 3));
 
     /*
 
-    Get The Redshift
+    Calculate the absorbtion
 
     */
 
-    double redshift = Redshift(e_metric, J, State_Vector, U_source_coord,
-                               Kerr_class, RBH_class, Wormhole_class, Observer_class);
+    double absorbtion_coeff = C_LIGHT_CGS * C_LIGHT_CGS / 2 / BOLTZMANN_CONST_CGS / OBS_FREQUENCY_CGS / OBS_FREQUENCY_CGS;
+    double absorbtion = absorbtion_coeff * redshift * redshift * emission / T_electron_cgs;
 
-    double abs_const_coeff = C_LIGHT_CGS * C_LIGHT_CGS / 2 / BOLTZMANN_CONST_CGS / OBS_FREQUENCY_CGS / OBS_FREQUENCY_CGS;
+    /*
 
-    double absorbtion = abs_const_coeff * redshift * redshift * emission / T_electron_cgs;
-    Derivatives[e_Intensity + iteration * e_State_Number] = -redshift * redshift * emission * exp(-State_Vector[e_Optical_Depth]) * CGS_JANSKY;
-    double test_2 = Derivatives[e_Intensity + iteration * e_State_Number];
-    Derivatives[e_Optical_Depth + iteration * e_State_Number] = -absorbtion / redshift;
-    double test_3 = Derivatives[e_Optical_Depth + iteration * e_State_Number];
+    Fill in radiative transfer derivatives
+
+    */
+
+
+    Derivatives[e_Intensity + iteration * e_State_Number] = -redshift * redshift * emission * exp(-State_Vector[e_Optical_Depth]) * OBS_FREQUENCY_CGS;
+    Derivatives[e_Optical_Depth + iteration * e_State_Number] = -absorbtion / redshift * OBS_FREQUENCY_CGS;
 
     return  OK;
 
 }
 
 int get_EOM(e_Spacetimes e_metric, double inter_State_vector[7 * 6], double J, double Derivatives[7 * 6], int iteration,
-            c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class) {
+                           c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class) {
 
     switch (e_metric) {
 
@@ -585,6 +629,12 @@ int get_EOM(e_Spacetimes e_metric, double inter_State_vector[7 * 6], double J, d
     case Reg_Black_Hole:
 
         RBH_class.EOM(inter_State_vector, J, Derivatives, iteration);
+
+        break;
+
+    case Naked_Singularity:
+
+        JNW_class.EOM(inter_State_vector, J, Derivatives, iteration);
 
         break;
 

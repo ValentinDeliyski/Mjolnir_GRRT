@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <string>
 #include <fstream>
+#include <iostream>
 #include "Enumerations.h"
 #include "IO_files.h"
 
@@ -36,13 +37,23 @@ std::string File_Names[] = {
 	"RBH_Momentum_Data0",
 	"RBH_Momentum_Data1",
 	"RBH_Momentum_Data2",
-	"RBH_Momentum_Data3"
+	"RBH_Momentum_Data3",
+
+    "JNW_Data0",
+	"JNW_Data1",
+	"JNW_Data2",
+	"JNW_Data3",
+
+	"JNW_Momentum_Data0",
+	"JNW_Momentum_Data1",
+	"JNW_Momentum_Data2",
+	"JNW_Momentum_Data3"
 
 };
 
 int open_output_files(e_Spacetimes e_metric, std::ofstream data[], std::ofstream momentum_data[], bool truncate) {
 
-	int const File_number = sizeof(File_Names) / sizeof(std::string);
+	int const File_number = SPACETIME_NUMBER*8;
 
 	std::filesystem::path dir("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity");
 	std::filesystem::path file[File_number];
@@ -92,6 +103,14 @@ int open_output_files(e_Spacetimes e_metric, std::ofstream data[], std::ofstream
 			data[File_Index].open(full_path[File_Index + 4 * 4], open_type);
 
 			momentum_data[File_Index].open(full_path[File_Index + 5 * 4], open_type);
+
+			break;
+
+		case Naked_Singularity:
+
+			data[File_Index].open(full_path[File_Index + 6 * 4], open_type);
+
+			momentum_data[File_Index].open(full_path[File_Index + 7 * 4], open_type);
 
 			break;
 
@@ -148,7 +167,7 @@ int write_to_file(double Image_coordiantes[], double redshift, double Flux, doub
 
 	case direct:
 
-		data[0] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
+		data[0] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::scientific << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
 
 		if (lens_from_file) {
 

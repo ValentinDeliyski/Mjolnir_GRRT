@@ -4,11 +4,13 @@
 
 	#define ENUMS
 
-	typedef enum tag_Spacetime_enums {
+typedef enum tag_Spacetime_enums {
 
 		Kerr = 0,
 		Reg_Black_Hole = 1,
-		Wormhole = 2
+		Wormhole = 2,
+		Naked_Singularity = 3,
+		SPACETIME_NUMBER = 4
 
 	}e_Spacetimes;
 

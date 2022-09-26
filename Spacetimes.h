@@ -117,6 +117,43 @@
 
     }c_RBH;
 
+    typedef class tag_JNW_Naked_Singularity {
+
+    private:
+
+        double M;
+        double GAMMA;
+        double r_SINGULARITY;
+
+        double r_ph;
+        double r_ISCO_outer;
+        double r_ISCO_inner;
+
+    public:
+
+        tag_JNW_Naked_Singularity(double gamma, double b);
+
+        double get_r_ph();
+        double get_gamma();
+        double get_r_ISCO_outer();
+        double get_r_ISCO_inner();
+        double get_r_singularity();
+
+        int metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta);
+
+        int metric_first_derivatives(class tag_JNW_Naked_Singularity JNW_class, double d2r_metric[4][4],
+            double* d2r_N, double* d2r_omega, double r, double theta);
+
+        int metric_second_derivatives(class tag_JNW_Naked_Singularity JNW_class, double d2r_metric[4][4],
+            double* d2r_N, double* d2r_omega, double r, double theta);
+
+        int intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
+            int photon, double r_obs, double theta_obs, double metric[4][4]);
+
+        int EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+
+    }c_JNW_Naked_Singularity;
+
     typedef class tag_observer {
 
     private:
@@ -134,8 +171,9 @@
         double get_phi_obs();
 
         int get_obs_velocity(double Obs_velocity[4],
-                             e_Spacetimes e_metric, c_Kerr Kerr_class, c_Wormhole Wormhole_class, c_RBH RBH_class);
+                             e_Spacetimes e_metric, c_Kerr Kerr_class, c_Wormhole Wormhole_class, c_RBH RBH_class, c_JNW_Naked_Singularity JNW_class);
 
     }c_Observer;
+
    
 #endif
