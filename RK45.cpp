@@ -10,10 +10,12 @@
 #include <iomanip> 
 #include <fstream>
 #include <cmath>
+#include <vector>
 
-Return_Value_enums RK45_EOM(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
-                            c_Kerr Kerr_class, e_Spacetimes e_metric, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class,
-                            c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model) {
+extern e_Spacetimes e_metric;
+
+Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
+                        c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     int iteration = 0;
     bool EOM_Status = OK;
@@ -38,12 +40,10 @@ Return_Value_enums RK45_EOM(double State_Vector[], double Derivatives[], double*
 
         }
 
-        EOM_Status = get_EOM(e_metric, inter_State_vector, J, Derivatives, iteration,
-                             Kerr_class, RBH_class, Wormhole_class, JNW_class);
+        EOM_Status = Spacetimes[e_metric]->get_EOM(inter_State_vector, J, Derivatives, iteration);
 
 
-        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration, J, OTT_Model,
-                               Kerr_class, e_metric, RBH_class, Wormhole_class, Observer_class, JNW_class);
+        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration, J, OTT_Model, Observer_class, Spacetimes);
 
 
         iteration += 1;

@@ -4,7 +4,7 @@
 
 	#define ENUMS
 
-typedef enum tag_Spacetime_enums {
+	typedef enum tag_Spacetime_enums {
 
 		Kerr = 0,
 		Reg_Black_Hole = 1,
@@ -34,7 +34,6 @@ typedef enum tag_Spacetime_enums {
 		e_r_coord     = 1,
 		e_theta_coord = 2,
 		e_phi_coord   = 3
-
 
 	}Spacetime_coords;
 
@@ -79,5 +78,32 @@ typedef enum tag_Spacetime_enums {
 		Exiting_Disk = 3
 
 	}Disk_Intersection;
+
+	typedef enum tag_Orbit_Orientation {
+
+		Prograde   = 0,
+		Retrograde = 1,
+
+	}Orbit_Orientation;
+
+	typedef enum tag_Spacetime_Parameters {
+
+		/* Wormhole */
+
+		e_WH_Redshift_parameter = 0,
+		e_WH_Throat_radius	  = 1,
+
+		/* Regular Black Hole */
+
+		e_RBH_parameter = 2,
+
+		/* JNW Naked Singularity */
+
+		e_JNW_r_Singularity = 3,
+		e_JNW_Gamma		  = 4,
+
+		PARAMETER_NUM = 5
+
+	}Spacetime_Parameters;
 
 #endif

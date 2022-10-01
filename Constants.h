@@ -6,20 +6,20 @@
 
     #define _USE_MATH_DEFINES
 
-    typedef double const RK45;
-    typedef int const RK45_int;
+    typedef double const Const_Float;
+    typedef int const Const_int;
 
 
-    RK45 INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important
-    RK45 INTEGRAL_ACCURACY = 5e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
-    RK45 RK45_ACCURACY	   = 1e-7;  // 1e-9 Seems to be an opitimal tradeoff between accuracy and performace 
-    RK45 SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
-    RK45 SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
+    Const_Float INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important
+    Const_Float INTEGRAL_ACCURACY = 5e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
+    Const_Float RK45_ACCURACY	   = 1e-7;  // 1e-9 Seems to be an opitimal tradeoff between accuracy and performace 
+    Const_Float SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
+    Const_Float SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
 
-    RK45_int RK45_size			   = 7;		  // Number of integration sub-steps
-    RK45_int MAX_INTEGRATION_COUNT = 7600000; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
+    Const_int RK45_size			   = 7;		  // Number of integration sub-steps
+    Const_int MAX_INTEGRATION_COUNT = 7600000; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
-    RK45 Coeff_deriv[RK45_size][RK45_size-1] =
+    Const_Float Coeff_deriv[RK45_size][RK45_size-1] =
     {
         {       0,               0,              0,             0,            0,           0   },
         {    1. / 5,             0,              0,             0,            0,           0   },
@@ -30,9 +30,9 @@
         {   35. / 384,           0,         500. / 1113,   125. / 192, -2187. / 6784,  11. / 84}
     };
 
-    RK45 Coeff_sol[RK45_size] = { 35. / 384, 0, 500. / 1113, 125. / 192, -2187. / 6784, 11. / 84, 0 };
+    Const_Float Coeff_sol[RK45_size] = { 35. / 384, 0, 500. / 1113, 125. / 192, -2187. / 6784, 11. / 84, 0 };
 
-    RK45 Coeff_test_sol[RK45_size] = { 5179. / 57600, 0, 7571. / 16695, 393. / 640, -92097. / 339200, 187. / 2100, 1. / 40 };
+    Const_Float Coeff_test_sol[RK45_size] = { 5179. / 57600, 0, 7571. / 16695, 393. / 640, -92097. / 339200, 187. / 2100, 1. / 40 };
 
     /*
 
@@ -40,17 +40,17 @@
 
     */
 
-    double const M_ELECTRON_SI = 9.1093837e-31;
-    double const Q_ELECTRON_SI = 1.60217663e-19;
-    double const T_ELECTRON_SI = 1e11;
-    double const N_ELECTRON_SI = 1e12;
+    Const_Float M_ELECTRON_SI = 9.1093837e-31;
+    Const_Float Q_ELECTRON_SI = 1.60217663e-19;
+    Const_Float T_ELECTRON_SI = 1e11;
+    Const_Float N_ELECTRON_SI = 1e12;
 
-    double const M_PROTON_SI = 1.67262192e-27;
+    Const_Float M_PROTON_SI = 1.67262192e-27;
 
-    double const C_LIGHT_SI         = 299792458;
-    double const BOLTZMANN_CONST_SI = 1.380649e-23;
+    Const_Float C_LIGHT_SI         = 299792458;
+    Const_Float BOLTZMANN_CONST_SI = 1.380649e-23;
 
-    double const OBS_FREQUENCY_SI = 230e9;
+    Const_Float OBS_FREQUENCY_SI = 230e9;
 
     /*
 
@@ -58,18 +58,35 @@
 
     */
 
-    double const M_ELECTRON_CGS = 9.1094e-28;
-    double const Q_ELECTRON_CGS = 4.8032e-10;
-    double const T_ELECTRON_CGS = 1e11;
-    double const N_ELECTRON_CGS = 2e6;
+    Const_Float M_ELECTRON_CGS = 9.1094e-28;
+    Const_Float Q_ELECTRON_CGS = 4.8032e-10;
+    Const_Float T_ELECTRON_CGS = 1e11;
+    Const_Float N_ELECTRON_CGS = 2e6;
 
-    double const M_PROTON_CGS = 1.67262192e-24;
+    Const_Float M_PROTON_CGS = 1.67262192e-24;
 
-    double const C_LIGHT_CGS         = 2.99792458e10;
-    double const BOLTZMANN_CONST_CGS = 1.380649e-16;
+    Const_Float C_LIGHT_CGS         = 2.99792458e10;
+    Const_Float BOLTZMANN_CONST_CGS = 1.380649e-16;
 
-    double const OBS_FREQUENCY_CGS = 230e9;
+    Const_Float OBS_FREQUENCY_CGS = 230e9;
 
-    double const CGS_JANSKY = 1e+23;
+    Const_Float CGS_TO_JANSKY = 1e+23;
+
+    /*
+
+    Metric Parameters
+
+    */
+
+    Const_Float MASS = 1.0;
+    Const_Float SPIN = 0.00001;
+
+    Const_Float WH_REDSHIFT = 1.0;
+    Const_Float WH_R_THROAT = MASS;
+
+    Const_Float RBH_PARAM = 0.00;
+
+    Const_Float JNW_R_SINGULARITY = 3.0;
+    Const_Float JNW_GAMMA = 2 * MASS / JNW_R_SINGULARITY;
 
 #endif

@@ -29,6 +29,7 @@
 #include <fstream>
 #include <cmath>
 #include <string>
+#include <vector>
 
 #include "Constants.h"
 #include "Spacetimes.h"
@@ -40,7 +41,7 @@
 
 #include "Lensing.h"
 
-e_Spacetimes e_metric = Naked_Singularity;
+e_Spacetimes e_metric = Kerr;
 Disk_Models e_Disk_Model = Optically_Thin_Toroidal;
 
 int main() {
@@ -56,13 +57,7 @@ int main() {
 
     c_Observer Observer_class(r_obs, theta_obs, phi_obs);
 
-    double M, a, r_throat, metric_parameter, b,gamma;
-
-        M = 1.0;
-        metric_parameter = 0.00;
-        a = 0.0001;
-        b = 3;
-        gamma = 2 * M / b;
+    double parameters[PARAMETER_NUM] = { WH_REDSHIFT,WH_R_THROAT,RBH_PARAM,JNW_R_SINGULARITY,JNW_GAMMA };
 
     /*
     
@@ -70,12 +65,11 @@ int main() {
 
     */
 
-    c_Kerr Kerr_class(a);
-    c_RBH RBH_class(metric_parameter);
-    c_Wormhole Wormhole_class(metric_parameter,a);
-    c_JNW_Naked_Singularity JNW_class(gamma, b);
-
-        r_throat = Wormhole_class.get_r_throat();
+    std::vector<c_Spacetime_Base*> Spacetimes;
+    Spacetimes.push_back(new derived_Kerr_class());
+    Spacetimes.push_back(new derived_RBH_class());
+    Spacetimes.push_back(new derived_Wormhole_class());
+    Spacetimes.push_back(new derived_JNW_class());
 
     /*
     
@@ -93,53 +87,14 @@ int main() {
 
     */
 
-    double r_in, r_out, r_ISCO;
+    double r_in = Spacetimes[e_metric]->get_ISCO(Prograde);
+    double r_out = 20 * r_in;
 
-        switch (e_metric) {
+    if (e_metric == Naked_Singularity && JNW_GAMMA < 1.0 / sqrt(5)) {
 
-            case Kerr:
+         r_in += 1;
 
-                r_ISCO = Kerr_class.get_ISCO();
-                    
-                r_in  = 6;
-                r_out = 50;
-
-                break;
-
-            case Reg_Black_Hole:
-
-                r_ISCO = RBH_class.get_ISCO();
-
-                r_in  = r_ISCO;
-                r_out = 50;
-
-                break;
-
-            case Wormhole:
-
-                r_ISCO = Wormhole_class.get_ISCO();
-
-                r_in  = r_ISCO;
-                r_out = 50 * r_ISCO;
-
-                break;
-
-            case Naked_Singularity:
-
-                r_ISCO = JNW_class.get_r_ISCO_outer();
-
-                r_in = r_ISCO + 2;
-                r_out = 50 * r_ISCO;
-
-                break;
-
-            default:
-
-                std::cout << "Wrong metric!" << '\n';
-
-                return ERROR;
-
-        }
+    }
 
     Novikov_Thorne_Model NT_Model(r_in, r_out);
 
@@ -153,8 +108,8 @@ int main() {
 
         disk_alpha = 1;
         disk_height_scale = 0.1;
-        disk_rad_cutoff = 3 * M;
-        disk_omega = sqrt(1. / 12) * M;
+        disk_rad_cutoff = 3 * MASS;
+        disk_omega = sqrt(1. / 12) * MASS;
         disk_magnetization = 0.01;
 
 
@@ -166,10 +121,9 @@ int main() {
 
     */
 
-    double metric[4][4], N_obs, omega_obs;
+    double metric[4][4]{}, N_obs, omega_obs;
 
-        get_metric(e_metric, metric, &N_obs, &omega_obs, r_obs, theta_obs,
-            Kerr_class, RBH_class, Wormhole_class, JNW_class);
+        Spacetimes[e_metric]->get_metric(metric, &N_obs, &omega_obs, r_obs, theta_obs);
 
     double J, p_theta_0, p_r_0;
 
@@ -203,15 +157,13 @@ int main() {
 
                     */
 
-                get_initial_conditions_from_file(e_metric, &J, J_data, &p_theta_0, p_theta_data, &p_r_0, photon, r_obs, 
-                                                 theta_obs, metric, N_obs, omega_obs,
-                                                 Kerr_class, RBH_class, Wormhole_class, JNW_class);
+                Spacetimes[e_metric]->get_initial_conditions_from_file(&J, J_data, &p_theta_0, p_theta_data, &p_r_0, photon, r_obs,
+                                                                       theta_obs, metric, N_obs, omega_obs);
 
                 double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
-                Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
-                                          lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class, JNW_class,
-                                          Observer_class, e_Disk_Model, NT_Model, OTT_Model);
+                Integration_status = Lens(initial_conditions, lens_from_file, data, momentum_data, Observer_class, 
+                                          e_Disk_Model, NT_Model, OTT_Model, Spacetimes);
 
     
                 print_progress(photon, Data_number, lens_from_file);
@@ -242,7 +194,7 @@ int main() {
 
         if (Integration_status == OK) {
 
-            for (double V_angle = V_angle_max; V_angle >= V_angle_min; V_angle -= Scan_Step) {
+            for (double V_angle = 0; V_angle >= V_angle_min; V_angle -= Scan_Step) {
 
                 print_progress(progress, int((V_angle_max - V_angle_min) / Scan_Step), lens_from_file);
 
@@ -254,9 +206,8 @@ int main() {
 
                     double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
-                    Integration_status = Lens(initial_conditions, M, metric_parameter, a, r_throat, r_in, r_out,
-                                              lens_from_file, data, momentum_data, e_metric, Kerr_class, RBH_class, Wormhole_class, JNW_class,
-                                              Observer_class, e_Disk_Model, NT_Model, OTT_Model);
+                    Integration_status = Lens(initial_conditions, lens_from_file, data, momentum_data, Observer_class, 
+                                              e_Disk_Model, NT_Model, OTT_Model, Spacetimes);
 
                 }
 

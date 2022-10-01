@@ -10,14 +10,13 @@
 
 #include <iostream>
 
-Return_Value_enums RK45_EOM(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
-                            c_Kerr Kerr_class, e_Spacetimes e_metric, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class,
-                            c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model);
+extern e_Spacetimes e_metric;
 
-Return_Value_enums Lens(double initial_conditions[], double M, double metric_parameter, double a, double r_throat, double r_in, double r_out, bool lens_from_file,
-                        std::ofstream data[], std::ofstream momentum_data[], 
-                        e_Spacetimes e_metric, c_Kerr Kerr_class, c_RBH RBH_class, c_Wormhole Wormhole_class, c_JNW_Naked_Singularity JNW_class, c_Observer Observer_class,
-                        Disk_Models e_Disk_Model, Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model) {
+Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
+                        c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes);
+
+Return_Value_enums Lens(double initial_conditions[], bool lens_from_file, std::ofstream data[], std::ofstream momentum_data[], c_Observer Observer_class,
+                        Disk_Models e_Disk_Model, Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double r_obs     = initial_conditions[e_r];
     double theta_obs = initial_conditions[e_theta];
@@ -69,11 +68,45 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
 
     Return_Value_enums RK45_Status = OK;
 
+    double parameter_to_write;
+
+    switch (e_metric) {
+
+    case Kerr:
+
+        parameter_to_write = SPIN;
+
+        break;
+
+    case Reg_Black_Hole:
+
+        parameter_to_write = RBH_PARAM;
+
+        break;
+
+    case Wormhole:
+
+        parameter_to_write = WH_REDSHIFT;
+
+        break;
+
+    case Naked_Singularity:
+
+        parameter_to_write = JNW_GAMMA;
+
+        break;
+
+    default:
+
+        std::cout << "Wrong Metric!" << '\n';
+
+        break;
+
+    }
+
     while (RK45_Status == OK && integration_count < MAX_INTEGRATION_COUNT) {
 
-        RK45_Status = RK45_EOM(State_vector, Derivatives, &step, J, &continue_integration, 
-                               Kerr_class, e_metric, RBH_class, Wormhole_class, JNW_class,
-                               Observer_class, OTT_Model);
+        RK45_Status = RK45(State_vector, Derivatives, &step, J, &continue_integration, Observer_class, OTT_Model, Spacetimes);
 
         // If error estimate, returned from RK45_EOM < RK45_ACCURACY
         if (continue_integration == true) {
@@ -114,13 +147,11 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
 
                 Image_Order_Novikov_Thorne = n_equator_crossings;
 
-                redshift = NT_Model.Redshift(e_metric, J, State_vector, r_obs, theta_obs,
-                                             Kerr_class, RBH_class, Wormhole_class, JNW_class);
+                redshift = NT_Model.Redshift(J, State_vector, r_obs, theta_obs, Spacetimes);
 
-                Flux_Novikov_Thorne = NT_Model.get_flux(e_metric, State_vector[e_r], r_in,
-                    Kerr_class, RBH_class, Wormhole_class, JNW_class);
+                Flux_Novikov_Thorne = NT_Model.get_flux(State_vector[e_r], Spacetimes);
 
-                write_to_file(Image_coordiantes, redshift, Flux_Novikov_Thorne, State_vector, metric_parameter, J,
+                write_to_file(Image_coordiantes, redshift, Flux_Novikov_Thorne, State_vector, parameter_to_write, J,
                               Image_Order_Novikov_Thorne, lens_from_file, data, momentum_data);
 
                 found_disc[Image_Order_Novikov_Thorne] = true;
@@ -144,55 +175,7 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
 
             // Evaluate logical flags for terminating the integration
 
-            bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
-            bool scatter_other_side = State_vector[e_r] < -sqrt(r_out * r_out + r_throat * r_throat);
-
-            bool hit_horizon_kerr = State_vector[e_r] - Kerr_class.get_r_horizon() < 0.05;
-            bool hit_horizon_RBH = State_vector[e_r] - RBH_class.get_r_horizon() < 0.05;
-
-            bool pass_trough_throat = State_vector[e_r] < 0;
-
-            bool hit_singularity = State_vector[e_r] - JNW_class.get_r_singularity() < 0.05;
-
-            bool terminate_integration = scatter;
-
-            switch (e_metric) {
-
-            case Wormhole:
-
-                scatter = State_vector[e_r] > sqrt(r_out * r_out + r_throat * r_throat) && Derivatives[0] < 0;
-
-                terminate_integration = scatter || scatter_other_side;
-
-                break;
-
-            case Kerr:
-
-                terminate_integration = scatter || hit_horizon_kerr;
-
-                break;
-
-            case Reg_Black_Hole:
-
-                terminate_integration = scatter || hit_horizon_RBH;
-
-                break;
-
-            case Naked_Singularity:
-
-                terminate_integration = scatter || hit_singularity;
-
-                break;
-
-            default:
-
-                std::cout << "Wrong metric!" << '\n';
-
-                return ERROR;
-
-            }
-
-            if (terminate_integration) {
+            if (Spacetimes[e_metric]->terminate_integration(State_vector, Derivatives)) {
 
                 switch (e_Disk_Model) {
 
@@ -202,7 +185,7 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
 
                         if (found_disc[Image_Order_Scan] == false && lens_from_file == false) {
 
-                            write_to_file(Image_coordiantes, 0., 0., State_vector, metric_parameter, J,
+                            write_to_file(Image_coordiantes, 0., 0., State_vector, parameter_to_write, J,
                                           Image_Order_Scan, lens_from_file, data, momentum_data);
 
                         }
@@ -214,12 +197,18 @@ Return_Value_enums Lens(double initial_conditions[], double M, double metric_par
 
                 case Optically_Thin_Toroidal:
 
-                    write_to_file(Image_coordiantes, 0., State_vector[e_Intensity], State_vector, metric_parameter, J,
+                    write_to_file(Image_coordiantes, 0., State_vector[e_Intensity], State_vector, parameter_to_write, J,
                                   direct, lens_from_file, data, momentum_data);
 
                     integration_count = 0;
 
                     break;
+
+                default:
+
+                    std::cout << "Wrong Disk Model!" << '\n';
+                    
+                    return ERROR;
 
                 }
 

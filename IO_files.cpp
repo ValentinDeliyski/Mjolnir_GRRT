@@ -53,7 +53,7 @@ std::string File_Names[] = {
 
 int open_output_files(e_Spacetimes e_metric, std::ofstream data[], std::ofstream momentum_data[], bool truncate) {
 
-	int const File_number = SPACETIME_NUMBER*8;
+	int const File_number = SPACETIME_NUMBER * 8;
 
 	std::filesystem::path dir("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity");
 	std::filesystem::path file[File_number];

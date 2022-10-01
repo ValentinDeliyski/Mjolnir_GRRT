@@ -1,6 +1,10 @@
 #pragma once
 
 #include <cmath>
+#include <iostream>
+#include <vector>
+
+#include "Constants.h"
 #include "Enumerations.h"
 #include "Spacetimes.h"
 #include "General_functions.h"
@@ -12,11 +16,13 @@
 |                                      |
 ***************************************/
 
+extern e_Spacetimes e_metric;
+
 tag_observer::tag_observer(double r, double theta, double phi) {
 
-    r_obs = r;
+    r_obs     = r;
     theta_obs = theta;
-    phi_obs = phi;
+    phi_obs   = phi;
 
 }
 
@@ -24,18 +30,16 @@ double tag_observer::get_r_obs() { return r_obs; };
 double tag_observer::get_theta_obs() { return theta_obs; };
 double tag_observer::get_phi_obs() { return phi_obs; };
 
-int tag_observer::get_obs_velocity(double Obs_velocity[4],
-                                 e_Spacetimes e_metric, c_Kerr Kerr_class, c_Wormhole Wormhole_class, c_RBH RBH_class, c_JNW_Naked_Singularity JNW_class) {
+int tag_observer::get_obs_velocity(double Obs_velocity[4], std::vector<c_Spacetime_Base*> Spacetimes) {
 
 
     double metric_obs[4][4], N_obs, omega_obs;
 
-    get_metric(e_metric, metric_obs, &N_obs, &omega_obs, r_obs, theta_obs,
-               Kerr_class, RBH_class, Wormhole_class, JNW_class);
+    Spacetimes[e_metric]->get_metric(metric_obs, &N_obs, &omega_obs, r_obs, theta_obs);
+
     /*
     Obs_velocity is given in contravatiant components 
     */
-
 
     Obs_velocity[0] = 1.0 / N_obs;
     Obs_velocity[1] = 0;
@@ -46,35 +50,69 @@ int tag_observer::get_obs_velocity(double Obs_velocity[4],
 
 }
 
+/*******************************************
+|                                          |
+| Derived Kerr Class Functions Definitions |
+|                                          |
+*******************************************/
 
-/**********************************************
-|                                             |
-| Kerr Black Hole Class Functions Definitions |
-|                                             |
-**********************************************/
+double derived_Kerr_class::get_ISCO(Orbit_Orientation Orientation) {
 
-tag_Kerr::tag_Kerr(double x) {
-
-    a = x;
-    M = 1.0;
-
-    r_horizon = M * (1 + sqrt(1 - a * a));
-    r_ph_prograde = 2 * M * (1 + cos(2.0 / 3 * acos(-a)));
-    r_ph_retrograde = 2 * M * (1 + cos(2.0 / 3 * acos(a)));
+    double M = MASS;
+    double a = SPIN;
 
     double Z_1 = 1 + pow(1 - a * a, 1. / 3) * (pow(1 + a, 1. / 3) + pow(1 - a, 1. / 3));
     double Z_2 = sqrt(3 * a * a + Z_1 * Z_1);
 
-    r_ISCO = M * (3 + Z_2 - sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
+    switch (Orientation) {
+
+        case Prograde:
+
+            return M * (3 + Z_2 - sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
+
+        case Retrograde:
+
+            return M * (3 + Z_2 + sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
+
+        default:
+
+            std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
+
+            return ERROR;
+
+    }
+
 }
 
-double tag_Kerr::get_r_ph_retrograde() { return r_ph_retrograde; };
-double tag_Kerr::get_r_ph_prograde()   { return r_ph_prograde; };
-double tag_Kerr::get_r_horizon()       { return r_horizon; };
-double tag_Kerr::get_ISCO()            { return r_ISCO; };
-double tag_Kerr::get_spin()            { return a; };
+double derived_Kerr_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
-int tag_Kerr::metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+    double M = MASS;
+    double a = SPIN;
+
+    switch (Orientation) {
+
+    case Prograde:
+
+        return 2 * M * (1 + cos(2.0 / 3 * acos(a)));
+
+    case Retrograde:
+
+        return 2 * M * (1 + cos(2.0 / 3 * acos(-a)));
+
+    default:
+
+        std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
+
+        return ERROR;
+
+    }
+
+}
+
+int derived_Kerr_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+
+    double M = MASS;
+    double a = SPIN;
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -97,12 +135,14 @@ int tag_Kerr::metric(double metric[4][4], double* N_metric, double* omega_metric
     return OK;
 }
 
-int tag_Kerr::metric_first_derivatives(class tag_Kerr Kerr_class, double dr_metric[4][4], double* dr_N, double* dr_omega,
-                                     double r, double theta) {
+int derived_Kerr_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
+
+    double M = MASS;
+    double a = SPIN;
 
     double metric[4][4], N, omega;
 
-    Kerr_class.metric(metric, &N, &omega, r, theta);
+    derived_Kerr_class::get_metric(metric, &N, &omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -126,16 +166,18 @@ int tag_Kerr::metric_first_derivatives(class tag_Kerr Kerr_class, double dr_metr
 
 }
 
-int tag_Kerr::metric_second_derivatives(class tag_Kerr Kerr_class, double d2r_metric[4][4], double* d2r_N, double* d2r_omega,
-                                      double r, double theta) {
+int derived_Kerr_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
+
+    double M = MASS;
+    double a = SPIN;
 
     double metric[4][4], N, omega;
 
-    Kerr_class.metric(metric, &N, &omega, r, theta);
+    derived_Kerr_class::get_metric(metric, &N, &omega, r, theta);
 
     double dr_metric[4][4], dr_N, dr_omega;
 
-    Kerr_class.metric_first_derivatives(Kerr_class, dr_metric, &dr_N, &dr_omega, r, theta);
+    derived_Kerr_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -160,8 +202,11 @@ int tag_Kerr::metric_second_derivatives(class tag_Kerr Kerr_class, double d2r_me
 
 }
 
-int tag_Kerr::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                          int photon, double r_obs, double theta_obs, double metric[4][4]) {
+int derived_Kerr_class::get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
+                                                        int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
+
+    double M = MASS;
+    double a = SPIN;
 
     *J = -J_data[photon] * sin(theta_obs);
     *p_theta = p_theta_data[photon];
@@ -176,7 +221,10 @@ int tag_Kerr::intitial_conditions_from_file(double* J, double J_data[], double* 
     return OK;
 }
 
-int tag_Kerr::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int derived_Kerr_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+
+    double M = MASS;
+    double a = SPIN;
 
     double r = inter_State_vector[e_r + iteration * e_State_Number];
     double r2 = r * r;
@@ -212,101 +260,332 @@ int tag_Kerr::EOM(double inter_State_vector[], double J, double Derivatives[], i
 
 }
 
-/***************************************
-|                                      |
-| Wormhole Class Functions Definitions |
-|                                      |
-***************************************/
+bool derived_Kerr_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-tag_Wormhole::tag_Wormhole(double x, double spin) {
+    bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
-    alpha_metric = x;
-    a = spin;
-    M = 1.0;
-    r_throat = M;
+    double r_horizon = MASS * (1 + sqrt(1 - SPIN * SPIN));
 
-    r_ISCO = 2 * M * (sqrt(4. / 9 * (6 * alpha_metric + 1)) * cosh(1. / 3 * acosh((1 + 9 * alpha_metric + 27. / 2 * alpha_metric * alpha_metric) / pow(6 * alpha_metric + 1, 3. / 2))) + 1. / 3);
-    r_ph = M / 2 * (1 + sqrt(1 + 8 * alpha_metric));
+    bool hit_horizon = State_vector[e_r] - r_horizon < 0.05;
+
+
+    return scatter || hit_horizon;
+
+};
+
+/*********************************************************
+|                                                        |
+| Derived Regular Black Hole Class Functions Definitions |
+|                                                        |
+*********************************************************/
+
+double derived_RBH_class::get_ISCO(Orbit_Orientation Orientation) {
+
+    double M = MASS;
+
+    switch (Orientation) {
+
+    case Prograde:
+
+        return sqrt(36 * MASS * MASS - RBH_PARAM * RBH_PARAM);
+
+    case Retrograde:
+
+        return sqrt(36 * MASS * MASS - RBH_PARAM * RBH_PARAM);
+
+    default:
+
+        std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
+
+        return ERROR;
+
+    }
+
 }
 
-double tag_Wormhole::get_metric_parameter() { return alpha_metric; };
-double tag_Wormhole::get_r_throat()         { return r_throat; };
-double tag_Wormhole::get_ISCO()             { return r_ISCO; };
-double tag_Wormhole::get_r_ph()             { return r_ph; };
-double tag_Wormhole::get_spin()             { return a; };
+double derived_RBH_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
-int tag_Wormhole::metric(double metric[4][4], double* N_metric, double* omega, double l, double theta) {
+    double M = MASS;
 
-        double r = sqrt(l * l + r_throat * r_throat);
-        double r2 = r * r;
-        double sin_theta = sin(theta);
+    switch (Orientation) {
 
-        double exponent = -M / r - alpha_metric * M * M / r2;
+    case Prograde:
 
-        *N_metric = exp(exponent);
-        *omega = 2 * a * M * M / r2 / r;
+        return sqrt(9 * MASS * MASS - RBH_PARAM * RBH_PARAM);
 
-        metric[0][0] = -*N_metric * *N_metric + r2 * *omega * *omega * sin_theta * sin_theta;
-        metric[0][3] = -r2 * sin_theta * sin_theta * *omega;
-        metric[1][1] = 1. / (1 - r_throat / r);
-        metric[2][2] = r2;
-        metric[3][3] = r2 * sin_theta * sin_theta;
+    case Retrograde:
 
-        return 0;
+        return sqrt(9 * MASS * MASS - RBH_PARAM * RBH_PARAM);
+
+    default:
+
+        std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
+
+        return ERROR;
+
     }
 
-int tag_Wormhole::metric_first_derivatives(class tag_Wormhole Wormhole_class, double dr_metric[4][4], double* dr_N, double* dr_omega,
-                                        double l, double theta) {
+}
 
-        double metric[4][4], N, omega;
+int derived_RBH_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
 
-        Wormhole_class.metric(metric, &N, &omega, l, theta);
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+    double rho = sqrt(r2 + RBH_PARAM * RBH_PARAM);
 
-        double r = sqrt(l * l + r_throat * r_throat);
-        double r2 = r * r;
-        double sin_theta = sin(theta);
+    metric[0][0] = -(1 - 2 * MASS / rho);
+    metric[0][3] = 0.0;
+    metric[1][1] = -1.0 / metric[0][0];
+    metric[2][2] = rho * rho;
+    metric[3][3] = metric[2][2] * sin_theta * sin_theta;
 
-        *dr_N = N * (1 / r2 + 2 * alpha_metric / (r2 * r));
-        *dr_omega = -3 * omega / r;
+    *N_metric = -metric[0][0];
+    *omega_metric = 0.0;
 
-        dr_metric[0][0] = -2 * N * *dr_N + 2 * r * omega * (omega + r * *dr_omega) * sin_theta * sin_theta;
-        dr_metric[0][3] = -r * (2 * omega + r * *dr_omega) * sin_theta * sin_theta;
-        dr_metric[1][1] = -1. / ((1 - r_throat / r) * (1 - r_throat / r)) * (r_throat / r2);
-        dr_metric[2][2] = 2 * r;
-        dr_metric[3][3] = 2 * r * sin_theta * sin_theta;
+    return OK;
+}
 
-        return 0;
+int derived_RBH_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
+
+    double metric[4][4], N, omega;
+
+    derived_RBH_class::get_metric(metric, &N, &omega, r, theta);
+
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
+    double rho = sqrt(r2 + RBH_PARAM * RBH_PARAM);
+    double rho3 = rho * rho * rho;
+
+    dr_metric[0][0] = -2 * MASS * r / rho3;
+    dr_metric[0][3] = 0.0;
+    dr_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * dr_metric[0][0];
+    dr_metric[2][2] = 2 * r;
+    dr_metric[3][3] = 2 * r * sin_theta * sin_theta;
+
+    *dr_N = -dr_metric[0][0];
+    *dr_omega = 0.0;
+
+    return OK;
+
+}
+
+int derived_RBH_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
+
+    double metric[4][4], N, omega;
+
+    derived_RBH_class::get_metric(metric, &N, &omega, r, theta);
+
+    double dr_metric[4][4], dr_N, dr_omega;
+
+    derived_RBH_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
+
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
+    double rho = sqrt(r2 + RBH_PARAM * RBH_PARAM);
+    double rho3 = rho * rho * rho;
+    double rho5 = rho * rho * rho * rho * rho;
+
+    d2r_metric[0][0] = -2 * MASS / rho3 + 6 * MASS * r2 / (rho5);
+    d2r_metric[0][3] = 0.0;
+    d2r_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * d2r_metric[0][0] - 
+                       2.0 / (metric[0][0] * metric[0][0] * metric[0][0]) * dr_metric[0][0] * dr_metric[0][0];
+    d2r_metric[2][2] = 2.0;
+    d2r_metric[3][3] = 2 * sin_theta * sin_theta;
+
+    *d2r_N = -d2r_metric[0][0];
+    *d2r_omega = 0.0;
+
+    return OK;
+
+}
+
+int derived_RBH_class::get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
+                                                        int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
+
+    *J = -J_data[photon] * sin(theta_obs);
+    *p_theta = p_theta_data[photon];
+
+    double rho = sqrt(r_obs * r_obs + RBH_PARAM * RBH_PARAM);
+    double rad_potential = 1 - (1 - 2 * MASS / rho) * *J * *J / (rho * rho);
+
+    *p_r = sqrt(rad_potential) * metric[1][1];
+
+    return OK;
+}
+
+int derived_RBH_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+
+    double r = inter_State_vector[0 + iteration * e_State_Number];
+    double rho = sqrt(r * r + RBH_PARAM * RBH_PARAM);
+
+    double sin1 = sin(inter_State_vector[1 + iteration * e_State_Number]);
+    double sin2 = sin1 * sin1;
+
+    double cos1 = cos(inter_State_vector[1 + iteration * e_State_Number]);
+    double cos2 = cos1 * cos1;
+
+    Derivatives[e_r + iteration * e_State_Number] = (1 - 2 * MASS / rho) * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_theta + iteration * e_State_Number] = 1.0 / (rho * rho) * inter_State_vector[e_p_theta + iteration * e_State_Number];
+    Derivatives[e_phi + iteration * e_State_Number] = J / (rho * rho * sin2);
+    Derivatives[e_phi_FD + iteration * e_State_Number] = 0.0;
+    Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (rho * rho * sin1 * sin2) * J * J;
+
+    double r_term_1 = -MASS * r / (rho * rho * rho) * (1.0 / ((1 - 2 * MASS / rho) * (1 - 2 * MASS / rho)) + inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number]);
+    double r_term_2 = r / (rho * rho * rho * rho) * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
+
+    Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
+
+    return 0;
+}
+
+bool derived_RBH_class::terminate_integration(double State_vector[], double Derivatives[]) {
+
+    bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
+
+    double r_horizon = sqrt(4 * MASS * MASS - RBH_PARAM * RBH_PARAM);
+
+    bool hit_horizon_RBH = State_vector[e_r] - r_horizon < 0.05;
+
+    return scatter || hit_horizon_RBH;
+
+}
+
+/***********************************************
+|                                              |
+| Derived Wormhole Class Functions Definitions |
+|                                              |
+***********************************************/
+
+double derived_Wormhole_class::get_ISCO(Orbit_Orientation Orientation) {
+
+    double M = MASS;
+
+    if (SPIN < 0.016) {
+
+        return  2 * M * (sqrt(4. / 9 * (6 * WH_REDSHIFT + 1)) * cosh(1. / 3 * acosh((1 + 9 * WH_REDSHIFT + 27. / 2 * WH_REDSHIFT * WH_REDSHIFT) / pow(6 * WH_REDSHIFT + 1, 3. / 2))) + 1. / 3);
+
+    }
+    else {
+
+        switch (Orientation) {
+
+        case Prograde:
+
+            return WH_R_THROAT;
+
+        case Retrograde:
+
+            return WH_R_THROAT;
+
+        default:
+
+            std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
+
+            return ERROR;
+
+        }
+
     }
 
-int tag_Wormhole::metric_second_derivatives(class tag_Wormhole Wormhole_class, double d2r_metric[4][4], double* d2r_N, double* d2r_omega,
-                                          double l, double theta) {
+}
 
-        double metric[4][4], N, omega;
+double derived_Wormhole_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
-        Wormhole_class.metric(metric, &N, &omega, l, theta);
+    double M = MASS;
+    double a = SPIN;
 
-        double dr_metric[4][4], dr_N, dr_omega;
+    switch (Orientation) {
 
-        Wormhole_class.metric_first_derivatives(Wormhole_class, dr_metric, &dr_N, &dr_omega, l, theta);
+    case Prograde:
 
-        double r = sqrt(l * l + r_throat * r_throat);
-        double r2 = r * r;
-        double sin_theta = sin(theta);
+        return  M / 2 * (1 + sqrt(1 + 8 * WH_REDSHIFT));
 
-        *d2r_N = dr_N * (1 / r2 + 2 * alpha_metric / (r2 * r)) - N * (2. / (r2 * r) + double(3) * double(2) * alpha_metric / (r2 * r2));
-        *d2r_omega = -3 * dr_omega / r + 3 * omega / r2;
+    case Retrograde:
 
-        d2r_metric[0][0] = -2 * dr_N * dr_N - 2 * N * *d2r_N + 2 * ((omega + r * dr_omega) * (omega + r * dr_omega) + r * omega * (dr_omega + dr_omega + r * *d2r_omega)) * sin_theta * sin_theta;
-        d2r_metric[0][3] = -(2 * omega + r * dr_omega + r * (3 * dr_omega + r * *d2r_omega)) * sin_theta * sin_theta;
-        d2r_metric[1][1] = 2 / ((1 - r_throat / r) * (1 - r_throat / r)) * ((r_throat / r2) * (r_throat / r2) / (1 - r_throat / r) + r_throat / (r2 * r));
-        d2r_metric[2][2] = 2.0;
-        d2r_metric[3][3] = 2 * sin_theta * sin_theta;
+        return M / 2 * (1 + sqrt(1 + 8 * WH_REDSHIFT));;
 
-        return 0;
+    default:
+
+        std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
+
+        return ERROR;
+
     }
 
-int tag_Wormhole::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                              int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
+}
+
+int derived_Wormhole_class::get_metric(double metric[4][4], double* N_metric, double* omega, double l, double theta) {
+
+    double r = sqrt(l * l + WH_R_THROAT * WH_R_THROAT);
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    double exponent = -MASS / r - WH_REDSHIFT * MASS * MASS / r2;
+
+    *N_metric = exp(exponent);
+    *omega = 2 * SPIN * MASS * MASS / r2 / r;
+
+    metric[0][0] = -*N_metric * *N_metric + r2 * *omega * *omega * sin_theta * sin_theta;
+    metric[0][3] = -r2 * sin_theta * sin_theta * *omega;
+    metric[1][1] = 1. / (1 - WH_R_THROAT / r);
+    metric[2][2] = r2;
+    metric[3][3] = r2 * sin_theta * sin_theta;
+
+    return 0;
+}
+
+int derived_Wormhole_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double l, double theta) {
+
+    double metric[4][4], N, omega;
+
+    derived_Wormhole_class::get_metric(metric, &N, &omega, l, theta);
+
+    double r = sqrt(l * l + WH_R_THROAT * WH_R_THROAT);
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    *dr_N = N * (1 / r2 + 2 * WH_REDSHIFT / (r2 * r));
+    *dr_omega = -3 * omega / r;
+
+    dr_metric[0][0] = -2 * N * *dr_N + 2 * r * omega * (omega + r * *dr_omega) * sin_theta * sin_theta;
+    dr_metric[0][3] = -r * (2 * omega + r * *dr_omega) * sin_theta * sin_theta;
+    dr_metric[1][1] = -1. / ((1 - WH_R_THROAT / r) * (1 - WH_R_THROAT / r)) * (WH_R_THROAT / r2);
+    dr_metric[2][2] = 2 * r;
+    dr_metric[3][3] = 2 * r * sin_theta * sin_theta;
+
+    return 0;
+}
+
+int derived_Wormhole_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double l, double theta) {
+
+    double metric[4][4], N, omega;
+
+    derived_Wormhole_class::get_metric(metric, &N, &omega, l, theta);
+
+    double dr_metric[4][4], dr_N, dr_omega;
+
+    derived_Wormhole_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, l, theta);
+
+    double r = sqrt(l * l + WH_R_THROAT * WH_R_THROAT);
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    *d2r_N = dr_N * (1 / r2 + 2 * WH_REDSHIFT / (r2 * r)) - N * (2. / (r2 * r) + 6 * WH_REDSHIFT / (r2 * r2));
+    *d2r_omega = -3 * dr_omega / r + 3 * omega / r2;
+
+    d2r_metric[0][0] = -2 * dr_N * dr_N - 2 * N * *d2r_N + 2 * ((omega + r * dr_omega) * (omega + r * dr_omega) + r * omega * (dr_omega + dr_omega + r * *d2r_omega)) * sin_theta * sin_theta;
+    d2r_metric[0][3] = -(2 * omega + r * dr_omega + r * (3 * dr_omega + r * *d2r_omega)) * sin_theta * sin_theta;
+    d2r_metric[1][1] = 2 / ((1 - WH_R_THROAT / r) * (1 - WH_R_THROAT / r)) * ((WH_R_THROAT / r2) * (WH_R_THROAT / r2) / (1 - WH_R_THROAT / r) + WH_R_THROAT / (r2 * r));
+    d2r_metric[2][2] = 2.0;
+    d2r_metric[3][3] = 2 * sin_theta * sin_theta;
+
+    return 0;
+}
+
+int derived_Wormhole_class::get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
+                                                            int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
 
     *J = -J_data[photon] * sin(theta_obs);
     *p_theta = p_theta_data[photon];
@@ -318,223 +597,109 @@ int tag_Wormhole::intitial_conditions_from_file(double* J, double J_data[], doub
     return 0;
 }
 
-int tag_Wormhole::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int derived_Wormhole_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
-     double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * e_State_Number] * inter_State_vector[0 + iteration * e_State_Number] + r_throat * r_throat);
-     double d_ell_r = inter_State_vector[0 + iteration * e_State_Number] / sqrt_r2;
+    double r_throat = WH_R_THROAT;
 
-     double omega = 2 * a / (sqrt_r2 * sqrt_r2 * sqrt_r2);
-     double d_ell_omega = -3 * omega / sqrt_r2 * d_ell_r;
+    double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * e_State_Number] * inter_State_vector[0 + iteration * e_State_Number] + r_throat * r_throat);
+    double d_ell_r = inter_State_vector[0 + iteration * e_State_Number] / sqrt_r2;
 
-    double exponent = -1 / sqrt_r2 - alpha_metric / (sqrt_r2 * sqrt_r2);
+    double omega = 2 * SPIN / (sqrt_r2 * sqrt_r2 * sqrt_r2);
+    double d_ell_omega = -3 * omega / sqrt_r2 * d_ell_r;
+
+    double exponent = -1 / sqrt_r2 - WH_REDSHIFT / (sqrt_r2 * sqrt_r2);
     double N = exp(exponent);
-    double d_ell_N = N * (1 / (sqrt_r2 * sqrt_r2) + 2 * alpha_metric / (sqrt_r2 * sqrt_r2 * sqrt_r2)) * d_ell_r;
+    double d_ell_N = N * (1 / (sqrt_r2 * sqrt_r2) + 2 * WH_REDSHIFT / (sqrt_r2 * sqrt_r2 * sqrt_r2)) * d_ell_r;
 
     double N2 = N * N;
 
-    double sin1 = sin(inter_State_vector[1 + iteration * e_State_Number]);
+    double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
     double sin2 = sin1 * sin1;
 
-    Derivatives[e_r + iteration * e_State_Number] = 1.0 / (1 + r_throat / sqrt_r2) * inter_State_vector[5 + iteration * e_State_Number];
-    Derivatives[e_theta + iteration * e_State_Number] = 1.0 / (sqrt_r2 * sqrt_r2) * inter_State_vector[4 + iteration * e_State_Number];
-    Derivatives[e_phi + iteration * e_State_Number] = J / (sqrt_r2 * sqrt_r2 * sin2);
-    Derivatives[e_phi_FD + iteration * e_State_Number] = omega * (1 - omega * J) / N2;
+    Derivatives[e_r       + iteration * e_State_Number] = 1.0 / (1 + r_throat / sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_theta   + iteration * e_State_Number] = 1.0 / (sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_theta + iteration * e_State_Number];
+    Derivatives[e_phi     + iteration * e_State_Number] = J / (sqrt_r2 * sqrt_r2 * sin2);
+    Derivatives[e_phi_FD  + iteration * e_State_Number] = omega * (1 - omega * J) / N2;
     Derivatives[e_p_theta + iteration * e_State_Number] = (cos(inter_State_vector[1 + iteration * e_State_Number]) / sin1) / (sqrt_r2 * sqrt_r2) * J * J / sin2;
 
-    double term_1 = -1.0 / ((1 + r_throat / sqrt_r2) * (1 + r_throat / sqrt_r2)) * r_throat * inter_State_vector[0 + iteration * e_State_Number] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] / 2;
+    double term_1 = -1.0 / ((1 + r_throat / sqrt_r2) * (1 + r_throat / sqrt_r2)) * r_throat * inter_State_vector[e_r + iteration * e_State_Number] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] / 2;
     double term_2 = 1.0 / (sqrt_r2 * sqrt_r2 * sqrt_r2) * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2) * d_ell_r;
     double term_3 = -(1.0 / (N2 * N) * d_ell_N * ((1 - omega * J) * (1 - omega * J)) - 1.0 / N2 * (-d_ell_omega * (1 - omega * J) * J));
 
     Derivatives[e_p_r + iteration * e_State_Number] = term_1 + term_2 + term_3;
 
-    return 0;
-}
-
-/*************************************************
-|                                                |
-| Regular Black Hole Class Functions Definitions |
-|                                                |
-*************************************************/
-
-tag_Regular_Black_Hole::tag_Regular_Black_Hole(double x) {
-
-    metric_parameter = x;
-    M = 1.0;
-
-    r_ph = sqrt(pow(3 * M, 2) - pow(metric_parameter, 2));
-    r_ISCO = sqrt(pow(6 * M, 2) - pow(metric_parameter, 2));
-    r_horizon = sqrt(pow(2 * M, 2) - pow(metric_parameter, 2));
-
-}
-
-double tag_Regular_Black_Hole::get_metric_parameter() { return metric_parameter; };
-double tag_Regular_Black_Hole::get_r_horizon()        { return r_horizon; };
-double tag_Regular_Black_Hole::get_ISCO()             { return r_ISCO; };
-double tag_Regular_Black_Hole::get_r_ph()             { return r_ph; };
-
-int tag_Regular_Black_Hole::metric(double metric[4][4], double* N_metric, double* omega_metric,
-    double r, double theta) {
-
-    double r2 = r * r;
-    double sin_theta = sin(theta);
-    double rho = sqrt(r2 + metric_parameter * metric_parameter);
-
-    metric[0][0] = -(1 - 2 * M / rho);
-    metric[0][3] = 0.0;
-    metric[1][1] = -1.0 / metric[0][0];
-    metric[2][2] = rho * rho;
-    metric[3][3] = metric[2][2] * sin_theta * sin_theta;
-
-
-    *N_metric = -metric[0][0];
-    *omega_metric = 0.0;
-
     return OK;
 }
 
-int tag_Regular_Black_Hole::metric_first_derivatives(class tag_Regular_Black_Hole RBH_class, double dr_metric[4][4], double* dr_N,
-                                    double* dr_omega, double r, double theta) {
+bool derived_Wormhole_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-        double metric[4][4], N, omega;
-
-        RBH_class.metric(metric, &N, &omega, r, theta);
-
-        double r2 = r * r;
-        double sin_theta = sin(theta);
-        double cos_theta = cos(theta);
-        double rho = sqrt(r2 + metric_parameter * metric_parameter);
-        double rho3 = rho * rho * rho;
-
-        dr_metric[0][0] = -2 * M * r / rho3;
-        dr_metric[0][3] = 0.0;
-        dr_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * dr_metric[0][0];
-        dr_metric[2][2] = 2 * r;
-        dr_metric[3][3] = 2 * r * sin_theta * sin_theta;
-
-        *dr_N = -dr_metric[0][0];
-        *dr_omega = 0.0;
-
-        return 0;
-
-}
-
-int tag_Regular_Black_Hole::metric_second_derivatives(class tag_Regular_Black_Hole RBH_class, double d2r_metric[4][4], double* d2r_N,
-        double* d2r_omega, double r, double theta) {
-
-        double metric[4][4], N, omega;
-
-        RBH_class.metric(metric, &N, &omega, r, theta);
-
-        double dr_metric[4][4], dr_N, dr_omega;
-
-        RBH_class.metric_first_derivatives(RBH_class, dr_metric, &dr_N, &dr_omega, r, theta);
-
-        double r2 = r * r;
-        double sin_theta = sin(theta);
-        double cos_theta = cos(theta);
-        double rho = sqrt(r2 + metric_parameter * metric_parameter);
-        double rho3 = rho * rho * rho;
-        double rho5 = rho * rho * rho * rho * rho;
-
-        d2r_metric[0][0] = -2 * M / rho3 + 6 * M * r2 / (rho5);
-        d2r_metric[0][3] = 0.0;
-        d2r_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * d2r_metric[0][0] - 2.0 / (metric[0][0] * metric[0][0] * metric[0][0]) * dr_metric[0][0] * dr_metric[0][0];
-        d2r_metric[2][2] = 2.0;
-        d2r_metric[3][3] = 2 * sin_theta * sin_theta;
-
-        *d2r_N = -d2r_metric[0][0];
-        *d2r_omega = 0.0;
-
-        return 0;
-
-}
-
-int tag_Regular_Black_Hole::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-        int photon, double r_obs, double theta_obs, double metric[4][4]) {
-
-        *J = -J_data[photon] * sin(theta_obs);
-        *p_theta = p_theta_data[photon];
-
-        double rho = sqrt(r_obs * r_obs + metric_parameter * metric_parameter);
-        double rad_potential = 1 - (1 - 2 * M / rho) * *J * *J / (rho * rho);
-
-        *p_r = sqrt(rad_potential) * metric[1][1];
-
-        return 0;
-}
-
-int tag_Regular_Black_Hole::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
-
-    double r = inter_State_vector[0 + iteration * e_State_Number];
-    double rho = sqrt(r * r + metric_parameter * metric_parameter);
-
-    double sin1 = sin(inter_State_vector[1 + iteration * e_State_Number]);
-    double sin2 = sin1 * sin1;
-
-    double cos1 = cos(inter_State_vector[1 + iteration * e_State_Number]);
-    double cos2 = cos1 * cos1;
-
-    Derivatives[e_r + iteration * e_State_Number] = (1 - 2 * M / rho) * inter_State_vector[e_p_r + iteration * e_State_Number];
-    Derivatives[e_theta + iteration * e_State_Number] = 1.0 / (rho * rho) * inter_State_vector[e_p_theta + iteration * e_State_Number];
-    Derivatives[e_phi + iteration * e_State_Number] = J / (rho * rho * sin2);
-    Derivatives[e_phi_FD + iteration * e_State_Number] = 0.0;
-    Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (rho * rho * sin1 * sin2) * J * J;
-
-    double r_term_1 = -M * r / (rho * rho * rho) * (1.0 / ((1 - 2 * M / rho) * (1 - 2 * M / rho)) + inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number]);
-    double r_term_2 = r / (rho * rho * rho * rho) * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
-
-    Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
-
-    return 0;
-}
+    bool scatter = scatter = State_vector[e_r] > sqrt(100 * 100 + WH_R_THROAT * WH_R_THROAT) && Derivatives[0] < 0;
+    bool scatter_other_side = State_vector[e_r] < -sqrt(100 * 100 + WH_R_THROAT * WH_R_THROAT);
 
 
-/**********************************************************************
-|                                                                     |
-| Janis-Newman-Winicour Naked Singularity Class Functions Definitions |
-|                                                                     |
-**********************************************************************/
+    return scatter || scatter_other_side;
 
-tag_JNW_Naked_Singularity::tag_JNW_Naked_Singularity(double gamma, double b) {
+};
 
-    M = 1.0;
-    GAMMA = gamma;
-    r_SINGULARITY = b;
+/******************************************************************************
+|                                                                             |
+| Derived Janis-Newman-Winicour Naked Singularity Class Functions Definitions |
+|                                                                             |
+******************************************************************************/
 
-    r_ISCO_inner = b;
-    r_ISCO_outer = b;
+double derived_JNW_class::get_ISCO(Orbit_Orientation Orientation) {
 
-    if (gamma > 1.0 / sqrt(5)) {
+    if (JNW_GAMMA > 1.0 / sqrt(5)) {
 
-        r_ISCO_outer = 1.0 / gamma * (3.0 * gamma + 1.0 + sqrt(5 * gamma * gamma - 1));
-        r_ISCO_inner = 1.0 / gamma * (3.0 * gamma + 1.0 - sqrt(5 * gamma * gamma - 1));
+        switch (Orientation) {
+
+        case Prograde:
+
+            return 1.0 / JNW_GAMMA * (3.0 * JNW_GAMMA + 1.0 + sqrt(5 * JNW_GAMMA * JNW_GAMMA - 1));
+
+        case Retrograde:
+
+            return 1.0 / JNW_GAMMA * (3.0 * JNW_GAMMA + 1.0 - sqrt(5 * JNW_GAMMA * JNW_GAMMA - 1));
+
+        default:
+
+            std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
+
+            return ERROR;
+
+        }
+    }
+    else {
+
+        return JNW_R_SINGULARITY;
 
     }
 
-    r_ph = 0;
+ };
 
-    if (gamma > 0.5) { // Weak naked singularity
+double derived_JNW_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
-        r_ph = (2 * gamma + 1) * b / 2;
+    if (JNW_GAMMA > 0.5) { // Weak naked singularity
+
+        return (2 * JNW_GAMMA + 1) * JNW_R_SINGULARITY / 2;
+
+    }
+    else {
+
+        return JNW_R_SINGULARITY;
 
     }
 
 };
 
-double tag_JNW_Naked_Singularity::get_r_ph()          { return r_ph; };
-double tag_JNW_Naked_Singularity::get_gamma()         { return GAMMA; };
-double tag_JNW_Naked_Singularity::get_r_ISCO_outer()  { return r_ISCO_outer; };
-double tag_JNW_Naked_Singularity::get_r_ISCO_inner()  { return r_ISCO_inner; };
-double tag_JNW_Naked_Singularity::get_r_singularity() { return r_SINGULARITY; };
-
-int tag_JNW_Naked_Singularity::metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int derived_JNW_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    metric[0][0] = -pow(1 - r_SINGULARITY / r, GAMMA);
+    metric[0][0] = -pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA);
     metric[1][1] = -1.0 / metric[0][0];
-    metric[2][2] = pow(1 - r_SINGULARITY / r, 1 - GAMMA) * r2;
+    metric[2][2] = pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) * r2;
     metric[3][3] = metric[2][2] * sin_theta * sin_theta;
     metric[0][3] = 0;
     metric[3][0] = metric[0][3];
@@ -546,20 +711,18 @@ int tag_JNW_Naked_Singularity::metric(double metric[4][4], double* N_metric, dou
 
 }
 
-
-int tag_JNW_Naked_Singularity::metric_first_derivatives(class tag_JNW_Naked_Singularity JNW_class, double dr_metric[4][4],
-    double* dr_N, double* dr_omega, double r, double theta) {
+int derived_JNW_class::get_dr_metric( double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
 
     double metric[4][4], N, omega;
 
-    JNW_class.metric(metric, &N, &omega, r, theta);
+    derived_JNW_class::get_metric(metric, &N, &omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    dr_metric[0][0] = -GAMMA * pow(1 - r_SINGULARITY / r, GAMMA - 1) * r_SINGULARITY / r2;
+    dr_metric[0][0] = -JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1) * JNW_R_SINGULARITY / r2;
     dr_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * dr_metric[0][0];;
-    dr_metric[2][2] = 2 * r * pow(1 - r_SINGULARITY / r, 1 - GAMMA) + (1 - GAMMA) * pow(1 - r_SINGULARITY / r, -GAMMA) * r_SINGULARITY;
+    dr_metric[2][2] = 2 * r * pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) + (1 - JNW_GAMMA) * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA) * JNW_R_SINGULARITY;
     dr_metric[3][3] = dr_metric[2][2] * sin_theta * sin_theta;
     dr_metric[0][3] = 0;
     dr_metric[3][0] = dr_metric[0][3];
@@ -567,29 +730,35 @@ int tag_JNW_Naked_Singularity::metric_first_derivatives(class tag_JNW_Naked_Sing
     *dr_N = -dr_metric[0][0];
     *dr_omega = 0.0;
 
-    return 0;
+    return OK;
 
 };
 
-int tag_JNW_Naked_Singularity::metric_second_derivatives(class tag_JNW_Naked_Singularity JNW_class, double d2r_metric[4][4],
-    double* d2r_N, double* d2r_omega, double r, double theta) {
+int derived_JNW_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
 
     double metric[4][4], N, omega;
 
-    JNW_class.metric(metric, &N, &omega, r, theta);
+    derived_JNW_class::get_metric(metric, &N, &omega, r, theta);
 
     double dr_metric[4][4], dr_N, dr_omega;
 
-    JNW_class.metric_first_derivatives(JNW_class, dr_metric, &dr_N, &dr_omega, r, theta);
+    derived_JNW_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    d2r_metric[0][0] = -GAMMA * (GAMMA - 1) * pow(1 - r_SINGULARITY / r, GAMMA - 2) * r_SINGULARITY*r_SINGULARITY / r2/r2 + 2 * GAMMA * pow(1 - r_SINGULARITY / r, GAMMA - 1) * r_SINGULARITY / r2 / r;
+    d2r_metric[0][0] = -JNW_GAMMA * (JNW_GAMMA - 1) * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 2) * JNW_R_SINGULARITY * JNW_R_SINGULARITY / r2 / r2
+                     + 2 * JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1) * JNW_R_SINGULARITY / r2 / r;
+
     d2r_metric[0][3] = 0.0;
-    d2r_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * d2r_metric[0][0] - 2.0 / (metric[0][0] * metric[0][0] * metric[0][0]) * dr_metric[0][0] * dr_metric[0][0];
-    d2r_metric[2][2] = 2 * pow(1 - r_SINGULARITY / r, 1 - GAMMA) + 2 * (1 - GAMMA) * pow(1 - r_SINGULARITY / r, -GAMMA) * r_SINGULARITY / r - (1 - GAMMA) * GAMMA * pow(1 - r_SINGULARITY / r, -GAMMA - 1) * r_SINGULARITY * r_SINGULARITY / r2;
+
+    d2r_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * d2r_metric[0][0] 
+                     - 2.0 / (metric[0][0] * metric[0][0] * metric[0][0]) * dr_metric[0][0] * dr_metric[0][0];
+
+    d2r_metric[2][2] = 2 * pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) + 2 * (1 - JNW_GAMMA) * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA) * JNW_R_SINGULARITY / r
+                     - (1 - JNW_GAMMA) * JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA - 1) * JNW_R_SINGULARITY * JNW_R_SINGULARITY / r2;
+
     d2r_metric[3][3] = d2r_metric[2][2] * sin_theta * sin_theta;
 
     *d2r_N = -d2r_metric[0][0];
@@ -599,13 +768,13 @@ int tag_JNW_Naked_Singularity::metric_second_derivatives(class tag_JNW_Naked_Sin
 
 }
 
-int tag_JNW_Naked_Singularity::intitial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-    int photon, double r_obs, double theta_obs, double metric[4][4]) {
+int derived_JNW_class::get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
+                                                        int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
 
     *J = -J_data[photon] * sin(theta_obs);
     *p_theta = p_theta_data[photon];
 
-    double rad_potential = 1 - pow(1 - r_SINGULARITY / r_obs, 2 * GAMMA - 1) * *J * *J / (r_obs * r_obs);
+    double rad_potential = 1 - pow(1 - JNW_R_SINGULARITY / r_obs, 2 * JNW_GAMMA - 1) * *J * *J / (r_obs * r_obs);
 
     *p_r = sqrt(rad_potential) * metric[1][1];
 
@@ -613,7 +782,7 @@ int tag_JNW_Naked_Singularity::intitial_conditions_from_file(double* J, double J
 
 }
 
-int tag_JNW_Naked_Singularity::EOM(double inter_State_vector[], double J, double Derivatives[], int iteration)
+int derived_JNW_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration)
 {
 
     double r = inter_State_vector[0 + iteration * e_State_Number];
@@ -624,20 +793,32 @@ int tag_JNW_Naked_Singularity::EOM(double inter_State_vector[], double J, double
     double cos1 = cos(inter_State_vector[1 + iteration * e_State_Number]);
     double cos2 = cos1 * cos1;
 
-    double pow_gamma = pow(1 - r_SINGULARITY / r, GAMMA);
-    double pow_gamma_minus_1 = pow(1 - r_SINGULARITY / r, GAMMA - 1);
+    double pow_gamma = pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA);
+    double pow_gamma_minus_1 = pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1);
 
-    Derivatives[e_r       + iteration * e_State_Number] = pow_gamma * inter_State_vector[e_p_r + iteration * e_State_Number];
-    Derivatives[e_theta   + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
-    Derivatives[e_phi     + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r * sin2) * J;
-    Derivatives[e_phi_FD  + iteration * e_State_Number] = 0.0;
+    Derivatives[e_r + iteration * e_State_Number] = pow_gamma * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_theta + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
+    Derivatives[e_phi + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r * sin2) * J;
+    Derivatives[e_phi_FD + iteration * e_State_Number] = 0.0;
     Derivatives[e_p_theta + iteration * e_State_Number] = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
 
-    double r_term_1 = -GAMMA * r_SINGULARITY / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma + inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number]);
-    double r_term_2 = 1.0 / r / r / r * pow_gamma_minus_1 * (1 - r_SINGULARITY / 2 / r * (GAMMA - 1) / (1 - r_SINGULARITY / r)) * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
+    double r_term_1 = -JNW_GAMMA * JNW_R_SINGULARITY / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma
+                    + inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number]);
+    double r_term_2 = 1.0 / r / r / r * pow_gamma_minus_1 * (1 - JNW_R_SINGULARITY / 2 / r * (JNW_GAMMA - 1) / (1 - JNW_R_SINGULARITY / r))
+                    * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
 
     Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
 
     return OK;
 
 }
+
+bool derived_JNW_class::terminate_integration(double State_vector[], double Derivatives[]) {
+
+    bool hit_singularity = State_vector[e_r] - JNW_R_SINGULARITY < 0.05;
+
+    bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
+
+    return scatter || hit_singularity;
+
+};
