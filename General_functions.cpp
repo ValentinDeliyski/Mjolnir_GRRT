@@ -272,13 +272,13 @@ int Lorentz_boost_matrix(double Boost_matrix[4][4], double U_source[4], double m
 int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J,
                            Optically_Thin_Toroidal_Model OTT_Model, c_Observer Observer_class, std::vector<c_Spacetime_Base*> Spacetimes) {
 
-    double r_throat = WH_R_THROAT, r;
+    double r;
 
     switch (e_metric) {
 
         case Wormhole:
 
-            r = sqrt(State_Vector[e_r] * State_Vector[e_r] + r_throat * r_throat);
+            r = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
 
             break;
 
@@ -289,7 +289,7 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
             break;
     }
 
-    double theta = State_Vector[e_theta];
+
     
     double electron_density = OTT_Model.get_disk_density(State_Vector);
 
@@ -311,7 +311,7 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
 
     double metric[4][4]{}, N_metric{}, Omega_metric{};
 
-    Spacetimes[e_metric]->get_metric(metric, &N_metric, &Omega_metric, r, theta);
+    Spacetimes[e_metric]->get_metric(metric, &N_metric, &Omega_metric, r, State_Vector[e_theta]);
 
     double U_source_ZAMO[4]{};
     Contravariant_coord_to_ZAMO(metric, U_source_coord, U_source_ZAMO);
@@ -388,7 +388,7 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
 
     if (f_s != 0) {
 
-        X = OBS_FREQUENCY_CGS / f_s / redshift;
+        X = OBS_FREQUENCY_CGS / f_s;
 
     }
 
@@ -404,7 +404,7 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
     */
 
     double absorbtion_coeff = C_LIGHT_CGS * C_LIGHT_CGS / 2 / BOLTZMANN_CONST_CGS / OBS_FREQUENCY_CGS / OBS_FREQUENCY_CGS;
-    double absorbtion = absorbtion_coeff * redshift * redshift * emission / T_electron_cgs;
+    double absorbtion = absorbtion_coeff * emission / T_electron_cgs;
 
     /*
 
@@ -412,8 +412,8 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
 
     */
 
-    Derivatives[e_Intensity     + iteration * e_State_Number] = -redshift * redshift * emission * exp(-State_Vector[e_Optical_Depth]) * OBS_FREQUENCY_CGS;
-    Derivatives[e_Optical_Depth + iteration * e_State_Number] = -absorbtion / redshift * OBS_FREQUENCY_CGS;
+    Derivatives[e_Intensity     + iteration * e_State_Number] = -redshift * redshift * emission * exp(-State_Vector[e_Optical_Depth]) * OBS_FREQUENCY_CGS * 100;
+    Derivatives[e_Optical_Depth + iteration * e_State_Number] = -absorbtion / redshift * OBS_FREQUENCY_CGS * 100;
 
     return  OK;
 

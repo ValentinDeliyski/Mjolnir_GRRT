@@ -7,6 +7,7 @@
 #include "Disk_Models.h"
 #include "IO_files.h"
 #include "General_functions.h"
+#include "Lensing.h"
 
 #include <iostream>
 
@@ -16,20 +17,32 @@ Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* ste
                         c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes);
 
 Return_Value_enums Lens(double initial_conditions[], bool lens_from_file, std::ofstream data[], std::ofstream momentum_data[], c_Observer Observer_class,
-                        Disk_Models e_Disk_Model, Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes) {
+                        Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double r_obs     = initial_conditions[e_r];
     double theta_obs = initial_conditions[e_theta];
     double phi_obs   = initial_conditions[e_phi];
-    double J         = initial_conditions[3];
     double p_theta_0 = initial_conditions[e_p_theta];
     double p_r_0     = initial_conditions[e_p_r];
 
-    // Initialize arrays that store the Flux, Intensity, Redshift from the disk and the image coordinates for each light ray
-    double Flux_Novikov_Thorne{}, Intensity_Toroidal_Disk{}, redshift{}, Image_coordiantes[3]{};
+    // Initialize the struct that holds the ray results
+    results Ray_results{};
+
+    for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
+
+        Ray_results.Three_Momentum[e_phi][Image_order] = initial_conditions[3];
+
+    }
+
+    double& J = Ray_results.Three_Momentum[e_phi][direct]; // For brevity's sake
+
+    Ray_results.Parameters[Kerr] = SPIN;
+    Ray_results.Parameters[Wormhole] = WH_REDSHIFT;
+    Ray_results.Parameters[Reg_Black_Hole] = RBH_PARAM;
+    Ray_results.Parameters[Naked_Singularity] = JNW_GAMMA;
 
     // Initialize initial State Vector
-    double State_vector[e_State_Number] = { r_obs, theta_obs, phi_obs, 0 , p_theta_0, p_r_0, Intensity_Toroidal_Disk, 0 };
+    double State_vector[e_State_Number] = { r_obs, theta_obs, phi_obs, 0., p_theta_0, p_r_0, 0., 0. };
 
     // Initialize a vector that stores the old state and the test state, used for estimating errors
     double State_vector_test[e_State_Number]{}, Old_state[e_State_Number]{};
@@ -50,59 +63,20 @@ Return_Value_enums Lens(double initial_conditions[], bool lens_from_file, std::o
 
     // Initialize two 3D position vectors, used for computing the photon tangent at the observer
     double r2[3]{}, r1[3]{
-                          State_vector[e_r] * cos(State_vector[e_phi] + State_vector[e_phi_FD]) * sin(State_vector[e_theta]),
-                          State_vector[e_r] * sin(State_vector[e_phi] + State_vector[e_phi_FD]) * sin(State_vector[e_theta]),
+                          State_vector[e_r] * cos(State_vector[e_phi]) * sin(State_vector[e_theta]),
+                          State_vector[e_r] * sin(State_vector[e_phi]) * sin(State_vector[e_theta]),
                           State_vector[e_r] * cos(State_vector[e_theta])
     };
 
     // Initialize counters for the Number Of Integration Steps, the Image Order and the Number Of Equator Crossings
-    int integration_count{}, Image_Order_Novikov_Thorne{}, Image_Order_Toroidal{}, n_equator_crossings{};
+    int integration_count{}, n_equator_crossings{}, Image_Order[DISK_MODEL_NUM]{};
 
-    // Initialize the Initial Step Size and Affine Parameter
+    // Initialize the Initial Step Size
     double step = INIT_STEPSIZE;
-    double affine_parameter{};
 
     // Initialize the logical flags and error enums
     bool continue_integration = false;
-    bool found_disc[ORDER_NUM]{};
-
     Return_Value_enums RK45_Status = OK;
-
-    double parameter_to_write;
-
-    switch (e_metric) {
-
-    case Kerr:
-
-        parameter_to_write = SPIN;
-
-        break;
-
-    case Reg_Black_Hole:
-
-        parameter_to_write = RBH_PARAM;
-
-        break;
-
-    case Wormhole:
-
-        parameter_to_write = WH_REDSHIFT;
-
-        break;
-
-    case Naked_Singularity:
-
-        parameter_to_write = JNW_GAMMA;
-
-        break;
-
-    default:
-
-        std::cout << "Wrong Metric!" << '\n';
-
-        break;
-
-    }
 
     while (RK45_Status == OK && integration_count < MAX_INTEGRATION_COUNT) {
 
@@ -114,19 +88,13 @@ Return_Value_enums Lens(double initial_conditions[], bool lens_from_file, std::o
             // Initialize the light ray
             if (integration_count == 1) {
 
-                for (int index = 0; index <= ORDER_NUM - 1; index++) {
-
-                    found_disc[index] = false;
-
-                }
-
-                redshift = 0;
-                Flux_Novikov_Thorne = 0;
+                Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]] = 0;
+                Ray_results.Flux_NT[Image_Order[Novikov_Thorne]]     = 0;
 
                 n_equator_crossings = 0;
 
-                Image_Order_Novikov_Thorne = direct;
-                Image_Order_Toroidal = direct;
+                Image_Order[Novikov_Thorne]          = direct;
+                Image_Order[Optically_Thin_Toroidal] = direct;
 
                 r2[x] = State_vector[e_r] * cos(State_vector[e_phi]) * sin(State_vector[e_theta]);
                 r2[y] = State_vector[e_r] * sin(State_vector[e_phi]) * sin(State_vector[e_theta]);
@@ -138,23 +106,23 @@ Return_Value_enums Lens(double initial_conditions[], bool lens_from_file, std::o
                                                      r1[y] + photon_LOS_parameter * photon_tangent[y],
                                                      r1[z] + photon_LOS_parameter * photon_tangent[z] };
 
+                double Image_coordiantes[3]{}; // Temporary array to store the rotated obs_plane_intersection vector
                 Rorate_to_obs_plane(theta_obs, phi_obs, obs_plane_intersection, Image_coordiantes);
+
+                Ray_results.Image_Coords[0] = -Image_coordiantes[0];
+                Ray_results.Image_Coords[1] =  Image_coordiantes[2];
 
             }
 
-            if (Disk_event(Novikov_Thorne, State_vector, Old_state, NT_Model, OTT_Model) == Inside_Disk
-                && e_Disk_Model == Novikov_Thorne) {
+            // Novikov-Thorne Model Evaluation
+            if (Disk_event(Novikov_Thorne, State_vector, Old_state, NT_Model, OTT_Model) == Inside_Disk ) {
 
-                Image_Order_Novikov_Thorne = n_equator_crossings;
+                Image_Order[Novikov_Thorne] = n_equator_crossings;
 
-                redshift = NT_Model.Redshift(J, State_vector, r_obs, theta_obs, Spacetimes);
-
-                Flux_Novikov_Thorne = NT_Model.get_flux(State_vector[e_r], Spacetimes);
-
-                write_to_file(Image_coordiantes, redshift, Flux_Novikov_Thorne, State_vector, parameter_to_write, J,
-                              Image_Order_Novikov_Thorne, lens_from_file, data, momentum_data);
-
-                found_disc[Image_Order_Novikov_Thorne] = true;
+                Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]]          = NT_Model.Redshift(J, State_vector, r_obs, theta_obs, Spacetimes);
+                Ray_results.Flux_NT[Image_Order[Novikov_Thorne]]              = NT_Model.get_flux(State_vector[e_r], Spacetimes);
+                Ray_results.Source_Coords[e_r][Image_Order[Novikov_Thorne]]   = State_vector[e_r];
+                Ray_results.Source_Coords[e_phi][Image_Order[Novikov_Thorne]] = State_vector[e_phi];
 
             }
 
@@ -177,40 +145,12 @@ Return_Value_enums Lens(double initial_conditions[], bool lens_from_file, std::o
 
             if (Spacetimes[e_metric]->terminate_integration(State_vector, Derivatives)) {
 
-                switch (e_Disk_Model) {
+                Ray_results.Intensity[direct]     = State_vector[e_Intensity];
+                Ray_results.Optical_Depth         = State_vector[e_Optical_Depth];
 
-                case Novikov_Thorne:
+                write_to_file(Ray_results, data, momentum_data);
 
-                    for (int Image_Order_Scan = 0; Image_Order_Scan <= 3; Image_Order_Scan += 1) {
-
-                        if (found_disc[Image_Order_Scan] == false && lens_from_file == false) {
-
-                            write_to_file(Image_coordiantes, 0., 0., State_vector, parameter_to_write, J,
-                                          Image_Order_Scan, lens_from_file, data, momentum_data);
-
-                        }
-                    }
-
-                    integration_count = 0;
-
-                    break;
-
-                case Optically_Thin_Toroidal:
-
-                    write_to_file(Image_coordiantes, 0., State_vector[e_Intensity], State_vector, parameter_to_write, J,
-                                  direct, lens_from_file, data, momentum_data);
-
-                    integration_count = 0;
-
-                    break;
-
-                default:
-
-                    std::cout << "Wrong Disk Model!" << '\n';
-                    
-                    return ERROR;
-
-                }
+                integration_count = 0;
 
                 break;
 

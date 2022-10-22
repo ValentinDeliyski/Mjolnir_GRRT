@@ -66,7 +66,8 @@
 	typedef enum tag_Disk_Model {
 
 		Novikov_Thorne = 0,
-		Optically_Thin_Toroidal = 1
+		Optically_Thin_Toroidal = 1,
+		DISK_MODEL_NUM = 2
 
 	}Disk_Models;
 
@@ -105,5 +106,6 @@
 		PARAMETER_NUM = 5
 
 	}Spacetime_Parameters;
+
 
 #endif

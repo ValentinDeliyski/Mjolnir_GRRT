@@ -42,12 +42,10 @@
 #include "Lensing.h"
 
 e_Spacetimes e_metric = Kerr;
-Disk_Models e_Disk_Model = Optically_Thin_Toroidal;
+bool lens_from_file = false;
+bool truncate = true;
 
 int main() {
-
-    bool lens_from_file = false;
-    bool truncate       = true;
 
     double r_obs, theta_obs, phi_obs;
 
@@ -79,7 +77,7 @@ int main() {
         
     std::ofstream data[4], momentum_data[4];
 
-        open_output_files(e_metric, data, momentum_data, truncate);
+        open_output_files(data, momentum_data);
 
     /*
     
@@ -163,7 +161,7 @@ int main() {
                 double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
                 Integration_status = Lens(initial_conditions, lens_from_file, data, momentum_data, Observer_class, 
-                                          e_Disk_Model, NT_Model, OTT_Model, Spacetimes);
+                                          NT_Model, OTT_Model, Spacetimes);
 
     
                 print_progress(photon, Data_number, lens_from_file);
@@ -186,7 +184,7 @@ int main() {
         double H_angle_min = -15 / r_obs;
         double H_angle_max = 15 / r_obs;
 
-        double Scan_Step = 2 * H_angle_max / 2500;
+        double Scan_Step = 2 * H_angle_max / 1000;
    
         int progress = 0;
         
@@ -207,7 +205,7 @@ int main() {
                     double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
                     Integration_status = Lens(initial_conditions, lens_from_file, data, momentum_data, Observer_class, 
-                                              e_Disk_Model, NT_Model, OTT_Model, Spacetimes);
+                                              NT_Model, OTT_Model, Spacetimes);
 
                 }
 

@@ -30,7 +30,7 @@
 
             double disk_Angular_Momentum(double r, std::vector<c_Spacetime_Base*> Spacetimes);
 
-            double Flux_integrand(e_Spacetimes e_metric, double r, std::vector<c_Spacetime_Base*> Spacetimes);
+            double Flux_integrand(double r, std::vector<c_Spacetime_Base*> Spacetimes);
 
             double solve_Flux_integral(double lower_bound, double upper_bound, double tolerance, std::vector<c_Spacetime_Base*> Spacetimes);
 

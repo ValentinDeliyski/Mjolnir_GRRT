@@ -117,7 +117,7 @@ double tag_Novikov_Thorne_Model::disk_Angular_Momentum(double r, std::vector<c_S
 
 }
 
-double tag_Novikov_Thorne_Model::Flux_integrand(e_Spacetimes e_metric, double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double tag_Novikov_Thorne_Model::Flux_integrand(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double metric[4][4], N, omega;
 
@@ -150,12 +150,12 @@ double tag_Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double 
     double left_mid_point  = (lower_bound + mid_point) / 2;
     double right_mid_point = (mid_point + upper_bound) / 2;
 
-    double F_lower_bound = Flux_integrand(e_metric, lower_bound, Spacetimes);
-    double F_mid_point   = Flux_integrand(e_metric, mid_point, Spacetimes);
-    double F_upper_bound = Flux_integrand(e_metric, upper_bound, Spacetimes);
+    double F_lower_bound = Flux_integrand(lower_bound, Spacetimes);
+    double F_mid_point   = Flux_integrand(mid_point, Spacetimes);
+    double F_upper_bound = Flux_integrand(upper_bound, Spacetimes);
 
-    double F_left_mid = Flux_integrand(e_metric, left_mid_point, Spacetimes);
-    double F_right_mid = Flux_integrand(e_metric, right_mid_point, Spacetimes);
+    double F_left_mid = Flux_integrand(left_mid_point, Spacetimes);
+    double F_right_mid = Flux_integrand(right_mid_point, Spacetimes);
 
     double S_left = (mid_point - lower_bound) / 6 * (F_lower_bound + 4 * F_left_mid + F_mid_point);
     double S_right = (upper_bound - mid_point) / 6 * (F_mid_point + 4 * F_right_mid + F_upper_bound);
@@ -254,8 +254,8 @@ double tag_Optically_Thin_Toroidal_Model::get_disk_magnetization() { return DISK
 
 int tag_Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], double State_Vector[], std::vector<c_Spacetime_Base*> Spacetimes) {
 
-    double r_source = State_Vector[e_r];
-    double theta_source = State_Vector[e_theta];
+    double& r_source     = State_Vector[e_r];
+    double& theta_source = State_Vector[e_theta];
 
     double metric_source[4][4], N_source, omega_source;
 
@@ -302,7 +302,7 @@ double tag_Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]
     double Height_Cutoff = h * h / (2 * (1 * rho) * (1 * rho));
     double Radial_Cutoff = (r - DISK_RAD_CUTOFF) * (r - DISK_RAD_CUTOFF) / DISK_OMEGA / DISK_OMEGA;
 
-    double electron_density = N_ELECTRON_CGS * pow(r / (1 + sqrt(1 - 0.94 * 0.94)), -2) * exp(-Height_Cutoff);
+    double electron_density = N_ELECTRON_CGS * pow(r / (1. + sqrt(1 - 0.94 * 0.94)), -2) * exp(-Height_Cutoff);
 
     //if (State_Vector[e_r] < DISK_RAD_CUTOFF) {
 

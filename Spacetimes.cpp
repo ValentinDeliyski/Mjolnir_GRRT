@@ -26,9 +26,9 @@ tag_observer::tag_observer(double r, double theta, double phi) {
 
 }
 
-double tag_observer::get_r_obs() { return r_obs; };
+double tag_observer::get_r_obs()     { return r_obs; };
 double tag_observer::get_theta_obs() { return theta_obs; };
-double tag_observer::get_phi_obs() { return phi_obs; };
+double tag_observer::get_phi_obs()   { return phi_obs; };
 
 int tag_observer::get_obs_velocity(double Obs_velocity[4], std::vector<c_Spacetime_Base*> Spacetimes) {
 
@@ -58,21 +58,18 @@ int tag_observer::get_obs_velocity(double Obs_velocity[4], std::vector<c_Spaceti
 
 double derived_Kerr_class::get_ISCO(Orbit_Orientation Orientation) {
 
-    double M = MASS;
-    double a = SPIN;
-
-    double Z_1 = 1 + pow(1 - a * a, 1. / 3) * (pow(1 + a, 1. / 3) + pow(1 - a, 1. / 3));
-    double Z_2 = sqrt(3 * a * a + Z_1 * Z_1);
+    double Z_1 = 1 + pow(1 - SPIN * SPIN, 1. / 3) * (pow(1 + SPIN, 1. / 3) + pow(1 - SPIN, 1. / 3));
+    double Z_2 = sqrt(3 * SPIN * SPIN + Z_1 * Z_1);
 
     switch (Orientation) {
 
         case Prograde:
 
-            return M * (3 + Z_2 - sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
+            return MASS * (3 + Z_2 - sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
 
         case Retrograde:
 
-            return M * (3 + Z_2 + sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
+            return MASS * (3 + Z_2 + sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
 
         default:
 
@@ -86,18 +83,15 @@ double derived_Kerr_class::get_ISCO(Orbit_Orientation Orientation) {
 
 double derived_Kerr_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
-    double M = MASS;
-    double a = SPIN;
-
     switch (Orientation) {
 
     case Prograde:
 
-        return 2 * M * (1 + cos(2.0 / 3 * acos(a)));
+        return 2 * MASS * (1 + cos(2.0 / 3 * acos(SPIN)));
 
     case Retrograde:
 
-        return 2 * M * (1 + cos(2.0 / 3 * acos(-a)));
+        return 2 * MASS * (1 + cos(2.0 / 3 * acos(-SPIN)));
 
     default:
 
@@ -203,7 +197,7 @@ int derived_Kerr_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, d
 }
 
 int derived_Kerr_class::get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                                        int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
+                                                         int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
 
     double M = MASS;
     double a = SPIN;
@@ -223,10 +217,7 @@ int derived_Kerr_class::get_initial_conditions_from_file(double* J, double J_dat
 
 int derived_Kerr_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
-    double M = MASS;
-    double a = SPIN;
-
-    double r = inter_State_vector[e_r + iteration * e_State_Number];
+    double& r = inter_State_vector[e_r + iteration * e_State_Number];
     double r2 = r * r;
 
     double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
@@ -235,24 +226,28 @@ int derived_Kerr_class::get_EOM(double inter_State_vector[], double J, double De
     double cos1 = cos(inter_State_vector[e_theta + iteration * e_State_Number]);
     double cos2 = cos1 * cos1;
 
-    double rho2 = r2 + a * a * cos2;
+    double rho2 = r2 + SPIN * SPIN * cos2;
 
-    double P = r2 + a * a - a * J;
-    double delta = r2 - 2 * M * r + a * a;
-    double F = P * P - delta * ((J - a) * (J - a) + cos2 * (J * J / sin2 - a * a));
+    double P = r2 + SPIN * SPIN - SPIN * J;
+    double delta = r2 - 2 * MASS * r + SPIN * SPIN;
+    double F = P * P - delta * ((J - SPIN) * (J - SPIN) + cos2 * (J * J / sin2 - SPIN * SPIN));
 
-    Derivatives[e_r + iteration * e_State_Number] = delta / rho2 * inter_State_vector[5 + iteration * e_State_Number];
-    Derivatives[e_theta + iteration * e_State_Number] = 1.0 / rho2 * inter_State_vector[4 + iteration * e_State_Number];
-    Derivatives[e_phi + iteration * e_State_Number] = 1.0 / (delta * rho2) * (P * a + delta * (J / sin2 - a));
-    Derivatives[e_phi_FD + iteration * e_State_Number] = -1.0 / rho2;
+    double& p_r     = inter_State_vector[e_p_r     + iteration * e_State_Number];
+    double& p_theta = inter_State_vector[e_p_theta + iteration * e_State_Number];
 
-    double theta_term_1 = -(delta * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] + inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number]) * a * a * cos1 * sin1 / (rho2 * rho2);
-    double theta_term_2 = F * a * a * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - a * a * cos1 * sin1) / rho2;
+    Derivatives[e_r      + iteration * e_State_Number] = delta / rho2 * p_r;
+    Derivatives[e_theta  + iteration * e_State_Number] = 1.0 / rho2 * p_theta;
+    Derivatives[e_phi    + iteration * e_State_Number] = 1.0 / (delta * rho2) * (P * SPIN + delta * (J / sin2 - SPIN));
+    Derivatives[e_phi_FD + iteration * e_State_Number] = -1.0 / rho2; /* Mino Time */
+
+    double theta_term_1 = -(delta * p_r * p_r + p_theta * p_theta) * SPIN * SPIN * cos1 * sin1 / (rho2 * rho2);
+    double theta_term_2 = F * SPIN * SPIN * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - SPIN * SPIN * cos1 * sin1) / rho2;
 
     Derivatives[e_p_theta + iteration * e_State_Number] = theta_term_1 + theta_term_2;
 
-    double r_term_1 = inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] / (rho2) * (M - r * (1 - delta / rho2)) + inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] * r / (rho2 * rho2);
-    double r_term_2 = (2 * P * r - (r - M) * ((J - a) * (J - a) + cos2 * (J * J / (sin2)-a * a))) / (delta * rho2) - F * (rho2 * (r - M) + r * delta) / (delta * delta * rho2 * rho2);
+    double r_term_1 = p_r * p_r / (rho2) * (MASS - r * (1 - delta / rho2)) + p_theta * p_theta * r / (rho2 * rho2);
+    double r_term_2 = (2 * P * r - (r - MASS) * ((J - SPIN) * (J - SPIN) + cos2 * (J * J / (sin2) - SPIN * SPIN))) / (delta * rho2)
+                    - F * (rho2 * (r - MASS) + r * delta) / (delta * delta * rho2 * rho2);
 
     Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
 
@@ -262,7 +257,7 @@ int derived_Kerr_class::get_EOM(double inter_State_vector[], double J, double De
 
 bool derived_Kerr_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
+    bool scatter = State_vector[e_r] > 300 && Derivatives[e_r] < 0;
 
     double r_horizon = MASS * (1 + sqrt(1 - SPIN * SPIN));
 

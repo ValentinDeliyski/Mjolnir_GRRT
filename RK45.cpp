@@ -72,16 +72,6 @@ Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* ste
     {
         *step = SAFETY_1 * *step * pow(RK45_ACCURACY / (integration_error + SAFETY_2), 0.2);
 
-        double z = State_Vector[e_r] * cos(State_Vector[e_theta]);
-
-        bool near_disk = z * z < 0.1 * 0.1 &&
-            State_Vector[e_r] * State_Vector[e_r] < 1.1 * 1.1 * 50 * 50;
-
-        if (near_disk)
-        {
-            *step = SAFETY_1 / 10 * *step * pow(RK45_ACCURACY / (integration_error + SAFETY_2), 0.2);
-        }
-
         *continue_integration = true;
 
     }

@@ -10,13 +10,13 @@
     typedef int const Const_int;
 
 
-    Const_Float INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important
-    Const_Float INTEGRAL_ACCURACY = 5e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
-    Const_Float RK45_ACCURACY	   = 1e-7;  // 1e-9 Seems to be an opitimal tradeoff between accuracy and performace 
+    Const_Float INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
+    Const_Float INTEGRAL_ACCURACY  = 5e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
+    Const_Float RK45_ACCURACY	   = 1e-8;  // 1e-7 Seems to be an opitimal tradeoff between accuracy and performace 
     Const_Float SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Const_Float SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
 
-    Const_int RK45_size			   = 7;		  // Number of integration sub-steps
+    Const_int RK45_size			    = 7;	   // Number of integration sub-steps
     Const_int MAX_INTEGRATION_COUNT = 7600000; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
     Const_Float Coeff_deriv[RK45_size][RK45_size-1] =
@@ -25,7 +25,7 @@
         {    1. / 5,             0,              0,             0,            0,           0   },
         {    3. / 40,         9. / 40,           0,             0,            0,           0   },
         {   44. / 45,       -56. / 15,       32. / 9,           0,            0,           0   },
-        {19372. / 6561,  -25360. / 2187,  64448. / 6561,  -212. / 727,        0,           0   },
+        {19372. / 6561,  -25360. / 2187,  64448. / 6561,  -212. / 729,        0,           0   },
         { 9017. / 3168,    -355. / 33,    46732. / 5247,    49. / 176, -5103. / 18656,     0   },
         {   35. / 384,           0,         500. / 1113,   125. / 192, -2187. / 6784,  11. / 84}
     };
@@ -79,7 +79,7 @@
     */
 
     Const_Float MASS = 1.0;
-    Const_Float SPIN = 0.00001;
+    Const_Float SPIN = 0.94;
 
     Const_Float WH_REDSHIFT = 1.0;
     Const_Float WH_R_THROAT = MASS;

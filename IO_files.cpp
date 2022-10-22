@@ -6,6 +6,11 @@
 #include <iostream>
 #include "Enumerations.h"
 #include "IO_files.h"
+#include "Lensing.h"
+
+extern e_Spacetimes e_metric;
+extern bool lens_from_file;
+extern bool truncate;
 
 std::string File_Names[] = {
 
@@ -51,7 +56,7 @@ std::string File_Names[] = {
 
 };
 
-int open_output_files(e_Spacetimes e_metric, std::ofstream data[], std::ofstream momentum_data[], bool truncate) {
+int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
 	int const File_number = SPACETIME_NUMBER * 8;
 
@@ -117,6 +122,37 @@ int open_output_files(e_Spacetimes e_metric, std::ofstream data[], std::ofstream
 		}
 	}
 
+	for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
+
+		data[Image_order] << "Image X Coord [M],"
+			<< " "
+			<< "Image Y Coord [M],"
+			<< " "
+			<< "Novikov-Thorne Disk Redshift [-],"
+			<< " "
+			<< "Novikov-Thorne Flux Redshift [?],"
+			<< " "
+			<< "Optically Thin Disk Intensity [Jy/sRad],"
+			<< " "
+			<< std::setprecision(6) << "Novikov-Thorne Disk Phi Coord [Rad],"
+			<< " "
+			<< "Novikov-Thorne Disk Radial Coord [M],"
+			<< '\n';
+
+		if (lens_from_file) {
+
+			momentum_data[Image_order] << "Radial Momentum (covariant),"
+				<< " "
+				<< "Theta Momentum (covariant),"
+				<< " "
+				<< "Phi Momentum (covariant),"
+				<< " "
+				<< "Metric Parameter,"
+				<< '\n';
+
+		}
+	}
+
 	return OK;
 
 }
@@ -159,68 +195,39 @@ int get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) 
 	return OK;
 }
 
-int write_to_file(double Image_coordiantes[], double redshift, double Flux, double State_vector[], double parameter, double J,
-				  int Image_oder, bool lens_from_file, std::ofstream data[], std::ofstream momentum_data[]) {
+int write_to_file(results Ray_results, std::ofstream data[], std::ofstream momentum_data[]) {
 
 
-	switch (Image_oder) {
+	for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
-	case direct:
-
-		data[0] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::scientific << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
-
-		if (lens_from_file) {
-
-			momentum_data[0] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
-
-		}
-
-		break;
-
-	case first:
-
-		data[1] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
+		data[Image_order] << Ray_results.Image_Coords[0]
+						  << " "
+						  << Ray_results.Image_Coords[1]
+						  << " "
+						  << Ray_results.Redshift_NT[Image_order]
+						  << " "
+						  << Ray_results.Flux_NT[Image_order]
+						  << " "
+						  << Ray_results.Intensity[Image_order]
+						  << " "
+						  << std::setprecision(6) << Ray_results.Source_Coords[e_phi][Image_order]
+						  << " "
+						  << Ray_results.Source_Coords[e_r][Image_order]
+						  << '\n';
 
 		if (lens_from_file) {
 
-			momentum_data[1] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
+			momentum_data[Image_order] << Ray_results.Three_Momentum[e_r][Image_order]
+									   << " "
+									   << Ray_results.Three_Momentum[e_theta][Image_order]
+									   << " "
+									   << Ray_results.Three_Momentum[e_phi][Image_order]
+									   << " "
+									   << Ray_results.Parameters[e_metric]
+									   << '\n';
 
 		}
-
-		break;
-
-	case second:
-
-		data[2] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
-
-		if (lens_from_file) {
-
-			momentum_data[2] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
-
-		}
-
-		break;
-
-	case third:
-
-		data[3] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
-
-		if (lens_from_file) {
-
-			momentum_data[3] << State_vector[5] << " " << State_vector[4] << " " << J << " " << parameter << '\n';
-
-		}
-
-		break;
-
-	case Total:
-
-		data[0] << -Image_coordiantes[0] << " " << Image_coordiantes[2] << " " << redshift << " " << std::fixed << std::setprecision(15) << Flux << " " << std::setprecision(6) << State_vector[2] << " " << State_vector[0] << '\n';
-
-		break;
-
 	}
-
 	return OK;
 
 }
