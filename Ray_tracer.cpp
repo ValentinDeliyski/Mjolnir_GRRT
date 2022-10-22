@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    * @Version: 3.1                                                                                |
+|    * @Version: 3.2                                                                                |
 |    * @Author: Valentin Deliyski                                                                   |
 |    * @Description: This program numeriaclly integrates the equations of motion                    |
 |    for null geodesics and ratiative transfer in a curved spacetime and projects                   |
@@ -42,32 +42,62 @@
 #include "Lensing.h"
 
 e_Spacetimes e_metric = Kerr;
-bool lens_from_file = false;
-bool truncate = true;
+
+/*
+
+Define classes that hold the spacetime properites
+
+*/
+
+std::vector<c_Spacetime_Base*> Spacetimes = {
+
+    new derived_Kerr_class(),
+    new derived_RBH_class(),
+    new derived_Wormhole_class(),
+    new derived_JNW_class()
+};
+
+/*
+
+Define the Observer class
+
+*/
+
+extern Const_Float r_obs = 1e4;
+extern Const_Float theta_obs = 85. / 180 * M_PI;
+Const_Float phi_obs = 0;
+
+c_Observer Observer_class(r_obs, theta_obs, phi_obs);
+
+/*
+
+Define the Optically Thin Disk Class
+
+*/
+
+Optically_Thin_Toroidal_Model OTT_Model(DISK_ALPHA, DISK_HEIGHT_SCALE, DISK_RAD_CUTOFF, DISK_OMEGA, DISK_MAGNETIZATION, MAG_FIELD_GEOMETRY);
+
+/*
+
+Define the Novikov-Thorne Disk Class
+
+*/
+
+Const_Float r_in = Spacetimes[e_metric]->get_ISCO(Prograde);
+Const_Float r_out = 20 * r_in;
+
+Novikov_Thorne_Model NT_Model(r_in, r_out);
+
+/*
+
+Define some global boolians
+
+*/
+
+extern Const_bool lens_from_file = false;
+extern Const_bool truncate       = true;
 
 int main() {
-
-    double r_obs, theta_obs, phi_obs;
-
-        r_obs = 1e4;
-        theta_obs = 85. / 180 * M_PI;
-        phi_obs = 0;
-
-    c_Observer Observer_class(r_obs, theta_obs, phi_obs);
-
-    double parameters[PARAMETER_NUM] = { WH_REDSHIFT,WH_R_THROAT,RBH_PARAM,JNW_R_SINGULARITY,JNW_GAMMA };
-
-    /*
-    
-    Define classes that hold the spacetime properites
-
-    */
-
-    std::vector<c_Spacetime_Base*> Spacetimes;
-    Spacetimes.push_back(new derived_Kerr_class());
-    Spacetimes.push_back(new derived_RBH_class());
-    Spacetimes.push_back(new derived_Wormhole_class());
-    Spacetimes.push_back(new derived_JNW_class());
 
     /*
     
@@ -78,41 +108,7 @@ int main() {
     std::ofstream data[4], momentum_data[4];
 
         open_output_files(data, momentum_data);
-
-    /*
-    
-    Get the ISCO orbits from the spacetime classes and set the inner Novikov-Thorne disk radius
-
-    */
-
-    double r_in = Spacetimes[e_metric]->get_ISCO(Prograde);
-    double r_out = 20 * r_in;
-
-    if (e_metric == Naked_Singularity && JNW_GAMMA < 1.0 / sqrt(5)) {
-
-         r_in += 1;
-
-    }
-
-    Novikov_Thorne_Model NT_Model(r_in, r_out);
-
-    /*
-
-    Set the Optically Thin Toroidal Disk model parameters
-
-    */
-
-    double disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega, disk_magnetization, mag_field_geometry[3]{1, 0, 0};
-
-        disk_alpha = 1;
-        disk_height_scale = 0.1;
-        disk_rad_cutoff = 3 * MASS;
-        disk_omega = sqrt(1. / 12) * MASS;
-        disk_magnetization = 0.01;
-
-
-    Optically_Thin_Toroidal_Model OTT_Model(disk_alpha, disk_height_scale, disk_rad_cutoff, disk_omega, disk_magnetization, mag_field_geometry);
-    
+  
     /*
     
     Get the metric at the observer to feed into the initial conditions functions
@@ -130,7 +126,7 @@ int main() {
     print_ASCII_art();
 
     std::cout << "Observer Radial Position [GM/c^2] = " << r_obs << '\n';
-    std::cout << "Observer Inclination [deg] = "   << int(theta_obs / M_PI * 180) << '\n';
+    std::cout << "Observer Inclination [deg]        = " << int(theta_obs / M_PI * 180) << '\n';
 
     if (lens_from_file) {
 
@@ -160,9 +156,7 @@ int main() {
 
                 double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
-                Integration_status = Lens(initial_conditions, lens_from_file, data, momentum_data, Observer_class, 
-                                          NT_Model, OTT_Model, Spacetimes);
-
+                Integration_status = Lens(initial_conditions, data, momentum_data);
     
                 print_progress(photon, Data_number, lens_from_file);
             }
@@ -204,8 +198,7 @@ int main() {
 
                     double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
 
-                    Integration_status = Lens(initial_conditions, lens_from_file, data, momentum_data, Observer_class, 
-                                              NT_Model, OTT_Model, Spacetimes);
+                    Integration_status = Lens(initial_conditions, data, momentum_data);
 
                 }
 

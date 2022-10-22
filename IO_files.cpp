@@ -1,16 +1,22 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include <filesystem>
 #include <string>
 #include <fstream>
 #include <iostream>
+
 #include "Enumerations.h"
 #include "IO_files.h"
-#include "Lensing.h"
+#include "Constants.h"
 
 extern e_Spacetimes e_metric;
-extern bool lens_from_file;
-extern bool truncate;
+extern Const_bool lens_from_file;
+extern Const_bool truncate;
+
+extern Const_Float r_obs;
+extern Const_Float theta_obs;
 
 std::string File_Names[] = {
 
@@ -124,20 +130,22 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
 	for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
-		data[Image_order] << "Image X Coord [M],"
-			<< " "
-			<< "Image Y Coord [M],"
-			<< " "
-			<< "Novikov-Thorne Disk Redshift [-],"
-			<< " "
-			<< "Novikov-Thorne Flux Redshift [?],"
-			<< " "
-			<< "Optically Thin Disk Intensity [Jy/sRad],"
-			<< " "
-			<< std::setprecision(6) << "Novikov-Thorne Disk Phi Coord [Rad],"
-			<< " "
-			<< "Novikov-Thorne Disk Radial Coord [M],"
-			<< '\n';
+		data[Image_order] << "Observer Radial Position [M]: " << r_obs << '\n'
+						  << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI << '\n'
+						  << "Image X Coord [M],"
+						  << " "
+  		   				  << "Image Y Coord [M],"
+	  					  << " "
+						  << "Novikov-Thorne Disk Redshift [-],"
+						  << " "
+						  << "Novikov-Thorne Flux Redshift [?],"
+						  << " "
+						  << "Optically Thin Disk Intensity [Jy/sRad],"
+						  << " "
+						  << "Novikov-Thorne Disk Phi Coord [Rad],"
+						  << " "
+						  << "Novikov-Thorne Disk Radial Coord [M]"
+						  << '\n';
 
 		if (lens_from_file) {
 

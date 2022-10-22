@@ -232,8 +232,8 @@ double tag_Novikov_Thorne_Model::get_r_out() { return r_out; };
 |                                                           |
 ************************************************************/
 
-tag_Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model(double alpha, double height_scale, double rad_cutoff, double omega,
-                                                                double magnetization, double mag_field[3]) {
+tag_Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model(Const_Float alpha, Const_Float height_scale, Const_Float rad_cutoff, Const_Float omega,
+                                                                     Const_Float magnetization, Const_Float mag_field[3]) {
 
     DISK_ALPHA = alpha;
     DISK_HEIGHT_SCALE = height_scale;

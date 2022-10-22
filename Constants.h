@@ -6,9 +6,9 @@
 
     #define _USE_MATH_DEFINES
 
-    typedef double const Const_Float;
-    typedef int const Const_int;
-
+    typedef const double Const_Float;
+    typedef const int  Const_int;
+    typedef const bool Const_bool;
 
     Const_Float INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
     Const_Float INTEGRAL_ACCURACY  = 5e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
@@ -88,5 +88,18 @@
 
     Const_Float JNW_R_SINGULARITY = 3.0;
     Const_Float JNW_GAMMA = 2 * MASS / JNW_R_SINGULARITY;
+
+    /*
+    
+    Optically Thin Disk Paramters
+    
+    */
+
+    Const_int DISK_ALPHA = 1;
+    Const_Float DISK_HEIGHT_SCALE = 0.1;
+    Const_Float DISK_RAD_CUTOFF = 3.0 * MASS;
+    Const_Float DISK_OMEGA = MASS / 3.5;
+    Const_Float DISK_MAGNETIZATION = 0.01;
+    Const_Float MAG_FIELD_GEOMETRY[3] = {1, 0, 0};
 
 #endif

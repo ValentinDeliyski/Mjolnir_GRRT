@@ -3,6 +3,7 @@
 #ifndef DISK_MODELS
 
     #include <vector>
+    #include "Constants.h"
 
 	#define DISK_MODELS
 
@@ -51,8 +52,8 @@
 
         public:
 
-            tag_Optically_Thin_Toroidal_Model(double alpha, double height_scale, double rad_cutoff, double omega,
-                                              double magnetization, double mag_field[3]);
+            tag_Optically_Thin_Toroidal_Model(Const_Float alpha, Const_Float height_scale, Const_Float rad_cutoff, Const_Float omega,
+                                              Const_Float magnetization, Const_Float mag_field[3]);
 
             double get_disk_alpha();
             double get_disk_height_scale();

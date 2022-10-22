@@ -2,7 +2,6 @@
 
 #include "Enumerations.h"
 #include "Constants.h"
-
 #include "Spacetimes.h"
 #include "Disk_Models.h"
 #include "IO_files.h"
@@ -12,12 +11,12 @@
 #include <iostream>
 
 extern e_Spacetimes e_metric;
+extern std::vector<c_Spacetime_Base*> Spacetimes;
+extern c_Observer Observer_class;
+extern Optically_Thin_Toroidal_Model OTT_Model;
+extern Novikov_Thorne_Model NT_Model;
 
-Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
-                        c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes);
-
-Return_Value_enums Lens(double initial_conditions[], bool lens_from_file, std::ofstream data[], std::ofstream momentum_data[], c_Observer Observer_class,
-                        Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes) {
+Return_Value_enums Lens(double initial_conditions[], std::ofstream data[], std::ofstream momentum_data[]) {
 
     double r_obs     = initial_conditions[e_r];
     double theta_obs = initial_conditions[e_theta];

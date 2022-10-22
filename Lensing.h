@@ -8,9 +8,11 @@
     #include "Spacetimes.h"
     #include "Disk_Models.h"
 
-    Return_Value_enums Lens(double initial_conditions[], bool lens_from_file, std::ofstream data[], std::ofstream momentum_data[], 
-                            c_Observer Observer_class, Novikov_Thorne_Model NT_Model,
-                            Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> VECTOR);
+
+	Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
+							c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes);
+
+	Return_Value_enums Lens(double initial_conditions[], std::ofstream data[], std::ofstream momentum_data[]);
 
 	typedef struct tag_results {
 
