@@ -95,10 +95,13 @@
     
     */
 
-    Const_int DISK_ALPHA = 1;
+    Const_Float DISK_ALPHA = 1;
+
     Const_Float DISK_HEIGHT_SCALE = 0.1;
+
     Const_Float DISK_RAD_CUTOFF = 3.0 * MASS;
     Const_Float DISK_OMEGA = MASS / 3.5;
+
     Const_Float DISK_MAGNETIZATION = 0.01;
     Const_Float MAG_FIELD_GEOMETRY[3] = {1, 0, 0};
 

@@ -13,9 +13,9 @@
 #include <vector>
 
 extern e_Spacetimes e_metric;
+extern std::vector<c_Spacetime_Base*> Spacetimes;
 
-Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
-                        c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes) {
+Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration) {
 
     int iteration = 0;
     bool EOM_Status = OK;
@@ -42,9 +42,7 @@ Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* ste
 
         EOM_Status = Spacetimes[e_metric]->get_EOM(inter_State_vector, J, Derivatives, iteration);
 
-
-        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration, J, OTT_Model, Observer_class, Spacetimes);
-
+        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration, J);
 
         iteration += 1;
 

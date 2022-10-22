@@ -188,7 +188,7 @@ int get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) 
 
 		geodesic_data >> J_data[*Data_number] >> p_theta_data[*Data_number];
 
-		if (geodesic_data.eof() == true) {
+		if (geodesic_data.eof()) {
 
 			break;
 
@@ -208,9 +208,9 @@ int write_to_file(results Ray_results, std::ofstream data[], std::ofstream momen
 
 	for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
-		data[Image_order] << Ray_results.Image_Coords[0]
+		data[Image_order] << Ray_results.Image_Coords[x]
 						  << " "
-						  << Ray_results.Image_Coords[1]
+						  << Ray_results.Image_Coords[y]
 						  << " "
 						  << Ray_results.Redshift_NT[Image_order]
 						  << " "

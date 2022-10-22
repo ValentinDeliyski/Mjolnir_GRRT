@@ -9,8 +9,7 @@
     #include "Disk_Models.h"
 
 
-	Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration,
-							c_Observer Observer_class, Optically_Thin_Toroidal_Model OTT_Model, std::vector<c_Spacetime_Base*> Spacetimes);
+	Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration);
 
 	Return_Value_enums Lens(double initial_conditions[], std::ofstream data[], std::ofstream momentum_data[]);
 

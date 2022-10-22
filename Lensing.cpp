@@ -79,7 +79,7 @@ Return_Value_enums Lens(double initial_conditions[], std::ofstream data[], std::
 
     while (RK45_Status == OK && integration_count < MAX_INTEGRATION_COUNT) {
 
-        RK45_Status = RK45(State_vector, Derivatives, &step, J, &continue_integration, Observer_class, OTT_Model, Spacetimes);
+        RK45_Status = RK45(State_vector, Derivatives, &step, J, &continue_integration);
 
         // If error estimate, returned from RK45_EOM < RK45_ACCURACY
         if (continue_integration == true) {
@@ -108,13 +108,13 @@ Return_Value_enums Lens(double initial_conditions[], std::ofstream data[], std::
                 double Image_coordiantes[3]{}; // Temporary array to store the rotated obs_plane_intersection vector
                 Rorate_to_obs_plane(theta_obs, phi_obs, obs_plane_intersection, Image_coordiantes);
 
-                Ray_results.Image_Coords[0] = -Image_coordiantes[0];
-                Ray_results.Image_Coords[1] =  Image_coordiantes[2];
+                Ray_results.Image_Coords[x] = -Image_coordiantes[0];
+                Ray_results.Image_Coords[y] =  Image_coordiantes[2];
 
             }
 
             // Novikov-Thorne Model Evaluation
-            if (Disk_event(Novikov_Thorne, State_vector, Old_state, NT_Model, OTT_Model) == Inside_Disk ) {
+            if (Disk_event(State_vector, Old_state) == Inside_Disk ) {
 
                 Image_Order[Novikov_Thorne] = n_equator_crossings;
 

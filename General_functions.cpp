@@ -10,6 +10,10 @@
 #include <vector>
 
 extern e_Spacetimes e_metric;
+extern std::vector<c_Spacetime_Base*> Spacetimes;
+extern c_Observer Observer_class;
+extern Optically_Thin_Toroidal_Model OTT_Model;
+extern Novikov_Thorne_Model NT_Model;
 
 int Rorate_to_obs_plane(double theta_obs, double phi_obs, double Image_point[3], double rotated_Image_point[3]) {
 
@@ -139,7 +143,7 @@ int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r,
     return OK;
 }
 
-double Redshift(double J, double State_Vector[], double U_source[], c_Observer Observer_class, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Redshift(double J, double State_Vector[], double U_source[]) {
 
     double U_obs[4];
 
@@ -269,8 +273,7 @@ int Lorentz_boost_matrix(double Boost_matrix[4][4], double U_source[4], double m
     return OK;
 }
 
-int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J,
-                           Optically_Thin_Toroidal_Model OTT_Model, c_Observer Observer_class, std::vector<c_Spacetime_Base*> Spacetimes) {
+int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J) {
 
     double r;
 
@@ -376,7 +379,7 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
 
     */
 
-    double redshift = Redshift(J, State_Vector, U_source_coord, Observer_class, Spacetimes);
+    double redshift = Redshift(J, State_Vector, U_source_coord);
 
     /*
    
@@ -478,29 +481,24 @@ void print_progress(int current, int max, bool lens_from_file) {
 
 }
 
-Disk_Intersection Disk_event(Disk_Models e_Disk_Model, double State_Vector[], double Old_State_Vector[],
-                             Novikov_Thorne_Model NT_Model, Optically_Thin_Toroidal_Model OTT_Model) {
+Disk_Intersection Disk_event(double State_Vector[], double Old_State_Vector[]) {
 
-    bool inside_disk{};
+    bool inside_NT_disk{};
 
     double r_in = NT_Model.get_r_in();
     double r_out = NT_Model.get_r_out();
 
-    switch (e_Disk_Model) {
 
-    case(Novikov_Thorne):
+    inside_NT_disk = State_Vector[e_r] * State_Vector[e_r] > r_in * r_in &&
+                     State_Vector[e_r] * State_Vector[e_r] < r_out * r_out &&
+                     crossed_equatior(State_Vector, Old_State_Vector);
 
-        inside_disk = State_Vector[e_r] * State_Vector[e_r] > r_in * r_in &&
-            State_Vector[e_r] * State_Vector[e_r] < r_out * r_out &&
-            crossed_equatior(State_Vector, Old_State_Vector);
+    if (inside_NT_disk) {
 
-        if (inside_disk) {
-
-            return Inside_Disk;
-        }
-
-        return Outside_Disk;
+        return Inside_Disk;
 
     }
+
+    return Outside_Disk;
 
 }
