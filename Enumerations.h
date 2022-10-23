@@ -107,5 +107,33 @@
 
 	}Spacetime_Parameters;
 
+	typedef struct tag_initial_conditions {
+
+		double init_metric[4][4];
+		double init_metric_Redshift_func;
+		double init_metric_Shitft_func;
+
+		double init_Pos[3];
+		double init_Three_Momentum[3];
+
+	}Initial_conditions_type;
+
+	typedef struct tag_results {
+
+		double Flux_NT[ORDER_NUM];
+		double Redshift_NT[ORDER_NUM];
+
+		double Intensity[ORDER_NUM];
+		double Optical_Depth;
+
+		double Source_Coords[3][ORDER_NUM];
+		double Three_Momentum[3][ORDER_NUM];
+
+		double Image_Coords[2];
+
+		double Parameters[SPACETIME_NUMBER];
+
+	}s_Results;
+
 
 #endif

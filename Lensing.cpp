@@ -16,24 +16,23 @@ extern c_Observer Observer_class;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 extern Novikov_Thorne_Model NT_Model;
 
-Return_Value_enums Lens(double initial_conditions[], std::ofstream data[], std::ofstream momentum_data[]) {
+Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofstream data[], std::ofstream momentum_data[]) {
 
-    double r_obs     = initial_conditions[e_r];
-    double theta_obs = initial_conditions[e_theta];
-    double phi_obs   = initial_conditions[e_phi];
-    double p_theta_0 = initial_conditions[e_p_theta];
-    double p_r_0     = initial_conditions[e_p_r];
+    double& r_obs     = p_Initial_Conditions->init_Pos[e_r];
+    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
+    double& phi_obs   = p_Initial_Conditions->init_Pos[e_phi];
+    double& J         = p_Initial_Conditions->init_Three_Momentum[e_phi];
+    double& p_theta_0 = p_Initial_Conditions->init_Three_Momentum[e_theta];
+    double& p_r_0     = p_Initial_Conditions->init_Three_Momentum[e_r];
 
     // Initialize the struct that holds the ray results
-    results Ray_results{};
+    s_Results Ray_results{};
 
     for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
-        Ray_results.Three_Momentum[e_phi][Image_order] = initial_conditions[3];
+        Ray_results.Three_Momentum[e_phi][Image_order] = J;
 
     }
-
-    double& J = Ray_results.Three_Momentum[e_phi][direct]; // For brevity's sake
 
     Ray_results.Parameters[Kerr] = SPIN;
     Ray_results.Parameters[Wormhole] = WH_REDSHIFT;
@@ -87,14 +86,6 @@ Return_Value_enums Lens(double initial_conditions[], std::ofstream data[], std::
             // Initialize the light ray
             if (integration_count == 1) {
 
-                Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]] = 0;
-                Ray_results.Flux_NT[Image_Order[Novikov_Thorne]]     = 0;
-
-                n_equator_crossings = 0;
-
-                Image_Order[Novikov_Thorne]          = direct;
-                Image_Order[Optically_Thin_Toroidal] = direct;
-
                 r2[x] = State_vector[e_r] * cos(State_vector[e_phi]) * sin(State_vector[e_theta]);
                 r2[y] = State_vector[e_r] * sin(State_vector[e_phi]) * sin(State_vector[e_theta]);
                 r2[z] = State_vector[e_r] * cos(State_vector[e_theta]);
@@ -114,14 +105,16 @@ Return_Value_enums Lens(double initial_conditions[], std::ofstream data[], std::
             }
 
             // Novikov-Thorne Model Evaluation
-            if (Disk_event(State_vector, Old_state) == Inside_Disk ) {
+            if (Disk_event(State_vector, Old_state) == Inside_Disk) {
 
                 Image_Order[Novikov_Thorne] = n_equator_crossings;
 
-                Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]]          = NT_Model.Redshift(J, State_vector, r_obs, theta_obs, Spacetimes);
-                Ray_results.Flux_NT[Image_Order[Novikov_Thorne]]              = NT_Model.get_flux(State_vector[e_r], Spacetimes);
-                Ray_results.Source_Coords[e_r][Image_Order[Novikov_Thorne]]   = State_vector[e_r];
-                Ray_results.Source_Coords[e_phi][Image_Order[Novikov_Thorne]] = State_vector[e_phi];
+                Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]]             = NT_Model.Redshift(J, State_vector, r_obs, theta_obs, Spacetimes);
+                Ray_results.Flux_NT[Image_Order[Novikov_Thorne]]                 = NT_Model.get_flux(State_vector[e_r], Spacetimes);
+                Ray_results.Source_Coords[e_r][Image_Order[Novikov_Thorne]]      = State_vector[e_r];
+                Ray_results.Source_Coords[e_phi][Image_Order[Novikov_Thorne]]    = State_vector[e_phi];
+                Ray_results.Three_Momentum[e_r][Image_Order[Novikov_Thorne]]     = State_vector[e_p_r];
+                Ray_results.Three_Momentum[e_theta][Image_Order[Novikov_Thorne]] = State_vector[e_p_theta];
 
             }
 
@@ -144,8 +137,8 @@ Return_Value_enums Lens(double initial_conditions[], std::ofstream data[], std::
 
             if (Spacetimes[e_metric]->terminate_integration(State_vector, Derivatives)) {
 
-                Ray_results.Intensity[direct]     = State_vector[e_Intensity];
-                Ray_results.Optical_Depth         = State_vector[e_Optical_Depth];
+                Ray_results.Intensity[direct] = State_vector[e_Intensity];
+                Ray_results.Optical_Depth     = State_vector[e_Optical_Depth];
 
                 write_to_file(Ray_results, data, momentum_data);
 

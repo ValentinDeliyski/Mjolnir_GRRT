@@ -124,10 +124,11 @@ double get_metric_det(double metric[4][4]) {
 
 }
 
-int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r, double metric[4][4],
-                                        double V_angle, double H_angle) {
+int get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Conditions, double V_angle, double H_angle) {
 
     double g2, gamma, ksi, L_z, E;
+
+    double (*metric)[4] = p_Initial_Conditions->init_metric;
 
     g2 = pow(metric[0][3], 2) - metric[0][0] * metric[3][3];
     ksi = sqrt(metric[3][3] / g2);
@@ -136,9 +137,9 @@ int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r,
     L_z = sqrt(metric[3][3]) * sin(H_angle + 2 * M_PI) * cos(V_angle);
     E = (1 + gamma * L_z) / ksi;
 
-    *J = L_z / E;
-    *p_theta = sqrt(metric[2][2]) * sin(V_angle) / E;
-    *p_r = sqrt(metric[1][1]) * cos(H_angle + 2 * M_PI) * cos(V_angle) / E;
+    p_Initial_Conditions->init_Three_Momentum[e_phi] = L_z / E;
+    p_Initial_Conditions->init_Three_Momentum[e_theta] = sqrt(metric[2][2]) * sin(V_angle) / E;
+    p_Initial_Conditions->init_Three_Momentum[e_r] = sqrt(metric[1][1]) * cos(H_angle + 2 * M_PI) * cos(V_angle) / E;
 
     return OK;
 }
@@ -482,6 +483,12 @@ void print_progress(int current, int max, bool lens_from_file) {
 }
 
 Disk_Intersection Disk_event(double State_Vector[], double Old_State_Vector[]) {
+
+    /*
+    
+    This function is only relevant for Novikov-Thorne disks
+    
+    */
 
     bool inside_NT_disk{};
 

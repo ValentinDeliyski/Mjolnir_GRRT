@@ -155,7 +155,7 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 				<< " "
 				<< "Phi Momentum (covariant),"
 				<< " "
-				<< "Metric Parameter,"
+				<< "Metric Parameter"
 				<< '\n';
 
 		}
@@ -203,8 +203,7 @@ int get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) 
 	return OK;
 }
 
-int write_to_file(results Ray_results, std::ofstream data[], std::ofstream momentum_data[]) {
-
+int write_to_file(s_Results Ray_results, std::ofstream data[], std::ofstream momentum_data[]) {
 
 	for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 

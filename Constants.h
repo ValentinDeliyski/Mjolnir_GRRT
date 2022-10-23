@@ -11,7 +11,7 @@
     typedef const bool Const_bool;
 
     Const_Float INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
-    Const_Float INTEGRAL_ACCURACY  = 5e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
+    Const_Float INTEGRAL_ACCURACY  = 5e-9;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
     Const_Float RK45_ACCURACY	   = 1e-8;  // 1e-7 Seems to be an opitimal tradeoff between accuracy and performace 
     Const_Float SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Const_Float SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
@@ -79,7 +79,7 @@
     */
 
     Const_Float MASS = 1.0;
-    Const_Float SPIN = 0.94;
+    Const_Float SPIN = 0.0001;
 
     Const_Float WH_REDSHIFT = 1.0;
     Const_Float WH_R_THROAT = MASS;

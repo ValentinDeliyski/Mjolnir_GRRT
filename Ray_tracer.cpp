@@ -23,7 +23,6 @@
 #define _USE_MATH_DEFINES
 
 #include <string>
-
 #include <iostream>
 #include <iomanip> 
 #include <fstream>
@@ -41,7 +40,7 @@
 
 #include "Lensing.h"
 
-e_Spacetimes e_metric = Kerr;
+e_Spacetimes e_metric = Naked_Singularity;
 
 /*
 
@@ -64,7 +63,7 @@ Define the Observer class
 */
 
 extern Const_Float r_obs = 1e4;
-extern Const_Float theta_obs = 85. / 180 * M_PI;
+extern Const_Float theta_obs = 20. / 180 * M_PI;
 Const_Float phi_obs = 0;
 
 c_Observer Observer_class(r_obs, theta_obs, phi_obs);
@@ -83,7 +82,7 @@ Define the Novikov-Thorne Disk Class
 
 */
 
-Const_Float r_in = Spacetimes[e_metric]->get_ISCO(Prograde);
+Const_Float r_in = 0.9*Spacetimes[e_metric]->get_ISCO(Prograde);
 Const_Float r_out = 20 * r_in;
 
 Novikov_Thorne_Model NT_Model(r_in, r_out);
@@ -94,7 +93,7 @@ Define some global boolians
 
 */
 
-extern Const_bool lens_from_file = false;
+extern Const_bool lens_from_file = true;
 extern Const_bool truncate       = true;
 
 int main() {
@@ -115,11 +114,23 @@ int main() {
 
     */
 
+    Initial_conditions_type s_Initial_Conditions{};
+    s_Initial_Conditions.init_Pos[e_r] = r_obs;
+    s_Initial_Conditions.init_Pos[e_theta] = theta_obs;
+    s_Initial_Conditions.init_Pos[e_phi] = phi_obs;
+
     double metric[4][4]{}, N_obs, omega_obs;
 
-        Spacetimes[e_metric]->get_metric(metric, &N_obs, &omega_obs, r_obs, theta_obs);
+        Spacetimes[e_metric]->get_metric(s_Initial_Conditions.init_metric, &N_obs, &omega_obs, r_obs, theta_obs);
+    
+        s_Initial_Conditions.init_metric_Redshift_func = N_obs;
+        s_Initial_Conditions.init_metric_Shitft_func = omega_obs;
 
-    double J, p_theta_0, p_r_0;
+    /*
+    
+    Im not even sure if these status checks do anything...
+    
+    */
 
     Return_Value_enums Integration_status = OK;
 
@@ -145,18 +156,15 @@ int main() {
 
             for (int photon = 0; photon <= Data_number; photon += 1) {
 
-                    /*
-                    
-                    Feed those initial conditions to the lenser
+                /*
 
-                    */
+                This function polulates the initial momentum inside the s_Initial_Conditions struct
 
-                Spacetimes[e_metric]->get_initial_conditions_from_file(&J, J_data, &p_theta_0, p_theta_data, &p_r_0, photon, r_obs,
-                                                                       theta_obs, metric, N_obs, omega_obs);
+                */
 
-                double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
+                Spacetimes[e_metric]->get_initial_conditions_from_file(&s_Initial_Conditions, J_data, p_theta_data, photon);
 
-                Integration_status = Lens(initial_conditions, data, momentum_data);
+                Integration_status = Lens(&s_Initial_Conditions, data, momentum_data);
     
                 print_progress(photon, Data_number, lens_from_file);
             }
@@ -194,11 +202,15 @@ int main() {
 
                 for (double H_angle = H_angle_min; H_angle <= H_angle_max; H_angle += Scan_Step) {
 
-                    get_intitial_conditions_from_angles(&J, &p_theta_0, &p_r_0, metric, V_angle, H_angle);
+                    /*
+                    
+                    This function polulates the initial momentum inside the s_Initial_Conditions struct
+                    
+                    */
 
-                    double initial_conditions[6] = { r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0 };
+                    get_intitial_conditions_from_angles(&s_Initial_Conditions, V_angle, H_angle);
 
-                    Integration_status = Lens(initial_conditions, data, momentum_data);
+                    Integration_status = Lens(&s_Initial_Conditions, data, momentum_data);
 
                 }
 

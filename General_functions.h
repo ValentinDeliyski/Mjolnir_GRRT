@@ -21,8 +21,7 @@
 
     double get_metric_det(double metric[4][4]);
 
-    int get_intitial_conditions_from_angles(double* J, double* p_theta, double* p_r, double metric[4][4],
-                                            double V_angle, double H_angle);
+    int get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Conditions, double V_angle, double H_angle);
 
     double Redshift(double J, double State_Vector[], double U_source[]);
 

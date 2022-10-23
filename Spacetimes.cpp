@@ -196,21 +196,26 @@ int derived_Kerr_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, d
 
 }
 
-int derived_Kerr_class::get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                                         int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
+int derived_Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
     double M = MASS;
     double a = SPIN;
 
-    *J = -J_data[photon] * sin(theta_obs);
-    *p_theta = p_theta_data[photon];
+    double& r_obs = p_Initial_Conditions->init_Pos[e_r];
+    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
+
+    p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
+    p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
+
+    double& J = p_Initial_Conditions->init_Three_Momentum[e_phi];
+    double& p_theta = p_Initial_Conditions->init_Three_Momentum[e_theta];
 
     double delta = pow(r_obs, 2) + pow(a, 2) - 2 * M * r_obs;
-    double K = pow(*p_theta, 2) + pow(cos(theta_obs), 2) * (pow(*J / sin(theta_obs), 2) - pow(a, 2));
+    double K = pow(p_theta, 2) + pow(cos(theta_obs), 2) * (pow(J / sin(theta_obs), 2) - pow(a, 2));
 
-    double rad_potential = pow(r_obs * r_obs + a * a - a * *J, 2) - delta * (pow(*J - a, 2) + K);
+    double rad_potential = pow(r_obs * r_obs + a * a - a * J, 2) - delta * (pow(J - a, 2) + K);
 
-    *p_r = sqrt(rad_potential) / delta;
+    p_Initial_Conditions->init_Three_Momentum[e_r] = sqrt(rad_potential) / delta;
 
     return OK;
 }
@@ -262,7 +267,6 @@ bool derived_Kerr_class::terminate_integration(double State_vector[], double Der
     double r_horizon = MASS * (1 + sqrt(1 - SPIN * SPIN));
 
     bool hit_horizon = State_vector[e_r] - r_horizon < 0.05;
-
 
     return scatter || hit_horizon;
 
@@ -396,16 +400,22 @@ int derived_RBH_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, do
 
 }
 
-int derived_RBH_class::get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                                        int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
+int derived_RBH_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
-    *J = -J_data[photon] * sin(theta_obs);
-    *p_theta = p_theta_data[photon];
+    double& r_obs = p_Initial_Conditions->init_Pos[e_r];
+    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
+
+    p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
+    p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
+
+    double& J = p_Initial_Conditions->init_Three_Momentum[e_phi];
 
     double rho = sqrt(r_obs * r_obs + RBH_PARAM * RBH_PARAM);
-    double rad_potential = 1 - (1 - 2 * MASS / rho) * *J * *J / (rho * rho);
+    double rad_potential = 1 - (1 - 2 * MASS / rho) * J * J / (rho * rho);
 
-    *p_r = sqrt(rad_potential) * metric[1][1];
+    double (*metric)[4] = p_Initial_Conditions->init_metric;
+
+    p_Initial_Conditions->init_Three_Momentum[e_r] = sqrt(rad_potential) * metric[1][1];
 
     return OK;
 }
@@ -579,15 +589,26 @@ int derived_Wormhole_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_
     return 0;
 }
 
-int derived_Wormhole_class::get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                                            int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
+int derived_Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
-    *J = -J_data[photon] * sin(theta_obs);
-    *p_theta = p_theta_data[photon];
 
-    double rad_potential = -(*p_theta * *p_theta + *J * *J / sin(theta_obs) / sin(theta_obs)) * N * N / r_obs / r_obs + (1 - omega * *J) * (1 - omega * *J);
+    double& r_obs = p_Initial_Conditions->init_Pos[e_r];
+    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
 
-    *p_r = sqrt(rad_potential) / N / sqrt(metric[1][1]) * r_obs / sqrt(pow(r_obs, 2) - pow(1, 2)) * metric[1][1];
+    p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
+    p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
+
+    double& p_theta = p_Initial_Conditions->init_Three_Momentum[e_theta];
+    double& J = p_Initial_Conditions->init_Three_Momentum[e_phi];
+
+    double& N = p_Initial_Conditions->init_metric_Redshift_func;
+    double& omega = p_Initial_Conditions->init_metric_Shitft_func;
+
+    double rad_potential = -(p_theta * p_theta + J * J / sin(theta_obs) / sin(theta_obs)) * N * N / r_obs / r_obs + (1 - omega * J) * (1 - omega * J);
+
+    double(*metric)[4] = p_Initial_Conditions->init_metric;
+
+    p_Initial_Conditions->init_Three_Momentum[e_r] = sqrt(rad_potential) / N / sqrt(metric[1][1]) * r_obs / sqrt(pow(r_obs, 2) - pow(1, 2)) * metric[1][1];
 
     return 0;
 }
@@ -763,15 +784,21 @@ int derived_JNW_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, do
 
 }
 
-int derived_JNW_class::get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                                        int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
+int derived_JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
-    *J = -J_data[photon] * sin(theta_obs);
-    *p_theta = p_theta_data[photon];
+    double& r_obs = p_Initial_Conditions->init_Pos[e_r];
+    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
 
-    double rad_potential = 1 - pow(1 - JNW_R_SINGULARITY / r_obs, 2 * JNW_GAMMA - 1) * *J * *J / (r_obs * r_obs);
+    p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
+    p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
 
-    *p_r = sqrt(rad_potential) * metric[1][1];
+    double& J = p_Initial_Conditions->init_Three_Momentum[e_phi];
+
+    double rad_potential = 1 - pow(1 - JNW_R_SINGULARITY / r_obs, 2 * JNW_GAMMA - 1) * J * J / (r_obs * r_obs);
+
+    double(*metric)[4] = p_Initial_Conditions->init_metric;
+
+    p_Initial_Conditions->init_Three_Momentum[e_r] = sqrt(rad_potential) * metric[1][1];
 
     return OK;
 

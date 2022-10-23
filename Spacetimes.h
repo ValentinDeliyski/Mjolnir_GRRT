@@ -59,8 +59,7 @@
 
             /* Initial conditions derived from images */
 
-            virtual int get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                                         int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega) {
+            virtual int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -110,8 +109,7 @@
 
             ///* Initial conditions derived from images */
 
-            int get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                                 int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega);
+            int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
 
             /* Equations of motion */
 
@@ -144,8 +142,7 @@
 
         /* Initial conditions derived from images */
 
-        int get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                             int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega);
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
 
         /* Equations of motion */
 
@@ -178,8 +175,7 @@
 
         /* Initial conditions derived from images */
 
-        int get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-            int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega);
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
 
         /* Equations of motion */
 
@@ -212,8 +208,7 @@
 
         /* Initial conditions derived from images */
 
-        int get_initial_conditions_from_file(double* J, double J_data[], double* p_theta, double p_theta_data[], double* p_r,
-                                             int photon, double r_obs, double theta_obs, double metric[4][4], double N, double omega);
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
 
         /* Equations of motion */
 
