@@ -9,13 +9,7 @@
     #include "Disk_Models.h"
     #include <vector>
 
-    int Rorate_to_obs_plane(double theta_obs, double phi_obs, double Image_point[3], double rotated_Image_point[3]);
-
-    double my_max(double vector[]);
-
-    bool crossed_equatior(double State_vector[], double Old_State_Vector[]);
-
-    double dot_product(double vector_1[3], double vector_2[3]);
+    double get_planck_function_CGS(double Frequency, double Temperature);
 
     int invert_metric(double inv_metric[4][4], double metric[4][4]);
 
@@ -34,11 +28,5 @@
     int Lorentz_boost_matrix(double Boost_matrix[4][4], double U_source[4], double metric[4][4]);
 
     int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J);
-
-    void print_ASCII_art();
-
-    void print_progress(int current, int max, bool lens_from_file);
-
-    Disk_Intersection Disk_event(double State_Vector[], double Old_State_Vector[]);
 
 #endif

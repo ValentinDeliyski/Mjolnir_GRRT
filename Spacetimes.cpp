@@ -121,7 +121,7 @@ int derived_Kerr_class::get_metric(double metric[4][4], double* N_metric, double
     metric[2][2] = rho2;
     metric[3][3] = (r2 + a * a + 2 * M * r * a * a / rho2 * sin_theta * sin_theta) * sin_theta * sin_theta;
 
-    double sigma2 = metric[3][3] * rho2 / sin_theta / sin_theta;
+    double sigma2 = (r2 + a * a) * (r2 + a * a) - a * a * delta * sin_theta * sin_theta;
 
     *N_metric = sqrt(rho2 * delta / sigma2);
     *omega_metric = 2 * a * r / sigma2;
@@ -266,7 +266,7 @@ bool derived_Kerr_class::terminate_integration(double State_vector[], double Der
 
     double r_horizon = MASS * (1 + sqrt(1 - SPIN * SPIN));
 
-    bool hit_horizon = State_vector[e_r] - r_horizon < 0.05;
+    bool hit_horizon = State_vector[e_r] - r_horizon < 1e-4;
 
     return scatter || hit_horizon;
 

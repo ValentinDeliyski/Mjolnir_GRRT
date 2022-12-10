@@ -15,8 +15,8 @@ extern e_Spacetimes e_metric;
 extern Const_bool lens_from_file;
 extern Const_bool truncate;
 
-extern Const_Float r_obs;
-extern Const_Float theta_obs;
+extern Real r_obs;
+extern Real theta_obs;
 
 std::string File_Names[] = {
 
@@ -64,7 +64,7 @@ std::string File_Names[] = {
 
 int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
-	int const File_number = SPACETIME_NUMBER * 8;
+	Const_int File_number = SPACETIME_NUMBER * 8;
 
 	std::filesystem::path dir("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity");
 	std::filesystem::path file[File_number];
@@ -138,7 +138,7 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 	  					  << " "
 						  << "Novikov-Thorne Disk Redshift [-],"
 						  << " "
-						  << "Novikov-Thorne Flux Redshift [?],"
+						  << "Novikov-Thorne Flux [?],"
 						  << " "
 						  << "Optically Thin Disk Intensity [Jy/sRad],"
 						  << " "

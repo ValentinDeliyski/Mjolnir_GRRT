@@ -4,16 +4,47 @@
 #include "Constants.h"
 #include "Spacetimes.h"
 #include "Disk_Models.h"
-#include "General_functions.h"
+#include "General_GR_functions.h"
+#include "General_math_functions.h"
 
-#include <iostream>
-#include <iomanip> 
-#include <fstream>
 #include <cmath>
 #include <vector>
 
 extern e_Spacetimes e_metric;
 extern std::vector<c_Spacetime_Base*> Spacetimes;
+extern Optically_Thin_Toroidal_Model OTT_Model;
+
+int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J) {
+
+    double r = State_Vector[e_r];
+
+    if (e_metric == Wormhole) {
+
+        r = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+
+    }
+
+    /* Get Disk Cooridinate Velocity */
+
+    double U_source_coord[4]{};
+
+    OTT_Model.get_disk_velocity(U_source_coord, State_Vector, Spacetimes);
+
+    /* Get The Redshift */
+
+    double redshift = Redshift(J, State_Vector, U_source_coord);
+
+    double Emission_function   = OTT_Model.get_emission_fucntion(State_Vector, J, Spacetimes);
+    double Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+
+    /* Fill in radiative transfer derivatives */
+
+    Derivatives[e_Intensity + iteration * e_State_Number] = -redshift * redshift * Emission_function * exp(-State_Vector[e_Optical_Depth]) * MASS_TO_CM * CGS_TO_JANSKY;
+    Derivatives[e_Optical_Depth + iteration * e_State_Number] = -Absorbtion_function / redshift * MASS_TO_CM;
+
+    return  OK;
+
+}
 
 Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration) {
 
@@ -42,7 +73,23 @@ Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* ste
 
         EOM_Status = Spacetimes[e_metric]->get_EOM(inter_State_vector, J, Derivatives, iteration);
 
-        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration, J);
+        //if (State_Vector[e_r + iteration * e_State_Number] > Spacetimes[e_metric]->get_ISCO(Prograde)) {
+
+            
+        double current_iteration[e_State_Number] = { inter_State_vector[e_r + iteration * e_State_Number],
+                                                    inter_State_vector[e_theta + iteration * e_State_Number],
+                                                    inter_State_vector[e_phi + iteration * e_State_Number],
+                                                    inter_State_vector[e_phi_FD + iteration * e_State_Number],
+                                                    inter_State_vector[e_p_theta + iteration * e_State_Number],
+                                                    inter_State_vector[e_p_r + iteration * e_State_Number],
+                                                    inter_State_vector[e_Intensity + iteration * e_State_Number],
+                                                    inter_State_vector[e_Optical_Depth + iteration * e_State_Number] };
+
+        get_Radiative_Transfer(current_iteration, Derivatives, iteration, J);
+
+
+
+        //}
 
         iteration += 1;
 
@@ -69,17 +116,6 @@ Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* ste
     if (integration_error < RK45_ACCURACY)
     {
         *step = SAFETY_1 * *step * pow(RK45_ACCURACY / (integration_error + SAFETY_2), 0.2);
-
-        double z = State_Vector[e_r] * cos(State_Vector[e_theta]);
-
-        bool near_disk = z * z < 0.1 * 0.1 &&
-            State_Vector[e_r] * State_Vector[e_r] < 1.1 * 1.1 * 50 * 50;
-
-        if (near_disk)
-        {
-            *step = SAFETY_1 / 10 * *step * pow(RK45_ACCURACY / (integration_error + SAFETY_2), 0.2);
-        }
-
 
         *continue_integration = true;
 

@@ -4,7 +4,8 @@
 #include "Constants.h"
 #include "Spacetimes.h"
 #include "Disk_Models.h"
-#include "General_functions.h"
+#include "General_GR_functions.h"
+#include "General_math_functions.h"
 
 #include <iostream>
 #include <iomanip> 
@@ -232,13 +233,13 @@ double tag_Novikov_Thorne_Model::get_r_out() { return r_out; };
 |                                                           |
 ************************************************************/
 
-tag_Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model(Const_Float alpha, Const_Float height_scale, Const_Float rad_cutoff, Const_Float omega,
-                                                                     Const_Float magnetization, Const_Float mag_field[3]) {
+tag_Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model(Real alpha, Real height_scale, Real rad_cutoff, Real cutoff_scale,
+                                                                     Real magnetization, Real mag_field[3]) {
 
     DISK_ALPHA = alpha;
     DISK_HEIGHT_SCALE = height_scale;
     DISK_RAD_CUTOFF = rad_cutoff;
-    DISK_OMEGA = omega;
+    DISK_CUTOFF_SCALE = cutoff_scale;
     DISK_MAGNETIZATION = magnetization;
     MAG_FIELD_GEOMETRY[0] = mag_field[0];
     MAG_FIELD_GEOMETRY[1] = mag_field[1];
@@ -249,18 +250,44 @@ tag_Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model(Const_Float
 double tag_Optically_Thin_Toroidal_Model::get_disk_alpha()         { return DISK_ALPHA; };
 double tag_Optically_Thin_Toroidal_Model::get_disk_height_scale()  { return DISK_HEIGHT_SCALE; };
 double tag_Optically_Thin_Toroidal_Model::get_disk_rad_cutoff()    { return DISK_RAD_CUTOFF; };;
-double tag_Optically_Thin_Toroidal_Model::get_disk_omega()         { return DISK_OMEGA; };
+double tag_Optically_Thin_Toroidal_Model::get_disk_omega()         { return DISK_CUTOFF_SCALE; };
 double tag_Optically_Thin_Toroidal_Model::get_disk_magnetization() { return DISK_MAGNETIZATION; };
+
+double tag_Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]) {
+
+    double r = State_vector[e_r];
+
+    double T = T_ELECTRON_CGS * (1 + sqrt(1 - SPIN * SPIN)) / r;
+
+    if (e_metric != Kerr) {
+
+        r = sqrt(r * r + WH_R_THROAT * WH_R_THROAT);
+
+        T = T_ELECTRON_CGS / r;
+
+    }
+
+    return T;
+
+}
 
 int tag_Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], double State_Vector[], std::vector<c_Spacetime_Base*> Spacetimes) {
 
-    double& r_source     = State_Vector[e_r];
+
+    double r_source = State_Vector[e_r];
+
+    if (e_metric == Wormhole) {
+
+        r_source = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+
+    }
+
     double& theta_source = State_Vector[e_theta];
 
     double metric_source[4][4], N_source, omega_source;
 
     Spacetimes[e_metric]->get_metric(metric_source, &N_source, &omega_source, r_source, theta_source);
-  
+
     double rho = r_source * sin(theta_source);
 
     if (rho < 0.0) {
@@ -273,7 +300,7 @@ int tag_Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[],
 
     double u_t{}, u_phi{};
 
-    double inv_metric[4][4];
+    double inv_metric[4][4]{};
 
     invert_metric(inv_metric, metric_source);
 
@@ -295,14 +322,16 @@ int tag_Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[],
 
 double tag_Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]) {
 
-    double r   = State_Vector[e_r];
+    double& r = State_Vector[e_r];
     double rho = sin(State_Vector[e_theta]);
-    double h   = cos(State_Vector[e_theta]);
+    double h = cos(State_Vector[e_theta]);
 
-    double Height_Cutoff = h * h / (2 * (1 * rho) * (1 * rho));
-    double Radial_Cutoff = (r - DISK_RAD_CUTOFF) * (r - DISK_RAD_CUTOFF) / DISK_OMEGA / DISK_OMEGA;
+    double Height_Cutoff = h * h / (2 * (DISK_ALPHA * rho) * (DISK_ALPHA * rho));
+    double Radial_Cutoff = (r - DISK_RAD_CUTOFF) * (r - DISK_RAD_CUTOFF) * DISK_CUTOFF_SCALE;
 
-    double electron_density = N_ELECTRON_CGS * pow(r / (1. + sqrt(1 - 0.94 * 0.94)), -2) * exp(-Height_Cutoff);
+    double electron_density = N_ELECTRON_CGS * pow(r / (1. + sqrt(1 - SPIN * SPIN)), -2) * exp(-Height_Cutoff);
+
+    //double electron_density = exp(-((r / 10) * (r / 10) + 100. / 3 * 100. / 3 * h * h) / 2);
 
     //if (State_Vector[e_r] < DISK_RAD_CUTOFF) {
 
@@ -317,9 +346,9 @@ double tag_Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]
 double tag_Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], double State_vector[]) {
 
     /*
-    
+
     Everything is in GCS!
-    
+
     */
 
     double electron_density = get_disk_density(State_vector);
@@ -333,3 +362,111 @@ double tag_Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], 
     return B_CGS;
 
 }
+
+double tag_Optically_Thin_Toroidal_Model::get_electrron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes) {
+
+    double U_source_coord[4];
+    get_disk_velocity(U_source_coord, State_vector, Spacetimes);
+
+    /*
+
+    Transform U_source To The ZAMO Frame
+
+    */
+
+    double metric[4][4]{}, N_metric{}, Omega_metric{};
+
+    Spacetimes[e_metric]->get_metric(metric, &N_metric, &Omega_metric, State_vector[e_r], State_vector[e_theta]);
+
+    double U_source_ZAMO[4]{};
+    Contravariant_coord_to_ZAMO(metric, U_source_coord, U_source_ZAMO);
+
+    /*
+
+    Boost U_source_ZAMO To The Fluid Frame
+
+    */
+
+    double Boost_matrix[4][4];
+
+    Lorentz_boost_matrix(Boost_matrix, U_source_ZAMO, metric);
+
+    double* U_source_Boosted  = mat_vec_multiply_4D(Boost_matrix, U_source_ZAMO);
+    double  U_source_local[3] = { U_source_Boosted[1] / U_source_Boosted[0], U_source_Boosted[2] / U_source_Boosted[0], U_source_Boosted[3] / U_source_Boosted[0] };
+
+    /*
+
+    Get Sin Of The Angle Between The Local Fluid Velocity And Magnetic Field In The ZAMO Frame
+
+    */
+
+    double cos_angle = 1, sin_angle{};
+
+    if (vector_norm(B_field_local, 3) > 1e-10 && dot_product(U_source_local, U_source_local) != 0) {
+
+        cos_angle = dot_product(B_field_local, U_source_local) / sqrt(dot_product(B_field_local, B_field_local) * dot_product(U_source_local, U_source_local));
+        sin_angle = sqrt(1 - cos_angle * cos_angle);
+
+    }
+
+    return sin_angle;
+
+}
+
+double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
+
+    /* Electron Density in CGS */
+
+    double electron_density = get_disk_density(State_vector);
+
+    /* Dimentionless Electron Temperature */
+
+    double T_electron       = get_disk_temperature(State_vector);
+    double T_electron_dim   = BOLTZMANN_CONST_CGS * T_electron / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
+
+    /* Magnetic Field */
+
+    double B_field_local[3];
+    double B_CGS = get_magnetic_field(B_field_local, State_vector);
+
+    /* Disk Coordinate Velocity */
+
+    double U_source_coord[4]{};
+    get_disk_velocity(U_source_coord, State_vector, Spacetimes);
+
+    /* Synchotron Frequency */
+
+    double f_cyclo         = Q_ELECTRON_CGS * B_CGS / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    double sin_pitch_angle = get_electrron_pitch_angle(State_vector, B_field_local, Spacetimes);
+
+    double f_s = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim * sin_pitch_angle;
+
+    /* Dimentionless Redshifted Synchotron Frequency */
+
+    double redshift = Redshift(J, State_vector, U_source_coord);
+
+    double X = 1e100;
+
+    if (f_s != 0) {
+
+        X = OBS_FREQUENCY_CGS / f_s / redshift;
+
+    }
+
+    /* Emission Function */
+
+    double X_term = (sqrt(X) + pow(2, 11.0 / 12) * pow(X, 1.0 / 6)) * (sqrt(X) + pow(2, 11.0 / 12) * pow(X, 1.0 / 6));
+    double constant_coeff = sqrt(2) * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 3 / C_LIGHT_CGS;
+
+    return constant_coeff * electron_density * f_s * X_term * exp(-pow(X, 1.0 / 3)) / std::cyl_bessel_k(2.0, 1.0 / T_electron_dim);
+
+}
+
+double tag_Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Function, double Frequency, double Temperature) {
+
+    double Planck_function_CGS = get_planck_function_CGS(Frequency, Temperature);
+
+    return Emission_Function/Planck_function_CGS;
+
+}
+

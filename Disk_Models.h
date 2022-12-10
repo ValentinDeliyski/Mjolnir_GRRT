@@ -46,14 +46,14 @@
             double DISK_ALPHA;
             double DISK_HEIGHT_SCALE;
             double DISK_RAD_CUTOFF;
-            double DISK_OMEGA;
+            double DISK_CUTOFF_SCALE;
             double DISK_MAGNETIZATION;
             double MAG_FIELD_GEOMETRY[3];
 
         public:
 
-            tag_Optically_Thin_Toroidal_Model(Const_Float alpha, Const_Float height_scale, Const_Float rad_cutoff, Const_Float omega,
-                                              Const_Float magnetization, Const_Float mag_field[3]);
+            tag_Optically_Thin_Toroidal_Model(Real alpha, Real height_scale, Real rad_cutoff, Real omega,
+                                              Real magnetization, Real mag_field[3]);
 
             double get_disk_alpha();
             double get_disk_height_scale();
@@ -66,6 +66,14 @@
             double get_disk_density(double State_vector[]);
 
             double get_magnetic_field(double B_field[3], double State_vector[]);
+
+            double get_emission_fucntion(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes);
+
+            double get_absorbtion_fucntion(double Emission_Function, double Frequency, double Temperature);
+
+            double get_electrron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes);
+
+            double get_disk_temperature(double State_vector[]);
 
     }Optically_Thin_Toroidal_Model;
 

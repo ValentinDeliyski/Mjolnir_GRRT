@@ -5,8 +5,7 @@
 #include "Spacetimes.h"
 #include "Disk_Models.h"
 #include "IO_files.h"
-#include "General_functions.h"
-#include "Lensing.h"
+#include "General_math_functions.h"
 
 #include <iostream>
 
@@ -105,7 +104,12 @@ Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofst
             }
 
             // Novikov-Thorne Model Evaluation
-            if (Disk_event(State_vector, Old_state) == Inside_Disk) {
+
+            bool inside_NT_disk = State_vector[e_r] * State_vector[e_r] > NT_Model.get_r_in() * NT_Model.get_r_in() &&
+                                  State_vector[e_r] * State_vector[e_r] < NT_Model.get_r_out() * NT_Model.get_r_out() &&
+                                  crossed_equatior(State_vector, Old_state);
+
+            if (inside_NT_disk) {
 
                 Image_Order[Novikov_Thorne] = n_equator_crossings;
 
