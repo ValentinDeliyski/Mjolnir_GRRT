@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    * @Version: 3.3                                                                                |
+|    * @Version: 3.4                                                                                |
 |    * @Author: Valentin Deliyski                                                                   |
 |    * @Description: This program numeriaclly integrates the equations of motion                    |
 |    for null geodesics and ratiative transfer in a curved spacetime and projects                   |
@@ -30,8 +30,8 @@
 #include <string>
 #include <vector>
 
-#include "Constants.h"
 #include "Spacetimes.h"
+#include "Constants.h"
 #include "Enumerations.h"
 #include "IO_files.h"
 
@@ -41,6 +41,7 @@
 #include "Lensing.h"
 
 e_Spacetimes e_metric = Kerr;
+e_Emission_model e_emission = Synchotron_phenomenological;
 
 /*
 
@@ -62,8 +63,8 @@ Define the Observer class
 
 */
 
-extern Real r_obs = 1e4;
-extern Real theta_obs = 160./ 180 * M_PI;
+extern Real r_obs = 1e3;
+extern Real theta_obs = 60./ 180 * M_PI;
 Real phi_obs = 0;
 
 c_Observer Observer_class(r_obs, theta_obs, phi_obs);
@@ -74,7 +75,7 @@ Define the Optically Thin Disk Class
 
 */
 
-Optically_Thin_Toroidal_Model OTT_Model(DISK_ALPHA, DISK_HEIGHT_SCALE, Spacetimes[e_metric]->get_ISCO(Prograde), DISK_CUTOFF_SCALE, DISK_MAGNETIZATION, MAG_FIELD_GEOMETRY);
+Optically_Thin_Toroidal_Model OTT_Model;
 
 /*
 
@@ -245,7 +246,7 @@ int main() {
         double H_angle_min = -15 / r_obs;
         double H_angle_max = 15 / r_obs;
 
-        double Scan_Step = 2 * H_angle_max / 600;
+        double Scan_Step = 2 * H_angle_max / 128;
    
         int progress = 0;
         
@@ -290,4 +291,3 @@ int main() {
 
     return Integration_status;
 }
-

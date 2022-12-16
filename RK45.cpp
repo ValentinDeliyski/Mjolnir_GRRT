@@ -34,12 +34,29 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
 
     double redshift = Redshift(J, State_Vector, U_source_coord);
 
-    double Emission_function   = OTT_Model.get_emission_fucntion(State_Vector, J, Spacetimes);
-    double Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+    double Emission_function{}, Absorbtion_function{};
+
+    switch (e_emission) {
+
+    case Synchotron_exact:
+
+        Emission_function = OTT_Model.get_emission_fucntion_synchotron_exact(State_Vector, J, Spacetimes);
+        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+
+        break;
+
+    case Synchotron_phenomenological:
+
+        Emission_function = OTT_Model.get_emission_fucntion_synchotron_phenomenological(State_Vector, J, Spacetimes);
+        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+    
+        break;
+
+    }
 
     /* Fill in radiative transfer derivatives */
 
-    Derivatives[e_Intensity + iteration * e_State_Number] = -redshift * redshift * Emission_function * exp(-State_Vector[e_Optical_Depth]) * MASS_TO_CM * CGS_TO_JANSKY;
+    Derivatives[e_Intensity     + iteration * e_State_Number] = -redshift * redshift * Emission_function * exp(-State_Vector[e_Optical_Depth]) * MASS_TO_CM;
     Derivatives[e_Optical_Depth + iteration * e_State_Number] = -Absorbtion_function / redshift * MASS_TO_CM;
 
     return  OK;

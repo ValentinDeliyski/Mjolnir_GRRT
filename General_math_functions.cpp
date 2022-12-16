@@ -1,7 +1,6 @@
 #define _USE_MATH_DEFINES
 
 #include <cmath>
-#include <vector>
 
 #include "Enumerations.h"
 
@@ -21,9 +20,7 @@ double vector_norm(double Vector[], int Vector_size) {
 
 };
 
-double* mat_vec_multiply_4D(double Matrix[4][4], double Vector[4]) {
-
-    double result[4]{};
+int mat_vec_multiply_4D(double Matrix[4][4], double Vector[4], double result[4]) {
 
     for (int row = 0; row <= 3; row += 1) {
 
@@ -34,7 +31,7 @@ double* mat_vec_multiply_4D(double Matrix[4][4], double Vector[4]) {
         }
     }
 
-    return result;
+    return OK;
 
 };
 

@@ -2,12 +2,16 @@
 
 #ifndef GENERAL_FUNCTIONS
 
-    #define GENERAL_FUNCTIONS
+    #define _USE_MATH_DEFINES
 
     #include "Enumerations.h"
     #include "Spacetimes.h"
-    #include "Disk_Models.h"
+
+    #include <iostream>
+    #include <cmath>
     #include <vector>
+
+    #define GENERAL_FUNCTIONS
 
     double get_planck_function_CGS(double Frequency, double Temperature);
 

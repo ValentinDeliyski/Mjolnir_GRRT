@@ -14,6 +14,13 @@
 
 	}e_Spacetimes;
 
+	typedef enum tag_Emission_model_enums {
+
+		Synchotron_exact = 0,
+		Synchotron_phenomenological = 1
+
+	}e_Emission_model;
+
 	typedef enum tag_State_enums {
 
 		e_r = 0,

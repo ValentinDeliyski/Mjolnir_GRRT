@@ -1,16 +1,16 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include "Enumerations.h"
-#include "Constants.h"
 #include "Spacetimes.h"
-#include "Disk_Models.h"
 #include "General_GR_functions.h"
 #include "General_math_functions.h"
+#include "Disk_Models.h"
 
-#include <iostream>
-#include <iomanip> 
-#include <fstream>
+#include <vector>
 #include <cmath>
+#include "Constants.h"
 
 /***************************************************
 |                                                  |
@@ -19,6 +19,7 @@
 ***************************************************/
 
 extern e_Spacetimes e_metric;
+extern std::vector<c_Spacetime_Base*> Spacetimes;
 
 tag_Novikov_Thorne_Model::tag_Novikov_Thorne_Model(double x, double y) {
 
@@ -233,37 +234,19 @@ double tag_Novikov_Thorne_Model::get_r_out() { return r_out; };
 |                                                           |
 ************************************************************/
 
-tag_Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model(Real alpha, Real height_scale, Real rad_cutoff, Real cutoff_scale,
-                                                                     Real magnetization, Real mag_field[3]) {
-
-    DISK_ALPHA = alpha;
-    DISK_HEIGHT_SCALE = height_scale;
-    DISK_RAD_CUTOFF = rad_cutoff;
-    DISK_CUTOFF_SCALE = cutoff_scale;
-    DISK_MAGNETIZATION = magnetization;
-    MAG_FIELD_GEOMETRY[0] = mag_field[0];
-    MAG_FIELD_GEOMETRY[1] = mag_field[1];
-    MAG_FIELD_GEOMETRY[2] = mag_field[2];
-
-}
-
-double tag_Optically_Thin_Toroidal_Model::get_disk_alpha()         { return DISK_ALPHA; };
-double tag_Optically_Thin_Toroidal_Model::get_disk_height_scale()  { return DISK_HEIGHT_SCALE; };
-double tag_Optically_Thin_Toroidal_Model::get_disk_rad_cutoff()    { return DISK_RAD_CUTOFF; };;
-double tag_Optically_Thin_Toroidal_Model::get_disk_omega()         { return DISK_CUTOFF_SCALE; };
-double tag_Optically_Thin_Toroidal_Model::get_disk_magnetization() { return DISK_MAGNETIZATION; };
+tag_Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model() {};
 
 double tag_Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]) {
 
     double r = State_vector[e_r];
 
-    double T = T_ELECTRON_CGS * (1 + sqrt(1 - SPIN * SPIN)) / r;
+    double T = T_ELECTRON_EXACT_CGS * (1 + sqrt(1 - SPIN * SPIN)) / r;
 
     if (e_metric != Kerr) {
 
         r = sqrt(r * r + WH_R_THROAT * WH_R_THROAT);
 
-        T = T_ELECTRON_CGS / r;
+        T = T_ELECTRON_EXACT_CGS / r;
 
     }
 
@@ -326,18 +309,40 @@ double tag_Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]
     double rho = sin(State_Vector[e_theta]);
     double h = cos(State_Vector[e_theta]);
 
-    double Height_Cutoff = h * h / (2 * (DISK_ALPHA * rho) * (DISK_ALPHA * rho));
-    double Radial_Cutoff = (r - DISK_RAD_CUTOFF) * (r - DISK_RAD_CUTOFF) * DISK_CUTOFF_SCALE;
+    double Height_Cutoff{};
+    double Radial_Cutoff{};
 
-    double electron_density = N_ELECTRON_CGS * pow(r / (1. + sqrt(1 - SPIN * SPIN)), -2) * exp(-Height_Cutoff);
+    double electron_density{};
 
-    //double electron_density = exp(-((r / 10) * (r / 10) + 100. / 3 * 100. / 3 * h * h) / 2);
+    switch (e_emission){
 
-    //if (State_Vector[e_r] < DISK_RAD_CUTOFF) {
+        case Synchotron_exact:
 
-    //    electron_density *= exp(-Radial_Cutoff);
+            Height_Cutoff = h * h / (2 * (DISK_OPENING_ANGLE * rho) * (DISK_OPENING_ANGLE * rho));
+            Radial_Cutoff = (r - Spacetimes[e_metric]->get_ISCO(Prograde)) * (r - Spacetimes[e_metric]->get_ISCO(Prograde)) * DISK_CUTOFF_SCALE;
 
-    //}
+            electron_density = N_ELECTRON_EXACT_CGS * pow(r / (1. + sqrt(1 - SPIN * SPIN)), -2) * exp(-Height_Cutoff);
+
+
+            if (State_Vector[e_r] < Spacetimes[e_metric]->get_ISCO(Prograde)) {
+
+                electron_density *= exp(-Radial_Cutoff);
+
+            }
+
+            break;
+
+        case Synchotron_phenomenological:
+
+            electron_density = exp(-((r / 10) * (r / 10) + DISK_HEIGHT_SCALE * DISK_HEIGHT_SCALE * h * h) / 2);
+
+            break;
+
+        default:
+
+            std::cout << "Wrong emission model!" << '\n';
+
+    }
 
     return electron_density;
 
@@ -363,7 +368,7 @@ double tag_Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], 
 
 }
 
-double tag_Optically_Thin_Toroidal_Model::get_electrron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes) {
+double tag_Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double U_source_coord[4];
     get_disk_velocity(U_source_coord, State_vector, Spacetimes);
@@ -387,11 +392,14 @@ double tag_Optically_Thin_Toroidal_Model::get_electrron_pitch_angle(double State
 
     */
 
-    double Boost_matrix[4][4];
+    double Boost_matrix[4][4]{};
 
     Lorentz_boost_matrix(Boost_matrix, U_source_ZAMO, metric);
 
-    double* U_source_Boosted  = mat_vec_multiply_4D(Boost_matrix, U_source_ZAMO);
+    double U_source_Boosted[4]{};
+    
+    mat_vec_multiply_4D(Boost_matrix, U_source_ZAMO, U_source_Boosted);
+
     double  U_source_local[3] = { U_source_Boosted[1] / U_source_Boosted[0], U_source_Boosted[2] / U_source_Boosted[0], U_source_Boosted[3] / U_source_Boosted[0] };
 
     /*
@@ -413,7 +421,7 @@ double tag_Optically_Thin_Toroidal_Model::get_electrron_pitch_angle(double State
 
 }
 
-double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
+double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     /* Electron Density in CGS */
 
@@ -437,7 +445,7 @@ double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion(double State_vec
     /* Synchotron Frequency */
 
     double f_cyclo         = Q_ELECTRON_CGS * B_CGS / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
-    double sin_pitch_angle = get_electrron_pitch_angle(State_vector, B_field_local, Spacetimes);
+    double sin_pitch_angle = get_electron_pitch_angle(State_vector, B_field_local, Spacetimes);
 
     double f_s = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim * sin_pitch_angle;
 
@@ -462,11 +470,41 @@ double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion(double State_vec
 
 }
 
+double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
+
+
+    double electron_density = get_disk_density(State_vector);
+
+    /* Disk Coordinate Velocity */
+
+    double U_source_coord[4]{};
+    get_disk_velocity(U_source_coord, State_vector, Spacetimes);
+
+    double redshift = Redshift(J, State_vector, U_source_coord);
+
+    return EMISSION_SCALE_PHENOMENOLOGICAL * electron_density * pow(redshift, EMISSION_POWER_LAW);
+
+}
+
 double tag_Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Function, double Frequency, double Temperature) {
 
-    double Planck_function_CGS = get_planck_function_CGS(Frequency, Temperature);
+    switch (e_emission) {
 
-    return Emission_Function/Planck_function_CGS;
+    case Synchotron_exact:
+
+        return Emission_Function / get_planck_function_CGS(Frequency, Temperature);
+
+    case Synchotron_phenomenological:
+
+        return DISK_ABSORBTION_COEFF * pow(Emission_Function, SOURCE_F_POWER_LAW);
+
+    }
+
+}
+
+double get_planck_function_CGS(double Frequency, double Temperature) {
+
+    return 2 * PLANCK_CONSTANT_CGS * Frequency * Frequency * Frequency / C_LIGHT_CGS / C_LIGHT_CGS / (exp(PLANCK_CONSTANT_CGS * Frequency / BOLTZMANN_CONST_CGS / Temperature) - 1);
 
 }
 

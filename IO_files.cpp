@@ -235,6 +235,7 @@ int write_to_file(s_Results Ray_results, std::ofstream data[], std::ofstream mom
 
 		}
 	}
+
 	return OK;
 
 }

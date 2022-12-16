@@ -1,21 +1,9 @@
 #pragma once
 
-#include "Enumerations.h"
-#include "Constants.h"
-#include "Spacetimes.h"
-
-#include <iostream>
-#include <cmath>
-#include <vector>
+#include "General_GR_functions.h"
 
 extern std::vector<c_Spacetime_Base*> Spacetimes;
 extern c_Observer Observer_class;
-
-double get_planck_function_CGS(double Frequency, double Temperature) {
-
-    return 2 * PLANCK_CONSTANT_CGS * Frequency * Frequency * Frequency / C_LIGHT_CGS / C_LIGHT_CGS / (exp(PLANCK_CONSTANT_CGS * Frequency / BOLTZMANN_CONST_CGS / Temperature) - 1);
-
-}
 
 /* Metric Related Functions */
 

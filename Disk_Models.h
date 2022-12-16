@@ -2,10 +2,9 @@
 
 #ifndef DISK_MODELS
 
-    #include <vector>
-    #include "Constants.h"
-
 	#define DISK_MODELS
+
+    extern e_Emission_model e_emission;
 
     typedef class tag_Novikov_Thorne_Model {
 
@@ -41,37 +40,23 @@
 
     typedef class tag_Optically_Thin_Toroidal_Model {
 
-        private:
-
-            double DISK_ALPHA;
-            double DISK_HEIGHT_SCALE;
-            double DISK_RAD_CUTOFF;
-            double DISK_CUTOFF_SCALE;
-            double DISK_MAGNETIZATION;
-            double MAG_FIELD_GEOMETRY[3];
-
         public:
 
-            tag_Optically_Thin_Toroidal_Model(Real alpha, Real height_scale, Real rad_cutoff, Real omega,
-                                              Real magnetization, Real mag_field[3]);
-
-            double get_disk_alpha();
-            double get_disk_height_scale();
-            double get_disk_rad_cutoff();
-            double get_disk_omega();
-            double get_disk_magnetization();
-
+            tag_Optically_Thin_Toroidal_Model();
+     
             int get_disk_velocity(double Disk_velocity[], double State_vector[], std::vector<c_Spacetime_Base*> Spacetimes);
 
             double get_disk_density(double State_vector[]);
 
             double get_magnetic_field(double B_field[3], double State_vector[]);
 
-            double get_emission_fucntion(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes);
+            double get_emission_fucntion_synchotron_exact(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes);
+
+            double get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes);
 
             double get_absorbtion_fucntion(double Emission_Function, double Frequency, double Temperature);
 
-            double get_electrron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes);
+            double get_electron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes);
 
             double get_disk_temperature(double State_vector[]);
 

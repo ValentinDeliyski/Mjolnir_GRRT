@@ -7,7 +7,7 @@
 #include "Constants.h"
 #include "Enumerations.h"
 #include "Spacetimes.h"
-#include "General_functions.h"
+#include "General_GR_functions.h"
 
 
 /***************************************
