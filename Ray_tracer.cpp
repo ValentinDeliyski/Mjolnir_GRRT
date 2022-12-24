@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    * @Version: 3.4                                                                                |
+|    * @Version: 3.5                                                                                |
 |    * @Author: Valentin Deliyski                                                                   |
 |    * @Description: This program numeriaclly integrates the equations of motion                    |
 |    for null geodesics and ratiative transfer in a curved spacetime and projects                   |
@@ -37,13 +37,14 @@
 
 #include "Disk_Models.h"
 #include "General_GR_functions.h"
-
 #include "Lensing.h"
+
+#include "Rendering_Engine.h"
 
 e_Spacetimes e_metric = Kerr;
 e_Emission_model e_emission = Synchotron_phenomenological;
 
-/*
+/* 
 
 Define classes that hold the spacetime properites
 
@@ -83,7 +84,7 @@ Define the Novikov-Thorne Disk Class
 
 */
 
-Real r_in = Spacetimes[e_metric]->get_ISCO(Prograde);
+Real r_in = Spacetimes[e_metric]->get_ISCO(Prograde) + 1;
 Real r_out = 25;
 
 Novikov_Thorne_Model NT_Model(r_in, r_out);
@@ -95,7 +96,18 @@ Define some global boolians
 */
 
 extern Const_bool lens_from_file = false;
-extern Const_bool truncate       = true;
+extern Const_bool truncate = true;
+
+/*
+
+Rendering Engine variables
+
+*/
+
+Const_int Resolution = 2500 * 2500;
+float Max_Intensity = 1;
+float texture_buffer[Resolution * 3]{};
+int texture_indexer{};
 
 void print_ASCII_art() {
 
@@ -156,8 +168,42 @@ void print_progress(int current, int max, bool lens_from_file) {
 
 }
 
-int main() {
+void main() {
     
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    GLFWwindow* window = OpenGL_init();
+
+    //The simulation image is interpreted as a texture
+    GLuint texture = init_texture();
+    // This thing holds the edges of the triangles that the renderer draws
+    Vertex_Buffer Vertex_buffer(vertices, sizeof(vertices));
+    // This thing holds the sequence in which the edges should be connected
+    Element_Buffer Element_buffer(Vertex_order, sizeof(Vertex_order));
+
+    // This thing (after linkning) combines the top two things into one object
+    Vertex_array Vertex_array;
+    Vertex_array.Bind();
+
+    Vertex_array.Linkattrib(Vertex_buffer, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
+    Vertex_array.Linkattrib(Vertex_buffer, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+    // Generates Shader object using shaders defualt.vert and default.frag
+    Shader shaderProgram("default.vert", "default.frag");
+    shaderProgram.Activate();
+    
+    // Generates a float (with an int ID), that scales the output image
+    GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
+
+    // Generates an in (with an int ID), that tells the shader *insert what it tells it here*
+    GLuint tex0Uni = glGetUniformLocation(shaderProgram.ID, "tex0");
+    glUniform1i(tex0Uni, 0);
+
+    // Activates the scaler with a value of 1.5f
+    glUniform1f(uniID, 1.5f);
+    // Binds the texture array (RGB values, based on a colormap from the intensity the simulator calculates)
+    glBindTexture(GL_TEXTURE_2D, texture);
+
     /*
     
     Create/Open the logging files
@@ -186,14 +232,6 @@ int main() {
         s_Initial_Conditions.init_metric_Redshift_func = N_obs;
         s_Initial_Conditions.init_metric_Shitft_func = omega_obs;
 
-    /*
-    
-    Im not even sure if these status checks do anything...
-    
-    */
-
-    Return_Value_enums Integration_status = OK;
-
     print_ASCII_art();
 
     std::cout << "Observer Radial Position [GM/c^2] = " << r_obs << '\n';
@@ -212,25 +250,23 @@ int main() {
 
         get_geodesic_data(J_data, p_theta_data, &Data_number);
 
-        if (Integration_status == OK) {
 
-            for (int photon = 0; photon <= Data_number; photon += 1) {
+        for (int photon = 0; photon <= Data_number; photon += 1) {
 
-                /*
+            /*
 
-                This function polulates the initial momentum inside the s_Initial_Conditions struct
+            This function polulates the initial momentum inside the s_Initial_Conditions struct
 
-                */
+            */
 
-                Spacetimes[e_metric]->get_initial_conditions_from_file(&s_Initial_Conditions, J_data, p_theta_data, photon);
+            Spacetimes[e_metric]->get_initial_conditions_from_file(&s_Initial_Conditions, J_data, p_theta_data, photon);
 
-                Integration_status = Lens(&s_Initial_Conditions, data, momentum_data);
+            Lens(&s_Initial_Conditions, data, momentum_data);
     
-                print_progress(photon, Data_number, lens_from_file);
-            }
-
-            std::cout << '\n';
+            print_progress(photon, Data_number, lens_from_file);
         }
+
+        std::cout << '\n';
     }
     else{
 
@@ -240,54 +276,75 @@ int main() {
 
         */
 
-        double V_angle_min = -15 / r_obs;
-        double V_angle_max = 15 / r_obs;
+        double V_angle_min = -25 / r_obs;
+        double V_angle_max = 25 / r_obs;
 
-        double H_angle_min = -15 / r_obs;
-        double H_angle_max = 15 / r_obs;
+        double H_angle_min = -25 / r_obs;
+        double H_angle_max = 25 / r_obs;
 
-        double Scan_Step = 2 * H_angle_max / 128;
+        double Scan_Step = (H_angle_max - H_angle_min) / 128;
    
         int progress = 0;
-        
-        int V_num = floor(log10f((V_angle_max - V_angle_min) * 10000) + 1);
 
-        if (Integration_status == OK) {
+        for (double V_angle = V_angle_min; V_angle <= V_angle_max; V_angle += Scan_Step) {
 
-            for (double V_angle = V_angle_max; V_angle >= V_angle_min; V_angle -= Scan_Step) {
+            print_progress(progress, int((V_angle_max - V_angle_min) / Scan_Step), lens_from_file);
 
-                print_progress(progress, int((V_angle_max - V_angle_min) / Scan_Step), lens_from_file);
+            progress += 1;
 
-                progress += 1;
+            for (double H_angle = H_angle_min; H_angle <= H_angle_max; H_angle += Scan_Step) {
 
-                for (double H_angle = H_angle_min; H_angle <= H_angle_max; H_angle += Scan_Step) {
+                /*
+                
+                This function polulates the initial momentum inside the s_Initial_Conditions struct
+                
+                */
 
-                    /*
-                    
-                    This function polulates the initial momentum inside the s_Initial_Conditions struct
-                    
-                    */
+                get_intitial_conditions_from_angles(&s_Initial_Conditions, V_angle, H_angle);
 
-                    get_intitial_conditions_from_angles(&s_Initial_Conditions, V_angle, H_angle);
-
-                    Integration_status = Lens(&s_Initial_Conditions, data, momentum_data);
-
-                }
+                Lens(&s_Initial_Conditions, data, momentum_data);
 
             }
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 129, 129, 0, GL_RGB, GL_FLOAT, texture_buffer);
+            // Specify the color of the background
+            glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+            // Clean the back buffer and assign the new color to it
+            glClear(GL_COLOR_BUFFER_BIT);
+            // Draw primitives, number of indices, datatype of indices, index of indices
+            glDrawElements(GL_TRIANGLES, sizeof(Vertex_order) / sizeof(float), GL_UNSIGNED_INT, 0);
+            // Swap the back buffer with the front buffer
+            glfwSwapBuffers(window);
+            // Take care of all GLFW events
+            glfwPollEvents();
+
+            
         }
+    
     }            
+
+    auto end_time = std::chrono::high_resolution_clock::now();
 
     close_output_files(data, momentum_data);
 
-    std::string Return_Value_String[] = {
+    std::cout << '\n' << "Simulation finished!" << '\n';
 
-        "OK",
-        "ERROR"
+    std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
 
-    };
+    while (!glfwWindowShouldClose(window)) {
 
-    std::cout << "Program Status = " << Return_Value_String[Integration_status];
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 129, 129, 0, GL_RGB, GL_FLOAT, texture_buffer);
+        // Specify the color of the background
+        glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+        // Clean the back buffer and assign the new color to it
+        glClear(GL_COLOR_BUFFER_BIT);
+        // Draw primitives, number of indices, datatype of indices, index of indices
+        glDrawElements(GL_TRIANGLES, sizeof(Vertex_order) / sizeof(float), GL_UNSIGNED_INT, 0);
+        // Swap the back buffer with the front buffer
+        glfwSwapBuffers(window);
+        // Take care of all GLFW events
+        glfwPollEvents();
 
-    return Integration_status;
+    }
+
 }

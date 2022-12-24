@@ -8,8 +8,10 @@
     #include "Spacetimes.h"
     #include "Disk_Models.h"
 
-	Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration);
+    void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J);
 
-	Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofstream data[], std::ofstream momentum_data[]);
+    void RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration);
+
+	void Lens(Initial_conditions_type* p_Initial_Conditions, std::ofstream data[], std::ofstream momentum_data[]);
 
 #endif 

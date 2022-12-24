@@ -14,7 +14,7 @@ extern e_Spacetimes e_metric;
 extern std::vector<c_Spacetime_Base*> Spacetimes;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 
-int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J) {
+void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J) {
 
     double r = State_Vector[e_r];
 
@@ -59,22 +59,20 @@ int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iter
     Derivatives[e_Intensity     + iteration * e_State_Number] = -redshift * redshift * Emission_function * exp(-State_Vector[e_Optical_Depth]) * MASS_TO_CM;
     Derivatives[e_Optical_Depth + iteration * e_State_Number] = -Absorbtion_function / redshift * MASS_TO_CM;
 
-    return  OK;
-
 }
 
-Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration) {
+void RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration) {
 
     int iteration = 0;
-    bool EOM_Status = OK;
 
     double state_error[e_State_Number]{};
-    double State_vector_test[e_State_Number]{};
+    double New_State_vector_O5[e_State_Number]{};
+    double New_State_vector_O4[e_State_Number]{};
     double inter_State_vector[RK45_size * e_State_Number]{};
 
     double integration_error{};
 
-    while (iteration <= RK45_size - 1 && EOM_Status == OK) { //runs trough the EOM evaluations in-between t and t + step
+    while (iteration <= RK45_size - 1) { //runs trough the EOM evaluations in-between t and t + step
 
         for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) { //runs trough the state vector components
 
@@ -88,25 +86,18 @@ Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* ste
 
         }
 
-        EOM_Status = Spacetimes[e_metric]->get_EOM(inter_State_vector, J, Derivatives, iteration);
-
-        //if (State_Vector[e_r + iteration * e_State_Number] > Spacetimes[e_metric]->get_ISCO(Prograde)) {
-
+        Spacetimes[e_metric]->get_EOM(inter_State_vector, J, Derivatives, iteration);
             
-        double current_iteration[e_State_Number] = { inter_State_vector[e_r + iteration * e_State_Number],
-                                                    inter_State_vector[e_theta + iteration * e_State_Number],
-                                                    inter_State_vector[e_phi + iteration * e_State_Number],
-                                                    inter_State_vector[e_phi_FD + iteration * e_State_Number],
-                                                    inter_State_vector[e_p_theta + iteration * e_State_Number],
-                                                    inter_State_vector[e_p_r + iteration * e_State_Number],
-                                                    inter_State_vector[e_Intensity + iteration * e_State_Number],
-                                                    inter_State_vector[e_Optical_Depth + iteration * e_State_Number] };
+        double current_iteration[e_State_Number] = { inter_State_vector[e_r             + iteration * e_State_Number],
+                                                     inter_State_vector[e_theta         + iteration * e_State_Number],
+                                                     inter_State_vector[e_phi           + iteration * e_State_Number],
+                                                     inter_State_vector[e_phi_FD        + iteration * e_State_Number],
+                                                     inter_State_vector[e_p_theta       + iteration * e_State_Number],
+                                                     inter_State_vector[e_p_r           + iteration * e_State_Number],
+                                                     inter_State_vector[e_Intensity     + iteration * e_State_Number],
+                                                     inter_State_vector[e_Optical_Depth + iteration * e_State_Number] };
 
         get_Radiative_Transfer(current_iteration, Derivatives, iteration, J);
-
-
-
-        //}
 
         iteration += 1;
 
@@ -114,16 +105,17 @@ Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* ste
 
     for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) {
 
-        State_vector_test[vector_indexer] = State_Vector[vector_indexer];
+        New_State_vector_O5[vector_indexer] = State_Vector[vector_indexer];
+        New_State_vector_O4[vector_indexer] = State_Vector[vector_indexer];
 
         for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) {
 
-            State_Vector[vector_indexer] += -*step * Coeff_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
-            State_vector_test[vector_indexer] += -*step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
+            New_State_vector_O5[vector_indexer] += -*step * Coeff_sol[derivative_indexer]      * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
+            New_State_vector_O4[vector_indexer] += -*step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
 
         }
 
-        state_error[vector_indexer] = State_Vector[vector_indexer] - State_vector_test[vector_indexer];
+        state_error[vector_indexer] = New_State_vector_O5[vector_indexer] - New_State_vector_O4[vector_indexer];
 
     }
 
@@ -146,6 +138,13 @@ Return_Value_enums RK45(double State_Vector[], double Derivatives[], double* ste
 
     }
 
-    return OK;
+    if (continue_integration) {
 
+        for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) {
+
+            State_Vector[vector_indexer] = New_State_vector_O5[vector_indexer];
+
+        }
+
+    }
 }

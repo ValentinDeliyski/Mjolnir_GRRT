@@ -490,13 +490,19 @@ double tag_Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emissio
 
     switch (e_emission) {
 
-    case Synchotron_exact:
+    case Synchotron_exact: 
 
         return Emission_Function / get_planck_function_CGS(Frequency, Temperature);
 
     case Synchotron_phenomenological:
 
         return DISK_ABSORBTION_COEFF * pow(Emission_Function, SOURCE_F_POWER_LAW);
+
+    default:
+
+        std::cout << "Wrong emission model!" << '\n'; 
+
+        return -1; 
 
     }
 

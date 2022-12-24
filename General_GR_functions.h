@@ -31,6 +31,4 @@
 
     int Lorentz_boost_matrix(double Boost_matrix[4][4], double U_source[4], double metric[4][4]);
 
-    int get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J);
-
-#endif
+#endif 

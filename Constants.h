@@ -85,7 +85,7 @@
     */
 
     Real MASS = 1.0;
-    Real SPIN = 0.00001;
+    Real SPIN = 0.9;
 
     Real WH_REDSHIFT = 1.0;
     Real WH_R_THROAT = MASS;

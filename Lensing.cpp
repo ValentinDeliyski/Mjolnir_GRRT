@@ -6,6 +6,7 @@
 #include "Disk_Models.h"
 #include "IO_files.h"
 #include "General_math_functions.h"
+#include "Rendering_Engine.h"
 
 #include <iostream>
 
@@ -14,15 +15,16 @@ extern std::vector<c_Spacetime_Base*> Spacetimes;
 extern c_Observer Observer_class;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 extern Novikov_Thorne_Model NT_Model;
+extern int texture_indexer;
 
-Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofstream data[], std::ofstream momentum_data[]) {
+void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], std::ofstream momentum_data[]) {
 
-    double& r_obs     = p_Initial_Conditions->init_Pos[e_r];
-    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
-    double& phi_obs   = p_Initial_Conditions->init_Pos[e_phi];
-    double& J         = p_Initial_Conditions->init_Three_Momentum[e_phi];
-    double& p_theta_0 = p_Initial_Conditions->init_Three_Momentum[e_theta];
-    double& p_r_0     = p_Initial_Conditions->init_Three_Momentum[e_r];
+    double& r_obs     = s_Initial_Conditions->init_Pos[e_r];
+    double& theta_obs = s_Initial_Conditions->init_Pos[e_theta];
+    double& phi_obs   = s_Initial_Conditions->init_Pos[e_phi];
+    double& J         = s_Initial_Conditions->init_Three_Momentum[e_phi];
+    double& p_theta_0 = s_Initial_Conditions->init_Three_Momentum[e_theta];
+    double& p_r_0     = s_Initial_Conditions->init_Three_Momentum[e_r];
 
     // Initialize the struct that holds the ray results
     s_Results Ray_results{};
@@ -41,19 +43,15 @@ Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofst
     // Initialize initial State Vector
     double State_vector[e_State_Number] = { r_obs, theta_obs, phi_obs, 0., p_theta_0, p_r_0, 0., 0. };
 
-    // Initialize a vector that stores the old state and the test state, used for estimating errors
-    double State_vector_test[e_State_Number]{}, Old_state[e_State_Number]{};
-
-    // Storing the number of elements in the state vector for readability in later code
-    int const Vector_size = sizeof(State_vector) / sizeof(double);
+    // Initialize a vector that stores the old state
+    double Old_state[e_State_Number]{};
 
     // Initialize arrays that store the states and derivatives of the intermidiate integration steps
-    double inter_State_vector[RK45_size * Vector_size]{}, Derivatives[RK45_size * Vector_size]{};
+    double inter_State_vector[RK45_size * e_State_Number]{}, Derivatives[RK45_size * e_State_Number]{};
 
     // Set the old State Vector and the Test State Vector to the Initial State Vector
     for (int vector_indexer = e_r; vector_indexer <= e_p_r; vector_indexer += 1) {
 
-        State_vector_test[vector_indexer] = State_vector[vector_indexer];
         Old_state[vector_indexer] = State_vector[vector_indexer];
 
     }
@@ -73,14 +71,13 @@ Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofst
 
     // Initialize the logical flags and error enums
     bool continue_integration = false;
-    Return_Value_enums RK45_Status = OK;
 
-    while (RK45_Status == OK && integration_count < MAX_INTEGRATION_COUNT) {
+    while (integration_count < MAX_INTEGRATION_COUNT) {
 
-        RK45_Status = RK45(State_vector, Derivatives, &step, J, &continue_integration);
+        RK45(State_vector, Derivatives, &step, J, &continue_integration);
 
         // If error estimate, returned from RK45_EOM < RK45_ACCURACY
-        if (continue_integration == true) {
+        if (continue_integration) {
 
             // Initialize the light ray
             if (integration_count == 1) {
@@ -105,7 +102,7 @@ Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofst
 
             // Novikov-Thorne Model Evaluation
 
-            bool inside_NT_disk = State_vector[e_r] * State_vector[e_r] > NT_Model.get_r_in() * NT_Model.get_r_in() &&
+            bool inside_NT_disk = State_vector[e_r] * State_vector[e_r] > NT_Model.get_r_in()  * NT_Model.get_r_in() &&
                                   State_vector[e_r] * State_vector[e_r] < NT_Model.get_r_out() * NT_Model.get_r_out() &&
                                   crossed_equatior(State_vector, Old_state);
 
@@ -131,7 +128,7 @@ Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofst
                 }
             }
 
-            for (int vector_indexer = 0; vector_indexer <= Vector_size - 1; vector_indexer += 1) {
+            for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) {
 
                 Old_state[vector_indexer] = State_vector[vector_indexer];
 
@@ -146,6 +143,9 @@ Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofst
 
                 write_to_file(Ray_results, data, momentum_data);
 
+                set_pixel_color(State_vector[e_Intensity], texture_indexer);
+                texture_indexer += 3;
+
                 integration_count = 0;
 
                 break;
@@ -157,7 +157,5 @@ Return_Value_enums Lens(Initial_conditions_type* p_Initial_Conditions, std::ofst
         }
 
     }
-
-    return RK45_Status;
 
 }
