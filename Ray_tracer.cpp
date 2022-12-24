@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    * @Version: 3.5                                                                                |
+|    * @Version: 3.4                                                                                |
 |    * @Author: Valentin Deliyski                                                                   |
 |    * @Description: This program numeriaclly integrates the equations of motion                    |
 |    for null geodesics and ratiative transfer in a curved spacetime and projects                   |
@@ -176,14 +176,16 @@ void main() {
 
     //The simulation image is interpreted as a texture
     GLuint texture = init_texture();
+
+    // This thing (after linkning) combines the bottom two things into one object
+    // NEEDS TO BEFORE THE VERTEX BUFFER AND ELEMENT BUFFER CALLS
+    Vertex_array Vertex_array;
+    Vertex_array.Bind();
+
     // This thing holds the edges of the triangles that the renderer draws
     Vertex_Buffer Vertex_buffer(vertices, sizeof(vertices));
     // This thing holds the sequence in which the edges should be connected
     Element_Buffer Element_buffer(Vertex_order, sizeof(Vertex_order));
-
-    // This thing (after linkning) combines the top two things into one object
-    Vertex_array Vertex_array;
-    Vertex_array.Bind();
 
     Vertex_array.Linkattrib(Vertex_buffer, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
     Vertex_array.Linkattrib(Vertex_buffer, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
@@ -201,7 +203,7 @@ void main() {
 
     // Activates the scaler with a value of 1.5f
     glUniform1f(uniID, 1.5f);
-    // Binds the texture array (RGB values, based on a colormap from the intensity the simulator calculates)
+    // Binds the texture array (RGB values 
     glBindTexture(GL_TEXTURE_2D, texture);
 
     /*
