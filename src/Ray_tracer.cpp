@@ -191,7 +191,7 @@ void main() {
     Vertex_array.Linkattrib(Vertex_buffer, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     // Generates Shader object using shaders defualt.vert and default.frag
-    Shader shaderProgram("default.vert", "default.frag");
+    Shader shaderProgram(".\\Libraries\\shaders\\default.vert", ".\\Libraries\\shaders\\default.frag");
     shaderProgram.Activate();
     
     // Generates a float (with an int ID), that scales the output image
