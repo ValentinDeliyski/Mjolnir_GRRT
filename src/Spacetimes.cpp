@@ -262,11 +262,11 @@ int derived_Kerr_class::get_EOM(double inter_State_vector[], double J, double De
 
 bool derived_Kerr_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool scatter = State_vector[e_r] > 300 && Derivatives[e_r] < 0;
+    bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
 
     double r_horizon = MASS * (1 + sqrt(1 - SPIN * SPIN));
 
-    bool hit_horizon = State_vector[e_r] - r_horizon < 1e-4;
+    bool hit_horizon = State_vector[e_r] - r_horizon < 1e-2;
 
     return scatter || hit_horizon;
 

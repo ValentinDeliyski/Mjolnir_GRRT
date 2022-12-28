@@ -95,6 +95,25 @@ int get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Condi
     return OK;
 }
 
+void get_impact_parameters(Initial_conditions_type* p_Initial_Conditions, double Image_coords[2]) {
+
+    double(*metric)[4] = p_Initial_Conditions->init_metric;
+
+    double g2, gamma, ksi;
+
+    g2 = pow(metric[0][3], 2) - metric[0][0] * metric[3][3];
+    ksi = sqrt(metric[3][3] / g2);
+    gamma = -metric[0][3] / metric[3][3] * ksi;
+
+    double& r_0 = p_Initial_Conditions->init_Pos[e_r];
+    double& J = p_Initial_Conditions->init_Three_Momentum[e_phi];
+    double& p_th = p_Initial_Conditions->init_Three_Momentum[e_theta];
+
+    Image_coords[x] = -r_0 * J / (ksi - gamma * J) / sqrt(metric[3][3]);
+    Image_coords[y] = r_0 * p_th / (ksi - gamma * J) / sqrt(metric[2][2]);
+
+}
+
 double Redshift(double J, double State_Vector[], double U_source[]) {
 
     double U_obs[4];

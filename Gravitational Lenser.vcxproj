@@ -41,6 +41,10 @@
     <ClCompile Include="src\RK45.cpp" />
     <ClCompile Include="src\Spacetimes.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Libraries\shaders\default.frag" />
+    <None Include="Libraries\shaders\default.vert" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

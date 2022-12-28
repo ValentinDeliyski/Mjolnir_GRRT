@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <vector>
+#include "Lensing.h"
 
 extern e_Spacetimes e_metric;
 extern std::vector<c_Spacetime_Base*> Spacetimes;
@@ -61,7 +62,7 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
 
 }
 
-void RK45(double State_Vector[], double Derivatives[], double* step, double J, bool* continue_integration) {
+void RK45(double State_Vector[], double Derivatives[], double J, Step_controller* controller) {
 
     int iteration = 0;
 
@@ -69,8 +70,6 @@ void RK45(double State_Vector[], double Derivatives[], double* step, double J, b
     double New_State_vector_O5[e_State_Number]{};
     double New_State_vector_O4[e_State_Number]{};
     double inter_State_vector[RK45_size * e_State_Number]{};
-
-    double integration_error{};
 
     while (iteration <= RK45_size - 1) { //runs trough the EOM evaluations in-between t and t + step
 
@@ -80,7 +79,7 @@ void RK45(double State_Vector[], double Derivatives[], double* step, double J, b
 
             for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) { //runs trough tough the Dormand-Prince coeficients matrix and adds on the contributions from the derivatives at the points between t and t + step;
 
-                inter_State_vector[vector_indexer + iteration * e_State_Number] += -*step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
+                inter_State_vector[vector_indexer + iteration * e_State_Number] += -controller->step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
 
             }
 
@@ -110,8 +109,8 @@ void RK45(double State_Vector[], double Derivatives[], double* step, double J, b
 
         for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) {
 
-            New_State_vector_O5[vector_indexer] += -*step * Coeff_sol[derivative_indexer]      * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
-            New_State_vector_O4[vector_indexer] += -*step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
+            New_State_vector_O5[vector_indexer] += -controller->step * Coeff_sol[derivative_indexer]      * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
+            New_State_vector_O4[vector_indexer] += -controller->step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
 
         }
 
@@ -119,26 +118,13 @@ void RK45(double State_Vector[], double Derivatives[], double* step, double J, b
 
     }
 
-    integration_error = my_max(state_error);
+    controller->current_err = my_max(state_error);
 
+    controller->update_step();
 
-    if (integration_error < RK45_ACCURACY)
-    {
-        *step = SAFETY_1 * *step * pow(RK45_ACCURACY / (integration_error + SAFETY_2), 0.2);
+    if (State_Vector[e_r] > 25) { controller->step *= 1.0 / 4; }
 
-        *continue_integration = true;
-
-    }
-    else
-    {
-
-        *step = SAFETY_1 * *step * pow(RK45_ACCURACY / (integration_error + SAFETY_2), 0.25);
-
-        *continue_integration = false;
-
-    }
-
-    if (continue_integration) {
+    if (controller->continue_integration) {
 
         for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) {
 
@@ -147,4 +133,46 @@ void RK45(double State_Vector[], double Derivatives[], double* step, double J, b
         }
 
     }
+    
+    controller->sec_prev_err = controller->prev_err;
+    controller->prev_err     = controller->current_err;
+    
+}
+
+Step_controller::Step_controller(double init_stepsize) {
+
+    Gain_I =  0.58 / 5;
+    Gain_P = -0.21 / 5;
+    Gain_D =  0.10 / 5;
+
+    step = INIT_STEPSIZE;
+
+    current_err  = RK45_ACCURACY;
+    prev_err     = RK45_ACCURACY;
+    sec_prev_err = RK45_ACCURACY;
+
+    continue_integration = false;
+
+}
+
+void Step_controller::update_step() {
+
+    if (current_err < RK45_ACCURACY)
+    {
+        step = pow(RK45_ACCURACY / (current_err  + SAFETY_2), Gain_I) *
+               pow(RK45_ACCURACY / (prev_err     + SAFETY_2), Gain_P) *
+               pow(RK45_ACCURACY / (sec_prev_err + SAFETY_2), Gain_D) * step;
+
+        continue_integration = true;
+
+    }
+    else
+    {
+
+        step = SAFETY_1 * step * pow(RK45_ACCURACY / (current_err + SAFETY_2), 0.25);
+
+        continue_integration = false;
+
+    }
+
 }

@@ -10,9 +10,11 @@
 	#include <sstream>
 	#include "Constants.h"
 
-	GLFWwindow* OpenGL_init();
+	GLFWwindow* OpenGL_init(double aspect_ratio);
 
 	void set_pixel_color(double intensity, int pixel_count);
+
+	void set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J);
 
 	/***************************************
 	|									   |
@@ -72,6 +74,14 @@
 
 	};
 
+	class Window_Callbacks {
+
+	public:
+
+		static void define_button_callbacks(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+	};
+
 	std::string get_file_contents(const char* filename);
 
 	GLuint init_texture();
@@ -86,5 +96,6 @@
 	};
 
 	const GLuint Vertex_order[] = {0, 2, 1, 0, 3, 2};
+
 
 #endif

@@ -1,11 +1,16 @@
+#define _USE_MATH_DEFINES
+
 #include "Rendering_Engine.h"
 #include "Constants.h"
+#include "Enumerations.h"
+#include <cmath>
 #include <iostream>
+
 
 extern float Max_Intensity;
 extern float texture_buffer[];
 
-GLFWwindow* OpenGL_init() {
+GLFWwindow* OpenGL_init(double aspect_ratio) {
 
     // Initialize GLFW
     glfwInit();
@@ -16,8 +21,8 @@ GLFWwindow* OpenGL_init() {
     // Tell GLFW we are using the CORE profile
     // So that means we only have the modern functions
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // Create a GLFWwindow object of 800 by 800 pixels, naming it "Gravitational Lenser"
-    GLFWwindow* window = glfwCreateWindow(800, 800, "Gravitational Lenser", NULL, NULL);
+    // Create a GLFWwindow object of 800 by 800 pixels, naming it "Gravitational Ray Tracer"
+    GLFWwindow* window = glfwCreateWindow(1200, 1200, "Gravitational Ray Tracer", NULL, NULL);
     // Introduce the window into the current context
     glfwMakeContextCurrent(window);
     // Turn off vsync because if slows down the simulation A LOT
@@ -26,7 +31,7 @@ GLFWwindow* OpenGL_init() {
     gladLoadGL();
     // Specify the viewport of OpenGL in the Window
     // In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
-    glViewport(0, 0, 800, 800);
+    glViewport(0, 0, 1200, aspect_ratio * 1200);
 
     return window;
 
@@ -34,35 +39,54 @@ GLFWwindow* OpenGL_init() {
 
 void set_pixel_color(double Intensity, int texture_indexer) {
 
-    Max_Intensity = 2.8051e-05;
-
     float x = Intensity / Max_Intensity;
 
     // Red Channel
 
-    float R = 1.0 / 0.5 * x;
+    float R = 1.0f / 0.5f * x;
 
-    if (R > 1) { R = 1; }
+    if (R > 1.0f) { R = 1.0f; }
 
     // Blue Channel
 
     float G{};
 
-    if (x > 0.5) { G = 1.0 / 0.5 * x - 1.0; }
+    if (x > 0.5f) { G = 1.0f / 0.5f * x - 1.0f; }
 
-    if (G > 1) { G = 1; }
+    if (G > 1.0f) { G = 1.0f; }
 
     // Green Channel
 
     float B{};
 
-    if (x > 0.75) { B = 1.0 / 0.25 * x - 0.75 / 0.25; }
+    if (x > 0.75f) { B = 1.0f / 0.25f * x - 0.75f / 0.25f; }
 
-    if (B > 1) { B = 1; }
+    if (B > 1.0f) { B = 1.0f; }
 
-    texture_buffer[texture_indexer] = R;
+    texture_buffer[texture_indexer + 0] = R;
     texture_buffer[texture_indexer + 1] = G;
     texture_buffer[texture_indexer + 2] = B;
+
+}
+
+void set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J) {
+
+    double theta = (State_vector[e_theta] + old_state[e_theta]) / 2;
+    double phi = (State_vector[e_phi] + old_state[e_phi]) / 2;
+
+    if (J*J < 1e-5) {
+
+        phi = phi + M_PI_2;
+
+    }
+
+    double grayscale_value = pow((1 + sin(10 * phi) * sin(10 * theta)) / 2, 1.0 / 5);
+
+
+
+    texture_buffer[texture_indexer] = grayscale_value;
+    texture_buffer[texture_indexer + 1] = grayscale_value;
+    texture_buffer[texture_indexer + 2] = grayscale_value;
 
 }
 
@@ -152,7 +176,7 @@ Element_Buffer::Element_Buffer(const GLuint* vertices, GLsizeiptr size) {
 
     glGenBuffers(1, &ID);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, vertices, GL_DYNAMIC_DRAW);
 
 }
 
@@ -187,13 +211,13 @@ GLuint init_texture() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
     
-    return  texture;
+    return texture;
 }
 
 std::string get_file_contents(const char* filename)
@@ -260,5 +284,30 @@ void Shader::Activate() {
 void Shader::Delete() {
 
     glDeleteProgram(ID);
+
+}
+
+void Window_Callbacks::define_button_callbacks(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    
+    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_NEAREST);
+
+    }
+
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
+
+    }
+
 
 }

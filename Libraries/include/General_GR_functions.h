@@ -21,6 +21,8 @@
 
     int get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Conditions, double V_angle, double H_angle);
 
+    void get_impact_parameters(Initial_conditions_type* p_Initial_Conditions, double Image_coords[2]);
+
     double Redshift(double J, double State_Vector[], double U_source[]);
 
     double get_photon_t_momentum(double State_vector[], double J, double metric[4][4]);
