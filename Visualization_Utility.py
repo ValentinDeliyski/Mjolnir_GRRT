@@ -57,7 +57,7 @@ def Parse_Sim_Results(File_name: str):
 
     return Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted, Metadata
 
-def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_inclanation: float, axes_limits = [-1, 1, -1, 1]):
+def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_inclanation: float):
 
     from scipy.optimize import fsolve
 
@@ -74,7 +74,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
         ksi = Sigma/(Sigma*omega - dr_omega)
         eta = r_ph**2/N**2*(1 - omega*ksi)**2 
 
-        return ksi, eta
+        return ksi.flatten(), eta.flatten()
 
     def get_retrograde_photon_orbit(spin: float, alpha: float):
 
@@ -151,6 +151,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
         ksi, eta = get_integrals_of_motion(r_ph)
 
         alpha_coord, beta_coord = generate_shadow_rim(ksi,eta)
+        
         #--- Get rid of the weird arc that goes "backwards" and doesnt contribute to the shadow ---#
     
         if spin > 0:
@@ -160,6 +161,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
 
         alpha_coord = alpha_coord[index:]
         beta_coord  = beta_coord[index:]
+        ksi  = ksi[index:]
 
         return alpha_coord, beta_coord, ksi
 
@@ -205,12 +207,12 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
 
     if spin > 0:
 
-        throat_bitmask  = alpha_th  > alpha_int
+        throat_bitmask  = beta_th**2  < beta_int**2
         outside_bitmask = alpha_out < alpha_int
 
     else:
 
-        throat_bitmask  = alpha_th  < alpha_int
+        throat_bitmask  = beta_th**2  < beta_int**2
         outside_bitmask = alpha_out > alpha_int
 
     alpha_out = alpha_out[outside_bitmask]
@@ -222,9 +224,12 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
     alpha_shadow = np.concatenate([alpha_th, alpha_out,  np.flip(alpha_out), np.flip(alpha_th)])
     beta_shadow  = np.concatenate([beta_th , beta_out , -np.flip(beta_out), -np.flip(beta_th) ])
 
-    plt.plot(alpha_shadow, beta_shadow, "b")
+    alpha_shadow = alpha_shadow[beta_shadow != 0]
+    beta_shadow  = beta_shadow[beta_shadow != 0]
 
-def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float, axes_limits = [-1, 1, -1, 1]):
+    plt.plot(alpha_shadow, beta_shadow, "k")
+
+def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float):
 
     #--- Equatorial Photon Orbits ---#
 
@@ -284,13 +289,14 @@ def add_celestial_sphere_pattern():
 
     pass
 
-Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted, Metadata = Parse_Sim_Results("Wormhole_Data0_1")
+Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted, Metadata = Parse_Sim_Results("Wormhole_Data0")
 
 axes_limits = [np.round(limit) for limit in Metadata[2]]
-plt.imshow(Intensity, interpolation = 'nearest', cmap = 'hot', extent = axes_limits)
+plt.imshow(Intensity, interpolation = 'nearest', cmap = 'jet', extent = axes_limits)
 
-# add_Kerr_Shadow(0.998, Metadata[0], np.deg2rad(Metadata[1]), axes_limits)
-add_Wormhole_Shadow(spin = -1, alpha = 2, obs_distance = 15, obs_inclanation = np.deg2rad(89.9), axes_limits = axes_limits)
+# add_Kerr_Shadow(0.998, Metadata[0], np.deg2rad(Metadata[1]))
+add_Wormhole_Shadow(spin = -0.5, alpha = 4, obs_distance = 15, obs_inclanation = np.deg2rad(89.9))
+
 #---- Figure Labels -----#
 
 plt.rcParams['text.usetex'] = True
