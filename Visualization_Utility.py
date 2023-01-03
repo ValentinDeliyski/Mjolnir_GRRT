@@ -76,7 +76,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
 
         return ksi.flatten(), eta.flatten()
 
-    def get_retrograde_photon_orbit(spin: float, alpha: float):
+    def get_retrograde_photon_orbit():
 
         def func(r_ph: float):
 
@@ -91,7 +91,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
         
         return fsolve(func, 10)
 
-    def get_shadow_branches_intersection(spin: float, alpha: float):
+    def get_shadow_branches_intersection():
 
         def func(r_ph: float):
 
@@ -127,8 +127,11 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
         gamma = -g_tph/g_phph*np.sqrt(g_phph/g2)
         ksi_metric   = np.sqrt(g_phph/g2)
 
-        Rad_potential   = (-eta*N_obs**2/obs_distance**2 + (1 - omega_obs * ksi)**2) * (-eta*N_obs**2/obs_distance**2 + (1 - omega_obs * ksi)**2 > 0)
-        Theta_potential = (eta - ksi**2/sin_0**2) * (eta - ksi**2/sin_0**2 > 0)
+        Rad_potential   = (-eta*N_obs**2/obs_distance**2 + (1 - omega_obs * ksi)**2)
+        Rad_potential = Rad_potential + (Rad_potential < 0)*1e10
+
+        Theta_potential = (eta - ksi**2/sin_0**2)
+        Theta_potential = Theta_potential * (Theta_potential > 0)
 
         #--- Local Contravariant Momenta ---#
 
@@ -139,8 +142,11 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
 
         #--- Celestial Angular Coordinates ---#
 
-        alpha_coord = np.arctan(p_phi/p_r)
-        beta_coord  = np.arcsin(p_theta/p_t)
+        alpha_args = p_phi[(p_theta/p_t)**2 < 1] / p_r[(p_theta/p_t)**2 < 1]
+        beta_args  = p_theta[(p_theta/p_t)**2 < 1] / p_t[(p_theta/p_t)**2 < 1]
+
+        alpha_coord = np.arctan(alpha_args)
+        beta_coord  = np.arcsin(beta_args)
 
         return alpha_coord.flatten(), beta_coord.flatten()
 
@@ -151,7 +157,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
         ksi, eta = get_integrals_of_motion(r_ph)
 
         alpha_coord, beta_coord = generate_shadow_rim(ksi,eta)
-        
+
         #--- Get rid of the weird arc that goes "backwards" and doesnt contribute to the shadow ---#
     
         if spin > 0:
@@ -161,7 +167,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
 
         alpha_coord = alpha_coord[index:]
         beta_coord  = beta_coord[index:]
-        ksi  = ksi[index:]
+        ksi = ksi[index:]
 
         return alpha_coord, beta_coord, ksi
 
@@ -192,7 +198,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
         return alpha_th, beta_th
 
     r_throat = 1
-    r_ph_max = get_retrograde_photon_orbit(spin = spin, alpha = alpha)
+    r_ph_max = get_retrograde_photon_orbit()
     r_ph = np.linspace(r_throat, r_ph_max, 10000)
 
     alpha_out, beta_out, ksi_out = generate_shadow_due_to_photons_outside_throat(r_ph)
@@ -201,7 +207,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
 
     #--- Get the itnersection points between the two shadow branches ---#
 
-    alpha_int, beta_int, ksi_int = generate_shadow_due_to_photons_outside_throat(get_shadow_branches_intersection(spin = spin, alpha = alpha))
+    alpha_int, beta_int, ksi_int = generate_shadow_due_to_photons_outside_throat(get_shadow_branches_intersection())
 
     #--- Delete the branches of the curves that do not contribute to the shadow ---#
 
