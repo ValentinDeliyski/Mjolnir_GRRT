@@ -1,8 +1,13 @@
 #define _USE_MATH_DEFINES
 
+#include "Disk_Models.h"
+
 #include <cmath>
 
 #include "Enumerations.h"
+
+
+extern Novikov_Thorne_Model NT_Model;
 
 double vector_norm(double Vector[], int Vector_size) {
 
@@ -116,6 +121,43 @@ bool crossed_equatior(double State_vector[], double Old_State_Vector[]) {
     return cos(State_vector[e_theta]) * cos(Old_State_Vector[e_theta]) < 0;
 
 }
+
+bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[]) {
+
+    if (cos(State_Vector[e_theta]) * cos(Old_State_Vector[e_theta]) > 0)
+    {
+
+        return 0;
+
+    }
+
+    double x = State_Vector[e_r] * sin(State_Vector[e_theta]) * cos(State_Vector[e_phi]);
+    double y = State_Vector[e_r] * sin(State_Vector[e_theta]) * sin(State_Vector[e_phi]);
+    double z = State_Vector[e_r] * cos(State_Vector[e_theta]);
+
+    double x_old = Old_State_Vector[e_r] * sin(Old_State_Vector[e_theta]) * cos(Old_State_Vector[e_phi]);
+    double y_old = Old_State_Vector[e_r] * sin(Old_State_Vector[e_theta]) * sin(Old_State_Vector[e_phi]);
+    double z_old = Old_State_Vector[e_r] * cos(Old_State_Vector[e_theta]);
+
+    double gradient[3] = { x - x_old, y - y_old, z - z_old };
+    double const_term[3] = { x_old, y_old, z_old };
+
+    double crossing_param = -const_term[2] / gradient[2];
+
+    for (int index = 0; index < 3; index++) {
+
+        Crossing_coords[index] = gradient[index] * crossing_param + const_term[index];
+
+    }
+
+    double r_crossing_squared = Crossing_coords[0] * Crossing_coords[0] + Crossing_coords[1] * Crossing_coords[1];
+    double r_out = NT_Model.get_r_out();
+    double r_in = NT_Model.get_r_in();
+
+    return r_crossing_squared < r_out* r_out && r_crossing_squared > r_in * r_in;
+
+}
+
 
 double dot_product(double vector_1[3], double vector_2[3]) {
 

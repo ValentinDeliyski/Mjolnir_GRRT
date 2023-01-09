@@ -266,7 +266,7 @@ bool derived_Kerr_class::terminate_integration(double State_vector[], double Der
 
     double r_horizon = MASS * (1 + sqrt(1 - SPIN * SPIN));
 
-    bool hit_horizon = State_vector[e_r] - r_horizon < 1e-2;
+    bool hit_horizon = State_vector[e_r] - r_horizon < 1e-5;
 
     return scatter || hit_horizon;
 
@@ -651,6 +651,7 @@ bool derived_Wormhole_class::terminate_integration(double State_vector[], double
 
     bool scatter = scatter = State_vector[e_r] > sqrt(100 * 100 + WH_R_THROAT * WH_R_THROAT) && Derivatives[0] < 0;
     bool scatter_other_side = State_vector[e_r] < -sqrt(100 * 100 + WH_R_THROAT * WH_R_THROAT);
+    bool stop_at_throat = State_vector[e_r] < 1e-5;
 
 
     return scatter || scatter_other_side;

@@ -64,8 +64,8 @@ Define the Observer class
 
 */
 
-extern Real r_obs = 15;
-extern Real theta_obs = 89.9 / 180 * M_PI;
+extern Real r_obs = 1e3;
+extern Real theta_obs = 60. / 180 * M_PI;
 Real phi_obs = 0;
 
 c_Observer Observer_class(r_obs, theta_obs, phi_obs);
@@ -84,7 +84,7 @@ Define the Novikov-Thorne Disk Class
 
 */
 
-Real r_in = Spacetimes[e_metric]->get_ISCO(Prograde) + 1;
+Real r_in = Spacetimes[e_metric]->get_ISCO(Prograde);
 Real r_out = 25;
 
 Novikov_Thorne_Model NT_Model(r_in, r_out);
@@ -169,17 +169,17 @@ void print_progress(int current, int max, bool lens_from_file) {
 
 }
 
+double V_angle_min = -atan(15 / r_obs);
+double V_angle_max = atan(15 / r_obs);
+
+double H_angle_min = -atan(15 / r_obs);
+double H_angle_max = atan(15 / r_obs);
+
 void main() {
     
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    double V_angle_min = -atan2(15.0,10.0);
-    double V_angle_max = atan2(15.0, 10.0);
-
-    double H_angle_min = -atan2(15.0, 10.0);
-    double H_angle_max = atan2(15.0, 10.0);
-
-    double Scan_Step = (H_angle_max - H_angle_min) / 1500;
+    double Scan_Step = (H_angle_max - H_angle_min) / 128;
 
     GLFWwindow* window = OpenGL_init(V_angle_max / H_angle_max);
 
@@ -250,8 +250,6 @@ void main() {
     std::cout << "Observer Radial Position [GM/c^2] = " << r_obs << '\n';
     std::cout << "Observer Inclination [deg]        = " << int(theta_obs / M_PI * 180) << '\n';
 
-    float value = 1.5f;
-
     if (lens_from_file) {
 
         /*
@@ -292,7 +290,7 @@ void main() {
         
         Normalizing_colormap = true;
   
-        for (double H_angle = H_angle_min; H_angle <= H_angle_max; H_angle += Scan_Step) {
+        for (double H_angle = H_angle_min; H_angle <= H_angle_max - Scan_Step; H_angle += Scan_Step) {
 
             get_intitial_conditions_from_angles(&s_Initial_Conditions, 0, H_angle);
 
@@ -312,7 +310,7 @@ void main() {
    
         int progress = 0;
 
-        for (double V_angle = V_angle_min; V_angle <= V_angle_max; V_angle += Scan_Step) {
+        for (double V_angle = V_angle_min; V_angle <= V_angle_max - Scan_Step; V_angle += Scan_Step) {
 
             print_progress(progress, int((V_angle_max - V_angle_min) / Scan_Step), lens_from_file);
 
@@ -329,7 +327,7 @@ void main() {
             glfwSwapBuffers(window);
             // Take care of all GLFW events
             
-            for (double H_angle = H_angle_max; H_angle >= H_angle_min; H_angle -= Scan_Step) {
+            for (double H_angle = H_angle_max; H_angle >= H_angle_min + Scan_Step; H_angle -= Scan_Step) {
 
                 /*
                 
@@ -355,7 +353,7 @@ void main() {
 
     std::cout << '\n' << "Simulation finished!" << '\n';
 
-    std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
 
     while (!glfwWindowShouldClose(window)) {
 

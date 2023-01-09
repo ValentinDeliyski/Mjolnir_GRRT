@@ -13,6 +13,7 @@
 
 extern e_Spacetimes e_metric;
 extern std::vector<c_Spacetime_Base*> Spacetimes;
+extern Novikov_Thorne_Model NT_Model;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 
 void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J) {
@@ -42,14 +43,14 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
     case Synchotron_exact:
 
         Emission_function = OTT_Model.get_emission_fucntion_synchotron_exact(State_Vector, J, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
 
         break;
 
     case Synchotron_phenomenological:
 
         Emission_function = OTT_Model.get_emission_fucntion_synchotron_phenomenological(State_Vector, J, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
     
         break;
 
@@ -122,8 +123,6 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
     controller->update_step();
 
-    if (State_Vector[e_r] > 25) { controller->step *= 1.0 / 4; }
-
     if (controller->continue_integration) {
 
         for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) {
@@ -141,11 +140,11 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
 Step_controller::Step_controller(double init_stepsize) {
 
-    Gain_I =  0.58 / 5;
-    Gain_P = -0.21 / 5;
-    Gain_D =  0.10 / 5;
+    Gain_I =  1. / 5;
+    Gain_P = -0 / 5;
+    Gain_D =  0 / 5;
 
-    step = INIT_STEPSIZE;
+    step = init_stepsize;
 
     current_err  = RK45_ACCURACY;
     prev_err     = RK45_ACCURACY;

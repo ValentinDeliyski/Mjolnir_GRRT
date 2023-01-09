@@ -4,6 +4,13 @@
 
 	#define DISK_MODELS
 
+    #include "Enumerations.h"
+    #include "Spacetimes.h"
+
+    #include <iostream>
+    #include <cmath>
+    #include <vector>
+
     extern e_Emission_model e_emission;
 
     typedef class tag_Novikov_Thorne_Model {
@@ -54,7 +61,7 @@
 
             double get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes);
 
-            double get_absorbtion_fucntion(double Emission_Function, double Frequency, double Temperature);
+            double get_absorbtion_fucntion(double Emission_Function, double State_vector[], double J, double Frequency, double Temperature);
 
             double get_electron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes);
 

@@ -8,7 +8,7 @@
     typedef const int  Const_int;
     typedef const bool Const_bool;
 
-    Real INIT_STEPSIZE	   = 1e-5; // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
+    Real INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
     Real INTEGRAL_ACCURACY = 5e-9;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
     Real RK45_ACCURACY	   = 1e-7;  // 1e-7 Seems to be an opitimal tradeoff between accuracy and performace 
     Real SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
@@ -85,7 +85,7 @@
     */
 
     Real MASS = 1.0;
-    Real SPIN = 1.0;
+    Real SPIN = 0.9;
 
     Real WH_REDSHIFT = 2.0;
     Real WH_R_THROAT = MASS;
@@ -106,7 +106,7 @@
     Real EMISSION_POWER_LAW = 0;
     Real SOURCE_F_POWER_LAW = 2.5;
 
-    Real DISK_ABSORBTION_COEFF = 1e5;
+    Real DISK_ABSORBTION_COEFF = 1e6;
     Real DISK_HEIGHT_SCALE = 100. / 3;
 
     Real EMISSION_SCALE_PHENOMENOLOGICAL = 3e-18;

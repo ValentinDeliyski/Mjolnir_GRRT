@@ -486,7 +486,7 @@ double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_pheno
 
 }
 
-double tag_Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Function, double Frequency, double Temperature) {
+double tag_Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Function, double State_vector[], double redshift, double Frequency, double Temperature) {
 
     switch (e_emission) {
 
@@ -496,7 +496,7 @@ double tag_Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emissio
 
     case Synchotron_phenomenological:
 
-        return DISK_ABSORBTION_COEFF * pow(Emission_Function, SOURCE_F_POWER_LAW);
+        return DISK_ABSORBTION_COEFF * EMISSION_SCALE_PHENOMENOLOGICAL * get_disk_density(State_vector) * pow(redshift, (SOURCE_F_POWER_LAW + EMISSION_POWER_LAW));
 
     default:
 

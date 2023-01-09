@@ -14,6 +14,8 @@
 
 	bool crossed_equatior(double State_vector[], double Old_State_Vector[]);
 
+	bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[]);
+
 	double dot_product(double vector_1[3], double vector_2[3]);
 
 #endif
