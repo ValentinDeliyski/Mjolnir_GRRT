@@ -14,8 +14,8 @@ def Parse_Sim_Results(File_name: str):
 
         OBS_DISTANCE    = float(csvreader.__next__()[1])
         OBS_INCLICATION = float(csvreader.__next__()[1])
-        X_PIXEL_COUNT   = 401
-        Y_PIXEL_COUNT   = 401
+        X_PIXEL_COUNT   = 100
+        Y_PIXEL_COUNT   = 100
 
         WINDOW_LIMITS = [float(limit) for limit in csvreader.__next__()[1].split(',')]
 
@@ -39,6 +39,8 @@ def Parse_Sim_Results(File_name: str):
             NT_Flux_Shifted[index] = NT_Redshift[index]**4*NT_Flux[index]
 
             index += 1
+
+        Intensity = Intensity / np.average(Intensity)
 
     # Arrays need to be flipped, because mpl treats y = 0 as the top, 
     # and the simulator (aka openGL) treats it as the bottom
@@ -233,7 +235,7 @@ def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_incl
     alpha_shadow = alpha_shadow[beta_shadow != 0]
     beta_shadow  = beta_shadow[beta_shadow != 0]
 
-    plt.plot(alpha_shadow, beta_shadow, "k")
+    plt.plot(alpha_shadow, beta_shadow, "b")
 
 def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float):
 
@@ -295,13 +297,20 @@ def add_celestial_sphere_pattern():
 
     pass
 
-Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted, Metadata = Parse_Sim_Results("Wormhole_Data0")
+def export_ehtim_data():
 
-axes_limits = [np.round(limit) for limit in Metadata[2]]
-plt.imshow(Intensity, interpolation = 'nearest', cmap = 'jet', extent = axes_limits)
+    #TODO   
+
+    pass
+
+Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted, Metadata = Parse_Sim_Results("Kerr_Data0")
+
+axes_limits = [(limit) for limit in Metadata[2]]
+
+plt.imshow(Intensity, interpolation = 'bilinear', cmap = 'jet', extent = axes_limits)
 
 # add_Kerr_Shadow(0.998, Metadata[0], np.deg2rad(Metadata[1]))
-add_Wormhole_Shadow(spin = -0.5, alpha = 4, obs_distance = 15, obs_inclanation = np.deg2rad(89.9))
+# add_Wormhole_Shadow(spin = -0.98, alpha = 2, obs_distance = 1e3, obs_inclanation = np.deg2rad(20.0))
 
 #---- Figure Labels -----#
 

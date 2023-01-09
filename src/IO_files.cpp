@@ -18,6 +18,11 @@ extern Const_bool truncate;
 extern Real r_obs;
 extern Real theta_obs;
 
+extern double V_angle_min;
+extern double V_angle_max;
+extern double H_angle_min;
+extern double H_angle_max;
+
 std::string File_Names[] = {
 
 	"Kerr_Data0",
@@ -131,7 +136,14 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 	for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
 		data[Image_order] << "Observer Radial Position [M]: " << r_obs << '\n'
-						  << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI << '\n'
+						  << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI 
+						  << '\n' 
+						  << "Observation Window Dimentions (-X,+X,-Y,+Y) [Rad]: "
+						  << H_angle_min << ","
+						  << H_angle_max << ","
+						  << V_angle_min << ","
+						  << H_angle_max
+						  << '\n'
 						  << "Image X Coord [M],"
 						  << " "
   		   				  << "Image Y Coord [M],"
@@ -142,10 +154,11 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 						  << " "
 						  << "Optically Thin Disk Intensity [Jy/sRad],"
 						  << " "
-						  << "Novikov-Thorne Disk Phi Coord [Rad],"
+						  << "Celestial Sphere Theta Coord [Rad],"
 						  << " "
-						  << "Novikov-Thorne Disk Radial Coord [M]"
+						  << "Celestial Sphere Phi Coord [Rad]"
 						  << '\n';
+
 
 		if (lens_from_file) {
 
@@ -217,9 +230,9 @@ int write_to_file(s_Results Ray_results, std::ofstream data[], std::ofstream mom
 						  << " "
 						  << Ray_results.Intensity[Image_order]
 						  << " "
-						  << std::setprecision(6) << Ray_results.Source_Coords[e_phi][Image_order]
+						  << Ray_results.Source_Coords[e_theta][Image_order]
 						  << " "
-						  << Ray_results.Source_Coords[e_r][Image_order]
+						  << Ray_results.Source_Coords[e_phi][Image_order]
 						  << '\n';
 
 		if (lens_from_file) {

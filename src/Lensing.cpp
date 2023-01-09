@@ -87,18 +87,21 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
 
             // Novikov-Thorne Model Evaluation
 
+            double crossing_coords[3];
+
             bool inside_NT_disk = State_vector[e_r] * State_vector[e_r] > NT_Model.get_r_in()  * NT_Model.get_r_in() &&
                                   State_vector[e_r] * State_vector[e_r] < NT_Model.get_r_out() * NT_Model.get_r_out() &&
                                   crossed_equatior(State_vector, Old_state);
 
-            if (inside_NT_disk) {
+            if (interpolate_crossing(State_vector, Old_state, crossing_coords)) {
 
                 Image_Order[Novikov_Thorne] = n_equator_crossings;
 
-                Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]]             = NT_Model.Redshift(J, State_vector, r_obs, theta_obs, Spacetimes);
-                Ray_results.Flux_NT[Image_Order[Novikov_Thorne]]                 = NT_Model.get_flux(State_vector[e_r], Spacetimes);
-                Ray_results.Source_Coords[e_r][Image_Order[Novikov_Thorne]]      = State_vector[e_r];
-                Ray_results.Source_Coords[e_phi][Image_Order[Novikov_Thorne]]    = State_vector[e_phi];
+                double r_crossing = sqrt(crossing_coords[0] * crossing_coords[0] + crossing_coords[1] * crossing_coords[1]);
+                double state_crossing[2] = { r_crossing, 3.141 / 2 };
+
+                Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]]             = NT_Model.Redshift(J, state_crossing, r_obs, theta_obs, Spacetimes);
+                Ray_results.Flux_NT[Image_Order[Novikov_Thorne]]                 = NT_Model.get_flux(r_crossing, Spacetimes);
                 Ray_results.Three_Momentum[e_r][Image_Order[Novikov_Thorne]]     = State_vector[e_p_r];
                 Ray_results.Three_Momentum[e_theta][Image_Order[Novikov_Thorne]] = State_vector[e_p_theta];
 
@@ -122,13 +125,11 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
 
                 if (!Normalizing_colormap) {
 
+                    set_pixel_color(State_vector[e_Intensity], texture_indexer);
+                    Ray_results.Source_Coords[e_theta][direct] = State_vector[e_theta];
+                    Ray_results.Source_Coords[e_phi][direct]   = State_vector[e_phi];
+
                     write_to_file(Ray_results, data, momentum_data);
-
-                    if (State_vector[e_r] > 20) {
-
-                        set_background_pattern_color(State_vector,Old_state, texture_indexer, J);
-
-                    }
                     
                     texture_indexer += 3;
 
