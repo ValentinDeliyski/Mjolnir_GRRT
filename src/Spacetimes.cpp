@@ -16,7 +16,7 @@
 |                                      |
 ***************************************/
 
-extern e_Spacetimes e_metric;
+extern Spacetime_enums e_metric;
 
 tag_observer::tag_observer(double r, double theta, double phi) {
 
@@ -819,10 +819,10 @@ int derived_JNW_class::get_EOM(double inter_State_vector[], double J, double Der
     double pow_gamma = pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA);
     double pow_gamma_minus_1 = pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1);
 
-    Derivatives[e_r + iteration * e_State_Number] = pow_gamma * inter_State_vector[e_p_r + iteration * e_State_Number];
-    Derivatives[e_theta + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
-    Derivatives[e_phi + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r * sin2) * J;
-    Derivatives[e_phi_FD + iteration * e_State_Number] = 0.0;
+    Derivatives[e_r       + iteration * e_State_Number] = pow_gamma * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_theta   + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
+    Derivatives[e_phi     + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r * sin2) * J;
+    Derivatives[e_phi_FD  + iteration * e_State_Number] = 0.0;
     Derivatives[e_p_theta + iteration * e_State_Number] = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
 
     double r_term_1 = -JNW_GAMMA * JNW_R_SINGULARITY / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma
@@ -838,10 +838,10 @@ int derived_JNW_class::get_EOM(double inter_State_vector[], double J, double Der
 
 bool derived_JNW_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool hit_singularity = State_vector[e_r] - JNW_R_SINGULARITY < 0.05;
+    bool hit_singularity = State_vector[e_r] - JNW_R_SINGULARITY < 1e-11;
 
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
-    return scatter || hit_singularity;
+    return scatter ;
 
 };

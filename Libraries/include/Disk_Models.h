@@ -11,7 +11,7 @@
     #include <cmath>
     #include <vector>
 
-    extern e_Emission_model e_emission;
+    extern Emission_model_enums e_emission;
 
     typedef class tag_Novikov_Thorne_Model {
 

@@ -18,7 +18,7 @@
 |                                                  |
 ***************************************************/
 
-extern e_Spacetimes e_metric;
+extern Spacetime_enums e_metric;
 extern std::vector<c_Spacetime_Base*> Spacetimes;
 
 tag_Novikov_Thorne_Model::tag_Novikov_Thorne_Model(double x, double y) {
@@ -91,7 +91,6 @@ double tag_Novikov_Thorne_Model::Redshift(double J, double State_Vector[], doubl
 }
 
 double tag_Novikov_Thorne_Model::disk_Energy(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
-
 
     double metric[4][4], N, omega;
 
@@ -261,7 +260,7 @@ int tag_Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[],
 
     if (e_metric == Wormhole) {
 
-        r_source = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+        r_source = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);   
 
     }
 
@@ -280,6 +279,12 @@ int tag_Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[],
     }
 
     double ell = pow(sqrt(rho), 3) / (1 + rho);
+
+    if (e_metric == Naked_Singularity) {
+
+        ell *= pow(1 - JNW_R_SINGULARITY / r_source, 1 - JNW_GAMMA);
+
+    }
 
     double u_t{}, u_phi{};
 
@@ -324,11 +329,11 @@ double tag_Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]
             electron_density = N_ELECTRON_EXACT_CGS * pow(r / (1. + sqrt(1 - SPIN * SPIN)), -2) * exp(-Height_Cutoff);
 
 
-            if (State_Vector[e_r] < Spacetimes[e_metric]->get_ISCO(Prograde)) {
+            //if (State_Vector[e_r] < Spacetimes[e_metric]->get_ISCO(Prograde)) {
 
-                electron_density *= exp(-Radial_Cutoff);
+              //  electron_density *= exp(-Radial_Cutoff);
 
-            }
+            //}
 
             break;
 
@@ -394,7 +399,7 @@ double tag_Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_
 
     double Boost_matrix[4][4]{};
 
-    Lorentz_boost_matrix(Boost_matrix, U_source_ZAMO, metric);
+    Lorentz_boost_matrix(Boost_matrix, U_source_ZAMO);
 
     double U_source_Boosted[4]{};
     
@@ -429,8 +434,8 @@ double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact
 
     /* Dimentionless Electron Temperature */
 
-    double T_electron       = get_disk_temperature(State_vector);
-    double T_electron_dim   = BOLTZMANN_CONST_CGS * T_electron / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
+    double T_electron     = get_disk_temperature(State_vector);
+    double T_electron_dim = BOLTZMANN_CONST_CGS * T_electron / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
 
     /* Magnetic Field */
 

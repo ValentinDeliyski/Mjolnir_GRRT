@@ -14,8 +14,8 @@
     Real SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Real SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
 
-    Const_int RK45_size			    = 7;	   // Number of integration sub-steps
-    Const_int MAX_INTEGRATION_COUNT = 7600000; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
+    Const_int RK45_size			    = 7;   // Number of integration sub-steps
+    Const_int MAX_INTEGRATION_COUNT = 1e8; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
     Real Coeff_deriv[RK45_size][RK45_size - 1] =
     {
@@ -85,15 +85,15 @@
     */
 
     Real MASS = 1.0;
-    Real SPIN = 0.9;
+    Real SPIN = 1e-5;
 
     Real WH_REDSHIFT = 2.0;
     Real WH_R_THROAT = MASS;
 
     Real RBH_PARAM = 0.00;
 
-    Real JNW_R_SINGULARITY = 4.5;
-    Real JNW_GAMMA = 2 * MASS / JNW_R_SINGULARITY;
+    Real JNW_GAMMA = 0.31;
+    Real JNW_R_SINGULARITY = 2 * MASS / JNW_GAMMA;
 
     /*
     
@@ -106,8 +106,8 @@
     Real EMISSION_POWER_LAW = 0;
     Real SOURCE_F_POWER_LAW = 2.5;
 
-    Real DISK_ABSORBTION_COEFF = 1e6;
-    Real DISK_HEIGHT_SCALE = 100. / 3;
+    Real DISK_ABSORBTION_COEFF = 0;
+    Real DISK_HEIGHT_SCALE = 10. / 3;
 
     Real EMISSION_SCALE_PHENOMENOLOGICAL = 3e-18;
 
@@ -122,6 +122,7 @@
     Real N_ELECTRON_EXACT_CGS = 2e6;
     Real T_ELECTRON_EXACT_CGS = 1e11;
 
-    Const_int RESOLUTION = 3000 * 3000;
+    Const_int RESOLUTION = 2500;
+    Const_int TEXTURE_BUFFER_SIZE = 3000 * 3000;
 
 #endif

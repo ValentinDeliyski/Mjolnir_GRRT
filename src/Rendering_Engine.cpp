@@ -6,7 +6,6 @@
 #include <cmath>
 #include <iostream>
 
-
 extern float Max_Intensity;
 extern float texture_buffer[];
 
@@ -14,26 +13,77 @@ GLFWwindow* OpenGL_init(double aspect_ratio) {
 
     // Initialize GLFW
     glfwInit();
-    // Tell GLFW what version of OpenGL we are using 
-    // In this case we are using OpenGL 3.3
+
+    // Tell GLFW what version of OpenGL we are using -> OpenGL 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    // Tell GLFW we are using the CORE profile
-    // So that means we only have the modern functions
+
+    // Tell GLFW we are using the CORE profile -> we only have the modern functions
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // Create a GLFWwindow object of 800 by 800 pixels, naming it "Gravitational Ray Tracer"
+
     GLFWwindow* window = glfwCreateWindow(1200, 1200, "Gravitational Ray Tracer", NULL, NULL);
+
     // Introduce the window into the current context
     glfwMakeContextCurrent(window);
+
     // Turn off vsync because if slows down the simulation A LOT
     glfwSwapInterval(0);
+
     //Load GLAD so it configures OpenGL
     gladLoadGL();
-    // Specify the viewport of OpenGL in the Window
-    // In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
-    glViewport(0, 0, 1200, aspect_ratio * 1200);
+
+    // Specify the viewport of OpenGL in the Window -> x = [0, aspect_ratio * 1200], y = [0, 1200]
+    glViewport(0, 0, aspect_ratio * 1200, 1200);
+
+    //The simulation image is interpreted as a texture
+    GLuint texture = init_texture();
+
+    // This thing (after linkning) combines the bottom two things into one object
+    // NEEDS TO BE BEFORE THE VERTEX BUFFER AND ELEMENT BUFFER CALLS
+    Vertex_array Vertex_array;
+    Vertex_array.Bind();
+
+    // This thing holds the edges of the triangles that the renderer draws
+    Vertex_Buffer Vertex_buffer(vertices, sizeof(vertices));
+    // This thing holds the sequence in which the edges should be connected
+    Element_Buffer Element_buffer(Vertex_order, sizeof(Vertex_order));
+
+    Vertex_array.Linkattrib(Vertex_buffer, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
+    Vertex_array.Linkattrib(Vertex_buffer, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+    // Generates a Shader object using the shaders defualt.vert and default.frag
+    Shader shaderProgram(".\\Libraries\\shaders\\default.vert", ".\\Libraries\\shaders\\default.frag");
+    shaderProgram.Activate();
+
+    // Generates a float (with an int ID), that scales the output image
+    GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
+
+    // Generates an int (with an int ID), that tells the shader *insert what it tells it here*
+    GLuint tex0Uni = glGetUniformLocation(shaderProgram.ID, "tex0");
+    glUniform1i(tex0Uni, 0);
+
+    // Activates the scaler with a value of 1.5f
+    glUniform1f(uniID, 1.5f);
+    // Binds the texture array (RGB values 
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     return window;
+
+}
+
+void update_rendering_window(GLFWwindow* window, double aspect_ratio) {
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, RESOLUTION, RESOLUTION * aspect_ratio, 0, GL_RGB, GL_FLOAT, texture_buffer);
+    // Specify the color of the background
+    glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+    // Clean the back buffer and assign the new color to it
+    glClear(GL_COLOR_BUFFER_BIT);
+    // Draw primitives, number of indices, datatype of indices, index of indices
+    glDrawElements(GL_TRIANGLES, sizeof(Vertex_order) / sizeof(float), GL_UNSIGNED_INT, 0);
+    // Swap the back buffer with the front buffer
+    glfwSwapBuffers(window);
+    // Take care of all GLFW events
+    glfwPollEvents();
 
 }
 

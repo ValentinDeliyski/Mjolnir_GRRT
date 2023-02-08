@@ -4,7 +4,7 @@
 
 	#define ENUMS
 
-	typedef enum tag_Spacetime_enums {
+	enum Spacetime_enums {
 
 		Kerr = 0,
 		Reg_Black_Hole = 1,
@@ -12,16 +12,16 @@
 		Naked_Singularity = 3,
 		SPACETIME_NUMBER = 4
 
-	}e_Spacetimes;
+	};
 
-	typedef enum tag_Emission_model_enums {
+	enum Emission_model_enums {
 
 		Synchotron_exact = 0,
 		Synchotron_phenomenological = 1
 
-	}e_Emission_model;
+	};
 
-	typedef enum tag_State_enums {
+	enum State_enums {
 
 		e_r = 0,
 		e_theta = 1,
@@ -33,26 +33,26 @@
 		e_Optical_Depth = 7,
 		e_State_Number = 8
 
-	}State_enums;
+	};
 
-	typedef enum tag_Spacetime_coords {
+	enum Spacetime_coords {
 
 		e_t_coord     = 0,
 		e_r_coord     = 1,
 		e_theta_coord = 2,
 		e_phi_coord   = 3
 
-	}Spacetime_coords;
+	};
 
-	typedef enum tag_XYZ_enums {
+	enum XYZ_enums {
 
 		x = 0,
 		y = 1,
 		z = 2
 
-	}XYZ_enums;
+	};
 
-	typedef enum tag_Image_Orders {
+	enum Image_Orders {
 
 		direct = 0,
 		first = 1,
@@ -61,40 +61,31 @@
 		ORDER_NUM = 4,
 		Total = 5,
 
-	}Order_enums;
+	};
 
-	typedef enum tag_Return_Values {
+	enum Return_Values {
 
 		OK = 0,
 		ERROR = 255
 
-	}Return_Value_enums;
+	};
 
-	typedef enum tag_Disk_Model {
+	typedef enum Disk_Model{
 
 		Novikov_Thorne = 0,
 		Optically_Thin_Toroidal = 1,
 		DISK_MODEL_NUM = 2
 
-	}Disk_Models;
+	};
 
-	typedef enum tag_Disk_Intersection {
-
-		Outside_Disk = 0,
-		Inside_Disk = 1,
-		Entering_Disk = 2,
-		Exiting_Disk = 3
-
-	}Disk_Intersection;
-
-	typedef enum tag_Orbit_Orientation {
+	typedef enum Orbit_Orientation{
 
 		Prograde   = 0,
 		Retrograde = 1,
 
-	}Orbit_Orientation;
+	};
 
-	typedef enum tag_Spacetime_Parameters {
+	enum Spacetime_Parameters {
 
 		/* Wormhole */
 
@@ -112,9 +103,9 @@
 
 		PARAMETER_NUM = 5
 
-	}Spacetime_Parameters;
+	};
 
-	typedef struct tag_initial_conditions {
+	struct Initial_conditions_type {
 
 		double init_metric[4][4];
 		double init_metric_Redshift_func;
@@ -123,9 +114,9 @@
 		double init_Pos[3];
 		double init_Three_Momentum[3];
 
-	}Initial_conditions_type;
+	};
 
-	typedef struct tag_results {
+	struct Results_type {
 
 		double Flux_NT[ORDER_NUM];
 		double Redshift_NT[ORDER_NUM];
@@ -140,7 +131,7 @@
 
 		double Parameters[SPACETIME_NUMBER];
 
-	}s_Results;
+	};
 
 
 #endif

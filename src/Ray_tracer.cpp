@@ -2,21 +2,21 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    * @Version: 3.5                                                                                |
-|    * @Author: Valentin Deliyski                                                                   |
-|    * @Description: This program numeriaclly integrates the equations of motion                    |
+|    @ Version: 3.5.2                                                                               |
+|    @ Author: Valentin Deliyski                                                                    |
+|    @ Description: This program numeriaclly integrates the equations of motion                     |
 |    for null geodesics and radiative transfer in a curved spacetime,then projects                  |
 |    them onto an observer's screen to construct relativistic images of accretion disks             |
 |                                                                                                   |
-|    * @Supported Spacetimes:                                                                       |
-|        ** Kerr Black Holes                                                                        |
-|        ** Static Regular Black Holes                                                              |
-|        ** Rotating Traversable Wormholes                                                          |
-|        ** Janis - Newman - Winicour Naked Singularities                                           |
+|    @ Supported Spacetimes:                                                                        |
+|      * Kerr Black Holes                                                                           |
+|      * Static Regular Black Holes                                                                 |
+|      * Rotating Traversable Wormholes                                                             |
+|      * Janis - Newman - Winicour Naked Singularities                                              |
 |                                                                                                   |
-|    * @Supported Disk Models                                                                       |
-|        ** Novikov-Thorne                                                                          |
-|        ** Generic Optically Thin Disk With Arbitrary Density, Emission and Absorbtion Profiles    |
+|    @ Supported Disk Models                                                                        |
+|      * Novikov-Thorne                                                                             |
+|      * Generic Optically Thin Disk With Arbitrary Density, Emission and Absorbtion Profiles       |
 |                                                                                                   |
 ****************************************************************************************************/
 
@@ -41,12 +41,12 @@
 
 #include "Rendering_Engine.h"
 
-e_Spacetimes e_metric = Kerr;
-e_Emission_model e_emission = Synchotron_phenomenological;
+Spacetime_enums e_metric = Kerr;
+Emission_model_enums e_emission = Synchotron_phenomenological;
 
 /* 
 
-Define classes that hold the spacetime properites
+Define classes that holds the spacetime properites
 
 */
 
@@ -65,7 +65,7 @@ Define the Observer class
 */
 
 extern Real r_obs = 1e3;
-extern Real theta_obs = 60. / 180 * M_PI;
+extern Real theta_obs = 20. / 180 * M_PI;
 Real phi_obs = 0;
 
 c_Observer Observer_class(r_obs, theta_obs, phi_obs);
@@ -84,7 +84,7 @@ Define the Novikov-Thorne Disk Class
 
 */
 
-Real r_in = Spacetimes[e_metric]->get_ISCO(Prograde);
+Real r_in = 4;
 Real r_out = 25;
 
 Novikov_Thorne_Model NT_Model(r_in, r_out);
@@ -95,7 +95,7 @@ Define some global boolians
 
 */
 
-extern Const_bool lens_from_file = false;
+extern Const_bool lens_from_file = true;
 extern Const_bool truncate = true;
 
 /*
@@ -104,11 +104,10 @@ Rendering Engine variables
 
 */
 
-int pixel_count{}; // This is sometimes off by one which is why Im literally counting them - prolly to due with the loops iterating over floats...
 float Max_Intensity{};
 int texture_indexer{};
 bool Normalizing_colormap{};
-float texture_buffer[RESOLUTION * 3]{};
+float texture_buffer[TEXTURE_BUFFER_SIZE * 3]{};
 
 void print_ASCII_art() {
 
@@ -126,7 +125,7 @@ void print_ASCII_art() {
 
 }
 
-void print_progress(int current, int max, bool lens_from_file) {
+void print_progress(int current, int max, bool lens_from_file, bool Normalizing_colormap) {
 
     int current_digits = 1;
 
@@ -145,9 +144,14 @@ void print_progress(int current, int max, bool lens_from_file) {
             std::cout << "Number Of Rays Cast: ";
 
         }
-        else {
+        else if(!Normalizing_colormap){
 
             std::cout << "Number Of Lines Scanned: ";
+
+        }
+        else {
+
+            std::cout << "Progress: ";
 
         }
 
@@ -159,62 +163,35 @@ void print_progress(int current, int max, bool lens_from_file) {
 
     }
 
-    for (int i = 0; i <= max_digits + current_digits; i += 1) {
+    for (int i = 0; i <= max_digits + current_digits + 1; i += 1) {
 
         std::cout << "\b";
 
     }
 
-    std::cout << current + 1 << "/" << max + 1;
+    std::cout << current + 1 << "/" << max + 1 << " ";
 
 }
 
-double V_angle_min = -atan(15 / r_obs);
-double V_angle_max = atan(15 / r_obs);
+/*
 
-double H_angle_min = -atan(15 / r_obs);
-double H_angle_max = atan(15 / r_obs);
+Setup a viewing window for the observer
+
+*/
+
+double V_angle_min = -atan(30 / r_obs);
+double V_angle_max = atan(30 / r_obs);
+
+double H_angle_min = -atan(30 / r_obs);
+double H_angle_max = atan(30 / r_obs);
 
 void main() {
     
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    double Scan_Step = (H_angle_max - H_angle_min) / 128;
+    double Scan_Step = (H_angle_max - H_angle_min) / (RESOLUTION - 1);
 
-    GLFWwindow* window = OpenGL_init(V_angle_max / H_angle_max);
-
-    //The simulation image is interpreted as a texture
-    GLuint texture = init_texture();
-
-    // This thing (after linkning) combines the bottom two things into one object
-    // NEEDS TO BEFORE THE VERTEX BUFFER AND ELEMENT BUFFER CALLS
-    Vertex_array Vertex_array;
-    Vertex_array.Bind();
-
-    // This thing holds the edges of the triangles that the renderer draws
-    Vertex_Buffer Vertex_buffer(vertices, sizeof(vertices));
-    // This thing holds the sequence in which the edges should be connected
-    Element_Buffer Element_buffer(Vertex_order, sizeof(Vertex_order));
-
-    Vertex_array.Linkattrib(Vertex_buffer, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
-    Vertex_array.Linkattrib(Vertex_buffer, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-    // Generates Shader object using the shaders defualt.vert and default.frag
-    Shader shaderProgram(".\\Libraries\\shaders\\default.vert", ".\\Libraries\\shaders\\default.frag");
-    shaderProgram.Activate();
-    
-    // Generates a float (with an int ID), that scales the output image
-    GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
-
-    // Generates an int (with an int ID), that tells the shader *insert what it tells it here*
-    GLuint tex0Uni = glGetUniformLocation(shaderProgram.ID, "tex0");
-    glUniform1i(tex0Uni, 0);
-
-    // Activates the scaler with a value of 1.5f
-    glUniform1f(uniID, 1.5f);
-    // Binds the texture array (RGB values 
-    glBindTexture(GL_TEXTURE_2D, texture);
-
+    GLFWwindow* window = OpenGL_init(H_angle_max / V_angle_max);
     glfwSetKeyCallback(window, Window_Callbacks::define_button_callbacks);
 
     /*
@@ -234,16 +211,16 @@ void main() {
     */
 
     Initial_conditions_type s_Initial_Conditions{};
-    s_Initial_Conditions.init_Pos[e_r] = r_obs;
+    s_Initial_Conditions.init_Pos[e_r]     = r_obs;
     s_Initial_Conditions.init_Pos[e_theta] = theta_obs;
-    s_Initial_Conditions.init_Pos[e_phi] = phi_obs;
+    s_Initial_Conditions.init_Pos[e_phi]   = phi_obs;
 
     double metric[4][4]{}, N_obs, omega_obs;
 
         Spacetimes[e_metric]->get_metric(s_Initial_Conditions.init_metric, &N_obs, &omega_obs, r_obs, theta_obs);
     
         s_Initial_Conditions.init_metric_Redshift_func = N_obs;
-        s_Initial_Conditions.init_metric_Shitft_func = omega_obs;
+        s_Initial_Conditions.init_metric_Shitft_func   = omega_obs;
 
     print_ASCII_art();
 
@@ -275,7 +252,7 @@ void main() {
 
             Lens(&s_Initial_Conditions, data, momentum_data);
     
-            print_progress(photon, Data_number, lens_from_file);
+            print_progress(photon, Data_number, lens_from_file, Normalizing_colormap);
         }
 
         std::cout << '\n';
@@ -289,14 +266,16 @@ void main() {
         */
         
         Normalizing_colormap = true;
-  
-        for (double H_angle = H_angle_min; H_angle <= H_angle_max - Scan_Step; H_angle += Scan_Step) {
 
-            get_intitial_conditions_from_angles(&s_Initial_Conditions, 0, H_angle);
+        std::cout << "Initial y = 0 scan to normalize the colormap..." << '\n';
+  
+        for (int pixel_num = 0; pixel_num <= RESOLUTION - 1; pixel_num++) {
+
+            get_intitial_conditions_from_angles(&s_Initial_Conditions, 0, H_angle_max - pixel_num * Scan_Step);
 
             Lens(&s_Initial_Conditions, data, momentum_data);
 
-            pixel_count += 1;
+            print_progress(pixel_num, RESOLUTION - 1, lens_from_file, Normalizing_colormap);
 
         }
 
@@ -304,30 +283,22 @@ void main() {
 
         /*
         
-        Setup a viewing window for the observer and loop trough it
+        Loop trough the viewing window
 
         */
    
         int progress = 0;
 
-        for (double V_angle = V_angle_min; V_angle <= V_angle_max - Scan_Step; V_angle += Scan_Step) {
+        std::cout << '\n' << "Simulation starts..." << '\n';
 
-            print_progress(progress, int((V_angle_max - V_angle_min) / Scan_Step), lens_from_file);
+        for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
+
+            update_rendering_window(window, V_angle_max / H_angle_max);
+            print_progress(progress, RESOLUTION - 1, lens_from_file, Normalizing_colormap);
 
             progress += 1;
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pixel_count, pixel_count * V_angle_max / H_angle_max, 0, GL_RGB, GL_FLOAT, texture_buffer);
-            // Specify the color of the background
-            glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-            // Clean the back buffer and assign the new color to it
-            glClear(GL_COLOR_BUFFER_BIT);
-            // Draw primitives, number of indices, datatype of indices, index of indices
-            glDrawElements(GL_TRIANGLES, sizeof(Vertex_order) / sizeof(float), GL_UNSIGNED_INT, 0);
-            // Swap the back buffer with the front buffer
-            glfwSwapBuffers(window);
-            // Take care of all GLFW events
-            
-            for (double H_angle = H_angle_max; H_angle >= H_angle_min + Scan_Step; H_angle -= Scan_Step) {
+            for (int H_pixel_num = 0; H_pixel_num <= RESOLUTION - 1; H_pixel_num++) {
 
                 /*
                 
@@ -335,11 +306,10 @@ void main() {
                 
                 */
 
-                get_intitial_conditions_from_angles(&s_Initial_Conditions, V_angle, H_angle);
+                get_intitial_conditions_from_angles(&s_Initial_Conditions, V_angle_min + V_pixel_num * Scan_Step,
+                                                                           H_angle_max - H_pixel_num * Scan_Step);
 
                 Lens(&s_Initial_Conditions, data, momentum_data);
-
-                glfwPollEvents();
 
             }
 
@@ -357,17 +327,7 @@ void main() {
 
     while (!glfwWindowShouldClose(window)) {
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pixel_count, pixel_count* V_angle_max / H_angle_max, 0, GL_RGB, GL_FLOAT, texture_buffer);
-        // Specify the color of the background
-        glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-        // Clean the back buffer and assign the new color to it
-        glClear(GL_COLOR_BUFFER_BIT);
-        // Draw primitives, number of indices, datatype of indices, index of indices
-        glDrawElements(GL_TRIANGLES, sizeof(Vertex_order) / sizeof(float), GL_UNSIGNED_INT, 0);
-        // Swap the back buffer with the front buffer
-        glfwSwapBuffers(window);
-        // Take care of all GLFW events
-        glfwPollEvents();
+        update_rendering_window(window, V_angle_max / H_angle_max);
 
     }
 

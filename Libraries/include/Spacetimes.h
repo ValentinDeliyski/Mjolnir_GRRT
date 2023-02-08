@@ -93,19 +93,19 @@
 
         public:
 
-            double get_ISCO(Orbit_Orientation Orientation);
-            double get_Photon_Sphere(Orbit_Orientation Orientation);
+            double get_ISCO(Orbit_Orientation Orientation) override;
+            double get_Photon_Sphere(Orbit_Orientation Orientation) override;
 
             /* Metric and its derivatives */
 
             int get_metric(double metric[4][4], double* N_metric,
-                           double* omega_metric, double r, double theta);
+                           double* omega_metric, double r, double theta) override;
 
             int get_dr_metric(double metric[4][4], double* N_metric,
-                              double* omega_metric, double r, double theta);
+                              double* omega_metric, double r, double theta) override;
 
             int get_d2r_metric(double metric[4][4], double* N_metric,
-                               double* omega_metric, double r, double theta);
+                               double* omega_metric, double r, double theta) override;
 
             ///* Initial conditions derived from images */
 
