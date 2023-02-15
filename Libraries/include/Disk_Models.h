@@ -11,9 +11,9 @@
     #include <cmath>
     #include <vector>
 
-    extern e_Emission_model e_emission;
+    extern Emission_model_enums e_emission;
 
-    typedef class tag_Novikov_Thorne_Model {
+    class Novikov_Thorne_Model {
 
         private:
 
@@ -22,7 +22,7 @@
 
         public:
 
-            tag_Novikov_Thorne_Model(double x, double y);
+            Novikov_Thorne_Model(double x, double y);
 
             double get_r_in();
             double get_r_out();
@@ -43,13 +43,13 @@
 
             double get_flux(double r, std::vector<c_Spacetime_Base*> Spacetimes);
 
-    }Novikov_Thorne_Model;
+    };
 
-    typedef class tag_Optically_Thin_Toroidal_Model {
+    class Optically_Thin_Toroidal_Model {
 
         public:
 
-            tag_Optically_Thin_Toroidal_Model();
+            Optically_Thin_Toroidal_Model();
      
             int get_disk_velocity(double Disk_velocity[], double State_vector[], std::vector<c_Spacetime_Base*> Spacetimes);
 
@@ -67,7 +67,7 @@
 
             double get_disk_temperature(double State_vector[]);
 
-    }Optically_Thin_Toroidal_Model;
+    };
 
 #endif
 

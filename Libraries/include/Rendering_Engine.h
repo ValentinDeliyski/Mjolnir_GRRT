@@ -12,6 +12,8 @@
 
 	GLFWwindow* OpenGL_init(double aspect_ratio);
 
+	void update_rendering_window(GLFWwindow* window, double aspect_ratio);
+
 	void set_pixel_color(double intensity, int pixel_count);
 
 	void set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J);

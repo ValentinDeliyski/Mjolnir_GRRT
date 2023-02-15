@@ -11,7 +11,7 @@
 #include "IO_files.h"
 #include "Constants.h"
 
-extern e_Spacetimes e_metric;
+extern Spacetime_enums e_metric;
 extern Const_bool lens_from_file;
 extern Const_bool truncate;
 
@@ -55,7 +55,7 @@ std::string File_Names[] = {
 	"RBH_Momentum_Data2",
 	"RBH_Momentum_Data3",
 
-    "JNW_Data0",
+	"JNW_Data0",
 	"JNW_Data1",
 	"JNW_Data2",
 	"JNW_Data3",
@@ -144,19 +144,24 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 						  << V_angle_min << ","
 						  << H_angle_max
 						  << '\n'
+						  << "Simulation Resolutoin: "
+						  << RESOLUTION
+						  << " x "
+						  << RESOLUTION
+						  << '\n'
 						  << "Image X Coord [M],"
 						  << " "
-  		   				  << "Image Y Coord [M],"
-	  					  << " "
+						  << "Image Y Coord [M],"
+						  << " "
 						  << "Novikov-Thorne Disk Redshift [-],"
 						  << " "
-						  << "Novikov-Thorne Flux [?],"
+						  << "Novikov-Thorne Flux [M^-2],"
 						  << " "
 						  << "Optically Thin Disk Intensity [Jy/sRad],"
 						  << " "
-						  << "Celestial Sphere Theta Coord [Rad],"
+						  << "Novikov-Thorne Source r Coord [M],"
 						  << " "
-						  << "Celestial Sphere Phi Coord [Rad]"
+						  << "Novikov-Thorne Source phi Coord [M] [Rad]"
 						  << '\n';
 
 
@@ -195,7 +200,7 @@ int get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) 
 
 	std::ifstream geodesic_data;
 
-	geodesic_data.open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Polarization\\Schwarzschild_Impact_parameters\\First_relativistic\\geodesic_data_20_deg_Sch_r6_198_photons.txt", std::ios::in);
+	geodesic_data.open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Polarization\\Schwarzschild_Impact_parameters\\First_relativistic\\geodesic_data_20_deg_Sch_r6_50_photons.txt", std::ios::in);
 
 	while (true) {
 
@@ -216,34 +221,34 @@ int get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) 
 	return OK;
 }
 
-int write_to_file(s_Results Ray_results, std::ofstream data[], std::ofstream momentum_data[]) {
+int write_to_file(Results_type s_Ray_results, std::ofstream data[], std::ofstream momentum_data[]) {
 
 	for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
-		data[Image_order] << Ray_results.Image_Coords[x]
+		data[Image_order] << s_Ray_results.Image_Coords[x]
 						  << " "
-						  << Ray_results.Image_Coords[y]
+						  << s_Ray_results.Image_Coords[y]
 						  << " "
-						  << Ray_results.Redshift_NT[Image_order]
+						  << s_Ray_results.Redshift_NT[Image_order]
 						  << " "
-						  << Ray_results.Flux_NT[Image_order]
+						  << s_Ray_results.Flux_NT[Image_order]
 						  << " "
-						  << Ray_results.Intensity[Image_order]
+						  << s_Ray_results.Intensity[Image_order] * CGS_TO_JANSKY
 						  << " "
-						  << Ray_results.Source_Coords[e_theta][Image_order]
+						  << s_Ray_results.Source_Coords[e_r][Image_order]
 						  << " "
-						  << Ray_results.Source_Coords[e_phi][Image_order]
+						  << s_Ray_results.Source_Coords[e_phi][Image_order]
 						  << '\n';
 
 		if (lens_from_file) {
 
-			momentum_data[Image_order] << Ray_results.Three_Momentum[e_r][Image_order]
+			momentum_data[Image_order] << s_Ray_results.Three_Momentum[e_r][Image_order]
 									   << " "
-									   << Ray_results.Three_Momentum[e_theta][Image_order]
+									   << s_Ray_results.Three_Momentum[e_theta][Image_order]
 									   << " "
-									   << Ray_results.Three_Momentum[e_phi][Image_order]
+									   << s_Ray_results.Three_Momentum[e_phi][Image_order]
 									   << " "
-									   << Ray_results.Parameters[e_metric]
+									   << s_Ray_results.Parameters[e_metric]
 									   << '\n';
 
 		}
