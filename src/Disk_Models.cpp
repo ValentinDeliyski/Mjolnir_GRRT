@@ -21,14 +21,14 @@
 extern Spacetime_enums e_metric;
 extern std::vector<c_Spacetime_Base*> Spacetimes;
 
-tag_Novikov_Thorne_Model::tag_Novikov_Thorne_Model(double x, double y) {
+Novikov_Thorne_Model::Novikov_Thorne_Model(double x, double y) {
 
     r_in = x;
     r_out = y;
 
 };
 
-double tag_Novikov_Thorne_Model::Keplerian_angular_velocity(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::Keplerian_angular_velocity(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double dr_metric[4][4], dr_N, dr_omega;
 
@@ -38,7 +38,7 @@ double tag_Novikov_Thorne_Model::Keplerian_angular_velocity(double r, std::vecto
 
 }
 
-double tag_Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double dr_metric[4][4], dr_N, dr_omega;
 
@@ -50,13 +50,13 @@ double tag_Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, std::ve
 
     double root = sqrt(dr_metric[0][3] * dr_metric[0][3] - dr_metric[0][0] * dr_metric[3][3]);
 
-    double Kepler = tag_Novikov_Thorne_Model::Keplerian_angular_velocity(r, Spacetimes);
+    double Kepler = Novikov_Thorne_Model::Keplerian_angular_velocity(r, Spacetimes);
 
     return  -Kepler / dr_metric[3][3] * d2r_metric[3][3] + (-d2r_metric[0][3] + 1.0 / root / 2 * (2 * dr_metric[0][3] * d2r_metric[0][3] - dr_metric[0][0] * d2r_metric[3][3] - d2r_metric[0][0] * dr_metric[3][3])) / dr_metric[3][3];
 
 }
 
-double tag_Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_obs, double theta_obs,
+double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_obs, double theta_obs,
                                           std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double r_source = State_Vector[e_r];
@@ -90,7 +90,7 @@ double tag_Novikov_Thorne_Model::Redshift(double J, double State_Vector[], doubl
 
 }
 
-double tag_Novikov_Thorne_Model::disk_Energy(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::disk_Energy(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double metric[4][4], N, omega;
 
@@ -104,7 +104,7 @@ double tag_Novikov_Thorne_Model::disk_Energy(double r, std::vector<c_Spacetime_B
 
 }
 
-double tag_Novikov_Thorne_Model::disk_Angular_Momentum(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::disk_Angular_Momentum(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double metric[4][4], N, omega;
 
@@ -118,7 +118,7 @@ double tag_Novikov_Thorne_Model::disk_Angular_Momentum(double r, std::vector<c_S
 
 }
 
-double tag_Novikov_Thorne_Model::Flux_integrand(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::Flux_integrand(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double metric[4][4], N, omega;
 
@@ -145,7 +145,7 @@ double tag_Novikov_Thorne_Model::Flux_integrand(double r, std::vector<c_Spacetim
 
 }
 
-double tag_Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double upper_bound, double tolerance, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double upper_bound, double tolerance, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double mid_point       = (lower_bound + upper_bound) / 2;
     double left_mid_point  = (lower_bound + mid_point) / 2;
@@ -197,7 +197,7 @@ double tag_Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double 
     return integral;
 }
 
-double tag_Novikov_Thorne_Model::get_flux(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::get_flux(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double metric[4][4], N, omega;
 
@@ -218,14 +218,14 @@ double tag_Novikov_Thorne_Model::get_flux(double r, std::vector<c_Spacetime_Base
 
     }
 
-    double Flux_integral = solve_Flux_integral(tag_Novikov_Thorne_Model::r_in, r, INTEGRAL_ACCURACY, Spacetimes);
+    double Flux_integral = solve_Flux_integral(Novikov_Thorne_Model::r_in, r, INTEGRAL_ACCURACY, Spacetimes);
 
     return Flux_coeff * Flux_integral;
 
 }
 
-double tag_Novikov_Thorne_Model::get_r_in()  { return r_in; };
-double tag_Novikov_Thorne_Model::get_r_out() { return r_out; };
+double Novikov_Thorne_Model::get_r_in()  { return r_in; };
+double Novikov_Thorne_Model::get_r_out() { return r_out; };
 
 /************************************************************
 |                                                           |
@@ -233,9 +233,9 @@ double tag_Novikov_Thorne_Model::get_r_out() { return r_out; };
 |                                                           |
 ************************************************************/
 
-tag_Optically_Thin_Toroidal_Model::tag_Optically_Thin_Toroidal_Model() {};
+Optically_Thin_Toroidal_Model::Optically_Thin_Toroidal_Model() {};
 
-double tag_Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]) {
+double Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]) {
 
     double r = State_vector[e_r];
 
@@ -253,7 +253,7 @@ double tag_Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vect
 
 }
 
-int tag_Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], double State_Vector[], std::vector<c_Spacetime_Base*> Spacetimes) {
+int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], double State_Vector[], std::vector<c_Spacetime_Base*> Spacetimes) {
 
 
     double r_source = State_Vector[e_r];
@@ -308,7 +308,7 @@ int tag_Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[],
 
 }
 
-double tag_Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]) {
+double Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]) {
 
     double& r = State_Vector[e_r];
     double rho = sin(State_Vector[e_theta]);
@@ -353,7 +353,7 @@ double tag_Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]
 
 }
 
-double tag_Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], double State_vector[]) {
+double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], double State_vector[]) {
 
     /*
 
@@ -373,7 +373,7 @@ double tag_Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], 
 
 }
 
-double tag_Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes) {
+double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes) {
 
     double U_source_coord[4];
     get_disk_velocity(U_source_coord, State_vector, Spacetimes);
@@ -426,7 +426,7 @@ double tag_Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_
 
 }
 
-double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
 
     /* Electron Density in CGS */
 
@@ -475,7 +475,7 @@ double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact
 
 }
 
-double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
 
 
     double electron_density = get_disk_density(State_vector);
@@ -491,7 +491,7 @@ double tag_Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_pheno
 
 }
 
-double tag_Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Function, double State_vector[], double redshift, double Frequency, double Temperature) {
+double Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Function, double State_vector[], double redshift, double Frequency, double Temperature) {
 
     switch (e_emission) {
 

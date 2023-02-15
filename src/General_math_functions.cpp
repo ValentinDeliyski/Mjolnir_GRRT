@@ -103,7 +103,7 @@ double my_max(double vector[]) {
 	return max;
 }
 
-bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[]) {
+bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[], double crossing_momenta[]) {
 
 	/***********************************************************************************************
 	|                                                                                              |
@@ -122,9 +122,15 @@ bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], doub
 	if (cos(State_Vector[e_theta]) * cos(Old_State_Vector[e_theta]) > 0)
 	{
 
-		return 0;
+		return false;
 
 	}
+
+	/*
+	
+	Interpolate the equatorial crossing coorinates
+	
+	*/
 
 	double x = State_Vector[e_r] * sin(State_Vector[e_theta]) * cos(State_Vector[e_phi]);
 	double y = State_Vector[e_r] * sin(State_Vector[e_theta]) * sin(State_Vector[e_phi]);
@@ -146,6 +152,26 @@ bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], doub
 	}
 
 	double r_crossing_squared = Crossing_coords[0] * Crossing_coords[0] + Crossing_coords[1] * Crossing_coords[1];
+
+	double crossing_coords_spherical[2]{};
+
+		crossing_coords_spherical[e_r]     = sqrt(r_crossing_squared);
+		crossing_coords_spherical[e_theta] = M_PI_2;
+
+	/*
+	
+	Interpolate the covariant momenta at those coorinates
+	
+	*/
+
+	double momentum_param[3]{};
+
+	for (int index = e_r; index <= e_theta; index++) {
+
+		momentum_param[index]   = (crossing_coords_spherical[index] - Old_State_Vector[index]) / (State_Vector[index] - Old_State_Vector[index]);
+		crossing_momenta[index] = momentum_param[index] * State_Vector[5 - index] + (1 - momentum_param[index]) * Old_State_Vector[5 - index];
+	}
+
 	double r_out = NT_Model.get_r_out();
 	double r_in  = NT_Model.get_r_in();
 

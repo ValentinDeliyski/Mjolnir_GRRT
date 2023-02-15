@@ -842,6 +842,6 @@ bool derived_JNW_class::terminate_integration(double State_vector[], double Deri
 
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
-    return scatter ;
+    return scatter;
 
 };

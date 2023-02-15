@@ -27,7 +27,7 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
     |   @ Inputs:                                                                                   |
     |     * State_Vector: Pointer to an array that holds the ray / photon State Vector              |
     |     * Derivatives: Pointer to an array that holds the evaluation of the E.O.M                 |
-    |     * iteration: The current RK45 iteration (0 to 7)                                          |
+    |     * iteration: The current RK45 iteration (0 to 7 - 1)                                      |
     |     * J: Covariant, azimuthal component of the ray / photon 4 - momentum                      |
     |                                                                                               |
     |   @ Ouput: None                                                                               |
@@ -152,6 +152,15 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
     controller->current_err = my_max(state_error);
 
     controller->update_step();
+
+    bool near_NT_disk = State_Vector[e_r] * State_Vector[e_r] * cos(State_Vector[e_theta]) * cos(State_Vector[e_theta]) < 0.5 * 0.5 &&
+                        State_Vector[e_r] * State_Vector[e_r] < NT_Model.get_r_out() * NT_Model.get_r_out();
+
+    if (near_NT_disk) {
+
+        controller->step /= 2;
+
+    }
 
     if (controller->continue_integration) {
 

@@ -200,7 +200,7 @@ int get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) 
 
 	std::ifstream geodesic_data;
 
-	geodesic_data.open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Polarization\\Schwarzschild_Impact_parameters\\Direct_image\\geodesic_data_20_deg_Sch_r6_500_photons.txt", std::ios::in);
+	geodesic_data.open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Polarization\\Schwarzschild_Impact_parameters\\First_relativistic\\geodesic_data_20_deg_Sch_r6_50_photons.txt", std::ios::in);
 
 	while (true) {
 

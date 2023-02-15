@@ -93,9 +93,9 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
 
             // Novikov-Thorne Model Evaluation
 
-            double crossing_coords[3];
+            double crossing_coords[3]{}, crossing_momenta[3]{};
 
-            if (interpolate_crossing(State_vector, Old_state, crossing_coords)) {
+            if (interpolate_crossing(State_vector, Old_state, crossing_coords, crossing_momenta)) {
 
                 Image_Order[Novikov_Thorne] = compute_order_no_spin(State_vector);
 
@@ -103,13 +103,13 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
                 double state_crossing[2] = { r_crossing, M_PI_2 };
 
                 s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]]             = NT_Model.Redshift(J, state_crossing, r_obs, theta_obs, Spacetimes);
-                s_Ray_results.Flux_NT[Image_Order[Novikov_Thorne]]                 = NT_Model.get_flux(r_crossing, Spacetimes);
+                s_Ray_results.Flux_NT[Image_Order[Novikov_Thorne]] = 0;
 
-                s_Ray_results.Source_Coords[e_r][Image_Order[Novikov_Thorne]]      = State_vector[e_r];
+                s_Ray_results.Source_Coords[e_r][Image_Order[Novikov_Thorne]]      = r_crossing;
                 s_Ray_results.Source_Coords[e_phi][Image_Order[Novikov_Thorne]]    = State_vector[e_phi];
 
-                s_Ray_results.Three_Momentum[e_r][Image_Order[Novikov_Thorne]]     = State_vector[e_p_r];
-                s_Ray_results.Three_Momentum[e_theta][Image_Order[Novikov_Thorne]] = State_vector[e_p_theta];
+                s_Ray_results.Three_Momentum[e_r][Image_Order[Novikov_Thorne]]     = crossing_momenta[e_r];
+                s_Ray_results.Three_Momentum[e_theta][Image_Order[Novikov_Thorne]] = crossing_momenta[e_theta];
 
 
             }

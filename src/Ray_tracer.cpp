@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    @ Version: 3.5.2                                                                               |
+|    @ Version: 3.5.3                                                                               |
 |    @ Author: Valentin Deliyski                                                                    |
 |    @ Description: This program numeriaclly integrates the equations of motion                     |
 |    for null geodesics and radiative transfer in a curved spacetime,then projects                  |
@@ -41,7 +41,7 @@
 
 #include "Rendering_Engine.h"
 
-Spacetime_enums e_metric = Kerr;
+Spacetime_enums e_metric = Naked_Singularity;
 Emission_model_enums e_emission = Synchotron_phenomenological;
 
 /* 
@@ -64,7 +64,7 @@ Define the Observer class
 
 */
 
-extern Real r_obs = 1e3;
+extern Real r_obs = 1e4;
 extern Real theta_obs = 20. / 180 * M_PI;
 Real phi_obs = 0;
 
@@ -84,8 +84,8 @@ Define the Novikov-Thorne Disk Class
 
 */
 
-Real r_in = 4;
-Real r_out = 25;
+Real r_in = 3;
+Real r_out = 1500;
 
 Novikov_Thorne_Model NT_Model(r_in, r_out);
 
