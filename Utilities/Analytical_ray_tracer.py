@@ -3,7 +3,8 @@ import numpy as np
 
 from scipy.stats import beta
 from scipy.integrate import quad
-from scipy.interpolate import CubicSpline
+from scipy.optimize import root_scalar
+from scipy.interpolate import CubicSpline, make_interp_spline
 
 import matplotlib.pyplot as plt
 
@@ -36,14 +37,14 @@ def propagate_rays(Spacetime, GRANULARITY, r_source, r_obs):
         metric_photon_sphere       = Spacetime.metric(Spacetime.photon_sphere(), np.pi / 2)
         impact_param_photon_sphere = np.sqrt(-metric_photon_sphere[3] / metric_photon_sphere[0])
 
-    print("Starting to compute direct photon paths...")
+    print("Computing direct photon paths...")
 
     # Calculate the impact parameters for photons that do not encounter a radian turning point
 
     # NOTE: To get a smoother image at the end it is better to distribute the impact paramters with a beta distrib.
     # A density parameter of 2 for both arguments seems like a good distribution - weighed more at the ends of the interval
 
-    density_parameter  = 2
+    density_parameter  = 5.5
     distribution_range = np.linspace(0, 1, GRANULARITY)
 
     if r_source < 0:
@@ -66,20 +67,19 @@ def propagate_rays(Spacetime, GRANULARITY, r_source, r_obs):
 
         results.append(azimuthal_distance)
 
+    Direct_spline = make_interp_spline(direct_impact_params, results, k = 1)
+
     print("Finished computing direct photon paths!")
 
     if r_source > 0:
 
-        print("Starting to compute higher order photon paths...")
+        print("Computing higher order photon paths...")
 
         if Spacetime.HAS_PHOTON_SPHERE:
 
-            # In the presence of a photon sphere, the turning points will be between it and the source
+            # NOTE: In the presence of a photon sphere, the turning points will be between it and the source
 
-            # higher_order_turning_points = np.linspace(r_source, Spacetime.photon_sphere(), GRANULARITY)
-            density_parameter  = 5.5
             higher_order_turning_points = r_source + (beta.cdf(distribution_range, density_parameter, density_parameter)) * (Spacetime.photon_sphere() - r_source)
-
             metrics_at_turning_points   = Spacetime.metric(higher_order_turning_points, np.pi / 2)
 
             # Calculate the impact parameters for the correspoinding turning points
@@ -88,51 +88,75 @@ def propagate_rays(Spacetime, GRANULARITY, r_source, r_obs):
 
         else:
 
+            def get_turning_point_equation(r_turning, impact_param, Spacetime):
+            
+                alpha = 1 / (1 / 2 - Spacetime.PARAMETER)
+
+                return pow(r_turning, alpha) - 2 / Spacetime.PARAMETER * pow(r_turning, alpha - 1) - pow(impact_param, alpha)
+
             # NOTE: Currently only applies to the Janis-Newman-Winicour Naked Singularities
             # In the absence of a photon sphere the turning points are located between the singularity and the source
 
-            density_parameter  = 105.5
-            distribution_range = np.linspace(0, 1, GRANULARITY)
-            r_singularity      = 2 * Spacetime.MASS / Spacetime.PARAMETER
+            r_singularity = 2 * Spacetime.MASS / Spacetime.PARAMETER
+            b_source      = r_source * pow(1 - r_singularity / r_source, 1 / 2 - Spacetime.PARAMETER)
 
             # NOTE: To properly construct the images we need a very uneven distribution of photon turning points
             # The majority of the points must be distributed at the ends of the interval - this is neatly done with a beta distribution
 
-            higher_order_turning_points = r_source + (beta.cdf(distribution_range, density_parameter, density_parameter)) * (r_singularity - r_source)
+            higher_order_impact_params = b_source * (1 - beta.cdf(distribution_range, density_parameter, density_parameter))
 
-            # higher_order_turning_points = np.linspace(r_source, r_singularity)
+            # Calculate the turning points for the correspoinding impact parameters
 
-            # Calculate the impact parameters for the correspoinding turning points
+            higher_order_turning_points = []
 
-            higher_order_impact_params = (higher_order_turning_points * pow(1 - 2 * Spacetime.MASS / Spacetime.PARAMETER / higher_order_turning_points, 1/2 - Spacetime.PARAMETER)).tolist()
+            for impact_param in higher_order_impact_params:
+
+                roots = root_scalar(get_turning_point_equation, 
+                                    x0      = r_source,
+                                    args    = (impact_param, Spacetime), 
+                                    maxiter = 100000, 
+                                    xtol    = 1e-28, 
+                                    method  = 'toms748', 
+                                    bracket = [r_singularity - 1, r_source + 1])
+                
+                if np.absolute(roots.root - r_singularity) > 1e-10:
+                    higher_order_turning_points.append(roots.root)
+
+                else:
+                    higher_order_turning_points.append(r_singularity)
 
         for impact_param, turning_point in zip(higher_order_impact_params, higher_order_turning_points):
 
             branch_1_integral = quad(Integrand, 
                                      turning_point, # Lower integration limit
                                      r_obs,         # Upper integration limit
-                                     args  = (Spacetime, impact_param), 
-                                     limit = 50000,
-                                     epsabs = 1e-20,
-                                     epsrel = 1e-20)[0]
+                                     args   = (Spacetime, impact_param), 
+                                     limit  = 10000,
+                                     epsabs = 1e-15,
+                                     epsrel = 1e-15)[0]
 
             branch_2_integral = quad(Integrand, 
                                      turning_point, # Lower integration limit
                                      r_source,      # Upper integration limit
-                                     args  = (Spacetime, impact_param), 
-                                     limit = 50000,
-                                     epsabs = 1e-20,
-                                     epsrel = 1e-20)[0]
+                                     args   = (Spacetime, impact_param), 
+                                     limit  = 10000,
+                                     epsabs = 1e-15,
+                                     epsrel = 1e-15)[0]
 
             results.append(branch_1_integral + branch_2_integral)
-        
+            
+        Indirect_spline = make_interp_spline(np.flip(higher_order_impact_params), np.flip(results[GRANULARITY:]), k = 1)
+
         impact_parameters = direct_impact_params
         impact_parameters.extend(higher_order_impact_params)
 
     else:
+        Indirect_spline   = None
         impact_parameters = direct_impact_params
 
-    return np.array(impact_parameters), np.array(results)
+    print("Finished computing higher order photon paths!")
+
+    return np.array(impact_parameters), np.array(results), Direct_spline, Indirect_spline
 
 def construct_images(Impact_parameters, Azimuthal_distance, Inclination):
 
@@ -141,14 +165,16 @@ def construct_images(Impact_parameters, Azimuthal_distance, Inclination):
     Image_order = 0
     Image_angles    = []
     Image_distances = []
+
+    Splines = []
   
     Solution_condition = np.arcsin(1 / np.tan(Azimuthal_distance) / np.tan(Inclination)).tolist()
 
     start_index = 0
     end_index   = 0
 
-    solution_starts = 0
-    solution_ends   = 0
+    solution_starts = False
+    solution_ends   = False
 
     for index, _ in enumerate(Solution_condition):
 
@@ -165,36 +191,107 @@ def construct_images(Impact_parameters, Azimuthal_distance, Inclination):
         if solution_ends:
             end_index = index
 
-            Image_angles.append(Solution_condition[ start_index:end_index ])
-            Image_distances.append(Impact_parameters[ start_index:end_index ])
+            if end_index - start_index > 20:
 
-            if len(Image_angles[Image_order]) > 20:
+                Image_angles.append(Solution_condition[ start_index:end_index ])
+                Image_distances.append(Impact_parameters[ start_index:end_index ])
 
-                # Image_angles[Image_order], Image_distances[Image_order] = zip(* sorted(zip(Image_angles[Image_order], Image_distances[Image_order])) )
+                theta_sorted, r_sorted = zip(* sorted(zip(Image_angles[Image_order], Image_distances[Image_order])) )
+                theta_sorted = theta_sorted + np.linspace(0, 1e-10, len(Image_angles[Image_order]))
 
-                # Image_angles[Image_order] = Image_angles[Image_order] + np.linspace(0, 1e-10, len(Image_angles[Image_order]))
-
-                # Spline = CubicSpline(Image_angles[Image_order], Image_distances[Image_order])
-
-                # Angles_spline = np.linspace(-np.pi / 2, np.pi / 2, 1000)
-                # Distances_spline = Spline(Angles_spline)
-
-                x_coords =  np.array(Image_distances[Image_order]) * np.cos(Image_angles[Image_order])
-                y_coords = -np.array(Image_distances[Image_order]) * np.sin(Image_angles[Image_order])
-
-                # x_coords =  np.array(Distances_spline) * np.cos(Angles_spline)
-                # y_coords = -np.array(Distances_spline) * np.sin(Angles_spline)
-
-                x_coords = np.append( np.append(-x_coords, np.flip(x_coords)), -x_coords[0] ) 
-                y_coords = np.append( np.append( y_coords, np.flip(y_coords)),  y_coords[0] )
-
-                plt.plot(x_coords, y_coords)
+                Splines.append(CubicSpline(theta_sorted, r_sorted))
 
                 Image_order = Image_order + 1
 
-    print("Number of images constructed: = ", Image_order)
+    print("Number of images constructed: ", Image_order)
 
-    plt.show()
+    return Splines, np.array(Image_distances), np.array(Image_angles)
+
+def combine_cplines(Direct_spline, Indirect_spline, Impact_Parameters):
+
+    max_Impact_param   = max(Impact_Parameters)
+    distribution_range = np.linspace(0, 1, 100000)
+    density_parameter  = 5.5
+
+    Direct_Impact_params_spline = beta.cdf(distribution_range, density_parameter, density_parameter) * max_Impact_param
+    Direct_angles_spline        = Direct_spline(Direct_Impact_params_spline)
+
+    if Indirect_spline != None:
+        Indirect_Impact_params_spline = max_Impact_param + (beta.cdf(distribution_range, density_parameter, density_parameter)) * (Impact_Parameters[-1] - max_Impact_param)
+        Indirect_angles_spline        = Indirect_spline(Indirect_Impact_params_spline)
+
+        Splined_angles        = np.append(Direct_angles_spline, Indirect_angles_spline)
+        Splined_Impact_params = np.append(Direct_Impact_params_spline, Indirect_Impact_params_spline)
+
+    else:
+        Splined_angles        = Direct_angles_spline
+        Splined_Impact_params = Direct_Impact_params_spline
+
+    return Splined_angles, Splined_Impact_params
+
+def plot_splined_data(figure_num, Splines):
+
+    color_index = 0
+    figure_spline = plt.figure(figure_num)
+    subfigure_spline = figure_spline.add_subplot(111)
+
+    for Spline in Splines:  
+
+        Angular_coords_spline = np.linspace(-np.pi / 2, np.pi / 2, 200)
+
+        #---------- Plot the Splined results ----------#
+
+        Radial_coords_spline = Spline(Angular_coords_spline)
+
+        x_coords_spline =  Radial_coords_spline * np.cos(Angular_coords_spline)
+        y_coords_spline = -Radial_coords_spline * np.sin(Angular_coords_spline)
+
+        x_coords_spline = np.append( np.append(-x_coords_spline, np.flip(x_coords_spline)), -x_coords_spline[0] ) 
+        y_coords_spline = np.append( np.append( y_coords_spline, np.flip(y_coords_spline)),  y_coords_spline[0] )
+
+        subfigure_spline.plot(x_coords_spline, y_coords_spline, color = COLOR_CYCLE[color_index])
+
+        color_index = (color_index + 1) % len(COLOR_CYCLE)
+
+    subfigure_spline.set_title(r'Splined Results From The Integration')
+    subfigure_spline.set_xlabel(r'x [M]')
+    subfigure_spline.set_ylabel(r'y [M]')
+    subfigure_spline.set_aspect(1)
+
+def plot_raw_data(figure_num, Radial_coords_raw, Angular_coords_raw):
+
+    color_index = 0
+    figure_raw = plt.figure(figure_num)
+    subfigure_raw = figure_raw.add_subplot(111)
+
+    for Image_order, _ in np.ndenumerate(Radial_coords_raw):
+
+        #---------- Plot the raw results ----------#
+
+        x_coords_raw =  Radial_coords_raw[Image_order] * np.cos(Angular_coords_raw[Image_order])
+        y_coords_raw = -Radial_coords_raw[Image_order] * np.sin(Angular_coords_raw[Image_order])
+
+        x_coords_raw = np.append( np.append(-x_coords_raw, np.flip(x_coords_raw)), -x_coords_raw[0] ) 
+        y_coords_raw = np.append( np.append( y_coords_raw, np.flip(y_coords_raw)),  y_coords_raw[0] )
+
+        subfigure_raw.plot(x_coords_raw, y_coords_raw, color = COLOR_CYCLE[color_index])
+
+        color_index = (color_index + 1) % len(COLOR_CYCLE)
+
+    subfigure_raw.set_title(r'Direct Results From The Integration')
+    subfigure_raw.set_xlabel(r'x [M]')
+    subfigure_raw.set_ylabel(r'y [M]')
+    subfigure_raw.set_aspect(1)
+
+def plot_angle_impact_param_grapth(figure_num, Impact_Parameters, Azimuthal_distance, Splined_Impact_params, Splined_angles):
+
+    fig = plt.figure(figure_num)
+    subfig = fig.add_subplot(111)
+
+    subfig.plot(Impact_Parameters, Azimuthal_distance)
+    subfig.plot(Splined_Impact_params, Splined_angles)
+
+COLOR_CYCLE = ["blue", "red", "black"]
 
 #------    Constants      -------#
 
@@ -226,9 +323,27 @@ Spacetime_dict ={"Schwarzshild":       SCH,
 r_obs = 1e3                         # [ M ]
 inclination_obs = 80 * DEG_TO_RAD   # [ rad ]
 
-Impact_Parameters, Azimuthal_distance = propagate_rays(Spacetime = Spacetime_dict["Naked Singularity"], 
-                                                       GRANULARITY = 5000, 
-                                                       r_source = 25, 
-                                                       r_obs = r_obs)
+Impact_Parameters, Azimuthal_distance, Direct_spline, Indirect_spline = propagate_rays(Spacetime = Spacetime_dict["Wormhole"], 
+                                                                                       GRANULARITY = 500, 
+                                                                                       r_source = 30, 
+                                                                                       r_obs = r_obs)
 
-construct_images(Impact_parameters = Impact_Parameters, Azimuthal_distance = Azimuthal_distance, Inclination = inclination_obs)
+Splined_angles, Splined_Impact_params = combine_cplines(Direct_spline, Indirect_spline, Impact_Parameters)
+
+Splines, Radial_coords_raw, Angular_coords_raw = construct_images(Impact_parameters = Splined_Impact_params, 
+                                                                  Azimuthal_distance = Splined_angles, 
+                                                                  Inclination = inclination_obs)
+
+plot_splined_data(figure_num = 1, 
+                  Splines = Splines)
+
+plot_raw_data(figure_num = 2, 
+              Radial_coords_raw = Radial_coords_raw, 
+              Angular_coords_raw = Angular_coords_raw)
+
+plot_angle_impact_param_grapth(figure_num = 3, 
+                               Impact_Parameters = Impact_Parameters, 
+                               Azimuthal_distance = Azimuthal_distance, 
+                               Splined_Impact_params = Splined_Impact_params, 
+                               Splined_angles = Splined_angles)
+plt.show()

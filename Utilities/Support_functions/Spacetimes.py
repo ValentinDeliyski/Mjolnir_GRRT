@@ -101,7 +101,12 @@ class JNW_Naked_Singularity:
         r_singularity = 2 * self.MASS / self.PARAMETER
 
         g_tt = -pow(1 - r_singularity / r, self.PARAMETER)
-        g_rr = - 1 / g_tt
+
+        if g_tt != 0:
+            g_rr = - 1 / g_tt
+        else:
+            g_rr = 1e10
+
         g_thth   = r**2 * pow(1 - r_singularity / r, 1 - self.PARAMETER) 
         g_phiphi = g_thth * np.sin(theta)**2
 
