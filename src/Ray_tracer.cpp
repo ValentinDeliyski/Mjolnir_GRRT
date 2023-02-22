@@ -65,7 +65,7 @@ Define the Observer class
 */
 
 extern Real r_obs = 1e4;
-extern Real theta_obs = 20. / 180 * M_PI;
+extern Real theta_obs = 80. / 180 * M_PI;
 Real phi_obs = 0;
 
 c_Observer Observer_class(r_obs, theta_obs, phi_obs);
@@ -95,7 +95,7 @@ Define some global boolians
 
 */
 
-extern Const_bool lens_from_file = true;
+extern Const_bool lens_from_file = false;
 extern Const_bool truncate = true;
 
 /*

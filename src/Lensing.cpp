@@ -116,15 +116,26 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
 
             if (compute_order_no_spin(State_vector) != Image_Order[Optically_Thin_Toroidal]) {
 
-                s_Ray_results.Intensity[Image_Order[Optically_Thin_Toroidal]] = State_vector[e_Intensity];
-
-                Image_Order[Optically_Thin_Toroidal] = compute_order_no_spin(State_vector);
+                s_Ray_results.Intensity[Image_Order[Optically_Thin_Toroidal]] = Old_state[e_Intensity]; 
                 
                 for (int order_scan = Image_Order[Optically_Thin_Toroidal] - 1; order_scan >= 0; order_scan -= 1) {
 
                     s_Ray_results.Intensity[Image_Order[Optically_Thin_Toroidal]] -= s_Ray_results.Intensity[order_scan];
 
-                }        
+                }      
+
+                Image_Order[Optically_Thin_Toroidal] = compute_order_no_spin(State_vector);
+
+            }
+
+            if (e_metric == Naked_Singularity) {
+
+                if (State_vector[e_r] - JNW_R_SINGULARITY < 5e-8) {
+
+                    //State_vector[e_r] += 1e-5;
+                    State_vector[e_p_r] *= -1;
+
+                }
 
             }
 

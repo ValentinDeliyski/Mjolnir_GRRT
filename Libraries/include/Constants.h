@@ -10,12 +10,12 @@
 
     Real INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
     Real INTEGRAL_ACCURACY = 5e-9;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
-    Real RK45_ACCURACY	   = 1e-11; // 1e-7 Seems to be an opitimal tradeoff between accuracy and performace 
+    Real RK45_ACCURACY	   = 1e-9; // 1e-7 Seems to be an opitimal tradeoff between accuracy and performace 
     Real SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Real SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
 
     Const_int RK45_size			    = 7;   // Number of integration sub-steps
-    Const_int MAX_INTEGRATION_COUNT = 1e8; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
+    Const_int MAX_INTEGRATION_COUNT = 1e9; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
     Real Coeff_deriv[RK45_size][RK45_size - 1] =
     {
@@ -92,7 +92,7 @@
 
     Real RBH_PARAM = 0.00;
 
-    Real JNW_GAMMA = 0.6866666666666666667;
+    Real JNW_GAMMA = 0.48;
     Real JNW_R_SINGULARITY = 2 * MASS / JNW_GAMMA;
 
     /*
@@ -107,7 +107,7 @@
     Real SOURCE_F_POWER_LAW = 2.5;
 
     Real DISK_ABSORBTION_COEFF = 0;
-    Real DISK_HEIGHT_SCALE = 10. / 3;
+    Real DISK_HEIGHT_SCALE = 100. / 3;
 
     Real EMISSION_SCALE_PHENOMENOLOGICAL = 3e-18;
 
@@ -122,7 +122,7 @@
     Real N_ELECTRON_EXACT_CGS = 2e6;
     Real T_ELECTRON_EXACT_CGS = 1e11;
 
-    Const_int RESOLUTION = 2500;
+    Const_int RESOLUTION = 512;
     Const_int TEXTURE_BUFFER_SIZE = 3000 * 3000;
 
 #endif

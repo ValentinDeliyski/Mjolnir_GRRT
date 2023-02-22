@@ -838,10 +838,10 @@ int derived_JNW_class::get_EOM(double inter_State_vector[], double J, double Der
 
 bool derived_JNW_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool hit_singularity = State_vector[e_r] - JNW_R_SINGULARITY < 1e-11;
+    bool hit_singularity = State_vector[e_r] - JNW_R_SINGULARITY < 1e-9;
 
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
-    return scatter;
+    return scatter ;
 
 };
