@@ -3,7 +3,6 @@ import numpy as np
 
 from scipy.stats import beta
 from scipy.integrate import quad
-from scipy.optimize import root_scalar
 from scipy.interpolate import CubicSpline, interp1d
 
 import matplotlib.pyplot as plt
@@ -12,7 +11,7 @@ from Support_functions.Spacetimes import *
 
 class Analytical_ray_tracer():
 
-    def __init__(self, Spacetime, Granularity, r_source, r_obs, inclination):
+    def __init__(self, Spacetime, Granularity, r_source, r_obs, inclination, MAX_IAMGE_ORDER):
 
         self.Spacetime   = Spacetime
         self.Granularity = Granularity
@@ -33,6 +32,8 @@ class Analytical_ray_tracer():
         self.raw_Image_radial_coords  = []
 
         self.Image_Spline = []
+
+        self.Max_Image_order = MAX_IAMGE_ORDER
 
     def Integrand(self, r, impact_param):
 
@@ -66,7 +67,7 @@ class Analytical_ray_tracer():
         #-------- Calculate the impact parameters for photons that do not encounter a radial turning point --------#
 
         # NOTE: To get a smoother image at the end it is better to distribute the impact paramters according to a beta distribution.
-        # A density parameter of 2 for both arguments seems like a good distribution - weighed more at the ends of the interval
+        # A density parameter of 5.5 for both arguments seems like a good distribution - weighed more at the ends of the interval
 
         density_parameter  = 5.5
         distribution_range = np.linspace(0, 1, self.Granularity)
@@ -97,9 +98,11 @@ class Analytical_ray_tracer():
 
             print("Computing higher order photon paths...")
 
-            density_parameter  = 5.5
+            if self.Spacetime.HAS_R_OF_B:
 
-            if self.Spacetime.HAS_PHOTON_SPHERE:
+                higher_order_impact_params, higher_order_turning_points = self.Spacetime.get_impact_params_and_turning_points(self.Granularity, self.r_source)
+   
+            else:     
 
                 # NOTE: In the presence of a photon sphere, the turning points will be between it and the source
 
@@ -109,45 +112,6 @@ class Analytical_ray_tracer():
                 #-------- Calculate the impact parameters for the correspoinding turning points --------#
 
                 higher_order_impact_params  = np.sqrt(-metrics_at_turning_points[3] / metrics_at_turning_points[0])
-
-            else:
-
-                def get_turning_point_equation(r_turning, impact_param, Spacetime):
-                
-                    alpha = 1 / (1 / 2 - Spacetime.PARAMETER)
-
-                    return pow(r_turning, alpha) - 2 / Spacetime.PARAMETER * pow(r_turning, alpha - 1) - pow(impact_param, alpha)
-
-                # NOTE: Currently only applies to the Janis-Newman-Winicour Naked Singularities
-                # In the absence of a photon sphere the turning points are located between the singularity and the source
-
-                r_singularity = 2 * self.Spacetime.MASS / self.Spacetime.PARAMETER
-                b_source      = self.r_source * pow(1 - r_singularity / self.r_source, 1 / 2 - self.Spacetime.PARAMETER)
-
-                # NOTE: To properly construct the images we need a very uneven distribution of photon impact parameters
-                # The majority of the points must be distributed at the ends of the interval - this is neatly done with a beta distribution
-
-                higher_order_impact_params = b_source * (1 - beta.cdf(distribution_range, density_parameter, density_parameter))
-
-                #-------- Calculate the turning points for the correspoinding impact parameters --------#
-
-                higher_order_turning_points = []
-
-                for impact_param in higher_order_impact_params:
-
-                    roots = root_scalar(get_turning_point_equation, 
-                                        x0      = self.r_source,
-                                        args    = (impact_param, self.Spacetime), 
-                                        maxiter = 100000, 
-                                        xtol    = 1e-28, 
-                                        method  = 'toms748', 
-                                        bracket = [r_singularity - 1, self.r_source + 1])
-
-                    if np.absolute(roots.root - r_singularity) > 1e-10:
-                        higher_order_turning_points.append(roots.root)
-
-                    else:
-                        higher_order_turning_points.append(r_singularity)
 
             #-------- Solve the integrals that involve turning points --------#
 
@@ -188,7 +152,7 @@ class Analytical_ray_tracer():
 
     def combine_splines(self):
 
-        #-------ENUMS-------#
+        #------ ENUMS ------#
 
         DIRECT   = 0
         INDIRECT = 1
@@ -199,11 +163,11 @@ class Analytical_ray_tracer():
         distribution_range = np.linspace(0, 1, 100000)
         density_parameter  = 5.5
 
-        Interpolated_direct_Impact_params = beta.cdf(distribution_range, density_parameter, density_parameter) * max_Impact_param * 0.99
+        Interpolated_direct_Impact_params = beta.cdf(distribution_range, density_parameter, density_parameter) * max_Impact_param * (1 - 1e-10)
         Interpolated_direct_Azimuth       = self.Impact_Azimuth_spline[DIRECT](Interpolated_direct_Impact_params).tolist()
 
         if self.Impact_Azimuth_spline[INDIRECT] != None:
-            Interpolated_indirect_Impact_params = max_Impact_param + (beta.cdf(distribution_range, density_parameter, density_parameter)) * (self.raw_Impact_params[-1] - max_Impact_param)
+            Interpolated_indirect_Impact_params = max_Impact_param + beta.cdf(distribution_range, density_parameter, density_parameter) * ((1 + 1e-10) * self.raw_Impact_params[-1] - max_Impact_param)
             Interpolated_indirect_Azimuth       = self.Impact_Azimuth_spline[INDIRECT](Interpolated_indirect_Impact_params)
 
             self.Interpolated_Azimuths.extend(Interpolated_direct_Azimuth)
@@ -221,7 +185,7 @@ class Analytical_ray_tracer():
         np.seterr(all = "ignore")
 
         Solution_condition = np.arcsin(1 / np.tan(self.Interpolated_Azimuths) / np.tan(self.inclincation))
-        
+        self.Interpolated_Impact_params = np.array(self.Interpolated_Impact_params)
         Image_count = 0
         start_index = 0
         end_index   = 0
@@ -231,29 +195,31 @@ class Analytical_ray_tracer():
 
         for index, _ in enumerate(Solution_condition):
 
-            if index != 0:
-                solution_starts =     np.isnan(Solution_condition[index - 1]) and not np.isnan(Solution_condition[index])
-                solution_ends   = not np.isnan(Solution_condition[index - 1]) and     np.isnan(Solution_condition[index])
+            if np.absolute(self.Interpolated_Azimuths[index]) < (self.Max_Image_order + 1) * np.pi:
 
-                if index == len(Solution_condition) - 1 and not np.isnan(Solution_condition[index]):
-                    solution_ends = True
+                if index != 0:
+                    solution_starts =     np.isnan(Solution_condition[index - 1]) and not np.isnan(Solution_condition[index])
+                    solution_ends   = not np.isnan(Solution_condition[index - 1]) and     np.isnan(Solution_condition[index])
 
-            if solution_starts:
-                start_index = index
+                    if index == len(Solution_condition) - 1 and not np.isnan(Solution_condition[index]):
+                        solution_ends = True
 
-            if solution_ends:
-                end_index = index
+                if solution_starts:
+                    start_index = index
 
-                if end_index - start_index > 20 and Image_count <= 20:
+                if solution_ends:
+                    end_index = index
 
-                    self.raw_Image_angular_coords.append(Solution_condition[ start_index:end_index ])
-                    self.raw_Image_radial_coords.append(self.Interpolated_Impact_params[ start_index:end_index ])
+                    if end_index - start_index > 20 and Image_count <= 20:
 
-                    theta_sorted, r_sorted = zip(* sorted(zip(self.raw_Image_angular_coords[Image_count], self.raw_Image_radial_coords[Image_count])) )
-                    theta_sorted = np.array(theta_sorted) + np.linspace(0, 1e-10, len(theta_sorted))
+                        self.raw_Image_angular_coords.append( Solution_condition[ start_index:end_index ] ) 
+                        self.raw_Image_radial_coords.append( np.array(self.Interpolated_Impact_params[ start_index:end_index ]) )
 
-                    self.Image_Spline.append(CubicSpline(theta_sorted, r_sorted))
-                    Image_count = Image_count + 1
+                        theta_sorted, r_sorted = zip(* sorted(zip(self.raw_Image_angular_coords[Image_count], self.raw_Image_radial_coords[Image_count])) )
+                        theta_sorted = np.array(theta_sorted) + np.linspace(0, 1e-10, len(theta_sorted))
+
+                        self.Image_Spline.append(CubicSpline(theta_sorted, r_sorted))
+                        Image_count = Image_count + 1
 
         print("Number of images constructed: ", Image_count)
 
@@ -294,7 +260,7 @@ def plot_raw_data(figure_num, Radial_coords_raw, Angular_coords_raw):
 
     try:
 
-        for Image_order, _ in np.ndenumerate(Radial_coords_raw):
+        for Image_order, _ in enumerate(Radial_coords_raw):
 
             #---------- Plot the raw results ----------#
 
@@ -332,10 +298,7 @@ def plot_angle_impact_param_grapth(figure_num, Splined_Impact_params, Splined_Az
 
     branch_split_index   = np.asarray(Splined_Impact_params == np.max(Splined_Impact_params)).nonzero()[0][0]
     figure_maximum_index = np.asarray(Splined_Azimuths      == np.max(Splined_Azimuths)).nonzero()[0][0]
-
     max_image_order      = np.min( [int(np.max(Splined_Azimuths) / np.pi + 1), 20] )
-
-    print(figure_maximum_index)
 
     #----------- Plot the line trough the maximum -----------#
 
@@ -418,26 +381,30 @@ if __name__ == "__main__":
 
     JNW_PARAM = 0.48  # [ - ]
 
+    GAUSS_BONET_PARAM = 1.15 # [ - ]
+
     #------      Metrics      -------#
 
     SCH = Schwarzschild()
     WH  = Wormhole(r_throat = WH_THROAT, parameter = WH_ALPHA)
     RBH = Regular_Black_Hole(parameter = RBH_PARAM)
     JNW = JNW_Naked_Singularity(parameter = JNW_PARAM)
+    GBNS = Gaus_Bonet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
 
     Spacetime_dict ={"Schwarzshild":       SCH, 
                      "Wormhole":            WH,
                      "Regular Black Hole": RBH,
-                     "Naked Singularity":  JNW}
+                     "Naked Singularity":  JNW,
+                     "Gauss - Bonet"    : GBNS}
 
-    Active_spacetime = "Schwarzshild"
+    Active_spacetime = "Gauss - Bonet"
 
     #----- Observer / Source  -------#
 
     r_obs = 1e3                         # [ M ]
     inclination_obs = 80 * DEG_TO_RAD   # [ rad ]
 
-    ray_tracer = Analytical_ray_tracer(SCH, 500, 6, r_obs, inclination_obs)
+    ray_tracer = Analytical_ray_tracer(Spacetime_dict[Active_spacetime], 1500, 10, r_obs, inclination_obs, MAX_IAMGE_ORDER = 9)
 
     ray_tracer.propagate_rays()
     ray_tracer.combine_splines()
@@ -449,11 +416,18 @@ if __name__ == "__main__":
         
     else:
         plot_raw_data(figure_num = 2, 
-                      Radial_coords_raw  = ray_tracer.raw_Impact_params, 
-                      Angular_coords_raw = ray_tracer.raw_Azimuths)
+                      Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
+                      Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
+        
+    plot_raw_data(figure_num = 2, 
+                      Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
+                      Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
+    
 
     plot_angle_impact_param_grapth(figure_num = 3,
                                    Splined_Impact_params = ray_tracer.Interpolated_Impact_params, 
                                    Splined_Azimuths      = ray_tracer.Interpolated_Azimuths,
                                    Inclination           = inclination_obs)
+
+    # plt.plot(ray_tracer.raw_Impact_params, ray_tracer.raw_Azimuths)
     plt.show()

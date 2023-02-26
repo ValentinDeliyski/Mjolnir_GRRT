@@ -1,10 +1,13 @@
 import numpy as np
+from scipy.stats import beta
+from scipy.optimize import root_scalar
 
 class Schwarzschild:
 
     def __init__(self):
         self.MASS = 1
         self.HAS_PHOTON_SPHERE = True
+        self.HAS_R_OF_B = False
 
     def metric(self, r, theta) -> np.array:
 
@@ -29,6 +32,7 @@ class Regular_Black_Hole:
         self.MASS = 1
         self.PARAMETER = parameter
         self.HAS_PHOTON_SPHERE = True
+        self.HAS_R_OF_B = False
 
     def metric(self, r, theta) -> np.array:
 
@@ -56,6 +60,7 @@ class Wormhole:
         self.R_THROAT = r_throat
         self.PARAMETER = parameter
         self.HAS_PHOTON_SPHERE = True
+        self.HAS_R_OF_B = False
 
     def metric(self, r_global, theta) -> np.array:
 
@@ -95,6 +100,8 @@ class JNW_Naked_Singularity:
 
         else:
             self.HAS_PHOTON_SPHERE = True
+
+        self.HAS_R_OF_B = True
 
     def metric(self, r, theta) -> np.array:
 
@@ -136,3 +143,134 @@ class JNW_Naked_Singularity:
         else:
 
             return 2 * self.MASS / self.PARAMETER
+        
+    def get_turning_point_equation(self, r_turning, impact_param):
+                
+        alpha = 1 / (1 / 2 - self.PARAMETER)
+
+        return pow(r_turning, alpha) - 2 / self.PARAMETER * pow(r_turning, alpha - 1) - pow(impact_param, alpha)
+
+    def get_impact_params_and_turning_points(self, GRANULARITY, r_source):
+                
+        density_parameter  = 5.5
+        distribution_range = np.linspace(0, 1, GRANULARITY)
+
+        if self.HAS_PHOTON_SPHERE:
+
+            # In the presence of a photon sphere, the turning points will be between it and the source
+
+            higher_order_turning_points = r_source + (beta.cdf(distribution_range, density_parameter, density_parameter)) * (self.photon_sphere() - r_source)
+
+            metrics_at_turning_points   = self.metric(higher_order_turning_points, np.pi / 2)
+
+            # Calculate the impact parameters for the correspoinding turning points
+
+            higher_order_impact_params  = np.sqrt(-metrics_at_turning_points[3] / metrics_at_turning_points[0])
+
+        else:
+
+            # In the absence of a photon sphere the turning points are located between the singularity and the source
+
+            r_singularity = 2 * self.MASS / self.PARAMETER
+            b_source      = r_source * pow(1 - r_singularity / r_source, 1 / 2 - self.PARAMETER)
+
+            # NOTE: To properly construct the images we need a very uneven distribution of photon impact parameters
+            # The majority of the points must be distributed at the ends of the interval - this is neatly done with a beta distribution
+
+            higher_order_impact_params = b_source * (1 - beta.cdf(distribution_range, density_parameter, density_parameter))
+
+                    #-------- Calculate the turning points for the correspoinding impact parameters --------#
+
+            higher_order_turning_points = []
+
+            for impact_param in higher_order_impact_params:
+
+                roots = root_scalar(self.get_turning_point_equation, 
+                                            x0      = r_source,
+                                            args    = (impact_param), 
+                                            maxiter = 100000, 
+                                            xtol    = 1e-28, 
+                                            method  = 'toms748', 
+                                            bracket = [r_singularity - 1, r_source + 1])
+
+                if np.absolute(roots.root - r_singularity) > 1e-10:
+                    higher_order_turning_points.append(roots.root)
+
+                else:
+                    higher_order_turning_points.append(r_singularity)
+
+        return higher_order_impact_params, higher_order_turning_points
+        
+class Gaus_Bonet_Naked_Singularity:
+
+    def __init__(self, parameter):
+
+        self.MASS = 1
+        self.PARAMETER = parameter
+        self.HAS_PHOTON_SPHERE = True
+        self.HAS_R_OF_B = True
+
+    def metric(self, r, theta) -> np.array:
+
+        if self.PARAMETER != 0:
+            f = 1 + r**2 / 2 / self.PARAMETER * (1 - np.sqrt(1 + 8 * self.PARAMETER * self.MASS / r**3))
+        else:
+            f = 1 - 2 * self.MASS / r
+
+        g_tt = -f
+
+        if g_tt != 0:
+            g_rr = - 1 / g_tt
+        else:
+            g_rr = np.inf
+
+        g_thth = r**2
+        g_phiphi = g_thth * np.sin(theta)**2
+
+        return np.array([g_tt, g_rr, g_thth, g_phiphi])
+    
+    def photon_sphere(self):
+
+        polynomial_coefs = [1, 0, -9 * self.MASS**2, 8 * self.MASS * self.PARAMETER]
+
+        roots = np.roots(polynomial_coefs)
+        roots = roots[roots > 0]
+
+        return np.max(roots)
+    
+    def get_impact_params_and_turning_points(self, GRANULARITY, r_source):
+
+        density_parameter  = 5.5
+        distribution_range = np.linspace(0, 1, GRANULARITY)
+
+        metric_source       = self.metric(r_source, np.pi / 2)
+        impact_param_source = np.sqrt(-metric_source[3] / metric_source[0])
+
+        higher_order_impact_params1 = impact_param_source + beta.cdf(distribution_range, density_parameter, density_parameter) * (self.photon_sphere() - impact_param_source)
+        higher_order_impact_params2 = self.photon_sphere() + beta.cdf(distribution_range, density_parameter, density_parameter) * (1e-2 - self.photon_sphere())
+                                                                                                                                             
+        higher_order_impact_params = np.concatenate((higher_order_impact_params1,higher_order_impact_params2), axis = 0)
+        
+        #-------- Calculate the impact parameters for the correspoinding turning points --------
+        higher_order_turning_points = []
+
+        for impact_param in higher_order_impact_params:
+
+            a = (impact_param**2 / 2 / self.PARAMETER - 1)**2 - impact_param**4 / 4 / self.PARAMETER**2
+            b = 0
+            c = 2 * impact_param**2 * (impact_param**2 / 2 / self.PARAMETER - 1)
+            d = -2 * impact_param**4 / self.PARAMETER
+            e = impact_param**4
+
+            polynom_coeffs = [a, b, c, d, e]
+                              
+            roots = np.roots(polynom_coeffs)
+            roots = roots[np.isreal(roots)]
+            roots = roots[roots > 0]
+                          
+            if len(roots) != 2:
+                higher_order_turning_points.append(np.max(np.real(roots)))
+            else:
+                higher_order_turning_points.append(np.min(np.real(roots)))
+
+        return higher_order_impact_params, higher_order_turning_points
