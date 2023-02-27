@@ -20,13 +20,8 @@ class Analytical_ray_tracer():
         self.r_obs        = r_obs
         self.inclincation = inclination
 
-        self.raw_Impact_params          = []
-        self.Interpolated_Impact_params = []
-
-        self.raw_Azimuths          = []
-        self.Interpolated_Azimuths = []
-
-        self.Impact_Azimuth_spline = []
+        self.raw_Impact_params = [[], []]
+        self.raw_Azimuths      = [[], []]
 
         self.raw_Image_angular_coords = []
         self.raw_Image_radial_coords  = []
@@ -34,6 +29,13 @@ class Analytical_ray_tracer():
         self.Image_Spline = []
 
         self.Max_Image_order = MAX_IAMGE_ORDER
+
+        #---- ENUMS ----#
+
+        self.DIRECT   = 0
+        self.INDIRECT = 1
+
+        #---------------#
 
     def Integrand(self, r, impact_param):
 
@@ -88,9 +90,11 @@ class Analytical_ray_tracer():
                                       epsabs = 1e-15,
                                       epsrel = 1e-15)[0]
 
-            self.raw_Azimuths.append(azimuthal_distance)
+            self.raw_Azimuths[self.DIRECT].append(azimuthal_distance)
 
-        self.Impact_Azimuth_spline.append(interp1d(direct_impact_params, self.raw_Azimuths))
+        self.raw_Impact_params[self.DIRECT].extend(direct_impact_params)
+
+        # self.Impact_Azimuth_spline.append(interp1d(direct_impact_params, self.raw_Azimuths))
 
         print("Finished computing direct photon paths!")
 
@@ -127,65 +131,94 @@ class Analytical_ray_tracer():
 
                 branch_2_integral = quad(self.Integrand, 
                                          turning_point, # Lower integration limit
-                                         self.r_source,      # Upper integration limit
+                                         self.r_source, # Upper integration limit
                                          args   = impact_param, 
                                          limit  = 10000,
                                          epsabs = 1e-15,
                                          epsrel = 1e-15)[0]
 
-                self.raw_Azimuths.append(branch_1_integral + branch_2_integral)
+                self.raw_Azimuths[self.INDIRECT].append(branch_1_integral + branch_2_integral)
 
-            #-------- Create the interpolation function for the indirect portion of the graph --------#
-
-            self.Impact_Azimuth_spline.append(interp1d(np.flip(higher_order_impact_params), np.flip(self.raw_Azimuths[self.Granularity:])))
-
-            #-------- Collect all the impact parameters into one list --------#
-
-            self.raw_Impact_params.extend(direct_impact_params)
-            self.raw_Impact_params.extend(higher_order_impact_params)
+            self.raw_Impact_params[self.INDIRECT].extend(higher_order_impact_params)
 
             print("Finished computing higher order photon paths!")
 
-        else:
-            self.Impact_Azimuth_spline.append(None)
-            self.raw_Impact_params.extend(direct_impact_params)
+        # else:
+        #     # self.Impact_Azimuth_spline.append(None)
+        #     self.raw_Impact_params.extend(direct_impact_params)
 
-    def combine_splines(self):
+        #-------- Convert the lists of results to numpy arrays --------#
 
-        #------ ENUMS ------#
+        self.raw_Impact_params = np.array(self.raw_Impact_params)
+        self.raw_Azimuths      = np.array(self.raw_Azimuths)
 
-        DIRECT   = 0
-        INDIRECT = 1
-     
-        #--------------------#
+    def create_spline(self):
 
-        max_Impact_param   = max(self.raw_Impact_params)
-        distribution_range = np.linspace(0, 1, 100000)
-        density_parameter  = 5.5
+        # If the raw result arrays are not numpy arrays, cast them as such in order to perform element-wise operations
+        if type(self.raw_Impact_params[self.INDIRECT]) == list:
+            self.raw_Impact_params[self.INDIRECT] = np.array(self.raw_Impact_params[self.INDIRECT])
 
-        Interpolated_direct_Impact_params = beta.cdf(distribution_range, density_parameter, density_parameter) * max_Impact_param * (1 - 1e-10)
-        Interpolated_direct_Azimuth       = self.Impact_Azimuth_spline[DIRECT](Interpolated_direct_Impact_params).tolist()
+        if type(self.raw_Azimuths[self.INDIRECT]) == list:
+            self.raw_Azimuths[self.INDIRECT] = np.array(self.raw_Azimuths[self.INDIRECT])
 
-        if self.Impact_Azimuth_spline[INDIRECT] != None:
-            Interpolated_indirect_Impact_params = max_Impact_param + beta.cdf(distribution_range, density_parameter, density_parameter) * ((1 + 1e-10) * self.raw_Impact_params[-1] - max_Impact_param)
-            Interpolated_indirect_Azimuth       = self.Impact_Azimuth_spline[INDIRECT](Interpolated_indirect_Impact_params)
+        # Spline the inverse function - a.e. Impact Param = f_inv(Azimuth)
+        # NOTE: This is in order to have a good distribution of points along the curve, samplint the spline of f(Impact param) properly is difficult in the vacinity of the photon sphere
 
-            self.Interpolated_Azimuths.extend(Interpolated_direct_Azimuth)
-            self.Interpolated_Azimuths.extend(Interpolated_indirect_Azimuth)
+        # Interpolate the direct portion of the function
+        direct_spline = interp1d(self.raw_Azimuths[ self.DIRECT ], self.raw_Impact_params[ self.DIRECT ])
+        direct_azimuth_interpolant     = np.linspace( min(self.raw_Azimuths[ self.DIRECT ]), max(self.raw_Azimuths[ self.DIRECT ]), 10000)
+        direct_impact_param_interpolat = direct_spline(direct_azimuth_interpolant)
 
-            self.Interpolated_Impact_params.extend(Interpolated_direct_Impact_params)
-            self.Interpolated_Impact_params.extend(Interpolated_indirect_Impact_params)
+        # NOTE: Wormhole spacetimes with sources at negative radidal coorinates do not have indirect portions of the function!
+        # So I am initializing them as empty arays that get appended at the end
+        indirect_impact_param_interpolat_right = []
+        indirect_impact_param_interpolat_left  = []
 
-        else:
-            self.Interpolated_Azimuths      = Interpolated_direct_Azimuth
-            self.Interpolated_Impact_params = Interpolated_direct_Impact_params
+        indirect_azimuth_interpolant_right = []
+        indirect_azimuth_interpolant_left  = [] 
+
+        if self.r_source > 0:
+
+            # Seperate out the Azimuth = f(Impact param) function into single-valued sections in order to make splines 
+            # NOTE: The direct images are always from single values graphs, while the indirect ones get split vertically around max( Azimuth )
+
+            indirect_split_index = max(np.asarray(self.raw_Azimuths[self.INDIRECT] == np.max(self.raw_Azimuths[self.INDIRECT])).nonzero()[0])
+
+            # Seperate out the left indirect branch
+            left_branch_condition = self.raw_Impact_params[self.INDIRECT] < self.raw_Impact_params[self.INDIRECT][indirect_split_index]
+
+            Indirect_Impact_param_left = self.raw_Impact_params[self.INDIRECT][left_branch_condition]
+            Indirect_Azimuth_left      =      self.raw_Azimuths[self.INDIRECT][left_branch_condition]
+
+            # Seperate out the right indirect branch
+            right_branch_condition = self.raw_Impact_params[self.INDIRECT] >= self.raw_Impact_params[self.INDIRECT][indirect_split_index]
+
+            Indirect_Impact_param_right = self.raw_Impact_params[self.INDIRECT][right_branch_condition]
+            Indirect_Azimuth_right      =      self.raw_Azimuths[self.INDIRECT][right_branch_condition]
+
+            # Interpolate the right indirect portion of the function
+            indirect_spline_right = interp1d(Indirect_Azimuth_right, Indirect_Impact_param_right)
+            indirect_azimuth_interpolant_right     = np.linspace( min(Indirect_Azimuth_right), max(Indirect_Azimuth_right), 10000)
+            indirect_impact_param_interpolat_right = indirect_spline_right(indirect_azimuth_interpolant_right)
+
+            # Interpolate the right indirect portion of the function
+            # NOTE: Some spacetimes do not posses this branch of the function, so I am declaring it as empty lists and conditionally filling them
+            indirect_azimuth_interpolant_left     = []
+            indirect_impact_param_interpolat_left = []
+            
+            if len(Indirect_Impact_param_left) > 1:
+                indirect_spline_left  = interp1d(Indirect_Azimuth_left, Indirect_Impact_param_left)
+                indirect_azimuth_interpolant_left     = np.linspace( max(Indirect_Azimuth_left), min(Indirect_Azimuth_left), 10000 )
+                indirect_impact_param_interpolat_left = indirect_spline_left(indirect_azimuth_interpolant_left)
+
+        self.Interpolated_Impact_params = np.append( np.append( direct_impact_param_interpolat, indirect_impact_param_interpolat_right ), indirect_impact_param_interpolat_left )
+        self.Interpolated_Azimuths = np.append( np.append( direct_azimuth_interpolant, indirect_azimuth_interpolant_right ), indirect_azimuth_interpolant_left )
 
     def construct_images(self):
 
         np.seterr(all = "ignore")
 
         Solution_condition = np.arcsin(1 / np.tan(self.Interpolated_Azimuths) / np.tan(self.inclincation))
-        self.Interpolated_Impact_params = np.array(self.Interpolated_Impact_params)
         Image_count = 0
         start_index = 0
         end_index   = 0
@@ -195,7 +228,7 @@ class Analytical_ray_tracer():
 
         for index, _ in enumerate(Solution_condition):
 
-            if np.absolute(self.Interpolated_Azimuths[index]) < (self.Max_Image_order + 1) * np.pi:
+            if self.Interpolated_Azimuths[index] <= (self.Max_Image_order + 1) * np.pi:
 
                 if index != 0:
                     solution_starts =     np.isnan(Solution_condition[index - 1]) and not np.isnan(Solution_condition[index])
@@ -210,7 +243,7 @@ class Analytical_ray_tracer():
                 if solution_ends:
                     end_index = index
 
-                    if end_index - start_index > 20 and Image_count <= 20:
+                    if end_index - start_index > 1:
 
                         self.raw_Image_angular_coords.append( Solution_condition[ start_index:end_index ] ) 
                         self.raw_Image_radial_coords.append( np.array(self.Interpolated_Impact_params[ start_index:end_index ]) )
@@ -397,19 +430,19 @@ if __name__ == "__main__":
                      "Naked Singularity":  JNW,
                      "Gauss - Bonet"    : GBNS}
 
-    Active_spacetime = "Gauss - Bonet"
+    Active_spacetime = "Naked Singularity"
 
     #----- Observer / Source  -------#
 
     r_obs = 1e3                         # [ M ]
     inclination_obs = 80 * DEG_TO_RAD   # [ rad ]
 
-    ray_tracer = Analytical_ray_tracer(Spacetime_dict[Active_spacetime], 1500, 10, r_obs, inclination_obs, MAX_IAMGE_ORDER = 9)
+    ray_tracer = Analytical_ray_tracer(Spacetime_dict[Active_spacetime], 500 , 5, r_obs, inclination_obs, MAX_IAMGE_ORDER = 7)
 
     ray_tracer.propagate_rays()
-    ray_tracer.combine_splines()
+    ray_tracer.create_spline()
     ray_tracer.construct_images()
-
+ 
     if Spacetime_dict[Active_spacetime].HAS_PHOTON_SPHERE:
         plot_splined_data(figure_num = 1, 
                           Splines = ray_tracer.Image_Spline)
@@ -422,12 +455,11 @@ if __name__ == "__main__":
     plot_raw_data(figure_num = 2, 
                       Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
                       Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
-    
+
 
     plot_angle_impact_param_grapth(figure_num = 3,
                                    Splined_Impact_params = ray_tracer.Interpolated_Impact_params, 
                                    Splined_Azimuths      = ray_tracer.Interpolated_Azimuths,
                                    Inclination           = inclination_obs)
 
-    # plt.plot(ray_tracer.raw_Impact_params, ray_tracer.raw_Azimuths)
     plt.show()
