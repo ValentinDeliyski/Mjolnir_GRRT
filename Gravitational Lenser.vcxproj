@@ -24,9 +24,11 @@
     <ClInclude Include="Libraries\include\Enumerations.h" />
     <ClInclude Include="Libraries\include\General_GR_functions.h" />
     <ClInclude Include="Libraries\include\General_math_functions.h" />
+    <ClInclude Include="Libraries\include\Inputs.h" />
     <ClInclude Include="Libraries\include\IO_files.h" />
     <ClInclude Include="Libraries\include\Lensing.h" />
     <ClInclude Include="Libraries\include\Rendering_Engine.h" />
+    <ClInclude Include="Libraries\include\Sim_Modes.h" />
     <ClInclude Include="Libraries\include\Spacetimes.h" />
   </ItemGroup>
   <ItemGroup>
@@ -39,6 +41,7 @@
     <ClCompile Include="src\Ray_tracer.cpp" />
     <ClCompile Include="src\Rendering_Engine.cpp" />
     <ClCompile Include="src\RK45.cpp" />
+    <ClCompile Include="src\Sim_Modes.cpp" />
     <ClCompile Include="src\Spacetimes.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -94,8 +94,6 @@ class Analytical_ray_tracer():
 
         self.raw_Impact_params[self.DIRECT].extend(direct_impact_params)
 
-        # self.Impact_Azimuth_spline.append(interp1d(direct_impact_params, self.raw_Azimuths))
-
         print("Finished computing direct photon paths!")
 
         if self.r_source > 0:
@@ -162,11 +160,11 @@ class Analytical_ray_tracer():
             self.raw_Azimuths[self.INDIRECT] = np.array(self.raw_Azimuths[self.INDIRECT])
 
         # Spline the inverse function - a.e. Impact Param = f_inv(Azimuth)
-        # NOTE: This is in order to have a good distribution of points along the curve, samplint the spline of f(Impact param) properly is difficult in the vacinity of the photon sphere
+        # NOTE: This is in order to have a good distribution of points along the curve, sampling the spline of f(Impact param) properly is difficult in the vacinity of the photon sphere
 
         # Interpolate the direct portion of the function
         direct_spline = interp1d(self.raw_Azimuths[ self.DIRECT ], self.raw_Impact_params[ self.DIRECT ])
-        direct_azimuth_interpolant     = np.linspace( min(self.raw_Azimuths[ self.DIRECT ]), max(self.raw_Azimuths[ self.DIRECT ]), 10000)
+        direct_azimuth_interpolant     = np.linspace( min(self.raw_Azimuths[ self.DIRECT ]), max(self.raw_Azimuths[ self.DIRECT ]), 100000)
         direct_impact_param_interpolat = direct_spline(direct_azimuth_interpolant)
 
         # NOTE: Wormhole spacetimes with sources at negative radidal coorinates do not have indirect portions of the function!
@@ -198,7 +196,7 @@ class Analytical_ray_tracer():
 
             # Interpolate the right indirect portion of the function
             indirect_spline_right = interp1d(Indirect_Azimuth_right, Indirect_Impact_param_right)
-            indirect_azimuth_interpolant_right     = np.linspace( min(Indirect_Azimuth_right), max(Indirect_Azimuth_right), 10000)
+            indirect_azimuth_interpolant_right     = np.linspace( min(Indirect_Azimuth_right), max(Indirect_Azimuth_right), 100000)
             indirect_impact_param_interpolat_right = indirect_spline_right(indirect_azimuth_interpolant_right)
 
             # Interpolate the right indirect portion of the function
@@ -208,7 +206,7 @@ class Analytical_ray_tracer():
             
             if len(Indirect_Impact_param_left) > 1:
                 indirect_spline_left  = interp1d(Indirect_Azimuth_left, Indirect_Impact_param_left)
-                indirect_azimuth_interpolant_left     = np.linspace( max(Indirect_Azimuth_left), min(Indirect_Azimuth_left), 10000 )
+                indirect_azimuth_interpolant_left     = np.linspace(max(Indirect_Azimuth_left), min(Indirect_Azimuth_left), 100000)
                 indirect_impact_param_interpolat_left = indirect_spline_left(indirect_azimuth_interpolant_left)
 
         self.Interpolated_Impact_params = np.append( np.append( direct_impact_param_interpolat, indirect_impact_param_interpolat_right ), indirect_impact_param_interpolat_left )
@@ -243,7 +241,7 @@ class Analytical_ray_tracer():
                 if solution_ends:
                     end_index = index
 
-                    if end_index - start_index > 1:
+                    if end_index - start_index > 20:
 
                         self.raw_Image_angular_coords.append( Solution_condition[ start_index:end_index ] ) 
                         self.raw_Image_radial_coords.append( np.array(self.Interpolated_Impact_params[ start_index:end_index ]) )
@@ -430,14 +428,19 @@ if __name__ == "__main__":
                      "Naked Singularity":  JNW,
                      "Gauss - Bonet"    : GBNS}
 
-    Active_spacetime = "Naked Singularity"
+    Active_spacetime = "Gauss - Bonet"
 
     #----- Observer / Source  -------#
 
     r_obs = 1e3                         # [ M ]
-    inclination_obs = 80 * DEG_TO_RAD   # [ rad ]
+    inclination_obs = 75 * DEG_TO_RAD   # [ rad ]
 
-    ray_tracer = Analytical_ray_tracer(Spacetime_dict[Active_spacetime], 500 , 5, r_obs, inclination_obs, MAX_IAMGE_ORDER = 7)
+    ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
+                                       Granularity = 500 , 
+                                       r_source = 30, 
+                                       r_obs = r_obs, 
+                                       inclination = inclination_obs, 
+                                       MAX_IAMGE_ORDER = 10)
 
     ray_tracer.propagate_rays()
     ray_tracer.create_spline()
@@ -451,11 +454,6 @@ if __name__ == "__main__":
         plot_raw_data(figure_num = 2, 
                       Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
                       Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
-        
-    plot_raw_data(figure_num = 2, 
-                      Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
-                      Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
-
 
     plot_angle_impact_param_grapth(figure_num = 3,
                                    Splined_Impact_params = ray_tracer.Interpolated_Impact_params, 

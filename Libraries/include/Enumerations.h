@@ -70,7 +70,7 @@
 
 	};
 
-	typedef enum Disk_Model{
+	enum Disk_Model{
 
 		Novikov_Thorne = 0,
 		Optically_Thin_Toroidal = 1,
@@ -78,7 +78,7 @@
 
 	};
 
-	typedef enum Orbit_Orientation{
+	enum Orbit_Orientation{
 
 		Prograde   = 0,
 		Retrograde = 1,

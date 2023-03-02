@@ -14,7 +14,6 @@
 #include "Lensing.h"
 #include <iostream>
 
-extern Spacetime_enums e_metric;
 extern std::vector<c_Spacetime_Base*> Spacetimes;
 extern c_Observer Observer_class;
 extern Optically_Thin_Toroidal_Model OTT_Model;
@@ -132,7 +131,6 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
 
                 if (State_vector[e_r] - JNW_R_SINGULARITY < 5e-8) {
 
-                    //State_vector[e_r] += 1e-5;
                     State_vector[e_p_r] *= -1;
 
                 }

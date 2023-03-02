@@ -11,7 +11,6 @@
 #include <vector>
 #include "Lensing.h"
 
-extern Spacetime_enums e_metric;
 extern std::vector<c_Spacetime_Base*> Spacetimes;
 extern Novikov_Thorne_Model NT_Model;
 extern Optically_Thin_Toroidal_Model OTT_Model;

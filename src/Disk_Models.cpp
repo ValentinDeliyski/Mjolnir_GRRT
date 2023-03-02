@@ -2,14 +2,12 @@
 
 #define _USE_MATH_DEFINES
 
-#include "Enumerations.h"
 #include "Spacetimes.h"
 #include "General_GR_functions.h"
 #include "General_math_functions.h"
 #include "Disk_Models.h"
 
 #include <vector>
-#include <cmath>
 #include "Constants.h"
 
 /***************************************************
@@ -18,7 +16,6 @@
 |                                                  |
 ***************************************************/
 
-extern Spacetime_enums e_metric;
 extern std::vector<c_Spacetime_Base*> Spacetimes;
 
 Novikov_Thorne_Model::Novikov_Thorne_Model(double x, double y) {
@@ -339,7 +336,7 @@ double Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]) {
 
         case Synchotron_phenomenological:
 
-            electron_density = exp(-((r / 10) * (r / 10) + DISK_HEIGHT_SCALE * DISK_HEIGHT_SCALE * h * h) / 2);
+            electron_density = exp(-r * r / DISK_RADIAL_SCALE / DISK_RADIAL_SCALE / 2 -  h * h / DISK_HEIGHT_SCALE / DISK_HEIGHT_SCALE / 2);
 
             break;
 

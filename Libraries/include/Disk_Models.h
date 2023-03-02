@@ -4,14 +4,10 @@
 
 	#define DISK_MODELS
 
-    #include "Enumerations.h"
     #include "Spacetimes.h"
 
     #include <iostream>
-    #include <cmath>
     #include <vector>
-
-    extern Emission_model_enums e_emission;
 
     class Novikov_Thorne_Model {
 

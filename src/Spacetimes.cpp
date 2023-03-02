@@ -16,8 +16,6 @@
 |                                      |
 ***************************************/
 
-extern Spacetime_enums e_metric;
-
 tag_observer::tag_observer(double r, double theta, double phi) {
 
     r_obs     = r;

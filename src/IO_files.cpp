@@ -2,26 +2,12 @@
 
 #define _USE_MATH_DEFINES
 
-#include <filesystem>
-#include <string>
-#include <fstream>
 #include <iostream>
 
-#include "Enumerations.h"
 #include "IO_files.h"
 #include "Constants.h"
 
-extern Spacetime_enums e_metric;
-extern Const_bool lens_from_file;
 extern Const_bool truncate;
-
-extern Real r_obs;
-extern Real theta_obs;
-
-extern double V_angle_min;
-extern double V_angle_max;
-extern double H_angle_min;
-extern double H_angle_max;
 
 std::string File_Names[] = {
 
@@ -71,7 +57,7 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
 	Const_int File_number = SPACETIME_NUMBER * 8;
 
-	std::filesystem::path dir("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity");
+	std::filesystem::path dir(std::filesystem::current_path() / "Sim_Results");
 	std::filesystem::path file[File_number];
 	std::filesystem::path full_path[File_number];
 	std::filesystem::path file_extention(".txt");
@@ -165,7 +151,7 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 						  << '\n';
 
 
-		if (lens_from_file) {
+		if (Active_Sim_Mode == 2) {
 
 			momentum_data[Image_order] << "Radial Momentum (covariant),"
 				<< " "
@@ -200,7 +186,7 @@ int get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) 
 
 	std::ifstream geodesic_data;
 
-	geodesic_data.open("C:\\Users\\Valentin\\Documents\\University stuff\\General Relativity\\Polarization\\Schwarzschild_Impact_parameters\\First_relativistic\\geodesic_data_20_deg_Sch_r6_50_photons.txt", std::ios::in);
+	geodesic_data.open(input_file_path, std::ios::in);
 
 	while (true) {
 
@@ -240,7 +226,7 @@ int write_to_file(Results_type s_Ray_results, std::ofstream data[], std::ofstrea
 						  << s_Ray_results.Source_Coords[e_phi][Image_order]
 						  << '\n';
 
-		if (lens_from_file) {
+		if (Active_Sim_Mode == 2) {
 
 			momentum_data[Image_order] << s_Ray_results.Three_Momentum[e_r][Image_order]
 									   << " "

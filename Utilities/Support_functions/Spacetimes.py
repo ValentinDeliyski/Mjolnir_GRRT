@@ -246,12 +246,16 @@ class Gaus_Bonet_Naked_Singularity:
         metric_source       = self.metric(r_source, np.pi / 2)
         impact_param_source = np.sqrt(-metric_source[3] / metric_source[0])
 
-        higher_order_impact_params1 = impact_param_source + beta.cdf(distribution_range, density_parameter, density_parameter) * (self.photon_sphere() - impact_param_source)
-        higher_order_impact_params2 = self.photon_sphere() + beta.cdf(distribution_range, density_parameter, density_parameter) * (1e-2 - self.photon_sphere())
+        metric_photon_sphere       = self.metric(self.photon_sphere(), np.pi / 2) 
+        impact_param_photon_sphere = np.sqrt(-metric_photon_sphere[3] / metric_photon_sphere[0])
+
+        higher_order_impact_params1 = impact_param_source        + beta.cdf(distribution_range, density_parameter, density_parameter) * (impact_param_photon_sphere - impact_param_source)
+        higher_order_impact_params2 = impact_param_photon_sphere + beta.cdf(distribution_range, density_parameter, density_parameter) * (1e-2 - impact_param_photon_sphere)
                                                                                                                                              
-        higher_order_impact_params = np.concatenate((higher_order_impact_params1,higher_order_impact_params2), axis = 0)
+        higher_order_impact_params = np.append(higher_order_impact_params1, higher_order_impact_params2)
         
-        #-------- Calculate the impact parameters for the correspoinding turning points --------
+        #-------- Calculate the impact parameters for the correspoinding turning points --------#
+        
         higher_order_turning_points = []
 
         for impact_param in higher_order_impact_params:
@@ -269,8 +273,8 @@ class Gaus_Bonet_Naked_Singularity:
             roots = roots[roots > 0]
                           
             if len(roots) != 2:
-                higher_order_turning_points.append(np.max(np.real(roots)))
+                higher_order_turning_points.append(np.max(roots))
             else:
-                higher_order_turning_points.append(np.min(np.real(roots)))
+                higher_order_turning_points.append(np.min(roots))
 
         return higher_order_impact_params, higher_order_turning_points
