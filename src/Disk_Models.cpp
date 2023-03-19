@@ -305,6 +305,26 @@ int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], dou
 
 }
 
+double Optically_Thin_Toroidal_Model::get_disk_hotspot(double State_Vector[]) {
+
+    double x_center = R_HOTSPOT_CENTER * cos(PHI_HOTSPOT_CENTER);
+    double y_center = R_HOTSPOT_CENTER * sin(PHI_HOTSPOT_CENTER);
+    double z_center = 0;
+
+    double x_photon = State_Vector[e_r] * sin(State_Vector[e_theta]) * cos(State_Vector[e_phi]);
+    double y_photon = State_Vector[e_r] * sin(State_Vector[e_theta]) * sin(State_Vector[e_phi]);
+    double z_photon = State_Vector[e_r] * cos(State_Vector[e_theta]);
+
+    double hotspot_density  = exp(-(x_center - x_photon) * (x_center - x_photon));
+           hotspot_density *= exp(-(y_center - y_photon) * (y_center - y_photon));
+           hotspot_density *= exp(-(z_center - z_photon) * (z_center - z_photon) / HOTSPOT_SCALE);
+           hotspot_density *= HOTSPOT_REL_SCALE;
+
+
+    return hotspot_density;
+
+}
+
 double Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]) {
 
     double& r = State_Vector[e_r];
@@ -346,7 +366,7 @@ double Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]) {
 
     }
 
-    return electron_density;
+    return electron_density + get_disk_hotspot(State_Vector);
 
 }
 

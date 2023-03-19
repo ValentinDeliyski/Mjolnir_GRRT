@@ -433,11 +433,11 @@ if __name__ == "__main__":
     #----- Observer / Source  -------#
 
     r_obs = 1e3                         # [ M ]
-    inclination_obs = 75 * DEG_TO_RAD   # [ rad ]
+    inclination_obs = 80 * DEG_TO_RAD   # [ rad ]
 
     ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
                                        Granularity = 500 , 
-                                       r_source = 30, 
+                                       r_source = 6, 
                                        r_obs = r_obs, 
                                        inclination = inclination_obs, 
                                        MAX_IAMGE_ORDER = 10)

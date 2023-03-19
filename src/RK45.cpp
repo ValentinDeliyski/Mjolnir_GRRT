@@ -152,12 +152,18 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
     controller->update_step();
 
-    bool near_NT_disk = State_Vector[e_r] * State_Vector[e_r] * cos(State_Vector[e_theta]) * cos(State_Vector[e_theta]) < 0.5 * 0.5 &&
-                        State_Vector[e_r] * State_Vector[e_r] < NT_Model.get_r_out() * NT_Model.get_r_out();
+    //bool near_NT_disk = State_Vector[e_r] * State_Vector[e_r] * cos(State_Vector[e_theta]) * cos(State_Vector[e_theta]) < 0.5 * 0.5 &&
+    //                    State_Vector[e_r] * State_Vector[e_r] < NT_Model.get_r_out() * NT_Model.get_r_out();
 
-    if (near_NT_disk) {
+    //if (near_NT_disk) {
 
-        controller->step /= 2;
+    //    controller->step /= 2;
+
+    //}
+
+    if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2) {
+
+        controller->step /= 4;
 
     }
 

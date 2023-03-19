@@ -4,24 +4,36 @@ from matplotlib import pyplot as plt
 from Support_functions.Parsers import*
 from Support_functions.Shadows import*
 
-Sim_Parser_0   = Simulation_Parser("Kerr_Data0_2500_2500 zoom")
-# Sim_Parser_1   = Simulation_Parser("Kerr_Data1")
-# Sim_Parser_2   = Simulation_Parser("Kerr_Data2")
-# Sim_Parser_3   = Simulation_Parser("Kerr_Data3")
+SIM_CASE = str(7)
 
+Sim_Parser_0 = Simulation_Parser("Hotspot_" + SIM_CASE + "_pi_4\\Gauss_Bonnet_n=0")
+Sim_Parser_1 = Simulation_Parser("Hotspot_" + SIM_CASE + "_pi_4\\Gauss_Bonnet_n=1")
+Sim_Parser_2 = Simulation_Parser("Hotspot_" + SIM_CASE + "_pi_4\\Gauss_Bonnet_n=2")
+Sim_Parser_3 = Simulation_Parser("Hotspot_" + SIM_CASE + "_pi_4\\Gauss_Bonnet_n=3")
 Intensity_0, NT_Flux_0, NT_Redshift_0, NT_Flux_Shifted_0, Metadata_0 = Sim_Parser_0.get_plottable_sim_data()
-# Intensity_1, NT_Flux_1, NT_Redshift_1, NT_Flux_Shifted_1, Metadata_1 = Sim_Parser_1.get_plottable_sim_data()
-# Intensity_2, NT_Flux_2, NT_Redshift_2, NT_Flux_Shifted_2, Metadata_2 = Sim_Parser_2.get_plottable_sim_data()
-# Intensity_3, NT_Flux_3, NT_Redshift_3, NT_Flux_Shifted_3, Metadata_3 = Sim_Parser_3.get_plottable_sim_data()
+Intensity_1, NT_Flux_1, NT_Redshift_1, NT_Flux_Shifted_1, Metadata_1 = Sim_Parser_1.get_plottable_sim_data()
+Intensity_2, NT_Flux_2, NT_Redshift_2, NT_Flux_Shifted_2, Metadata_2 = Sim_Parser_2.get_plottable_sim_data()
+Intensity_3, NT_Flux_3, NT_Redshift_3, NT_Flux_Shifted_3, Metadata_3 = Sim_Parser_3.get_plottable_sim_data()
 
 # Sim_Parser.export_ehtim_data(Intensity)
-axes_limits       = np.array([(limit) for limit in Metadata_0[2]])
+axes_limits = np.array([(limit) for limit in Metadata_0[2]])
 
 Main_Figure = plt.figure()
 Subplot = Main_Figure.add_subplot(111)
 
-Data_to_plot = Intensity_0
-Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits, vmin = np.min(Data_to_plot), vmax = np.max(Data_to_plot))
+Data_to_plot = Intensity_0 + Intensity_1 + Intensity_2 + Intensity_3
+# print(np.max(np.array(Intensity_0 + Intensity_2 + Intensity_1 + Intensity_3).flatten()))
+Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits, vmin = -0, vmax = 3.913125e+18)
+Subplot.set_xlabel(r'$\alpha_{rel}$ [rad]')
+Subplot.set_ylabel(r'$\delta_{rel}$ [rad]')
+
+# Subplot = Main_Figure.add_subplot(122)
+
+# Data_to_plot = Intensity_1
+# # print(np.max(np.array(Intensity_0 + Intensity_2 + Intensity_1 + Intensity_3).flatten()))
+# Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits, vmin = 0, vmax = 3.913125e+18/2)
+# Subplot.set_xlabel(r'$\alpha_{rel}$ [rad]')
+# Subplot.set_ylabel(r'$\delta_{rel}$ [rad]')
 
 # figure = plt.figure()
 

@@ -79,25 +79,29 @@ double derived_Kerr_class::get_ISCO(Orbit_Orientation Orientation) {
 
 }
 
-double derived_Kerr_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+double* derived_Kerr_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+
+    double photon_orbit{};
 
     switch (Orientation) {
 
     case Prograde:
 
-        return 2 * MASS * (1 + cos(2.0 / 3 * acos(SPIN)));
+        photon_orbit = 2 * MASS * (1 + cos(2.0 / 3 * acos(SPIN)));
 
     case Retrograde:
 
-        return 2 * MASS * (1 + cos(2.0 / 3 * acos(-SPIN)));
+        photon_orbit = 2 * MASS * (1 + cos(2.0 / 3 * acos(-SPIN)));
 
     default:
 
         std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
 
-        return ERROR;
+        return NULL;
 
     }
+
+    return &photon_orbit;
 
 }
 
@@ -300,27 +304,31 @@ double derived_RBH_class::get_ISCO(Orbit_Orientation Orientation) {
 
 }
 
-double derived_RBH_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+double* derived_RBH_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
     double M = MASS;
+
+    double photon_orbit{};
 
     switch (Orientation) {
 
     case Prograde:
 
-        return sqrt(9 * MASS * MASS - RBH_PARAM * RBH_PARAM);
+        photon_orbit = sqrt(9 * MASS * MASS - RBH_PARAM * RBH_PARAM);
 
     case Retrograde:
 
-        return sqrt(9 * MASS * MASS - RBH_PARAM * RBH_PARAM);
+        photon_orbit = sqrt(9 * MASS * MASS - RBH_PARAM * RBH_PARAM);
 
     default:
 
         std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
 
-        return ERROR;
+        return NULL;
 
     }
+
+    return &photon_orbit;
 
 }
 
@@ -494,28 +502,32 @@ double derived_Wormhole_class::get_ISCO(Orbit_Orientation Orientation) {
 
 }
 
-double derived_Wormhole_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+double* derived_Wormhole_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
     double M = MASS;
     double a = SPIN;
+
+    double photon_orbit{};
 
     switch (Orientation) {
 
     case Prograde:
 
-        return  M / 2 * (1 + sqrt(1 + 8 * WH_REDSHIFT));
+        photon_orbit =  M / 2 * (1 + sqrt(1 + 8 * WH_REDSHIFT));
 
     case Retrograde:
 
-        return M / 2 * (1 + sqrt(1 + 8 * WH_REDSHIFT));;
+        photon_orbit =  M / 2 * (1 + sqrt(1 + 8 * WH_REDSHIFT));;
 
     default:
 
         std::cout << "Wrong Orbit Orientation! - Must be 'Prograde' or 'Retrograde'!" << '\n';
 
-        return ERROR;
+        return NULL;
 
     }
+
+    return &photon_orbit;
 
 }
 
@@ -692,18 +704,22 @@ double derived_JNW_class::get_ISCO(Orbit_Orientation Orientation) {
 
  };
 
-double derived_JNW_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+double* derived_JNW_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+
+    double photon_orbit{};
 
     if (JNW_GAMMA > 0.5) { // Weak naked singularity
 
-        return (2 * JNW_GAMMA + 1) * JNW_R_SINGULARITY / 2;
+        photon_orbit = (2 * JNW_GAMMA + 1) * JNW_R_SINGULARITY / 2;
 
     }
     else {
 
-        return JNW_R_SINGULARITY;
+        photon_orbit = JNW_R_SINGULARITY;
 
     }
+
+    return &photon_orbit;
 
 };
 
@@ -716,11 +732,11 @@ int derived_JNW_class::get_metric(double metric[4][4], double* N_metric, double*
     metric[1][1] = -1.0 / metric[0][0];
     metric[2][2] = pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) * r2;
     metric[3][3] = metric[2][2] * sin_theta * sin_theta;
-    metric[0][3] = 0;
+    metric[0][3] = 0.;
     metric[3][0] = metric[0][3];
 
     *N_metric = -metric[0][0];
-    *omega_metric = 0;
+    *omega_metric = 0.;
 
     return OK;
 
@@ -841,5 +857,183 @@ bool derived_JNW_class::terminate_integration(double State_vector[], double Deri
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
     return scatter ;
+
+};
+
+double derived_Gauss_Bonnet_class::get_Photon_ISCO_equation(double r) {
+
+    return r * r * r * (1 - sqrt(1 + 8 * MASS * GAUSS_BONNET_GAMMA / r / r / r)) + 2 * MASS * GAUSS_BONNET_GAMMA;
+
+}
+
+double derived_Gauss_Bonnet_class::get_Photon_ISCO_equation_derivative(double r) {
+
+    double root = sqrt(1 + 8 * MASS * GAUSS_BONNET_GAMMA / r / r / r);
+
+    return 3 * r * r * (1 - root) + 12 * MASS * GAUSS_BONNET_GAMMA / r / root;
+
+}
+
+double derived_Gauss_Bonnet_class::get_ISCO(Orbit_Orientation Orientation) {
+
+    return 6.;
+
+};
+
+double* derived_Gauss_Bonnet_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+
+    /* This expression is the root of a cubic equation */
+
+    double q =  8 * MASS * GAUSS_BONNET_GAMMA;
+    double p = -9 * MASS * MASS;
+
+    double photon_orbits[2]{};
+
+    photon_orbits[0] = 2 * sqrt(-p / 3) * cos(1. / 3 * acos(3. / 2 * q / p * sqrt(-3. / p)));
+    photon_orbits[1] = 2 * sqrt(-p / 3) * cos(1. / 3 * acos(3. / 2 * q / p * sqrt(-3. / p)) + 2. * M_PI / 3);
+
+    return photon_orbits;
+
+};
+
+int derived_Gauss_Bonnet_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+
+    double M = MASS;
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    double f = 1. + r2 / GAUSS_BONNET_GAMMA / 2. * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
+
+    metric[0][0] = -f;
+    metric[1][1] = 1. / f;
+    metric[2][2] = r2;
+    metric[3][3] = r2 * sin_theta * sin_theta;
+    metric[0][3] = 0.;
+    metric[3][0] = 0.;
+
+    *N_metric     = -metric[0][0];
+    *omega_metric = 0.;
+
+    return OK;
+
+}
+
+int derived_Gauss_Bonnet_class::get_dr_metric(double dr_metric[4][4], double* dr_N_metric, double* dr_omega_metric, double r, double theta) {
+
+    double metric[4][4]{}, N{}, omega{};
+    double M  = MASS;
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    derived_Gauss_Bonnet_class::get_metric(metric, &N, &omega, r, theta);
+
+    double f    = 1. + r2 / GAUSS_BONNET_GAMMA / 2. * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
+    double dr_f = 2. / r * (f - 1.) + 6. * M / sqrt(r2 * r2 + 8. * GAUSS_BONNET_GAMMA * M * r);
+
+    dr_metric[0][0] = -dr_f;
+    dr_metric[1][1] = -1. / f / f * dr_f;
+    dr_metric[2][2] = 2. * r;
+    dr_metric[3][3] = 2. * r * sin_theta * sin_theta;
+    dr_metric[0][3] = 0.;
+    dr_metric[3][0] = 0.;
+
+    *dr_N_metric     = -dr_metric[0][0];
+    *dr_omega_metric = 0.;
+
+    return OK;
+
+}
+
+int derived_Gauss_Bonnet_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric, double* d2r_omega_metric, double r, double theta) {
+
+    double metric[4][4]{}, N{}, omega{};
+    double M = MASS;
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    derived_Gauss_Bonnet_class::get_metric(metric, &N, &omega, r, theta);
+
+    double dr_metric[4][4]{}, dr_N{}, dr_omega{};
+
+    derived_Gauss_Bonnet_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
+
+    double root = sqrt(r2 * r2 + 8 * GAUSS_BONNET_GAMMA * M * r);
+
+    double f     =  1 + r2 / GAUSS_BONNET_GAMMA / 2. * (1 - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
+    double dr_f  =  2. / r * (f - 1.) + 6 * M / root;
+    double d2r_f = -2. / r2 * (f - 1.) + 2. / r * dr_f - 12. * M / root / root / root * (r2 * r + 2. * GAUSS_BONNET_GAMMA * M);
+
+    d2r_metric[0][0] = -d2r_f;
+    d2r_metric[1][1] = 2. / f / f / f * dr_f - 1. / f / f * d2r_f;
+    d2r_metric[2][2] = 2.;
+    d2r_metric[3][3] = 2. * sin_theta * sin_theta;
+    d2r_metric[0][3] = 0.;
+    d2r_metric[3][0] = 0.;
+
+    *d2r_N_metric     = -d2r_metric[0][0];
+    *d2r_omega_metric = 0.;
+
+    return OK;
+
+}
+
+int derived_Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
+
+    double& r_obs     = p_Initial_Conditions->init_Pos[e_r];
+    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
+
+    p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
+    p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
+
+    double& J = p_Initial_Conditions->init_Three_Momentum[e_phi];
+    double  f = 1. + r_obs * r_obs / 2. / GAUSS_BONNET_GAMMA * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * MASS / r_obs / r_obs / r_obs));
+
+    double rad_potential = 1. - f * J * J / (r_obs * r_obs);
+
+    double(*metric)[4] = p_Initial_Conditions->init_metric;
+
+    p_Initial_Conditions->init_Three_Momentum[e_r] = sqrt(rad_potential) * metric[1][1];
+
+    return OK;
+
+}
+
+int derived_Gauss_Bonnet_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration){
+
+    double& r = inter_State_vector[e_r + iteration * e_State_Number];
+
+    double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double sin2 = sin1 * sin1;
+
+    double cos1 = cos(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double cos2 = cos1 * cos1;
+
+    double root = sqrt(1. + 8. * GAUSS_BONNET_GAMMA * MASS / r / r / r);
+
+    double f    = 1. + r * r / GAUSS_BONNET_GAMMA / 2. * (1. - root);
+    double dr_f = 2. / r * (f - 1.) + 6. * MASS / root / r / r;
+
+    Derivatives[e_r       + iteration * e_State_Number] = f * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_theta   + iteration * e_State_Number] = 1. / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
+    Derivatives[e_phi     + iteration * e_State_Number] = J / (r * r * sin2);
+    Derivatives[e_phi_FD  + iteration * e_State_Number] = 0.0;
+    Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (r * r * sin1 * sin2) * J * J;
+
+    double r_term_1 = -1. / 2 * (1.0 / f / f + inter_State_vector[e_p_r] * inter_State_vector[e_p_r]) * dr_f;
+    double r_term_2 = 1.0 / r / r / r * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
+
+    Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
+
+    return OK;
+
+}
+
+bool derived_Gauss_Bonnet_class::terminate_integration(double State_vector[], double Derivatives[]) {
+
+    bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
+
+    bool too_high_order = State_vector[e_phi] * State_vector[e_phi] > 5 * M_PI * 5 * M_PI;
+
+    return scatter || too_high_order;
 
 };

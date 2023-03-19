@@ -24,6 +24,8 @@ class Simulation_Parser():
             self.X_PIXEL_COUNT   = int(Resolution_list[1])
             self.Y_PIXEL_COUNT   = int(Resolution_list[3])
 
+            # self.params = csvreader.__next__()
+
             self.Legend = csvreader.__next__()
 
             csvreader = csv.reader(file, delimiter = " ")

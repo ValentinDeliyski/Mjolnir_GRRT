@@ -53,7 +53,8 @@ std::vector<c_Spacetime_Base*> Spacetimes = {
     new derived_Kerr_class(),
     new derived_RBH_class(),
     new derived_Wormhole_class(),
-    new derived_JNW_class()
+    new derived_JNW_class(),
+    new derived_Gauss_Bonnet_class()
 };
 
 /*
@@ -86,7 +87,7 @@ Define some global boolians
 
 */
 
-extern Const_bool truncate = true;
+extern const bool truncate = true;
 
 /*
 
@@ -116,7 +117,7 @@ void print_ASCII_art() {
 }
 
 int main() {
-
+  
     /*
 
     Create/Open the logging files

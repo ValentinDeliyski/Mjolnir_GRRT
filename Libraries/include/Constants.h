@@ -6,17 +6,8 @@
     
     #include "Inputs.h"
 
-    typedef const int  Const_int;
-    typedef const bool Const_bool;
-
-    Real INIT_STEPSIZE	   = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
-    Real INTEGRAL_ACCURACY = 5e-9;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
-    Real RK45_ACCURACY	   = 1e-8;  // 1e-9 Seems to be an opitimal tradeoff between accuracy and performace 
-    Real SAFETY_1		   = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
-    Real SAFETY_2		   = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
-
-    Const_int RK45_size			    = 7;   // Number of integration sub-steps
-    Const_int MAX_INTEGRATION_COUNT = 1e9; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
+    const int RK45_size			    = 7;   // Number of integration sub-steps
+    const int MAX_INTEGRATION_COUNT = 1e9; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
     Real Coeff_deriv[RK45_size][RK45_size - 1] =
     {

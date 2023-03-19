@@ -148,7 +148,7 @@
                 */
 
                 get_intitial_conditions_from_angles(s_Initial_Conditions, V_angle_min + V_pixel_num * Scan_Step,
-                    H_angle_max - H_pixel_num * Scan_Step);
+                                                    H_angle_max - H_pixel_num * Scan_Step);
 
                 Lens(s_Initial_Conditions, data, momentum_data);
 

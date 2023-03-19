@@ -7,55 +7,65 @@
 #include "IO_files.h"
 #include "Constants.h"
 
-extern Const_bool truncate;
+extern const bool truncate;
 
 std::string File_Names[] = {
 
-	"Kerr_Data0",
-	"Kerr_Data1",
-	"Kerr_Data2",
-	"Kerr_Data3",
+	"Kerr_n=0",
+	"Kerr_n=1",
+	"Kerr_n=2",
+	"Kerr_n=3",
 
-	"Kerr_Momentum_Data0",
-	"Kerr_Momentum_Data1",
-	"Kerr_Momentum_Data2",
-	"Kerr_Momentum_Data3",
+	"Kerr_Momenta_n=0",
+	"Kerr_Momenta_n=1",
+	"Kerr_Momenta_n=2",
+	"Kerr_Momenta_n=3",
 
-	"Wormhole_Data0",
-	"Wormhole_Data1",
-	"Wormhole_Data2",
-	"Wormhole_Data3",
+	"Wormhole_n=0",
+	"Wormhole_n=1",
+	"Wormhole_n=2",
+	"Wormhole_n=3",
 
-	"Wormhole_Momentum_Data0",
-	"Wormhole_Momentum_Data1",
-	"Wormhole_Momentum_Data2",
-	"Wormhole_Momentum_Data3",
+	"Wormhole_Momenta_n=0",
+	"Wormhole_Momenta_n=1",
+	"Wormhole_Momenta_n=2",
+	"Wormhole_Momenta_n=3",
 
-	"RBH_Data0",
-	"RBH_Data1",
-	"RBH_Data2",
-	"RBH_Data3",
+	"RBH_n=0",
+	"RBH_n=1",
+	"RBH_n=2",
+	"RBH_n=3",
 
-	"RBH_Momentum_Data0",
-	"RBH_Momentum_Data1",
-	"RBH_Momentum_Data2",
-	"RBH_Momentum_Data3",
+	"RBH_Momenta_n=0",
+	"RBH_Momenta_n=1",
+	"RBH_Momenta_n=2",
+	"RBH_Momenta_n=3",
 
-	"JNW_Data0",
-	"JNW_Data1",
-	"JNW_Data2",
-	"JNW_Data3",
+	"JNW_n=0",
+	"JNW_n=1",
+	"JNW_n=2",
+	"JNW_n=3",
 
-	"JNW_Momentum_Data0",
-	"JNW_Momentum_Data1",
-	"JNW_Momentum_Data2",
-	"JNW_Momentum_Data3"
+	"JNW_Momenta_n=0",
+	"JNW_Momenta_n=1",
+	"JNW_Momenta_n=2",
+	"JNW_Momenta_n=3",
+
+	"Gauss_Bonnet_n=0",
+	"Gauss_Bonnet_n=1",
+	"Gauss_Bonnet_n=2",
+	"Gauss_Bonnet_n=3",
+
+	"Gauss_Bonnet_Momenta_n=0",
+	"Gauss_Bonnet_Momenta_n=1",
+	"Gauss_Bonnet_Momenta_n=2",
+	"Gauss_Bonnet_Momenta_n=3"
 
 };
 
 int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
-	Const_int File_number = SPACETIME_NUMBER * 8;
+	const int File_number = SPACETIME_NUMBER * 8;
 
 	std::filesystem::path dir(std::filesystem::current_path() / "Sim_Results");
 	std::filesystem::path file[File_number];
@@ -88,7 +98,11 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
 			data[File_Index].open(full_path[File_Index + 0 * 4], open_type);
 
-			momentum_data[File_Index].open(full_path[File_Index + 1 * 4], open_type);
+			if (Active_Sim_Mode == 2) {
+
+				momentum_data[File_Index].open(full_path[File_Index + 1 * 4], open_type);
+
+			}
 
 			break;
 
@@ -96,7 +110,11 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
 			data[File_Index].open(full_path[File_Index + 2 * 4], open_type);
 
-			momentum_data[File_Index].open(full_path[File_Index + 3 * 4], open_type);
+			if (Active_Sim_Mode == 2) {
+
+				momentum_data[File_Index].open(full_path[File_Index + 3 * 4], open_type);
+
+			}
 
 			break;
 
@@ -104,7 +122,11 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
 			data[File_Index].open(full_path[File_Index + 4 * 4], open_type);
 
-			momentum_data[File_Index].open(full_path[File_Index + 5 * 4], open_type);
+			if (Active_Sim_Mode == 2) {
+
+				momentum_data[File_Index].open(full_path[File_Index + 5 * 4], open_type);
+
+			}
 
 			break;
 
@@ -112,18 +134,34 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 
 			data[File_Index].open(full_path[File_Index + 6 * 4], open_type);
 
-			momentum_data[File_Index].open(full_path[File_Index + 7 * 4], open_type);
+			if (Active_Sim_Mode == 2) {
+
+				momentum_data[File_Index].open(full_path[File_Index + 7 * 4], open_type);
+			}
+
+			break;
+
+		case Gauss_Bonnet:
+
+			data[File_Index].open(full_path[File_Index + 8 * 4], open_type);
+
+			if (Active_Sim_Mode == 2) {
+
+				momentum_data[File_Index].open(full_path[File_Index + 9 * 4], open_type);
+
+			}
 
 			break;
 
 		}
+
 	}
 
 	for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
 		data[Image_order] << "Observer Radial Position [M]: " << r_obs << '\n'
-						  << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI 
-						  << '\n' 
+						  << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI
+						  << '\n'
 						  << "Observation Window Dimentions (-X,+X,-Y,+Y) [Rad]: "
 						  << H_angle_min << ","
 						  << H_angle_max << ","
@@ -134,8 +172,38 @@ int open_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 						  << RESOLUTION
 						  << " x "
 						  << RESOLUTION
-						  << '\n'
-						  << "Image X Coord [M],"
+						  << '\n';
+
+		switch (e_metric) {
+
+			case Kerr:
+
+				data[Image_order] << "Spin Parameter: " << SPIN
+								  << '\n';
+
+				break;
+
+			case Wormhole:
+
+				data[Image_order] << "Spin Parameter: " << SPIN << ", Redshift Parameter: " << WH_REDSHIFT
+								  << '\n';
+				break;
+
+			case Reg_Black_Hole:
+
+				data[Image_order] << "Parameter: " << RBH_PARAM
+								  << '\n';
+				break;
+
+			case Naked_Singularity:
+
+				data[Image_order] << "Gamma: " << JNW_GAMMA
+								  << '\n';
+				break;
+
+		}
+
+	    data[Image_order] << "Image X Coord [M],"
 						  << " "
 						  << "Image Y Coord [M],"
 						  << " "
@@ -174,7 +242,11 @@ int close_output_files(std::ofstream data[], std::ofstream momentum_data[]) {
 	for (int i = 0; i <= 3; i++) {
 
 		data[i].close();
-		momentum_data[i].close();
+
+		if (Active_Sim_Mode == 2) {
+
+			momentum_data[i].close();
+		}
 
 	}
 

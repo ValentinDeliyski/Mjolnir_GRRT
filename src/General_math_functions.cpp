@@ -14,7 +14,7 @@ double vector_norm(double Vector[], int Vector_size) {
 	|   @ Description: Computes the Euclidian norm of the vector Vector   |
 	|                                                                     |
 	|   @ Inputs:                                                         |
-		  * Vector: Pointer to the vector, whose norm we will find		  |
+	|	  * Vector: Pointer to the vector, whose norm we will find		  |
 	|	  * Vector_size: The dimention of the vector					  |
 	|																	  |
 	|   @ Ouput: Euclidian norm of the vector							  |
@@ -194,5 +194,14 @@ double dot_product(double vector_1[3], double vector_2[3]) {
 	************************************************************************************/
 
 	return vector_1[0] * vector_2[0] + vector_1[1] * vector_2[1] + vector_1[2] * vector_2[2];
+
+}
+
+double newton_root_finder(double *func(double), double *func_deriv(double)) {
+
+
+
+
+
 
 }

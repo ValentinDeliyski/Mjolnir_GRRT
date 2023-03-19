@@ -20,11 +20,11 @@
 
             };
 
-            virtual double get_Photon_Sphere(Orbit_Orientation Orientation) {
+            virtual double* get_Photon_Sphere(Orbit_Orientation Orientation) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
-                return ERROR;
+                return NULL;
 
             };
 
@@ -94,18 +94,18 @@
         public:
 
             double get_ISCO(Orbit_Orientation Orientation) override;
-            double get_Photon_Sphere(Orbit_Orientation Orientation) override;
+            double* get_Photon_Sphere(Orbit_Orientation Orientation) override;
 
             /* Metric and its derivatives */
 
             int get_metric(double metric[4][4], double* N_metric,
                            double* omega_metric, double r, double theta) override;
 
-            int get_dr_metric(double metric[4][4], double* N_metric,
-                              double* omega_metric, double r, double theta) override;
+            int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
+                              double* dr_omega_metric, double r, double theta);
 
-            int get_d2r_metric(double metric[4][4], double* N_metric,
-                               double* omega_metric, double r, double theta) override;
+            int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
+                               double* d2r_omega_metric, double r, double theta);
 
             ///* Initial conditions derived from images */
 
@@ -127,18 +127,18 @@
     public:
 
         double get_ISCO(Orbit_Orientation Orientation);
-        double get_Photon_Sphere(Orbit_Orientation Orientation);
+        double* get_Photon_Sphere(Orbit_Orientation Orientation);
 
         /* Metric and its derivatives */
 
         int get_metric(double metric[4][4], double* N_metric,
                        double* omega_metric, double r, double theta);
 
-        int get_dr_metric(double metric[4][4], double* N_metric,
-                          double* omega_metric, double r, double theta);
+        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
+                          double* dr_omega_metric, double r, double theta);
 
-        int get_d2r_metric(double metric[4][4], double* N_metric,
-                           double* omega_metric, double r, double theta);
+        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
+                           double* d2r_omega_metric, double r, double theta);
 
         /* Initial conditions derived from images */
 
@@ -160,18 +160,18 @@
     public:
 
         double get_ISCO(Orbit_Orientation Orientation);
-        double get_Photon_Sphere(Orbit_Orientation Orientation);
+        double* get_Photon_Sphere(Orbit_Orientation Orientation);
 
         /* Metric and its derivatives */
 
         int get_metric(double metric[4][4], double* N_metric,
-            double* omega_metric, double r, double theta);
+                       double* omega_metric, double r, double theta);
 
-        int get_dr_metric(double metric[4][4], double* N_metric,
-                          double* omega_metric, double r, double theta);
+        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
+                          double* dr_omega_metric, double r, double theta);
 
-        int get_d2r_metric(double metric[4][4], double* N_metric,
-                           double* omega_metric, double r, double theta);
+        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
+                           double* d2r_omega_metric, double r, double theta);
 
         /* Initial conditions derived from images */
 
@@ -193,18 +193,18 @@
     public:
 
         double get_ISCO(Orbit_Orientation Orientation);
-        double get_Photon_Sphere(Orbit_Orientation Orientation);
+        double* get_Photon_Sphere(Orbit_Orientation Orientation);
 
         /* Metric and its derivatives */
 
         int get_metric(double metric[4][4], double* N_metric,
                        double* omega_metric, double r, double theta);
 
-        int get_dr_metric(double metric[4][4], double* N_metric,
-                          double* omega_metric, double r, double theta);
+        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
+                          double* dr_omega_metric, double r, double theta);
 
-        int get_d2r_metric(double metric[4][4], double* N_metric,
-                           double* omega_metric, double r, double theta);
+        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
+                           double* d2r_omega_metric, double r, double theta);
 
         /* Initial conditions derived from images */
 
@@ -220,6 +220,42 @@
 
 
     }JNW_class;
+
+    typedef class derived_Gauss_Bonnet_class : public c_Spacetime_Base{
+
+    public:
+
+        double get_ISCO(Orbit_Orientation Orientation);
+        double* get_Photon_Sphere(Orbit_Orientation Orientation);
+
+        /* Metric and its derivatives */
+
+        int get_metric(double metric[4][4], double* N_metric,
+                       double* omega_metric, double r, double theta);
+
+        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
+                          double* dr_omega_metric, double r, double theta);
+
+        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
+                           double* d2r_omega_metric, double r, double theta);
+
+        /* Initial conditions derived from images */
+
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
+
+        /* Equations of motion */
+
+        int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+
+        /* Integration Termination Conditions */
+
+        bool terminate_integration(double State_vector[], double Derivatives[]);
+
+        double get_Photon_ISCO_equation(double r);
+        double get_Photon_ISCO_equation_derivative(double r);
+
+
+    }Gauss_Bonnet_class;
 
     typedef class tag_observer {
 

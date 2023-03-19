@@ -49,6 +49,8 @@
      
             int get_disk_velocity(double Disk_velocity[], double State_vector[], std::vector<c_Spacetime_Base*> Spacetimes);
 
+            double get_disk_hotspot(double State_Vector[]);
+
             double get_disk_density(double State_vector[]);
 
             double get_magnetic_field(double B_field[3], double State_vector[]);
