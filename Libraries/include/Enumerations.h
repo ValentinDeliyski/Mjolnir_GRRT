@@ -7,11 +7,12 @@
     enum Spacetime_enums {
 
         Kerr			  = 0,
-        Reg_Black_Hole	  = 1,
-        Wormhole		  = 2,
+        Wormhole		  = 1,
+        Reg_Black_Hole    = 2,
         Naked_Singularity = 3,
         Gauss_Bonnet      = 4,
-        SPACETIME_NUMBER  = 5
+        BH_w_Dark_Matter  = 5,
+        SPACETIME_NUMBER  = 6
 
     };
 
@@ -55,12 +56,11 @@
 
     enum Image_Orders {
 
-        direct = 0,
-        first = 1,
-        second = 2,
-        third = 3,
+        direct    = 0,
+        first     = 1,
+        second    = 2,
+        third     = 3,
         ORDER_NUM = 4,
-        Total = 5,
 
     };
 

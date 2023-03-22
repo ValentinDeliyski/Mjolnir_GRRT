@@ -4,7 +4,7 @@
 #include "Constants.h"
 #include <cmath>
 
-extern std::vector<c_Spacetime_Base*> Spacetimes;
+extern std::vector<Spacetime_Base_Class*> Spacetimes;
 extern c_Observer Observer_class;
 
 /* Metric Related Functions */

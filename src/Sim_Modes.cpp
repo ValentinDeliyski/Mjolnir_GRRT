@@ -9,8 +9,10 @@
     #include "General_GR_functions.h"
     #include "Rendering_Engine.h"
 
-    extern std::vector<c_Spacetime_Base*> Spacetimes;
+    extern std::vector<Spacetime_Base_Class*> Spacetimes;
     extern bool Normalizing_colormap;
+    extern double hotspot_phi_angle;
+    extern int texture_indexer;
 
     void print_progress(int current, int max, bool lens_from_file, bool Normalizing_colormap) {
 
@@ -60,42 +62,16 @@
 
     }
 
-	void run_simulation_mode_2(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], std::ofstream momentum_data[]) {
-        
-        Normalizing_colormap = false;
+    void run_simulation_mode_1(Initial_conditions_type* s_Initial_Conditions) {
 
         /*
 
-        Read the initial conditions from file
+        Create/Open the logging files
 
         */
 
-        double J_data[500]{}, p_theta_data[500]{};
-        int Data_number = 0;
-
-        get_geodesic_data(J_data, p_theta_data, &Data_number);
-
-        for (int photon = 0; photon <= Data_number; photon += 1) {
-
-            /*
-
-            This function polulates the initial momentum inside the s_Initial_Conditions struct
-
-            */
-
-            Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, J_data, p_theta_data, photon);
-
-            Lens(s_Initial_Conditions, data, momentum_data);
-
-            print_progress(photon, Data_number, true, false);
-        }
-
-        std::cout << '\n';
-
-
-	}
-
-    void run_simulation_mode_1(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], std::ofstream momentum_data[]) {
+        std::ofstream data[4], momentum_data[4];
+        open_output_files(data, momentum_data);
 
         GLFWwindow* window = OpenGL_init(H_angle_max / V_angle_max);
         glfwSetKeyCallback(window, Window_Callbacks::define_button_callbacks);
@@ -148,7 +124,7 @@
                 */
 
                 get_intitial_conditions_from_angles(s_Initial_Conditions, V_angle_min + V_pixel_num * Scan_Step,
-                                                    H_angle_max - H_pixel_num * Scan_Step);
+                    H_angle_max - H_pixel_num * Scan_Step);
 
                 Lens(s_Initial_Conditions, data, momentum_data);
 
@@ -160,6 +136,155 @@
 
         std::cout << '\n' << "Simulation finished!" << '\n';
 
+        std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
+
+        close_output_files(data, momentum_data);
+
+        while (!glfwWindowShouldClose(window)) {
+
+            update_rendering_window(window, V_angle_max / H_angle_max);
+
+        }
+
+    }
+
+	void run_simulation_mode_2(Initial_conditions_type* s_Initial_Conditions) {
+        
+        /*
+
+        Create/Open the logging files
+
+        */
+
+        std::ofstream data[4], momentum_data[4];
+
+        open_output_files(data, momentum_data);
+
+        Normalizing_colormap = false;
+
+        /*
+
+        Read the initial conditions from file
+
+        */
+
+        double J_data[500]{}, p_theta_data[500]{};
+        int Data_number = 0;
+
+        get_geodesic_data(J_data, p_theta_data, &Data_number);
+
+        for (int photon = 0; photon <= Data_number; photon += 1) {
+
+            /*
+
+            This function polulates the initial momentum inside the s_Initial_Conditions struct
+
+            */
+
+            Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, J_data, p_theta_data, photon);
+
+            Lens(s_Initial_Conditions, data, momentum_data);
+
+            print_progress(photon, Data_number, true, false);
+        }
+
+        std::cout << '\n';
+
+        close_output_files(data, momentum_data);
+	}
+    
+    void run_simulation_mode_3(Initial_conditions_type* s_Initial_Conditions) {
+
+        GLFWwindow* window = OpenGL_init(H_angle_max / V_angle_max);
+        glfwSetKeyCallback(window, Window_Callbacks::define_button_callbacks);
+
+        auto start_time = std::chrono::high_resolution_clock::now();
+
+        /*
+
+        Do one scan line in the middle of the image to find the maximum intensity for use in the colormap
+
+        */
+
+        std::cout << "Initial y = 0 scan to normalize the colormap..." << '\n';
+
+        for (int pixel_num = 0; pixel_num <= RESOLUTION - 1; pixel_num++) {
+
+            get_intitial_conditions_from_angles(s_Initial_Conditions, 0, H_angle_max - pixel_num * Scan_Step);
+
+            Lens(s_Initial_Conditions, NULL, NULL);
+
+            print_progress(pixel_num, RESOLUTION - 1, false, Normalizing_colormap);
+
+        }
+
+        Normalizing_colormap = false;
+
+        /*
+        
+        Perform HOTSPOT_ANIMATION_NUMBER number of simulations in order to make an animation of the hotspot
+        
+        */
+
+        std::cout << '\n' << "Simulation starts..." << '\n';
+
+        for (int hotspot_number = 0; hotspot_number < HOTSPOT_ANIMATION_NUMBER; hotspot_number++) {
+
+            hotspot_phi_angle = double(hotspot_number) / 8 * 2 * M_PI;
+
+            texture_indexer = 0;
+
+            /*
+
+            Create/Open the logging files
+
+            */
+
+            std::ofstream data[4], momentum_data[4];
+            open_output_files(data, momentum_data);
+
+            /*
+
+            Loop trough the viewing window
+
+            */
+
+            int progress = 0;
+
+            std::cout << "Hotspot position at: " << hotspot_number << " / 4 PI" << "\n";
+
+            for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
+
+                update_rendering_window(window, V_angle_max / H_angle_max);
+                print_progress(progress, RESOLUTION - 1, false, Normalizing_colormap);
+
+                progress += 1;
+
+                for (int H_pixel_num = 0; H_pixel_num <= RESOLUTION - 1; H_pixel_num++) {
+
+                    /*
+
+                    This function polulates the initial momentum inside the s_Initial_Conditions struct
+
+                    */
+
+                    get_intitial_conditions_from_angles(s_Initial_Conditions, V_angle_min + V_pixel_num * Scan_Step,
+                                                        H_angle_max - H_pixel_num * Scan_Step);
+
+                    Lens(s_Initial_Conditions, data, momentum_data);
+
+                }
+
+            }
+
+            std::cout << "\n";
+
+            close_output_files(data, momentum_data);
+        }
+
+        auto end_time = std::chrono::high_resolution_clock::now();
+
+        std::cout << '\n' << "Simulation finished!" << '\n';
         std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
 
         while (!glfwWindowShouldClose(window)) {

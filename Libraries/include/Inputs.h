@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Wormhole;	// Spacetime to be used
+    const Spacetime_enums e_metric = Kerr;	// Spacetime to be used
 
     Real MASS = 1.0;
-    Real SPIN = 1.0;
+    Real SPIN = 0.98;
     // Wormhole spacetime parameters //
 
     Real WH_REDSHIFT = 2.0;
@@ -33,12 +33,17 @@
 
     // Gauss - Bonnet spacetime parameters //
 
-    Real GAUSS_BONNET_GAMMA = 1.1495190525;
+    Real GAUSS_BONNET_GAMMA = 0.1495190525;
+
+    // Black Hole with Dark Matter Halo parameters //
+
+    Real A_0    = 1e2;
+    Real M_HALO = 1e2;
 
     // ======================== Observer Inputs ======================== //
 
     Real r_obs	   = 1e4;			   // Radial potision of the observer [ M ]
-    Real theta_obs = 80. / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real theta_obs = 60. / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0;				   // Azimuthal angle of the observer ( not used ) [ Rad ]
 
     // ======================== Emission Model Inputs ======================== //
@@ -47,8 +52,8 @@
 
     // Novikov - Thorne accretion disk parameters
 
-    Real r_in  = 4.896029367;	  // Inner accretion idsk radius [ M ]
-    Real r_out = 35;  // Outer accretion disk radius [ M ]
+    Real r_in  = 4.896029367;	// Inner accretion idsk radius [ M ]
+    Real r_out = 35;            // Outer accretion disk radius [ M ]
 
     // Phenomenological Synchotron emission parameters //
     
@@ -77,11 +82,11 @@
     Real HOTSPOT_REL_SCALE  = 10./2; // Hotspot density ~ HOTSPOT_REL_SCALE
     Real HOTSPOT_SCALE      = 10.;
     Real R_HOTSPOT_CENTER   = 6.;
-    Real PHI_HOTSPOT_CENTER = 7. / 4 * M_PI;
+    const int HOTSPOT_ANIMATION_NUMBER = 8;
 
     // ======================== Simulation Modes Inputs ======================== //
 
-    const int Active_Sim_Mode = 1;
+    const int Active_Sim_Mode = 3;
 
     // Simulation Mode 1 viewing window //
 
@@ -104,7 +109,7 @@
 
     Real INIT_STEPSIZE     = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
     Real INTEGRAL_ACCURACY = 5e-9;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
-    Real RK45_ACCURACY     = 1e-8;  // 1e-9 Seems to be an opitimal tradeoff between accuracy and performace 
+    Real RK45_ACCURACY     = 1e-7;  // 1e-9 Seems to be an opitimal tradeoff between accuracy and performace 
     Real SAFETY_1          = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Real SAFETY_2          = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
 

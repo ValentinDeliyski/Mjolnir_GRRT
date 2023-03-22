@@ -14,7 +14,7 @@
 #include "Lensing.h"
 #include <iostream>
 
-extern std::vector<c_Spacetime_Base*> Spacetimes;
+extern std::vector<Spacetime_Base_Class*> Spacetimes;
 extern c_Observer Observer_class;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 extern Novikov_Thorne_Model NT_Model;
@@ -58,6 +58,8 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
     s_Ray_results.Parameters[Wormhole]          = WH_REDSHIFT;
     s_Ray_results.Parameters[Reg_Black_Hole]    = RBH_PARAM;
     s_Ray_results.Parameters[Naked_Singularity] = JNW_GAMMA;
+    s_Ray_results.Parameters[Gauss_Bonnet]      = GAUSS_BONNET_GAMMA;
+    s_Ray_results.Parameters[BH_w_Dark_Matter]  = M_HALO / A_0;
 
     // Initialize initial State Vector
     double State_vector[e_State_Number] = { r_obs, theta_obs, phi_obs, 0., p_theta_0, p_r_0, 0., 0. };

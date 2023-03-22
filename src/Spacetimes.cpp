@@ -28,7 +28,7 @@ double tag_observer::get_r_obs()     { return r_obs; };
 double tag_observer::get_theta_obs() { return theta_obs; };
 double tag_observer::get_phi_obs()   { return phi_obs; };
 
-int tag_observer::get_obs_velocity(double Obs_velocity[4], std::vector<c_Spacetime_Base*> Spacetimes) {
+int tag_observer::get_obs_velocity(double Obs_velocity[4], std::vector<Spacetime_Base_Class*> Spacetimes) {
 
 
     double metric_obs[4][4], N_obs, omega_obs;
@@ -54,7 +54,7 @@ int tag_observer::get_obs_velocity(double Obs_velocity[4], std::vector<c_Spaceti
 |                                          |
 *******************************************/
 
-double derived_Kerr_class::get_ISCO(Orbit_Orientation Orientation) {
+double Kerr_class::get_ISCO(Orbit_Orientation Orientation) {
 
     double Z_1 = 1 + pow(1 - SPIN * SPIN, 1. / 3) * (pow(1 + SPIN, 1. / 3) + pow(1 - SPIN, 1. / 3));
     double Z_2 = sqrt(3 * SPIN * SPIN + Z_1 * Z_1);
@@ -79,7 +79,7 @@ double derived_Kerr_class::get_ISCO(Orbit_Orientation Orientation) {
 
 }
 
-double* derived_Kerr_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+double* Kerr_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
     double photon_orbit{};
 
@@ -105,7 +105,7 @@ double* derived_Kerr_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
 }
 
-int derived_Kerr_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int Kerr_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
 
     double M = MASS;
     double a = SPIN;
@@ -131,14 +131,14 @@ int derived_Kerr_class::get_metric(double metric[4][4], double* N_metric, double
     return OK;
 }
 
-int derived_Kerr_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
+int Kerr_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
 
     double M = MASS;
     double a = SPIN;
 
     double metric[4][4], N, omega;
 
-    derived_Kerr_class::get_metric(metric, &N, &omega, r, theta);
+    Kerr_class::get_metric(metric, &N, &omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -162,18 +162,18 @@ int derived_Kerr_class::get_dr_metric(double dr_metric[4][4], double* dr_N, doub
 
 }
 
-int derived_Kerr_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
+int Kerr_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
 
     double M = MASS;
     double a = SPIN;
 
     double metric[4][4], N, omega;
 
-    derived_Kerr_class::get_metric(metric, &N, &omega, r, theta);
+    Kerr_class::get_metric(metric, &N, &omega, r, theta);
 
     double dr_metric[4][4], dr_N, dr_omega;
 
-    derived_Kerr_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
+    Kerr_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -198,7 +198,7 @@ int derived_Kerr_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, d
 
 }
 
-int derived_Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
+int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
     double M = MASS;
     double a = SPIN;
@@ -222,7 +222,7 @@ int derived_Kerr_class::get_initial_conditions_from_file(Initial_conditions_type
     return OK;
 }
 
-int derived_Kerr_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int Kerr_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
     double& r = inter_State_vector[e_r + iteration * e_State_Number];
     double r2 = r * r;
@@ -262,7 +262,7 @@ int derived_Kerr_class::get_EOM(double inter_State_vector[], double J, double De
 
 }
 
-bool derived_Kerr_class::terminate_integration(double State_vector[], double Derivatives[]) {
+bool Kerr_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
     bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
 
@@ -280,7 +280,7 @@ bool derived_Kerr_class::terminate_integration(double State_vector[], double Der
 |                                                        |
 *********************************************************/
 
-double derived_RBH_class::get_ISCO(Orbit_Orientation Orientation) {
+double RBH_class::get_ISCO(Orbit_Orientation Orientation) {
 
     double M = MASS;
 
@@ -304,7 +304,7 @@ double derived_RBH_class::get_ISCO(Orbit_Orientation Orientation) {
 
 }
 
-double* derived_RBH_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+double* RBH_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
     double M = MASS;
 
@@ -332,7 +332,7 @@ double* derived_RBH_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
 }
 
-int derived_RBH_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int RBH_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -350,11 +350,11 @@ int derived_RBH_class::get_metric(double metric[4][4], double* N_metric, double*
     return OK;
 }
 
-int derived_RBH_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
+int RBH_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
 
     double metric[4][4], N, omega;
 
-    derived_RBH_class::get_metric(metric, &N, &omega, r, theta);
+    RBH_class::get_metric(metric, &N, &omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -375,15 +375,15 @@ int derived_RBH_class::get_dr_metric(double dr_metric[4][4], double* dr_N, doubl
 
 }
 
-int derived_RBH_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
+int RBH_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
 
     double metric[4][4], N, omega;
 
-    derived_RBH_class::get_metric(metric, &N, &omega, r, theta);
+    RBH_class::get_metric(metric, &N, &omega, r, theta);
 
     double dr_metric[4][4], dr_N, dr_omega;
 
-    derived_RBH_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
+    RBH_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -406,7 +406,7 @@ int derived_RBH_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, do
 
 }
 
-int derived_RBH_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
+int RBH_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
     double& r_obs = p_Initial_Conditions->init_Pos[e_r];
     double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
@@ -426,7 +426,7 @@ int derived_RBH_class::get_initial_conditions_from_file(Initial_conditions_type*
     return OK;
 }
 
-int derived_RBH_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int RBH_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
     double r = inter_State_vector[0 + iteration * e_State_Number];
     double rho = sqrt(r * r + RBH_PARAM * RBH_PARAM);
@@ -451,7 +451,7 @@ int derived_RBH_class::get_EOM(double inter_State_vector[], double J, double Der
     return 0;
 }
 
-bool derived_RBH_class::terminate_integration(double State_vector[], double Derivatives[]) {
+bool RBH_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
@@ -469,7 +469,7 @@ bool derived_RBH_class::terminate_integration(double State_vector[], double Deri
 |                                              |
 ***********************************************/
 
-double derived_Wormhole_class::get_ISCO(Orbit_Orientation Orientation) {
+double Wormhole_class::get_ISCO(Orbit_Orientation Orientation) {
 
     double M = MASS;
 
@@ -502,7 +502,7 @@ double derived_Wormhole_class::get_ISCO(Orbit_Orientation Orientation) {
 
 }
 
-double* derived_Wormhole_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+double* Wormhole_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
     double M = MASS;
     double a = SPIN;
@@ -531,7 +531,7 @@ double* derived_Wormhole_class::get_Photon_Sphere(Orbit_Orientation Orientation)
 
 }
 
-int derived_Wormhole_class::get_metric(double metric[4][4], double* N_metric, double* omega, double l, double theta) {
+int Wormhole_class::get_metric(double metric[4][4], double* N_metric, double* omega, double l, double theta) {
 
     double r = sqrt(l * l + WH_R_THROAT * WH_R_THROAT);
     double r2 = r * r;
@@ -551,11 +551,11 @@ int derived_Wormhole_class::get_metric(double metric[4][4], double* N_metric, do
     return 0;
 }
 
-int derived_Wormhole_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double l, double theta) {
+int Wormhole_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double l, double theta) {
 
     double metric[4][4], N, omega;
 
-    derived_Wormhole_class::get_metric(metric, &N, &omega, l, theta);
+    Wormhole_class::get_metric(metric, &N, &omega, l, theta);
 
     double r = sqrt(l * l + WH_R_THROAT * WH_R_THROAT);
     double r2 = r * r;
@@ -573,15 +573,15 @@ int derived_Wormhole_class::get_dr_metric(double dr_metric[4][4], double* dr_N, 
     return 0;
 }
 
-int derived_Wormhole_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double l, double theta) {
+int Wormhole_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double l, double theta) {
 
     double metric[4][4], N, omega;
 
-    derived_Wormhole_class::get_metric(metric, &N, &omega, l, theta);
+    Wormhole_class::get_metric(metric, &N, &omega, l, theta);
 
     double dr_metric[4][4], dr_N, dr_omega;
 
-    derived_Wormhole_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, l, theta);
+    Wormhole_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, l, theta);
 
     double r = sqrt(l * l + WH_R_THROAT * WH_R_THROAT);
     double r2 = r * r;
@@ -599,7 +599,7 @@ int derived_Wormhole_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_
     return 0;
 }
 
-int derived_Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
+int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
 
     double& r_obs = p_Initial_Conditions->init_Pos[e_r];
@@ -623,7 +623,7 @@ int derived_Wormhole_class::get_initial_conditions_from_file(Initial_conditions_
     return 0;
 }
 
-int derived_Wormhole_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int Wormhole_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
     double r_throat = WH_R_THROAT;
 
@@ -657,7 +657,7 @@ int derived_Wormhole_class::get_EOM(double inter_State_vector[], double J, doubl
     return OK;
 }
 
-bool derived_Wormhole_class::terminate_integration(double State_vector[], double Derivatives[]) {
+bool Wormhole_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
     bool scatter = scatter = State_vector[e_r] > sqrt(100 * 100 + WH_R_THROAT * WH_R_THROAT) && Derivatives[0] < 0;
     bool scatter_other_side = State_vector[e_r] < -sqrt(100 * 100 + WH_R_THROAT * WH_R_THROAT);
@@ -674,7 +674,7 @@ bool derived_Wormhole_class::terminate_integration(double State_vector[], double
 |                                                                             |
 ******************************************************************************/
 
-double derived_JNW_class::get_ISCO(Orbit_Orientation Orientation) {
+double JNW_class::get_ISCO(Orbit_Orientation Orientation) {
 
     if (JNW_GAMMA > 1.0 / sqrt(5)) {
 
@@ -704,7 +704,7 @@ double derived_JNW_class::get_ISCO(Orbit_Orientation Orientation) {
 
  };
 
-double* derived_JNW_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+double* JNW_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
     double photon_orbit{};
 
@@ -723,7 +723,7 @@ double* derived_JNW_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
 };
 
-int derived_JNW_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int JNW_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -742,11 +742,11 @@ int derived_JNW_class::get_metric(double metric[4][4], double* N_metric, double*
 
 }
 
-int derived_JNW_class::get_dr_metric( double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
+int JNW_class::get_dr_metric( double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
 
     double metric[4][4], N, omega;
 
-    derived_JNW_class::get_metric(metric, &N, &omega, r, theta);
+    JNW_class::get_metric(metric, &N, &omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -765,15 +765,15 @@ int derived_JNW_class::get_dr_metric( double dr_metric[4][4], double* dr_N, doub
 
 };
 
-int derived_JNW_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
+int JNW_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
 
     double metric[4][4], N, omega;
 
-    derived_JNW_class::get_metric(metric, &N, &omega, r, theta);
+    JNW_class::get_metric(metric, &N, &omega, r, theta);
 
     double dr_metric[4][4], dr_N, dr_omega;
 
-    derived_JNW_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
+    JNW_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -799,7 +799,7 @@ int derived_JNW_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, do
 
 }
 
-int derived_JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
+int JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
     double& r_obs = p_Initial_Conditions->init_Pos[e_r];
     double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
@@ -819,7 +819,7 @@ int derived_JNW_class::get_initial_conditions_from_file(Initial_conditions_type*
 
 }
 
-int derived_JNW_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration)
+int JNW_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration)
 {
 
     double r = inter_State_vector[0 + iteration * e_State_Number];
@@ -850,7 +850,7 @@ int derived_JNW_class::get_EOM(double inter_State_vector[], double J, double Der
 
 }
 
-bool derived_JNW_class::terminate_integration(double State_vector[], double Derivatives[]) {
+bool JNW_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
     bool hit_singularity = State_vector[e_r] - JNW_R_SINGULARITY < 1e-9;
 
@@ -860,27 +860,19 @@ bool derived_JNW_class::terminate_integration(double State_vector[], double Deri
 
 };
 
-double derived_Gauss_Bonnet_class::get_Photon_ISCO_equation(double r) {
+/**********************************************************************************
+|                                                                                 |
+| Derived Gauss-Bonnet Naked Singularity / Black Hole Class Functions Definitions |
+|                                                                                 |
+**********************************************************************************/
 
-    return r * r * r * (1 - sqrt(1 + 8 * MASS * GAUSS_BONNET_GAMMA / r / r / r)) + 2 * MASS * GAUSS_BONNET_GAMMA;
-
-}
-
-double derived_Gauss_Bonnet_class::get_Photon_ISCO_equation_derivative(double r) {
-
-    double root = sqrt(1 + 8 * MASS * GAUSS_BONNET_GAMMA / r / r / r);
-
-    return 3 * r * r * (1 - root) + 12 * MASS * GAUSS_BONNET_GAMMA / r / root;
-
-}
-
-double derived_Gauss_Bonnet_class::get_ISCO(Orbit_Orientation Orientation) {
+double Gauss_Bonnet_class::get_ISCO(Orbit_Orientation Orientation) {
 
     return 6.;
 
 };
 
-double* derived_Gauss_Bonnet_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
+double* Gauss_Bonnet_class::get_Photon_Sphere(Orbit_Orientation Orientation) {
 
     /* This expression is the root of a cubic equation */
 
@@ -896,7 +888,7 @@ double* derived_Gauss_Bonnet_class::get_Photon_Sphere(Orbit_Orientation Orientat
 
 };
 
-int derived_Gauss_Bonnet_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int Gauss_Bonnet_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
 
     double M = MASS;
     double r2 = r * r;
@@ -918,14 +910,11 @@ int derived_Gauss_Bonnet_class::get_metric(double metric[4][4], double* N_metric
 
 }
 
-int derived_Gauss_Bonnet_class::get_dr_metric(double dr_metric[4][4], double* dr_N_metric, double* dr_omega_metric, double r, double theta) {
+int Gauss_Bonnet_class::get_dr_metric(double dr_metric[4][4], double* dr_N_metric, double* dr_omega_metric, double r, double theta) {
 
-    double metric[4][4]{}, N{}, omega{};
     double M  = MASS;
     double r2 = r * r;
     double sin_theta = sin(theta);
-
-    derived_Gauss_Bonnet_class::get_metric(metric, &N, &omega, r, theta);
 
     double f    = 1. + r2 / GAUSS_BONNET_GAMMA / 2. * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
     double dr_f = 2. / r * (f - 1.) + 6. * M / sqrt(r2 * r2 + 8. * GAUSS_BONNET_GAMMA * M * r);
@@ -944,18 +933,11 @@ int derived_Gauss_Bonnet_class::get_dr_metric(double dr_metric[4][4], double* dr
 
 }
 
-int derived_Gauss_Bonnet_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric, double* d2r_omega_metric, double r, double theta) {
+int Gauss_Bonnet_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric, double* d2r_omega_metric, double r, double theta) {
 
-    double metric[4][4]{}, N{}, omega{};
     double M = MASS;
     double r2 = r * r;
     double sin_theta = sin(theta);
-
-    derived_Gauss_Bonnet_class::get_metric(metric, &N, &omega, r, theta);
-
-    double dr_metric[4][4]{}, dr_N{}, dr_omega{};
-
-    derived_Gauss_Bonnet_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
 
     double root = sqrt(r2 * r2 + 8 * GAUSS_BONNET_GAMMA * M * r);
 
@@ -977,7 +959,7 @@ int derived_Gauss_Bonnet_class::get_d2r_metric(double d2r_metric[4][4], double* 
 
 }
 
-int derived_Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
+int Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
     double& r_obs     = p_Initial_Conditions->init_Pos[e_r];
     double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
@@ -998,7 +980,7 @@ int derived_Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditi
 
 }
 
-int derived_Gauss_Bonnet_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration){
+int Gauss_Bonnet_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration){
 
     double& r = inter_State_vector[e_r + iteration * e_State_Number];
 
@@ -1028,12 +1010,128 @@ int derived_Gauss_Bonnet_class::get_EOM(double inter_State_vector[], double J, d
 
 }
 
-bool derived_Gauss_Bonnet_class::terminate_integration(double State_vector[], double Derivatives[]) {
+bool Gauss_Bonnet_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
     bool too_high_order = State_vector[e_phi] * State_vector[e_phi] > 5 * M_PI * 5 * M_PI;
 
-    return scatter || too_high_order;
+    double r_horizon{};
+    bool hit_horizon = false;
+
+    if (GAUSS_BONNET_GAMMA <= 1) {
+
+        r_horizon = MASS + sqrt(MASS * MASS - GAUSS_BONNET_GAMMA * GAUSS_BONNET_GAMMA);
+        hit_horizon = State_vector[e_r] - r_horizon < 1e-5;
+
+    }
+
+    return scatter || too_high_order || hit_horizon;
+
+};
+
+/***********************************************************************
+|                                                                      |
+| Derived Black Hole with Dark Matter Halo Class Functions Definitions |
+|                                                                      |
+***********************************************************************/
+
+int Black_Hole_w_Dark_Matter_Halo_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+
+    double M  = MASS;
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    double ksi = 2 * A_0 - M_HALO + 4 * M;
+    double Y   = sqrt(M_HALO / ksi) * (atan((r + A_0 + M_HALO) / sqrt(M_HALO * ksi)) - M_PI);
+    double f   = (1 - 2 * M / r) * exp(Y);
+    double m   = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
+
+
+    metric[0][0] = -f;
+    metric[1][1] = 1. / (1 - 2 * m / r);
+    metric[2][2] = r2;
+    metric[3][3] = r2 * sin_theta * sin_theta;
+    metric[0][3] = 0.;
+    metric[3][0] = 0.;
+
+    *N_metric     = -metric[0][0];
+    *omega_metric = 0.;
+
+    return OK;
+}
+
+int Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(double dr_metric[4][4], double* dr_N_metric, double* dr_omega_metric, double r, double theta) {
+
+    double M = MASS;
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    double ksi = 2 * A_0 - M_HALO + 4 * M;
+    double Y = sqrt(M_HALO / ksi) * (atan((r + A_0 + M_HALO) / sqrt(M_HALO * ksi)) - M_PI);
+
+    double exp_y = exp(Y);
+
+    double f    = (1 - 2 * M / r) * exp_y;
+    double dr_f = (2 * M / r2 + (1 - 2 * M / r) * sqrt(M_HALO / ksi) / (1 + (r + A_0 + M_HALO) * (r + A_0 + M_HALO) / M_HALO / ksi)) * exp_y;
+    double m    = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
+    double dr_m = 2 * (1 - 2 * M / r) * ((1 - 2 * M / r) * (1 - r / (r + A_0)) * r + 2 * M) * M_HALO / (r + A_0) / (r + A_0);
+
+    dr_metric[0][0] = -dr_f;
+    dr_metric[1][1] = -1. / (1 - 2 * m / r) / (1 - 2 * m / r) * (2 * m / r2 - 2 / r * dr_m);
+    dr_metric[2][2] = r2;
+    dr_metric[3][3] = r2 * sin_theta * sin_theta;
+    dr_metric[0][3] = 0.;
+    dr_metric[3][0] = 0.;
+
+    *dr_N_metric = -dr_metric[0][0];
+    *dr_omega_metric = 0.;
+
+    return OK;
+}
+
+int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+
+    double& r = inter_State_vector[e_r + iteration * e_State_Number];
+
+    double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double sin2 = sin1 * sin1;
+
+    double cos1 = cos(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double cos2 = cos1 * cos1;
+
+    double M  = MASS;
+    double r2 = r * r;
+
+    double ksi   = 2 * A_0 - M_HALO + 4 * M;
+    double Y     = sqrt(M_HALO / ksi) * (atan((r + A_0 + M_HALO) / sqrt(M_HALO * ksi)) - M_PI);
+    double exp_y = exp(Y);
+
+    double f    = (1 - 2 * M / r) * exp_y;
+    double dr_f = (2 * M / r2 + (1 - 2 * M / r) / ksi / (1 + (r + A_0 + M_HALO) * (r + A_0 + M_HALO) / M_HALO / ksi)) * exp_y;
+    double m    = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
+    double dr_m = 2 * (1 - 2 * M / r) * ((1 - 2 * M / r) * (1 - r / (r + A_0)) * r + 2 * M) * M_HALO / (r + A_0) / (r + A_0);
+
+    Derivatives[e_r       + iteration * e_State_Number] = (1 - 2 * m / r) * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_theta   + iteration * e_State_Number] = 1. / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
+    Derivatives[e_phi     + iteration * e_State_Number] = J / (r * r * sin2);
+    Derivatives[e_phi_FD  + iteration * e_State_Number] = 0.0;
+    Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (r * r * sin1 * sin2) * J * J;
+
+    double r_term_1 = -1. / 2 / f / f * dr_f + (dr_m / r - m / r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number];
+    double r_term_2 = 1.0 / r / r / r * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
+
+    Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
+
+    return OK;
+
+}
+
+bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(double State_vector[], double Derivatives[]) {
+
+    bool scatter     = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
+    bool hit_horizon = State_vector[e_r] - 2 * MASS < 1e-5;
+
+    return scatter || hit_horizon;
 
 };

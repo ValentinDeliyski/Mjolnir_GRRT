@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    @ Version: 3.5.3                                                                               |
+|    @ Version: 3.6.3                                                                               |
 |    @ Author: Valentin Deliyski                                                                    |
 |    @ Description: This program numeriaclly integrates the equations of motion                     |
 |    for null geodesics and radiative transfer in a curved spacetime,then projects                  |
@@ -13,6 +13,7 @@
 |      * Static Regular Black Holes                                                                 |
 |      * Rotating Traversable Wormholes                                                             |
 |      * Janis - Newman - Winicour Naked Singularities                                              |
+|      * Gauss - Bonnet Black Holes / Naked Singularities                                           |
 |                                                                                                   |
 |    @ Supported Disk Models                                                                        |
 |      * Novikov-Thorne                                                                             |
@@ -48,13 +49,14 @@ Define classes that holds the spacetime properites
 
 */
 
-std::vector<c_Spacetime_Base*> Spacetimes = {
+std::vector<Spacetime_Base_Class*> Spacetimes = {
 
-    new derived_Kerr_class(),
-    new derived_RBH_class(),
-    new derived_Wormhole_class(),
-    new derived_JNW_class(),
-    new derived_Gauss_Bonnet_class()
+    new Kerr_class(),
+    new Wormhole_class(),
+    new RBH_class(),
+    new JNW_class(),
+    new Gauss_Bonnet_class(),
+    new Black_Hole_w_Dark_Matter_Halo_class()
 };
 
 /*
@@ -100,6 +102,14 @@ int texture_indexer{};
 bool Normalizing_colormap = true;
 float texture_buffer[TEXTURE_BUFFER_SIZE * 3]{};
 
+/*
+
+Initialize the angular position of the hotspot - this needs to be global for now
+
+*/
+
+double hotspot_phi_angle{};
+
 void print_ASCII_art() {
 
     std::cout <<
@@ -117,17 +127,7 @@ void print_ASCII_art() {
 }
 
 int main() {
-  
-    /*
-
-    Create/Open the logging files
-
-    */
-
-    std::ofstream data[4], momentum_data[4];
-
-    open_output_files(data, momentum_data);
-
+ 
     /*
 
     Get the metric at the observer to feed into the initial conditions functions
@@ -135,16 +135,16 @@ int main() {
     */
 
     Initial_conditions_type s_Initial_Conditions{};
-    s_Initial_Conditions.init_Pos[e_r] = r_obs;
+    s_Initial_Conditions.init_Pos[e_r]     = r_obs;
     s_Initial_Conditions.init_Pos[e_theta] = theta_obs;
-    s_Initial_Conditions.init_Pos[e_phi] = phi_obs;
+    s_Initial_Conditions.init_Pos[e_phi]   = phi_obs;
 
     double metric[4][4]{}, N_obs, omega_obs;
 
     Spacetimes[e_metric]->get_metric(s_Initial_Conditions.init_metric, &N_obs, &omega_obs, r_obs, theta_obs);
 
     s_Initial_Conditions.init_metric_Redshift_func = N_obs;
-    s_Initial_Conditions.init_metric_Shitft_func = omega_obs;
+    s_Initial_Conditions.init_metric_Shitft_func   = omega_obs;
 
     print_ASCII_art();
 
@@ -155,13 +155,19 @@ int main() {
 
         case 1:
 
-            run_simulation_mode_1(&s_Initial_Conditions, data, momentum_data);
+            run_simulation_mode_1(&s_Initial_Conditions);
 
             break;
 
         case 2:
 
-            run_simulation_mode_2(&s_Initial_Conditions, data, momentum_data);
+            run_simulation_mode_2(&s_Initial_Conditions);
+
+            break;
+
+        case 3:
+
+            run_simulation_mode_3(&s_Initial_Conditions);
 
             break;
 
@@ -172,8 +178,6 @@ int main() {
             return ERROR;
 
     }
-
-    close_output_files(data, momentum_data);
 
     return OK;
 }

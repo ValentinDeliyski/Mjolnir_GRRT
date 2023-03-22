@@ -8,7 +8,7 @@
     #include <vector>
     #include "Enumerations.h"
 
-    typedef class tag_Spacetime_Base_Class {
+    class Spacetime_Base_Class {
 
         public:
 
@@ -87,9 +87,9 @@
             
             };
 
-    }c_Spacetime_Base;
+    };
 
-    typedef class derived_Kerr_class : public c_Spacetime_Base{
+    class Kerr_class : public Spacetime_Base_Class {
 
         public:
 
@@ -120,42 +120,9 @@
             virtual bool terminate_integration(double State_vector[], double Derivatives[]);
 
 
-    }Kerr_class;
+    };
 
-    typedef class derived_Wormhole_class : public c_Spacetime_Base {
-
-    public:
-
-        double get_ISCO(Orbit_Orientation Orientation);
-        double* get_Photon_Sphere(Orbit_Orientation Orientation);
-
-        /* Metric and its derivatives */
-
-        int get_metric(double metric[4][4], double* N_metric,
-                       double* omega_metric, double r, double theta);
-
-        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
-                          double* dr_omega_metric, double r, double theta);
-
-        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
-                           double* d2r_omega_metric, double r, double theta);
-
-        /* Initial conditions derived from images */
-
-        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
-
-        /* Equations of motion */
-
-        int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
-
-        /* Integration Termination Conditions */
-
-        bool terminate_integration(double State_vector[], double Derivatives[]);
-
-
-    }Wormhole_class;
-
-    typedef class derived_RBH_class : public c_Spacetime_Base {
+    class Wormhole_class : public Spacetime_Base_Class {
 
     public:
 
@@ -186,9 +153,42 @@
         bool terminate_integration(double State_vector[], double Derivatives[]);
 
 
-    }RBH_class;
+    };
 
-    typedef class derived_JNW_class : public c_Spacetime_Base {
+    class RBH_class : public Spacetime_Base_Class {
+
+    public:
+
+        double get_ISCO(Orbit_Orientation Orientation);
+        double* get_Photon_Sphere(Orbit_Orientation Orientation);
+
+        /* Metric and its derivatives */
+
+        int get_metric(double metric[4][4], double* N_metric,
+                       double* omega_metric, double r, double theta);
+
+        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
+                          double* dr_omega_metric, double r, double theta);
+
+        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
+                           double* d2r_omega_metric, double r, double theta);
+
+        /* Initial conditions derived from images */
+
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
+
+        /* Equations of motion */
+
+        int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+
+        /* Integration Termination Conditions */
+
+        bool terminate_integration(double State_vector[], double Derivatives[]);
+
+
+    };
+
+    class JNW_class : public Spacetime_Base_Class {
 
     public:
 
@@ -219,9 +219,9 @@
         bool terminate_integration(double State_vector[], double Derivatives[]);
 
 
-    }JNW_class;
+    };
 
-    typedef class derived_Gauss_Bonnet_class : public c_Spacetime_Base{
+    class Gauss_Bonnet_class : public Spacetime_Base_Class {
 
     public:
 
@@ -251,11 +251,33 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]);
 
-        double get_Photon_ISCO_equation(double r);
-        double get_Photon_ISCO_equation_derivative(double r);
+    };
+
+    class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
+
+    public:
+
+        /* Metric and its derivatives */
+
+        int get_metric(double metric[4][4], double* N_metric,
+            double* omega_metric, double r, double theta);
+
+        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
+            double* dr_omega_metric, double r, double theta);
 
 
-    }Gauss_Bonnet_class;
+        /* Initial conditions derived from images */
+
+ 
+        /* Equations of motion */
+
+        int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+
+        /* Integration Termination Conditions */
+
+        bool terminate_integration(double State_vector[], double Derivatives[]);
+
+    };
 
     typedef class tag_observer {
 
@@ -273,7 +295,7 @@
         double get_theta_obs();
         double get_phi_obs();
 
-        int get_obs_velocity(double Obs_velocity[4], std::vector<c_Spacetime_Base*> Spacetimes);
+        int get_obs_velocity(double Obs_velocity[4], std::vector<Spacetime_Base_Class*> Spacetimes);
 
     }c_Observer;
 

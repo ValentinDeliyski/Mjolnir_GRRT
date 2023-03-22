@@ -196,12 +196,3 @@ double dot_product(double vector_1[3], double vector_2[3]) {
 	return vector_1[0] * vector_2[0] + vector_1[1] * vector_2[1] + vector_1[2] * vector_2[2];
 
 }
-
-double newton_root_finder(double *func(double), double *func_deriv(double)) {
-
-
-
-
-
-
-}

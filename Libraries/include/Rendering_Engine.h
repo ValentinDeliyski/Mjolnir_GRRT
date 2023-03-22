@@ -1,103 +1,103 @@
 #pragma once
 #ifndef RENDERING_ENGINE
-	
-	#define RENDERING_ENGINE
+    
+    #define RENDERING_ENGINE
 
-	#include <glad/glad.h>
-	#include <GLFW/glfw3.h>
-	#include <string>
-	#include <fstream>
-	#include <sstream>
-	#include "Constants.h"
+    #include <glad/glad.h>
+    #include <GLFW/glfw3.h>
+    #include <string>
+    #include <fstream>
+    #include <sstream>
+    #include "Constants.h"
 
-	GLFWwindow* OpenGL_init(double aspect_ratio);
+    GLFWwindow* OpenGL_init(double aspect_ratio);
 
-	void update_rendering_window(GLFWwindow* window, double aspect_ratio);
+    void update_rendering_window(GLFWwindow* window, double aspect_ratio);
 
-	void set_pixel_color(double intensity, int pixel_count);
+    void set_pixel_color(double intensity, int pixel_count);
 
-	void set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J);
+    void set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J);
 
-	/***************************************
-	|									   |
-	| Classes that abstract the OpenGL api |
-	|                                      |
-	***************************************/
+    /***************************************
+    |									   |
+    | Classes that abstract the OpenGL api |
+    |                                      |
+    ***************************************/
 
 
-	class Vertex_Buffer {
+    class Vertex_Buffer {
 
-	public:
+    public:
 
-		GLuint ID;
-		Vertex_Buffer(const GLfloat* verticies, GLsizeiptr size);
+        GLuint ID;
+        Vertex_Buffer(const GLfloat* verticies, GLsizeiptr size);
 
-		void Bind();
-		void Unbind();
-		void Delete();
+        void Bind();
+        void Unbind();
+        void Delete();
 
-	};
+    };
 
-	class Vertex_array {
+    class Vertex_array {
 
-	public:
+    public:
 
-		GLuint ID;
-		Vertex_array();
+        GLuint ID;
+        Vertex_array();
 
-		void Linkattrib(Vertex_Buffer Vertex_Buffer, GLuint layout, GLuint numComponents, GLenum type, GLsizei stride, void* offset);
-		void Bind();
-		void Unbind();
-		void Delete();
+        void Linkattrib(Vertex_Buffer Vertex_Buffer, GLuint layout, GLuint numComponents, GLenum type, GLsizei stride, void* offset);
+        void Bind();
+        void Unbind();
+        void Delete();
 
-	};
+    };
 
-	class Element_Buffer {
+    class Element_Buffer {
 
-	public:
-		GLuint ID;
-		Element_Buffer(const GLuint* verticies, GLsizeiptr size);
+    public:
+        GLuint ID;
+        Element_Buffer(const GLuint* verticies, GLsizeiptr size);
 
-		void Bind();
-		void Unbind();
-		void Delete();
+        void Bind();
+        void Unbind();
+        void Delete();
 
-	};
+    };
 
-	class Shader {
+    class Shader {
 
-	public:
+    public:
 
-		GLuint ID;
-		Shader(const char* vertexFile, const char* fragmentFile);
+        GLuint ID;
+        Shader(const char* vertexFile, const char* fragmentFile);
 
-		void Activate();
-		void Delete();
+        void Activate();
+        void Delete();
 
-	};
+    };
 
-	class Window_Callbacks {
+    class Window_Callbacks {
 
-	public:
+    public:
 
-		static void define_button_callbacks(GLFWwindow* window, int key, int scancode, int action, int mods);
+        static void define_button_callbacks(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-	};
+    };
 
-	std::string get_file_contents(const char* filename);
+    std::string get_file_contents(const char* filename);
 
-	GLuint init_texture();
+    GLuint init_texture();
 
-	const GLfloat vertices[] =
-	{ 
+    const GLfloat vertices[] =
+    { 
    // Vertex coordinates  Texture Coordinates
-		-0.5f, -0.5f,		  0.0f, 0.0f,     // Lower left corner
-		-0.5f,  0.5f,		  0.0f, 1.0f,     // Upper left corner
-		 0.5f,  0.5f,		  1.0f, 1.0f,     // Upper right corner
-		 0.5f, -0.5f,		  1.0f, 0.0f,     // Lower right corner
-	};
+        -0.5f, -0.5f,		  0.0f, 0.0f,     // Lower left corner
+        -0.5f,  0.5f,		  0.0f, 1.0f,     // Upper left corner
+         0.5f,  0.5f,		  1.0f, 1.0f,     // Upper right corner
+         0.5f, -0.5f,		  1.0f, 0.0f,     // Lower right corner
+    };
 
-	const GLuint Vertex_order[] = {0, 2, 1, 0, 3, 2};
+    const GLuint Vertex_order[] = {0, 2, 1, 0, 3, 2};
 
 
 #endif

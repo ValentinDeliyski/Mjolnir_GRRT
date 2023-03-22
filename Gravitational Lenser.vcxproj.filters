@@ -48,6 +48,9 @@
     <ClInclude Include="Libraries\include\Sim_Modes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IO_filename_strings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\General_math_functions.cpp">

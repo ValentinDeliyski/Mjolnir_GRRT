@@ -16,7 +16,8 @@
 |                                                  |
 ***************************************************/
 
-extern std::vector<c_Spacetime_Base*> Spacetimes;
+extern std::vector<Spacetime_Base_Class*> Spacetimes;
+extern double hotspot_phi_angle;
 
 Novikov_Thorne_Model::Novikov_Thorne_Model(double x, double y) {
 
@@ -25,7 +26,7 @@ Novikov_Thorne_Model::Novikov_Thorne_Model(double x, double y) {
 
 };
 
-double Novikov_Thorne_Model::Keplerian_angular_velocity(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::Keplerian_angular_velocity(double r, std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     double dr_metric[4][4], dr_N, dr_omega;
 
@@ -35,7 +36,7 @@ double Novikov_Thorne_Model::Keplerian_angular_velocity(double r, std::vector<c_
 
 }
 
-double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     double dr_metric[4][4], dr_N, dr_omega;
 
@@ -54,7 +55,7 @@ double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, std::vector
 }
 
 double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_obs, double theta_obs,
-                                          std::vector<c_Spacetime_Base*> Spacetimes) {
+                                          std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     double r_source = State_Vector[e_r];
     double theta_source = State_Vector[e_theta];
@@ -87,7 +88,7 @@ double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_
 
 }
 
-double Novikov_Thorne_Model::disk_Energy(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::disk_Energy(double r, std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     double metric[4][4], N, omega;
 
@@ -101,7 +102,7 @@ double Novikov_Thorne_Model::disk_Energy(double r, std::vector<c_Spacetime_Base*
 
 }
 
-double Novikov_Thorne_Model::disk_Angular_Momentum(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::disk_Angular_Momentum(double r, std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     double metric[4][4], N, omega;
 
@@ -115,7 +116,7 @@ double Novikov_Thorne_Model::disk_Angular_Momentum(double r, std::vector<c_Space
 
 }
 
-double Novikov_Thorne_Model::Flux_integrand(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::Flux_integrand(double r, std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     double metric[4][4], N, omega;
 
@@ -142,7 +143,7 @@ double Novikov_Thorne_Model::Flux_integrand(double r, std::vector<c_Spacetime_Ba
 
 }
 
-double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double upper_bound, double tolerance, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double upper_bound, double tolerance, std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     double mid_point       = (lower_bound + upper_bound) / 2;
     double left_mid_point  = (lower_bound + mid_point) / 2;
@@ -194,7 +195,7 @@ double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double uppe
     return integral;
 }
 
-double Novikov_Thorne_Model::get_flux(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::get_flux(double r, std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     double metric[4][4], N, omega;
 
@@ -250,7 +251,7 @@ double Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]
 
 }
 
-int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], double State_Vector[], std::vector<c_Spacetime_Base*> Spacetimes) {
+int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], double State_Vector[], std::vector<Spacetime_Base_Class*> Spacetimes) {
 
 
     double r_source = State_Vector[e_r];
@@ -307,8 +308,8 @@ int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], dou
 
 double Optically_Thin_Toroidal_Model::get_disk_hotspot(double State_Vector[]) {
 
-    double x_center = R_HOTSPOT_CENTER * cos(PHI_HOTSPOT_CENTER);
-    double y_center = R_HOTSPOT_CENTER * sin(PHI_HOTSPOT_CENTER);
+    double x_center = R_HOTSPOT_CENTER * cos(hotspot_phi_angle);
+    double y_center = R_HOTSPOT_CENTER * sin(hotspot_phi_angle);
     double z_center = 0;
 
     double x_photon = State_Vector[e_r] * sin(State_Vector[e_theta]) * cos(State_Vector[e_phi]);
@@ -390,7 +391,7 @@ double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], doub
 
 }
 
-double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes) {
+double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vector[], double B_field_local[], std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     double U_source_coord[4];
     get_disk_velocity(U_source_coord, State_vector, Spacetimes);
@@ -443,7 +444,7 @@ double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vect
 
 }
 
-double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(double State_vector[], double J, std::vector<Spacetime_Base_Class*> Spacetimes) {
 
     /* Electron Density in CGS */
 
@@ -492,7 +493,7 @@ double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(dou
 
 }
 
-double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, std::vector<Spacetime_Base_Class*> Spacetimes) {
 
 
     double electron_density = get_disk_density(State_vector);
