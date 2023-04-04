@@ -4,6 +4,8 @@
 
     #define ENUMS
 
+    #include <vector>
+
     enum Spacetime_enums {
 
         Kerr			  = 0,
@@ -20,6 +22,13 @@
 
         Synchotron_exact            = 0,
         Synchotron_phenomenological = 1
+
+    };
+
+    enum Disk_density_model_enums {
+
+        Power_law       = 0,
+        Exponential_law = 1
 
     };
 
@@ -79,10 +88,10 @@
 
     };
 
-    enum Orbit_Orientation{
+    enum Orbit_select{
 
-        Prograde   = 0,
-        Retrograde = 1,
+        Inner = 0,
+        Outer = 1,
 
     };
 
@@ -99,20 +108,33 @@
 
     struct Results_type {
 
-        double Flux_NT[ORDER_NUM];
-        double Redshift_NT[ORDER_NUM];
+        double Flux_NT[ORDER_NUM]{};
+        double Redshift_NT[ORDER_NUM]{};
 
-        double Intensity[ORDER_NUM];
-        double Optical_Depth;
+        double Intensity[ORDER_NUM]{};
+        double Optical_Depth{};
 
-        double Source_Coords[3][ORDER_NUM];
-        double Three_Momentum[3][ORDER_NUM];
+        double Source_Coords[3][ORDER_NUM]{};
+        double Three_Momentum[3][ORDER_NUM]{};
 
-        double Image_Coords[2];
+        double Image_Coords[2]{};
 
-        double Parameters[SPACETIME_NUMBER];
+        std::vector<std::vector<double>> Ray_log;
+
+        double Parameters[SPACETIME_NUMBER]{};
 
     };
 
+    struct Trace_Results_type {
+
+        double Intensity;
+        double Optical_Depth;
+
+        double Coordinates[3];
+        double Three_Momentum[3];
+
+        double Image_Coords[2];
+
+    };
 
 #endif

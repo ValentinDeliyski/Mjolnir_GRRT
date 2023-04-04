@@ -12,15 +12,15 @@
 
         public:
 
-            virtual double get_ISCO(Orbit_Orientation Orientation) {
+            virtual double* get_ISCO() {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
-                return ERROR;
+                return NULL;
 
             };
 
-            virtual double* get_Photon_Sphere(Orbit_Orientation Orientation) {
+            virtual double* get_Photon_Sphere() {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -93,8 +93,8 @@
 
         public:
 
-            double get_ISCO(Orbit_Orientation Orientation) override;
-            double* get_Photon_Sphere(Orbit_Orientation Orientation) override;
+            double* get_ISCO() override;
+            double* get_Photon_Sphere() override;
 
             /* Metric and its derivatives */
 
@@ -126,8 +126,8 @@
 
     public:
 
-        double get_ISCO(Orbit_Orientation Orientation);
-        double* get_Photon_Sphere(Orbit_Orientation Orientation);
+        double* get_ISCO();
+        double* get_Photon_Sphere();
 
         /* Metric and its derivatives */
 
@@ -159,8 +159,8 @@
 
     public:
 
-        double get_ISCO(Orbit_Orientation Orientation);
-        double* get_Photon_Sphere(Orbit_Orientation Orientation);
+        double* get_ISCO();
+        double* get_Photon_Sphere();
 
         /* Metric and its derivatives */
 
@@ -192,8 +192,8 @@
 
     public:
 
-        double get_ISCO(Orbit_Orientation Orientation);
-        double* get_Photon_Sphere(Orbit_Orientation Orientation);
+        double* get_ISCO();
+        double* get_Photon_Sphere();
 
         /* Metric and its derivatives */
 
@@ -223,10 +223,14 @@
 
     class Gauss_Bonnet_class : public Spacetime_Base_Class {
 
+    private:
+
+        double r_ISCO[2];
+
     public:
 
-        double get_ISCO(Orbit_Orientation Orientation);
-        double* get_Photon_Sphere(Orbit_Orientation Orientation);
+        double* get_ISCO() ;
+        double* get_Photon_Sphere() ;
 
         /* Metric and its derivatives */
 
@@ -257,6 +261,8 @@
 
     public:
 
+        double* get_ISCO();
+
         /* Metric and its derivatives */
 
         int get_metric(double metric[4][4], double* N_metric,
@@ -268,6 +274,7 @@
 
         /* Initial conditions derived from images */
 
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
  
         /* Equations of motion */
 

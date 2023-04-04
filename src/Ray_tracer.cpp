@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    @ Version: 3.6.3                                                                               |
+|    @ Version: 3.8.0                                                                               |
 |    @ Author: Valentin Deliyski                                                                    |
 |    @ Description: This program numeriaclly integrates the equations of motion                     |
 |    for null geodesics and radiative transfer in a curved spacetime,then projects                  |
@@ -14,6 +14,7 @@
 |      * Rotating Traversable Wormholes                                                             |
 |      * Janis - Newman - Winicour Naked Singularities                                              |
 |      * Gauss - Bonnet Black Holes / Naked Singularities                                           |
+|      * Black Holes with a Dark Matter Halo                                                        |
 |                                                                                                   |
 |    @ Supported Disk Models                                                                        |
 |      * Novikov-Thorne                                                                             |
@@ -23,11 +24,6 @@
 
 #define _USE_MATH_DEFINES
 
-#include <string>
-#include <iostream>
-#include <iomanip> 
-#include <fstream>
-#include <string>
 #include <vector>
 
 #include "Constants.h"
@@ -57,6 +53,7 @@ std::vector<Spacetime_Base_Class*> Spacetimes = {
     new JNW_class(),
     new Gauss_Bonnet_class(),
     new Black_Hole_w_Dark_Matter_Halo_class()
+
 };
 
 /*
@@ -73,7 +70,7 @@ Define the Optically Thin Disk Class
 
 */
 
-Optically_Thin_Toroidal_Model OTT_Model;
+Optically_Thin_Toroidal_Model OTT_Model(HOTSPOT_R_COORD, 0);
 
 /*
 
@@ -85,30 +82,20 @@ Novikov_Thorne_Model NT_Model(r_in, r_out);
 
 /*
 
-Define some global boolians
-
-*/
-
-extern const bool truncate = true;
-
-/*
-
 Rendering Engine variables
 
 */
 
 float Max_Intensity{};
-int texture_indexer{};
-bool Normalizing_colormap = true;
 float texture_buffer[TEXTURE_BUFFER_SIZE * 3]{};
 
 /*
 
-Initialize the angular position of the hotspot - this needs to be global for now
+Initialize the file manager
 
 */
 
-double hotspot_phi_angle{};
+File_manager_class File_manager(input_file_path, Truncate_files);
 
 void print_ASCII_art() {
 
@@ -127,7 +114,7 @@ void print_ASCII_art() {
 }
 
 int main() {
- 
+
     /*
 
     Get the metric at the observer to feed into the initial conditions functions
@@ -168,6 +155,12 @@ int main() {
         case 3:
 
             run_simulation_mode_3(&s_Initial_Conditions);
+
+            break;
+
+        case 4:
+
+            run_simulation_mode_4(&s_Initial_Conditions);
 
             break;
 

@@ -65,7 +65,7 @@ int mat_vec_multiply_4D(double Matrix[4][4], double Vector[4], double result[4])
 
 };
 
-double my_max(double vector[]) {
+double my_max(double vector[], int element_number) {
 
 	/*****************************************************************************
 	|                                                                            |
@@ -78,7 +78,7 @@ double my_max(double vector[]) {
 	|                                                                            |
 	*****************************************************************************/
 
-	int index_max = e_State_Number - 1;
+	int index_max = element_number - 1;
 
 	for (int index = 0; index <= index_max; index += 1) {
 

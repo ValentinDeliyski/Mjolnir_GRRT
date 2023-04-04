@@ -18,6 +18,8 @@
 
     void set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J);
 
+    void normalize_colormap(Initial_conditions_type* s_Initial_Conditions);
+
     /***************************************
     |									   |
     | Classes that abstract the OpenGL api |

@@ -8,7 +8,7 @@ class Simulation_Parser():
 
         with open("..\\Sim_Results\\" + File_name + ".txt", 'r') as file:
 
-            self.HEADER_ROW_COUNT = 5
+            self.HEADER_ROW_COUNT = 6
 
             csvreader = csv.reader(file, delimiter = ":")
             row_count = sum(1 for row in file) - self.HEADER_ROW_COUNT
@@ -24,7 +24,7 @@ class Simulation_Parser():
             self.X_PIXEL_COUNT   = int(Resolution_list[1])
             self.Y_PIXEL_COUNT   = int(Resolution_list[3])
 
-            # self.params = csvreader.__next__()
+            self.params = csvreader.__next__()
 
             self.Legend = csvreader.__next__()
 

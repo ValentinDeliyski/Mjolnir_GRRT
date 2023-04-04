@@ -117,14 +117,14 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
         Spacetimes[e_metric]->get_EOM(inter_State_vector, J, Derivatives, iteration);
             
-        double current_iteration[e_State_Number] = { inter_State_vector[e_r             + iteration * e_State_Number],
-                                                     inter_State_vector[e_theta         + iteration * e_State_Number],
-                                                     inter_State_vector[e_phi           + iteration * e_State_Number],
-                                                     inter_State_vector[e_phi_FD        + iteration * e_State_Number],
-                                                     inter_State_vector[e_p_theta       + iteration * e_State_Number],
-                                                     inter_State_vector[e_p_r           + iteration * e_State_Number],
-                                                     inter_State_vector[e_Intensity     + iteration * e_State_Number],
-                                                     inter_State_vector[e_Optical_Depth + iteration * e_State_Number] };
+        double current_iteration[] = {inter_State_vector[e_r             + iteration * e_State_Number],
+                                      inter_State_vector[e_theta         + iteration * e_State_Number],
+                                      inter_State_vector[e_phi           + iteration * e_State_Number],
+                                      inter_State_vector[e_phi_FD        + iteration * e_State_Number],
+                                      inter_State_vector[e_p_theta       + iteration * e_State_Number],
+                                      inter_State_vector[e_p_r           + iteration * e_State_Number],
+                                      inter_State_vector[e_Intensity     + iteration * e_State_Number],
+                                      inter_State_vector[e_Optical_Depth + iteration * e_State_Number] };
 
         get_Radiative_Transfer(current_iteration, Derivatives, iteration, J);
 
@@ -148,7 +148,7 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
     }
 
-    controller->current_err = my_max(state_error);
+    controller->current_err = my_max(state_error, e_State_Number);
 
     controller->update_step();
 

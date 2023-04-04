@@ -10,9 +10,8 @@
     #include "Rendering_Engine.h"
 
     extern std::vector<Spacetime_Base_Class*> Spacetimes;
-    extern bool Normalizing_colormap;
-    extern double hotspot_phi_angle;
-    extern int texture_indexer;
+    extern Optically_Thin_Toroidal_Model OTT_Model;
+    extern File_manager_class File_manager;
 
     void print_progress(int current, int max, bool lens_from_file, bool Normalizing_colormap) {
 
@@ -70,33 +69,14 @@
 
         */
 
-        std::ofstream data[4], momentum_data[4];
-        open_output_files(data, momentum_data);
+        File_manager.open_image_output_files();
 
         GLFWwindow* window = OpenGL_init(H_angle_max / V_angle_max);
         glfwSetKeyCallback(window, Window_Callbacks::define_button_callbacks);
 
         auto start_time = std::chrono::high_resolution_clock::now();
 
-        /*
-
-        Do one scan line in the middle of the image to find the maximum intensity for use in the colormap
-
-        */
-
-        std::cout << "Initial y = 0 scan to normalize the colormap..." << '\n';
-
-        for (int pixel_num = 0; pixel_num <= RESOLUTION - 1; pixel_num++) {
-
-            get_intitial_conditions_from_angles(s_Initial_Conditions, 0, H_angle_max - pixel_num * Scan_Step);
-
-            Lens(s_Initial_Conditions, data, momentum_data);
-
-            print_progress(pixel_num, RESOLUTION - 1, false, Normalizing_colormap);
-
-        }
-
-        Normalizing_colormap = false;
+        normalize_colormap(s_Initial_Conditions);
 
         /*
 
@@ -105,13 +85,14 @@
         */
 
         int progress = 0;
+        int texture_indexer{};
 
         std::cout << '\n' << "Simulation starts..." << '\n';
 
         for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
 
             update_rendering_window(window, V_angle_max / H_angle_max);
-            print_progress(progress, RESOLUTION - 1, false, Normalizing_colormap);
+            print_progress(progress, RESOLUTION - 1, false, false);
 
             progress += 1;
 
@@ -123,10 +104,28 @@
 
                 */
 
-                get_intitial_conditions_from_angles(s_Initial_Conditions, V_angle_min + V_pixel_num * Scan_Step,
-                    H_angle_max - H_pixel_num * Scan_Step);
+                get_intitial_conditions_from_angles(s_Initial_Conditions, 
+                                                    V_angle_min + V_pixel_num * Scan_Step,
+                                                    H_angle_max - H_pixel_num * Scan_Step);
 
-                Lens(s_Initial_Conditions, data, momentum_data);
+               /*
+
+               Ray propagation happens here
+
+               */
+
+               Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
+
+               double Pixel_intensity = s_Ray_results.Intensity[direct] +
+                                        s_Ray_results.Intensity[first]  +
+                                        s_Ray_results.Intensity[second] +
+                                        s_Ray_results.Intensity[third];
+
+               set_pixel_color(Pixel_intensity, texture_indexer);
+
+               File_manager.write_image_data_to_file(s_Ray_results);
+
+               texture_indexer += 3;
 
             }
 
@@ -134,11 +133,10 @@
 
         auto end_time = std::chrono::high_resolution_clock::now();
 
-        std::cout << '\n' << "Simulation finished!" << '\n';
+        std::cout << '\n' << "Simulation finished!";
+        std::cout << '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
 
-        std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
-
-        close_output_files(data, momentum_data);
+        File_manager.close_image_output_files();
 
         while (!glfwWindowShouldClose(window)) {
 
@@ -156,11 +154,7 @@
 
         */
 
-        std::ofstream data[4], momentum_data[4];
-
-        open_output_files(data, momentum_data);
-
-        Normalizing_colormap = false;
+        File_manager.open_image_output_files();
 
         /*
 
@@ -169,9 +163,10 @@
         */
 
         double J_data[500]{}, p_theta_data[500]{};
-        int Data_number = 0;
+        int Data_number{};
+        int texture_indexer{};
 
-        get_geodesic_data(J_data, p_theta_data, &Data_number);
+        File_manager.get_geodesic_data(J_data, p_theta_data, &Data_number);
 
         for (int photon = 0; photon <= Data_number; photon += 1) {
 
@@ -183,14 +178,24 @@
 
             Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, J_data, p_theta_data, photon);
 
-            Lens(s_Initial_Conditions, data, momentum_data);
+            /*
+            
+            Ray propagation happens here
+            
+            */
+
+            Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
+
+            File_manager.write_image_data_to_file(s_Ray_results);
+
+            texture_indexer += 3;
 
             print_progress(photon, Data_number, true, false);
         }
 
         std::cout << '\n';
 
-        close_output_files(data, momentum_data);
+        File_manager.close_image_output_files();
 	}
     
     void run_simulation_mode_3(Initial_conditions_type* s_Initial_Conditions) {
@@ -200,25 +205,7 @@
 
         auto start_time = std::chrono::high_resolution_clock::now();
 
-        /*
-
-        Do one scan line in the middle of the image to find the maximum intensity for use in the colormap
-
-        */
-
-        std::cout << "Initial y = 0 scan to normalize the colormap..." << '\n';
-
-        for (int pixel_num = 0; pixel_num <= RESOLUTION - 1; pixel_num++) {
-
-            get_intitial_conditions_from_angles(s_Initial_Conditions, 0, H_angle_max - pixel_num * Scan_Step);
-
-            Lens(s_Initial_Conditions, NULL, NULL);
-
-            print_progress(pixel_num, RESOLUTION - 1, false, Normalizing_colormap);
-
-        }
-
-        Normalizing_colormap = false;
+        normalize_colormap(s_Initial_Conditions);
 
         /*
         
@@ -228,11 +215,11 @@
 
         std::cout << '\n' << "Simulation starts..." << '\n';
 
-        for (int hotspot_number = 0; hotspot_number < HOTSPOT_ANIMATION_NUMBER; hotspot_number++) {
+        for (int hotspot_number = 0; hotspot_number <= HOTSPOT_ANIMATION_NUMBER - 1; hotspot_number++) {
 
-            hotspot_phi_angle = double(hotspot_number) / 8 * 2 * M_PI;
+            OTT_Model.HOTSPOT_PHI_COORD = double(hotspot_number) / HOTSPOT_ANIMATION_NUMBER * 2 * M_PI;
 
-            texture_indexer = 0;
+            int texture_indexer{};
 
             /*
 
@@ -240,8 +227,7 @@
 
             */
 
-            std::ofstream data[4], momentum_data[4];
-            open_output_files(data, momentum_data);
+            File_manager.open_image_output_files();
 
             /*
 
@@ -256,7 +242,7 @@
             for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
 
                 update_rendering_window(window, V_angle_max / H_angle_max);
-                print_progress(progress, RESOLUTION - 1, false, Normalizing_colormap);
+                print_progress(progress, RESOLUTION - 1, false, false);
 
                 progress += 1;
 
@@ -270,8 +256,23 @@
 
                     get_intitial_conditions_from_angles(s_Initial_Conditions, V_angle_min + V_pixel_num * Scan_Step,
                                                         H_angle_max - H_pixel_num * Scan_Step);
+                    /*
+            
+                    Ray propagation happens here
+            
+                    */
 
-                    Lens(s_Initial_Conditions, data, momentum_data);
+                    Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
+
+                    double Pixel_intensity = s_Ray_results.Intensity[direct] +
+                                             s_Ray_results.Intensity[first]  +
+                                             s_Ray_results.Intensity[second] +
+                                             s_Ray_results.Intensity[third];
+
+                    set_pixel_color(Pixel_intensity, texture_indexer);
+                    File_manager.write_image_data_to_file(s_Ray_results);
+
+                    texture_indexer += 3;
 
                 }
 
@@ -279,12 +280,12 @@
 
             std::cout << "\n";
 
-            close_output_files(data, momentum_data);
+            File_manager.close_image_output_files();
         }
 
         auto end_time = std::chrono::high_resolution_clock::now();
 
-        std::cout << '\n' << "Simulation finished!" << '\n';
+        std::cout << "Simulation finished!" << '\n';
         std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
 
         while (!glfwWindowShouldClose(window)) {
@@ -293,6 +294,17 @@
 
         }
 
+    }
+
+    void run_simulation_mode_4(Initial_conditions_type* s_Initial_Conditions) {
+
+        Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, (double*) &X_INIT, (double*) &Y_INIT, 0);
+
+        Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
+
+        File_manager.open_log_output_file();
+        File_manager.log_photon_path(s_Ray_results);
+        File_manager.close_log_output_file();
     }
 
 #endif

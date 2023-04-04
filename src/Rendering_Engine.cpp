@@ -1,10 +1,10 @@
 #define _USE_MATH_DEFINES
 
 #include "Rendering_Engine.h"
-#include "Constants.h"
-#include "Enumerations.h"
-#include <cmath>
-#include <iostream>
+#include "lensing.h"
+#include "General_GR_functions.h"
+#include "General_math_functions.h"
+#include "Sim_Modes.h"
 
 extern float Max_Intensity;
 extern float texture_buffer[];
@@ -29,13 +29,13 @@ GLFWwindow* OpenGL_init(double aspect_ratio) {
     // Turn off vsync because if slows down the simulation A LOT
     glfwSwapInterval(0);
 
-    //Load GLAD so it configures OpenGL
+    // Load GLAD so it configures OpenGL
     gladLoadGL();
 
     // Specify the viewport of OpenGL in the Window -> x = [0, aspect_ratio * 1200], y = [0, 1200]
     glViewport(0, 0, aspect_ratio * 1200, 1200);
 
-    //The simulation image is interpreted as a texture
+    // The simulation image is interpreted as a texture
     GLuint texture = init_texture();
 
     // This thing (after linkning) combines the bottom two things into one object
@@ -137,6 +137,41 @@ void set_background_pattern_color(double State_vector[], double old_state[], int
     texture_buffer[texture_indexer] = grayscale_value;
     texture_buffer[texture_indexer + 1] = grayscale_value;
     texture_buffer[texture_indexer + 2] = grayscale_value;
+
+}
+
+void normalize_colormap(Initial_conditions_type* s_Initial_Conditions) {
+
+    /*
+
+    Do one scan line in the middle of the image to find the maximum intensity for use in the colormap
+
+    */
+
+    std::cout << "Initial y = 0 scan to normalize the colormap..." << '\n';
+
+    Results_type Colormap_normalization_results{}; 
+
+    for (int pixel_num = 0; pixel_num <= RESOLUTION - 1; pixel_num++) {
+
+        get_intitial_conditions_from_angles(s_Initial_Conditions, 0, H_angle_max - pixel_num * Scan_Step);
+
+        Colormap_normalization_results = Propagate_ray(s_Initial_Conditions);
+
+        double Intensity_current = Colormap_normalization_results.Intensity[direct] +
+                                   Colormap_normalization_results.Intensity[first]  +
+                                   Colormap_normalization_results.Intensity[second] +
+                                   Colormap_normalization_results.Intensity[third];
+
+        if (Intensity_current > Max_Intensity) {
+
+            Max_Intensity = Intensity_current;
+
+        }
+
+        print_progress(pixel_num, RESOLUTION - 1, false, true);
+
+    }
 
 }
 
