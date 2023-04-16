@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    @ Version: 3.8.0                                                                               |
+|    @ Version: 3.8.1                                                                               |
 |    @ Author: Valentin Deliyski                                                                    |
 |    @ Description: This program numeriaclly integrates the equations of motion                     |
 |    for null geodesics and radiative transfer in a curved spacetime,then projects                  |
@@ -45,14 +45,22 @@ Define classes that holds the spacetime properites
 
 */
 
-std::vector<Spacetime_Base_Class*> Spacetimes = {
 
-    new Kerr_class(),
-    new Wormhole_class(),
-    new RBH_class(),
-    new JNW_class(),
-    new Gauss_Bonnet_class(),
-    new Black_Hole_w_Dark_Matter_Halo_class()
+Kerr_class Kerr_class_instance = Kerr_class();
+Wormhole_class Wormhole_class_instance = Wormhole_class();
+RBH_class RHB_class_instance = RBH_class();
+JNW_class JNW_class_intance = JNW_class();
+Gauss_Bonnet_class Gauss_Bonet_class_instance = Gauss_Bonnet_class();
+Black_Hole_w_Dark_Matter_Halo_class BH_w_DM_class_instace = Black_Hole_w_Dark_Matter_Halo_class();
+
+Spacetime_Base_Class* Spacetimes[] = {
+
+    &Kerr_class_instance,
+    &Wormhole_class_instance,
+    &RHB_class_instance,
+    &JNW_class_intance,
+    &Gauss_Bonet_class_instance,
+    &BH_w_DM_class_instace
 
 };
 
@@ -97,6 +105,36 @@ Initialize the file manager
 
 File_manager_class File_manager(input_file_path, Truncate_files);
 
+/*
+
+Precomputed variables definitions
+
+*/
+
+double sin_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
+double one_over_sqrt_sin[NUM_SAMPLES_TO_AVG];
+double one_over_cbrt_sin[NUM_SAMPLES_TO_AVG];
+double one_over_sin_to_1_6[NUM_SAMPLES_TO_AVG];
+
+void precompute_electron_pitch_angles() {
+
+    for (int index = 0; index <= NUM_SAMPLES_TO_AVG - 1; index++) {
+
+        double pitch_angle = double(index) / NUM_SAMPLES_TO_AVG * M_PI;
+        sin_electron_pitch_angles[index] = sin(pitch_angle);
+
+        if (sin_electron_pitch_angles[index] != 0) {
+
+            one_over_sqrt_sin[index]   = 1. / sqrt(sin_electron_pitch_angles[index]);
+            one_over_cbrt_sin[index]   = 1. / cbrt(sin_electron_pitch_angles[index]);
+            one_over_sin_to_1_6[index] = 1. / sqrt(one_over_cbrt_sin[index]);
+
+        }
+
+    }
+
+}
+
 void print_ASCII_art() {
 
     std::cout <<
@@ -115,9 +153,11 @@ void print_ASCII_art() {
 
 int main() {
 
+    precompute_electron_pitch_angles();
+
     /*
 
-    Get the metric at the observer to feed into the initial conditions functions
+    Get the metric at the observer to feed into the initial conditions struct
 
     */
 

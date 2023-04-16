@@ -14,7 +14,7 @@
 #include "Lensing.h"
 #include <iostream>
 
-extern std::vector<Spacetime_Base_Class*> Spacetimes;
+extern Spacetime_Base_Class* Spacetimes[];
 extern c_Observer Observer_class;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 extern Novikov_Thorne_Model NT_Model;
@@ -119,8 +119,13 @@ Results_type Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
                 double r_crossing = sqrt(crossing_coords[x] * crossing_coords[x] + crossing_coords[y] * crossing_coords[y]);
                 double state_crossing[2] = { r_crossing, M_PI_2 };
 
-                s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]]             = NT_Model.Redshift(J, state_crossing, r_obs, theta_obs, Spacetimes);
-                s_Ray_results.Flux_NT[Image_Order[Novikov_Thorne]] = 0;
+                s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]] = NT_Model.Redshift(J, state_crossing, r_obs, theta_obs, Spacetimes);
+                
+                if (s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]] != 0) {
+
+                    s_Ray_results.Flux_NT[Image_Order[Novikov_Thorne]] = 0;
+
+                }
 
                 s_Ray_results.Source_Coords[e_r][Image_Order[Novikov_Thorne]]      = r_crossing;
                 s_Ray_results.Source_Coords[e_phi][Image_Order[Novikov_Thorne]]    = State_vector[e_phi];

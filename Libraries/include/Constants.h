@@ -31,7 +31,7 @@
     */
 
     Real M_SUN_SI = 1.989e30;
-    Real OBJECT_MASS_SI = 4e6 * M_SUN_SI;
+    Real OBJECT_MASS_SI = 6.2e9 * M_SUN_SI;
 
     Real G_NEWTON_SI = 6.6743e-11;
 

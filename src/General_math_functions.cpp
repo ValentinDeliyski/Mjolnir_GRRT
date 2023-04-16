@@ -2,7 +2,7 @@
 
 #include "Disk_Models.h"
 #include "Enumerations.h"
-
+#include "inputs.h"
 #include <cmath>
 
 extern Novikov_Thorne_Model NT_Model;
@@ -175,8 +175,13 @@ bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], doub
 	double r_out = NT_Model.get_r_out();
 	double r_in  = NT_Model.get_r_in();
 
-	return r_crossing_squared < r_out * r_out && r_crossing_squared > r_in * r_in;
+	if (e_metric == Wormhole) {
 
+		return r_crossing_squared < r_out* r_out - WH_R_THROAT * WH_R_THROAT && r_crossing_squared > r_in * r_in - WH_R_THROAT * WH_R_THROAT;
+
+	}
+	
+	return r_crossing_squared < r_out * r_out && r_crossing_squared > r_in * r_in;
 }
 
 double dot_product(double vector_1[3], double vector_2[3]) {

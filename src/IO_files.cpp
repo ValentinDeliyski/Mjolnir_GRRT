@@ -7,6 +7,7 @@
 #include "IO_files.h"
 #include "Constants.h"
 
+extern Spacetime_Base_Class* Spacetimes[];
 extern Optically_Thin_Toroidal_Model OTT_Model;
 
 File_manager_class::File_manager_class(std::string input_file_path, bool truncate) {
@@ -67,7 +68,8 @@ void File_manager_class::write_simulation_metadata() {
                                             << "\n"
                                             << "Disk Opening Angle [tan(angle)]: "
                                             << DISK_OPENING_ANGLE
-                                            << ", R_0 [ M ]: "
+                                            << "\n"
+                                            << "R_0[M]: "
                                             << R_0
                                             << "\n";
 
@@ -79,15 +81,14 @@ void File_manager_class::write_simulation_metadata() {
                                             << "\n"
                                             << "Disk Height Scale [M]: "
                                             << DISK_HEIGHT_SCALE
-                                            << ", Disk Radial Scale [M]: "
+                                            << "\n"
+                                            << "Disk Radial Scale [M]: "
                                             << DISK_RADIAL_SCALE
                                             << "\n";
 
             break;
 
         }
-
-        std::cout << "Active disk emission model: ";
 
         switch (e_emission) {
 
@@ -119,7 +120,7 @@ void File_manager_class::write_simulation_metadata() {
                                             << "Disk Magnetization [-]: "
                                             << DISK_MAGNETIZATION
                                             << "\n"
-                                            << ", Magnetic Field Geometry: "
+                                            << "Magnetic Field Geometry: "
                                             << "[" << MAG_FIELD_GEOMETRY[0]
                                             << ", " << MAG_FIELD_GEOMETRY[1]
                                             << ", " << MAG_FIELD_GEOMETRY[2] << "]"
@@ -151,7 +152,7 @@ void File_manager_class::write_simulation_metadata() {
         Image_Output_files[Image_order] << "------------------------------------------------------- Novikov-Thorne Disk Metadata -------------------------------------------------------"
                                         << "\n"
                                         << "Inner Disk Radius [M]: "
-                                        << r_in
+                                        << r_in * (r_in != NULL) + Spacetimes[e_metric]->get_ISCO()[Inner] * (r_in == NULL)
                                         << "\n"
                                         << "Outer Disk Radius [M]: "
                                         << r_out
@@ -161,8 +162,6 @@ void File_manager_class::write_simulation_metadata() {
         switch (Active_Sim_Mode) {
 
         case 2:
-
-            
 
             Image_Output_files[Image_order] << "Image X Coord [M],"
                                             << " "
@@ -190,8 +189,6 @@ void File_manager_class::write_simulation_metadata() {
             break;
 
         default:
-
-
 
             Image_Output_files[Image_order] << "Observation Window Dimentions (-X,+X,-Y,+Y) [Rad]: "
                                             << H_angle_min << ","
@@ -257,8 +254,6 @@ void File_manager_class::write_simulation_metadata() {
                                             << '\n';
 
         }
-
-        break;
 
     }
 }

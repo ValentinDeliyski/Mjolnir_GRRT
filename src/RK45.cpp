@@ -11,7 +11,7 @@
 #include <vector>
 #include "Lensing.h"
 
-extern std::vector<Spacetime_Base_Class*> Spacetimes;
+extern Spacetime_Base_Class* Spacetimes[];
 extern Novikov_Thorne_Model NT_Model;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 
@@ -33,11 +33,17 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
     |                                                                                               |
     ************************************************************************************************/
 
-    double r = State_Vector[e_r];
+    double temp_State_Vector[e_State_Number]{};
+
+    for (int index = e_r; index < e_State_Number - 1; index++) {
+
+        temp_State_Vector[index] = State_Vector[index];
+
+    }
 
     if (e_metric == Wormhole) {
 
-        r = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+        temp_State_Vector[e_r] = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
 
     }
 
@@ -45,11 +51,11 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
 
     double U_source_coord[4]{};
 
-    OTT_Model.get_disk_velocity(U_source_coord, State_Vector, Spacetimes);
+    OTT_Model.get_disk_velocity(U_source_coord, temp_State_Vector, Spacetimes);
 
     /* Get The Redshift */
 
-    double redshift = Redshift(J, State_Vector, U_source_coord);
+    double redshift = Redshift(J, temp_State_Vector, U_source_coord);
 
     double Emission_function{}, Absorbtion_function{};
 
@@ -57,15 +63,15 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
 
     case Synchotron_exact:
 
-        Emission_function = OTT_Model.get_emission_fucntion_synchotron_exact(State_Vector, J, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+        Emission_function = OTT_Model.get_emission_fucntion_synchotron_exact(temp_State_Vector, J, Spacetimes);
+        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
 
         break;
 
     case Synchotron_phenomenological:
 
-        Emission_function = OTT_Model.get_emission_fucntion_synchotron_phenomenological(State_Vector, J, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+        Emission_function = OTT_Model.get_emission_fucntion_synchotron_phenomenological(temp_State_Vector, J, Spacetimes);
+        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
     
         break;
 
@@ -97,6 +103,7 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
     int iteration = 0;
 
     double state_error[e_State_Number]{};
+    double state_rel_err[e_State_Number]{};
     double New_State_vector_O5[e_State_Number]{};
     double New_State_vector_O4[e_State_Number]{};
     double inter_State_vector[RK45_size * e_State_Number]{};
@@ -144,11 +151,24 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
         }
 
-        state_error[vector_indexer] = New_State_vector_O5[vector_indexer] - New_State_vector_O4[vector_indexer];
+        state_error[vector_indexer]   = New_State_vector_O5[vector_indexer] - New_State_vector_O4[vector_indexer];
 
+        if (New_State_vector_O5[vector_indexer] != 0) {
+
+            state_rel_err[vector_indexer] = state_error[vector_indexer] / New_State_vector_O5[vector_indexer];
+
+        }
+        else {
+
+            state_rel_err[vector_indexer] = 0;
+
+        }
+
+       
     }
 
-    controller->current_err = my_max(state_error, e_State_Number);
+    controller->current_err     = my_max(state_error,   e_State_Number);
+    controller->current_rel_err = my_max(state_rel_err, e_State_Number);
 
     controller->update_step();
 
@@ -161,7 +181,7 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
     //}
 
-    if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2) {
+    if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2.5) {
 
         controller->step /= 4;
 
@@ -190,9 +210,10 @@ Step_controller::Step_controller(double init_stepsize) {
 
     step = init_stepsize;
 
-    current_err  = RK45_ACCURACY;
-    prev_err     = RK45_ACCURACY;
-    sec_prev_err = RK45_ACCURACY;
+    current_err     = RK45_ACCURACY;
+    current_rel_err = RK45_ACCURACY;
+    prev_err        = RK45_ACCURACY;
+    sec_prev_err    = RK45_ACCURACY;
 
     continue_integration = false;
 

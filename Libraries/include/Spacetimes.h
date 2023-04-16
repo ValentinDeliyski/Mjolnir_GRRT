@@ -293,6 +293,7 @@
         double r_obs;
         double theta_obs;
         double phi_obs;
+        double obs_velocity[4];
 
     public:
 
@@ -302,7 +303,7 @@
         double get_theta_obs();
         double get_phi_obs();
 
-        int get_obs_velocity(double Obs_velocity[4], std::vector<Spacetime_Base_Class*> Spacetimes);
+        int get_obs_velocity(double Obs_velocity[4]);
 
     }c_Observer;
 

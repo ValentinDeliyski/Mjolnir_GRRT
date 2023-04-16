@@ -4,7 +4,7 @@
 #include "Constants.h"
 #include <cmath>
 
-extern std::vector<Spacetime_Base_Class*> Spacetimes;
+extern Spacetime_Base_Class* Spacetimes[];
 extern c_Observer Observer_class;
 
 /* Metric Related Functions */
@@ -131,12 +131,14 @@ double Redshift(double J, double State_Vector[], double U_source[]) {
 
     double U_obs[4];
 
-    Observer_class.get_obs_velocity(U_obs, Spacetimes);
+    Observer_class.get_obs_velocity(U_obs);
 
-    return  (-U_obs[0] + U_obs[3] * J) / (-U_source[0] * 1 +
-                                           U_source[1] * State_Vector[e_p_r] +
-                                           U_source[2] * State_Vector[e_p_theta] +
-                                           U_source[3] * J);
+    double redshift = (-U_obs[0] + U_obs[3] * J) / (-U_source[0] * 1 +
+        U_source[1] * State_Vector[e_p_r] +
+        U_source[2] * State_Vector[e_p_theta] +
+        U_source[3] * J);
+
+    return redshift;
 
 }
 
@@ -280,8 +282,8 @@ int Increment_theta_turning_points(double State_Vector[], double Old_State[]) {
 
 int compute_image_order(int N_theta_turning_points, Initial_conditions_type* p_Initial_Conditions) {
 
-    int order = N_theta_turning_points - bool(p_Initial_Conditions->init_Three_Momentum[e_theta] > 0);
-
+    int order = N_theta_turning_points - bool(p_Initial_Conditions->init_Three_Momentum[e_theta] < 0);
+        
     if (order > 3) {
 
         order = 3;

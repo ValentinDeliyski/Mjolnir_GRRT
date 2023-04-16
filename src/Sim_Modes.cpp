@@ -9,7 +9,7 @@
     #include "General_GR_functions.h"
     #include "Rendering_Engine.h"
 
-    extern std::vector<Spacetime_Base_Class*> Spacetimes;
+    extern Spacetime_Base_Class* Spacetimes[];
     extern Optically_Thin_Toroidal_Model OTT_Model;
     extern File_manager_class File_manager;
 
@@ -70,6 +70,12 @@
         */
 
         File_manager.open_image_output_files();
+
+        /*
+
+        Initialize the rendering engine
+
+        */
 
         GLFWwindow* window = OpenGL_init(H_angle_max / V_angle_max);
         glfwSetKeyCallback(window, Window_Callbacks::define_button_callbacks);

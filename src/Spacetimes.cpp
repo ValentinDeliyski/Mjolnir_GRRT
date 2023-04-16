@@ -15,11 +15,28 @@
 |                                      |
 ***************************************/
 
+extern Spacetime_Base_Class* Spacetimes[];
+
 tag_observer::tag_observer(double r, double theta, double phi) {
 
     r_obs     = r;
     theta_obs = theta;
     phi_obs   = phi;
+
+    double metric_obs[4][4]{}, N_obs, omega_obs;
+
+    Spacetimes[e_metric]->get_metric(metric_obs, &N_obs, &omega_obs, r_obs, theta_obs);
+
+    /*
+
+    Obs_velocity is given in contravatiant components
+
+    */
+
+    obs_velocity[0] = 1.0 / N_obs;
+    obs_velocity[1] = 0;
+    obs_velocity[2] = 0;
+    obs_velocity[3] = omega_obs / N_obs;
 
 }
 
@@ -27,21 +44,13 @@ double tag_observer::get_r_obs()     { return r_obs; };
 double tag_observer::get_theta_obs() { return theta_obs; };
 double tag_observer::get_phi_obs()   { return phi_obs; };
 
-int tag_observer::get_obs_velocity(double Obs_velocity[4], std::vector<Spacetime_Base_Class*> Spacetimes) {
+int tag_observer::get_obs_velocity(double Obs_velocity[4]) {
 
+    for (int index = 0; index <= 3; index++) {
 
-    double metric_obs[4][4], N_obs, omega_obs;
+        Obs_velocity[index] = obs_velocity[index];
 
-    Spacetimes[e_metric]->get_metric(metric_obs, &N_obs, &omega_obs, r_obs, theta_obs);
-
-    /*
-    Obs_velocity is given in contravatiant components 
-    */
-
-    Obs_velocity[0] = 1.0 / N_obs;
-    Obs_velocity[1] = 0;
-    Obs_velocity[2] = 0;
-    Obs_velocity[3] = omega_obs / N_obs;
+    }
 
     return OK;
 
@@ -544,9 +553,7 @@ int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_
 
 int Wormhole_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
 
-    double r_throat = WH_R_THROAT;
-
-    double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * e_State_Number] * inter_State_vector[0 + iteration * e_State_Number] + r_throat * r_throat);
+    double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * e_State_Number] * inter_State_vector[0 + iteration * e_State_Number] + WH_R_THROAT * WH_R_THROAT);
     double d_ell_r = inter_State_vector[0 + iteration * e_State_Number] / sqrt_r2;
 
     double omega = 2 * SPIN / (sqrt_r2 * sqrt_r2 * sqrt_r2);
@@ -561,13 +568,13 @@ int Wormhole_class::get_EOM(double inter_State_vector[], double J, double Deriva
     double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
     double sin2 = sin1 * sin1;
 
-    Derivatives[e_r       + iteration * e_State_Number] = 1.0 / (1 + r_throat / sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_r       + iteration * e_State_Number] = 1.0 / (1 + WH_R_THROAT / sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number];
     Derivatives[e_theta   + iteration * e_State_Number] = 1.0 / (sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_theta + iteration * e_State_Number];
     Derivatives[e_phi     + iteration * e_State_Number] = J / (sqrt_r2 * sqrt_r2 * sin2);
     Derivatives[e_phi_FD  + iteration * e_State_Number] = omega * (1 - omega * J) / N2;
     Derivatives[e_p_theta + iteration * e_State_Number] = (cos(inter_State_vector[1 + iteration * e_State_Number]) / sin1) / (sqrt_r2 * sqrt_r2) * J * J / sin2;
 
-    double term_1 = -1.0 / ((1 + r_throat / sqrt_r2) * (1 + r_throat / sqrt_r2)) * r_throat * inter_State_vector[e_r + iteration * e_State_Number] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] / 2;
+    double term_1 = -1.0 / ((1 + WH_R_THROAT / sqrt_r2) * (1 + WH_R_THROAT / sqrt_r2)) * WH_R_THROAT * inter_State_vector[e_r + iteration * e_State_Number] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] / 2;
     double term_2 = 1.0 / (sqrt_r2 * sqrt_r2 * sqrt_r2) * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2) * d_ell_r;
     double term_3 = -(1.0 / (N2 * N) * d_ell_N * ((1 - omega * J) * (1 - omega * J)) - 1.0 / N2 * (-d_ell_omega * (1 - omega * J) * J));
 
@@ -835,7 +842,7 @@ double* Gauss_Bonnet_class::get_Photon_Sphere() {
     double q =  8 * MASS * GAUSS_BONNET_GAMMA;
     double p = -9 * MASS * MASS;
 
-    double photon_orbits[2]{};
+    static double photon_orbits[2]{};
 
     photon_orbits[Outer] = 2 * sqrt(-p / 3) * cos(1. / 3 * acos(3. / 2 * q / p * sqrt(-3. / p)));
     photon_orbits[Inner] = 2 * sqrt(-p / 3) * cos(1. / 3 * acos(3. / 2 * q / p * sqrt(-3. / p)) + 2. * M_PI / 3);

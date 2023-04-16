@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Gauss_Bonnet;	// Spacetime to be used
+    const Spacetime_enums e_metric = Wormhole; // Spacetime to be used
 
     Real MASS = 1.0;
-    Real SPIN = 0.98;
+    Real SPIN = 0.94;
 
     // Wormhole spacetime parameters //
 
@@ -46,29 +46,29 @@
 
     // ======================== Observer Inputs ======================== //
 
-    Real r_obs	   = 1e4;			   // Radial potision of the observer [ M ]
-    Real theta_obs = 60. / 180 * M_PI; // Polar angle of the observer [ Rad ]
-    Real phi_obs   = 0;				   // Azimuthal angle of the observer ( not used ) [ Rad ]
+    Real r_obs	   = 1e4;			    // Radial potision of the observer [ M ]
+    Real theta_obs = 160. / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real phi_obs   = 0;				    // Azimuthal angle of the observer ( not used ) [ Rad ]
 
     // ======================== Emission Model Inputs ======================== //
 
-    const Emission_model_enums     e_emission   = Synchotron_phenomenological; // Emission model to be used
+    const Emission_model_enums     e_emission   = Synchotron_exact; // Emission model to be used
     const Disk_density_model_enums e_disk_model = Power_law;
 
     // Novikov - Thorne accretion disk parameters
 
-    Real r_in  = 4.896029367;	// Inner accretion idsk radius [ M ]
-    Real r_out = 35;            // Outer accretion disk radius [ M ]
+    Real r_in  = NULL;	// Inner accretion idsk radius [ M ]
+    Real r_out = 35;    // Outer accretion disk radius [ M ]
 
     // Exponential disk profile parameters //
 
     Real DISK_HEIGHT_SCALE = 1. / (10. / 3); // disk density ~ exp( - cos(theta)^2 / DISK_HEIGHT_SCALE^2 / 2 )
-    Real DISK_RADIAL_SCALE = 10;		      // disk density ~ exp( - r^2 / DISK_RADIAL_SCALE^2 / 2)
+    Real DISK_RADIAL_SCALE = 10;		     // disk density ~ exp( - r^2 / DISK_RADIAL_SCALE^2 / 2)
 
     // Power law disk profile parameters //
 
-    Real DISK_OPENING_ANGLE = 0.1;	 // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
-    Real DISK_CUTOFF_SCALE  = 2;     // disk density ~ exp( - (r - r_ISCO)^2 / DISK_CUTOFF_SCALE^2) if r < r_ISCO
+    Real DISK_OPENING_ANGLE = 1;   // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
+    Real DISK_CUTOFF_SCALE  = 0.5; // disk density ~ exp( - (r - r_ISCO)^2 / DISK_CUTOFF_SCALE^2) if r < r_ISCO
     Real R_0                = 1;
 
     // Phenomenological Synchotron emission parameters //
@@ -79,15 +79,17 @@
 
     Real EMISSION_SCALE_PHENOMENOLOGICAL = 3e-18;
 
-    /* Exact Synchotron emission parameters */
+    // Exact Synchotron emission parameters //
     
     Real DISK_MAGNETIZATION    = 0.01;
-    Real MAG_FIELD_GEOMETRY[3] = { 1, 0, 0 };
+    Real MAG_FIELD_GEOMETRY[3] = { 1, 0, 0 }; // Unused for now
 
     Real N_ELECTRON_EXACT_CGS = 2e6;
-    Real T_ELECTRON_EXACT_CGS = 1e11;
+    Real T_ELECTRON_EXACT_CGS = 2e11;
 
-    /* Hotspot paramteres */
+    const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
+
+    // Hotspot paramteres //
 
     Real HOTSPOT_REL_SCALE  = 0. / 2; // Hotspot density ~ HOTSPOT_REL_SCALE
     Real HOTSPOT_SCALE      = 1.;
@@ -101,13 +103,13 @@
 
     // Simulation Mode 1 and 3 viewing window //
 
-    Real V_angle_min = -atan(30 / r_obs);
-    Real V_angle_max =  atan(30 / r_obs);
+    Real V_angle_min = -atan(15 / r_obs);
+    Real V_angle_max =  atan(15 / r_obs);
 
-    Real H_angle_min = -atan(30 / r_obs);
-    Real H_angle_max =  atan(30 / r_obs);
+    Real H_angle_min = -atan(15 / r_obs);
+    Real H_angle_max =  atan(15 / r_obs);
 
-    const int RESOLUTION = 512;                  // Linear size of the square pixel grid that makes up the image
+    const int RESOLUTION = 1500;                  // Linear size of the square pixel grid that makes up the image
     const int TEXTURE_BUFFER_SIZE = 3000 * 3000; // The size of the buffer to store the texture - must be >= RESOLUTION^2
 
     Real Scan_Step = (H_angle_max - H_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons

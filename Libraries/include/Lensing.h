@@ -23,6 +23,7 @@
         double step;
 
         double current_err;
+        double current_rel_err;
         double prev_err;
         double sec_prev_err;
 
