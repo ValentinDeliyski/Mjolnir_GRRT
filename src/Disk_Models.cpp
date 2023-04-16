@@ -2,14 +2,12 @@
 
 #define _USE_MATH_DEFINES
 
-#include "Enumerations.h"
 #include "Spacetimes.h"
 #include "General_GR_functions.h"
 #include "General_math_functions.h"
 #include "Disk_Models.h"
 
 #include <vector>
-#include <cmath>
 #include "Constants.h"
 
 /***************************************************
@@ -18,17 +16,27 @@
 |                                                  |
 ***************************************************/
 
-extern Spacetime_enums e_metric;
-extern std::vector<c_Spacetime_Base*> Spacetimes;
+extern Spacetime_Base_Class* Spacetimes[];
+extern double sin_electron_pitch_angles[NUM_SAMPLES_TO_AVG];
+extern double one_over_sqrt_sin[NUM_SAMPLES_TO_AVG];
+extern double one_over_cbrt_sin[NUM_SAMPLES_TO_AVG];
+extern double one_over_sin_to_1_6[NUM_SAMPLES_TO_AVG];
 
 Novikov_Thorne_Model::Novikov_Thorne_Model(double x, double y) {
 
     r_in = x;
+
+    if (x == NULL) {
+
+        r_in = Spacetimes[e_metric]->get_ISCO()[Inner];
+
+    }
+    
     r_out = y;
 
 };
 
-double Novikov_Thorne_Model::Keplerian_angular_velocity(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::Keplerian_angular_velocity(double r, Spacetime_Base_Class* Spacetimes[]) {
 
     double dr_metric[4][4], dr_N, dr_omega;
 
@@ -38,7 +46,7 @@ double Novikov_Thorne_Model::Keplerian_angular_velocity(double r, std::vector<c_
 
 }
 
-double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, Spacetime_Base_Class* Spacetimes[]) {
 
     double dr_metric[4][4], dr_N, dr_omega;
 
@@ -57,9 +65,9 @@ double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, std::vector
 }
 
 double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_obs, double theta_obs,
-                                          std::vector<c_Spacetime_Base*> Spacetimes) {
+    Spacetime_Base_Class* Spacetimes[]) {
 
-    double r_source = State_Vector[e_r];
+    double r_source     = State_Vector[e_r];
     double theta_source = State_Vector[e_theta];
 
     /*
@@ -84,13 +92,18 @@ double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_
 
     double gamma = 1 / sqrt(-metric_source[0][0] - 2 * metric_source[0][3] * Kepler - metric_source[3][3] * Kepler * Kepler);
 
+    if (gamma != gamma) {
+
+        return 0;
+    }
+
     double U_source[4] = { gamma, 0, 0, gamma * Kepler };
 
     return  (-U_obs[0] + U_obs[3] * J) / (-U_source[0] + U_source[3] * J);
 
 }
 
-double Novikov_Thorne_Model::disk_Energy(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::disk_Energy(double r, Spacetime_Base_Class* Spacetimes[]) {
 
     double metric[4][4], N, omega;
 
@@ -104,7 +117,7 @@ double Novikov_Thorne_Model::disk_Energy(double r, std::vector<c_Spacetime_Base*
 
 }
 
-double Novikov_Thorne_Model::disk_Angular_Momentum(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::disk_Angular_Momentum(double r, Spacetime_Base_Class* Spacetimes[]) {
 
     double metric[4][4], N, omega;
 
@@ -118,7 +131,7 @@ double Novikov_Thorne_Model::disk_Angular_Momentum(double r, std::vector<c_Space
 
 }
 
-double Novikov_Thorne_Model::Flux_integrand(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::Flux_integrand(double r, Spacetime_Base_Class* Spacetimes[]) {
 
     double metric[4][4], N, omega;
 
@@ -145,7 +158,7 @@ double Novikov_Thorne_Model::Flux_integrand(double r, std::vector<c_Spacetime_Ba
 
 }
 
-double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double upper_bound, double tolerance, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double upper_bound, double tolerance, Spacetime_Base_Class* Spacetimes[]) {
 
     double mid_point       = (lower_bound + upper_bound) / 2;
     double left_mid_point  = (lower_bound + mid_point) / 2;
@@ -197,15 +210,15 @@ double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double uppe
     return integral;
 }
 
-double Novikov_Thorne_Model::get_flux(double r, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Novikov_Thorne_Model::get_flux(double r, Spacetime_Base_Class* Spacetimes[]) {
 
     double metric[4][4], N, omega;
 
     Spacetimes[e_metric]->get_metric(metric, &N, &omega, r, M_PI_2);
 
     double metric_det = get_metric_det(metric);
-    double E_disk = disk_Energy(r, Spacetimes);
-    double L_disk = disk_Angular_Momentum(r, Spacetimes);
+    double E_disk     = disk_Energy(r, Spacetimes);
+    double L_disk     = disk_Angular_Momentum(r, Spacetimes);
 
     double Kepler    =    Keplerian_angular_velocity(r, Spacetimes);
     double dr_Kepler = dr_Keplerian_angular_velocity(r, Spacetimes);
@@ -218,7 +231,7 @@ double Novikov_Thorne_Model::get_flux(double r, std::vector<c_Spacetime_Base*> S
 
     }
 
-    double Flux_integral = solve_Flux_integral(Novikov_Thorne_Model::r_in, r, INTEGRAL_ACCURACY, Spacetimes);
+    double Flux_integral = solve_Flux_integral(r_in, r, INTEGRAL_ACCURACY, Spacetimes);
 
     return Flux_coeff * Flux_integral;
 
@@ -233,28 +246,30 @@ double Novikov_Thorne_Model::get_r_out() { return r_out; };
 |                                                           |
 ************************************************************/
 
-Optically_Thin_Toroidal_Model::Optically_Thin_Toroidal_Model() {};
+Optically_Thin_Toroidal_Model::Optically_Thin_Toroidal_Model(double hotspot_radial_position, double hotspot_phi_angle){
+
+    HOTSPOT_R_COORD   = hotspot_radial_position;
+    HOTSPOT_PHI_COORD = hotspot_phi_angle;
+
+};
 
 double Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]) {
 
     double r = State_vector[e_r];
 
-    double T = T_ELECTRON_EXACT_CGS * (1 + sqrt(1 - SPIN * SPIN)) / r;
+    if (e_metric == Wormhole) {
 
-    if (e_metric != Kerr) {
-
-        r = sqrt(r * r + WH_R_THROAT * WH_R_THROAT);
-
-        T = T_ELECTRON_EXACT_CGS / r;
+        r = sqrt(State_vector[e_r] * State_vector[e_r] + WH_R_THROAT * WH_R_THROAT);
 
     }
+
+    double T = T_ELECTRON_EXACT_CGS * R_0 / r;
 
     return T;
 
 }
 
-int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], double State_Vector[], std::vector<c_Spacetime_Base*> Spacetimes) {
-
+int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], double State_Vector[], Spacetime_Base_Class* Spacetimes[]) {
 
     double r_source = State_Vector[e_r];
 
@@ -265,7 +280,6 @@ int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], dou
     }
 
     double& theta_source = State_Vector[e_theta];
-
     double metric_source[4][4], N_source, omega_source;
 
     Spacetimes[e_metric]->get_metric(metric_source, &N_source, &omega_source, r_source, theta_source);
@@ -278,13 +292,8 @@ int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], dou
 
     }
 
-    double ell = pow(sqrt(rho), 3) / (1 + rho);
-
-    if (e_metric == Naked_Singularity) {
-
-        ell *= pow(1 - JNW_R_SINGULARITY / r_source, 1 - JNW_GAMMA);
-
-    }
+    double sqrt_rho = sqrt(rho);
+    double ell      = sqrt_rho * sqrt_rho * sqrt_rho / (1 + rho);
 
     double u_t{}, u_phi{};
 
@@ -308,48 +317,79 @@ int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], dou
 
 }
 
-double Optically_Thin_Toroidal_Model::get_disk_density(double State_Vector[]) {
+double Optically_Thin_Toroidal_Model::get_disk_hotspot(double State_Vector[]) {
 
-    double& r = State_Vector[e_r];
+    double x_center = HOTSPOT_R_COORD * cos(HOTSPOT_PHI_COORD);
+    double y_center = HOTSPOT_R_COORD * sin(HOTSPOT_PHI_COORD);
+    double z_center = 0;
+
+    double r = State_Vector[e_r];
+
+    if (e_metric == Wormhole) {
+
+        r = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+
+    }
+
+    double x_photon = r * sin(State_Vector[e_theta]) * cos(State_Vector[e_phi]);
+    double y_photon = r * sin(State_Vector[e_theta]) * sin(State_Vector[e_phi]);
+    double z_photon = r * cos(State_Vector[e_theta]);
+
+    double hotspot_density  = exp(-(x_center - x_photon) * (x_center - x_photon) / HOTSPOT_SCALE / HOTSPOT_SCALE);
+           hotspot_density *= exp(-(y_center - y_photon) * (y_center - y_photon) / HOTSPOT_SCALE / HOTSPOT_SCALE);
+           hotspot_density *= exp(-(z_center - z_photon) * (z_center - z_photon) / HOTSPOT_SCALE / HOTSPOT_SCALE);
+           hotspot_density *= HOTSPOT_REL_SCALE;
+
+
+    return hotspot_density;
+
+}
+
+double Optically_Thin_Toroidal_Model::get_disk_density_profile(double State_Vector[]) {
+
+    double r  = State_Vector[e_r];
+
+    if (e_metric == Wormhole) {
+
+        r = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+
+    }
+
     double rho = sin(State_Vector[e_theta]);
-    double h = cos(State_Vector[e_theta]);
+    double h   = cos(State_Vector[e_theta]);
 
-    double Height_Cutoff{};
-    double Radial_Cutoff{};
+    double Height_Cutoff = h * h / (2 * (DISK_OPENING_ANGLE * rho) * (DISK_OPENING_ANGLE * rho));
+    double Radial_Cutoff = (r - Spacetimes[e_metric]->get_ISCO()[Inner]) * (r - Spacetimes[e_metric]->get_ISCO()[Inner]) / DISK_CUTOFF_SCALE / DISK_CUTOFF_SCALE;
 
     double electron_density{};
+    
+    switch (e_disk_model){
 
-    switch (e_emission){
+        case Power_law:
 
-        case Synchotron_exact:
+            electron_density = exp(-Height_Cutoff) / (r / R_0) / (r / R_0);
 
-            Height_Cutoff = h * h / (2 * (DISK_OPENING_ANGLE * rho) * (DISK_OPENING_ANGLE * rho));
-            Radial_Cutoff = (r - Spacetimes[e_metric]->get_ISCO(Prograde)) * (r - Spacetimes[e_metric]->get_ISCO(Prograde)) * DISK_CUTOFF_SCALE;
+  /*          if (r < Spacetimes[e_metric]->get_ISCO()[Inner]) {
 
-            electron_density = N_ELECTRON_EXACT_CGS * pow(r / (1. + sqrt(1 - SPIN * SPIN)), -2) * exp(-Height_Cutoff);
+                electron_density *= exp(-Radial_Cutoff);
 
-
-            //if (State_Vector[e_r] < Spacetimes[e_metric]->get_ISCO(Prograde)) {
-
-              //  electron_density *= exp(-Radial_Cutoff);
-
-            //}
+            }*/
 
             break;
 
-        case Synchotron_phenomenological:
+        case Exponential_law:
 
-            electron_density = exp(-((r / 10) * (r / 10) + DISK_HEIGHT_SCALE * DISK_HEIGHT_SCALE * h * h) / 2);
+            electron_density = exp(- r * r / DISK_RADIAL_SCALE / DISK_RADIAL_SCALE / 2 - h * h / DISK_HEIGHT_SCALE / DISK_HEIGHT_SCALE / 2);
 
             break;
 
         default:
 
-            std::cout << "Wrong emission model!" << '\n';
+            std::cout << "Wrong disk density model!" << '\n';
 
     }
 
-    return electron_density;
+    return electron_density + get_disk_hotspot(State_Vector);
 
 }
 
@@ -361,7 +401,7 @@ double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], doub
 
     */
 
-    double electron_density = get_disk_density(State_vector);
+    double electron_density = N_ELECTRON_EXACT_CGS * get_disk_density_profile(State_vector);
 
     double B_CGS = sqrt(DISK_MAGNETIZATION * C_LIGHT_CGS * C_LIGHT_CGS * electron_density * M_PROTON_CGS * 4 * M_PI);
 
@@ -373,7 +413,7 @@ double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], doub
 
 }
 
-double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vector[], double B_field_local[], std::vector<c_Spacetime_Base*> Spacetimes) {
+double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vector[], double B_field_local[], Spacetime_Base_Class* Spacetimes[]) {
 
     double U_source_coord[4];
     get_disk_velocity(U_source_coord, State_vector, Spacetimes);
@@ -426,16 +466,17 @@ double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vect
 
 }
 
-double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(double State_vector[], double J, Spacetime_Base_Class* Spacetimes[]) {
 
     /* Electron Density in CGS */
 
-    double electron_density = get_disk_density(State_vector);
+    double electron_density = N_ELECTRON_EXACT_CGS * get_disk_density_profile(State_vector);
 
     /* Dimentionless Electron Temperature */
 
     double T_electron     = get_disk_temperature(State_vector);
     double T_electron_dim = BOLTZMANN_CONST_CGS * T_electron / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
+    double divisor        = std::cyl_bessel_k(2.0, 1.0 / T_electron_dim);
 
     /* Magnetic Field */
 
@@ -447,38 +488,64 @@ double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(dou
     double U_source_coord[4]{};
     get_disk_velocity(U_source_coord, State_vector, Spacetimes);
 
-    /* Synchotron Frequency */
-
-    double f_cyclo         = Q_ELECTRON_CGS * B_CGS / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
-    double sin_pitch_angle = get_electron_pitch_angle(State_vector, B_field_local, Spacetimes);
-
-    double f_s = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim * sin_pitch_angle;
-
-    /* Dimentionless Redshifted Synchotron Frequency */
+    /* Redshit */
 
     double redshift = Redshift(J, State_vector, U_source_coord);
 
+    /* Cyclotron Frequency */
+
+    double f_cyclo = Q_ELECTRON_CGS * B_CGS / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+
+    /* Synchotron Frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
+
+    double f_s_no_sin = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim;
+
     double X = 1e100;
 
-    if (f_s != 0) {
+    if (f_s_no_sin != 0) {
 
-        X = OBS_FREQUENCY_CGS / f_s / redshift;
+        X = OBS_FREQUENCY_CGS / f_s_no_sin / redshift;
 
     }
 
-    /* Emission Function */
+    double X_1_2 = sqrt(X);
+    double X_1_3 = cbrt(X);
+    double X_1_6 = sqrt(X_1_3);
 
-    double X_term = (sqrt(X) + pow(2, 11.0 / 12) * pow(X, 1.0 / 6)) * (sqrt(X) + pow(2, 11.0 / 12) * pow(X, 1.0 / 6));
-    double constant_coeff = sqrt(2) * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 3 / C_LIGHT_CGS;
+    /* Average the Emission Function over all electron pitch angles */
 
-    return constant_coeff * electron_density * f_s * X_term * exp(-pow(X, 1.0 / 3)) / std::cyl_bessel_k(2.0, 1.0 / T_electron_dim);
+    double constant_coeff = M_SQRT2 * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 3 / C_LIGHT_CGS;
+    double emission_function{};
+
+    for (int averaging_idx = 0; averaging_idx <= NUM_SAMPLES_TO_AVG - 1; averaging_idx++) {
+
+        double sin_pitch_angle = sin_electron_pitch_angles[averaging_idx];
+
+        double X_1_2_angle_corrected = X_1_2 * one_over_sqrt_sin[averaging_idx];
+        double X_1_3_angle_corrected = X_1_3 * one_over_cbrt_sin[averaging_idx];
+        double X_1_6_angle_corrected = X_1_6 * one_over_sin_to_1_6[averaging_idx];
+
+        double X_term = X_1_2_angle_corrected + 1.887749 * X_1_6_angle_corrected; // The constant is = pow(2, 11.0 / 12.0)
+        X_term *= X_term;
+
+        if (divisor != 0.) {
+
+            emission_function += constant_coeff * electron_density * (f_s_no_sin * sin_pitch_angle) * X_term * exp(-X_1_3_angle_corrected) / divisor * sin_pitch_angle * M_PI / NUM_SAMPLES_TO_AVG;
+
+        }
+
+    }
+
+    /* Factor of 1 / 2 from the averaging */
+
+    return emission_function / 2;
 
 }
 
-double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, std::vector<c_Spacetime_Base*> Spacetimes) {
+double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, Spacetime_Base_Class* Spacetimes[]) {
 
 
-    double electron_density = get_disk_density(State_vector);
+    double electron_density = EMISSION_SCALE_PHENOMENOLOGICAL * get_disk_density_profile(State_vector);
 
     /* Disk Coordinate Velocity */
 
@@ -487,11 +554,13 @@ double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomeno
 
     double redshift = Redshift(J, State_vector, U_source_coord);
 
-    return EMISSION_SCALE_PHENOMENOLOGICAL * electron_density * pow(redshift, EMISSION_POWER_LAW);
+    return electron_density * pow(redshift, EMISSION_POWER_LAW);
 
 }
 
 double Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Function, double State_vector[], double redshift, double Frequency, double Temperature) {
+
+    double absorbtion_function{};
 
     switch (e_emission) {
 
@@ -501,7 +570,7 @@ double Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Fu
 
     case Synchotron_phenomenological:
 
-        return DISK_ABSORBTION_COEFF * EMISSION_SCALE_PHENOMENOLOGICAL * get_disk_density(State_vector) * pow(redshift, (SOURCE_F_POWER_LAW + EMISSION_POWER_LAW));
+        return DISK_ABSORBTION_COEFF * EMISSION_SCALE_PHENOMENOLOGICAL * get_disk_density_profile(State_vector) * pow(redshift, (SOURCE_F_POWER_LAW + EMISSION_POWER_LAW));
 
     default:
 
@@ -510,7 +579,6 @@ double Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Fu
         return -1; 
 
     }
-
 }
 
 double get_planck_function_CGS(double Frequency, double Temperature) {

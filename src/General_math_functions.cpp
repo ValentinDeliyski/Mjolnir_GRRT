@@ -2,7 +2,7 @@
 
 #include "Disk_Models.h"
 #include "Enumerations.h"
-
+#include "inputs.h"
 #include <cmath>
 
 extern Novikov_Thorne_Model NT_Model;
@@ -14,7 +14,7 @@ double vector_norm(double Vector[], int Vector_size) {
 	|   @ Description: Computes the Euclidian norm of the vector Vector   |
 	|                                                                     |
 	|   @ Inputs:                                                         |
-		  * Vector: Pointer to the vector, whose norm we will find		  |
+	|	  * Vector: Pointer to the vector, whose norm we will find		  |
 	|	  * Vector_size: The dimention of the vector					  |
 	|																	  |
 	|   @ Ouput: Euclidian norm of the vector							  |
@@ -65,7 +65,7 @@ int mat_vec_multiply_4D(double Matrix[4][4], double Vector[4], double result[4])
 
 };
 
-double my_max(double vector[]) {
+double my_max(double vector[], int element_number) {
 
 	/*****************************************************************************
 	|                                                                            |
@@ -78,7 +78,7 @@ double my_max(double vector[]) {
 	|                                                                            |
 	*****************************************************************************/
 
-	int index_max = e_State_Number - 1;
+	int index_max = element_number - 1;
 
 	for (int index = 0; index <= index_max; index += 1) {
 
@@ -175,8 +175,13 @@ bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], doub
 	double r_out = NT_Model.get_r_out();
 	double r_in  = NT_Model.get_r_in();
 
-	return r_crossing_squared < r_out * r_out && r_crossing_squared > r_in * r_in;
+	if (e_metric == Wormhole) {
 
+		return r_crossing_squared < r_out* r_out - WH_R_THROAT * WH_R_THROAT && r_crossing_squared > r_in * r_in - WH_R_THROAT * WH_R_THROAT;
+
+	}
+	
+	return r_crossing_squared < r_out * r_out && r_crossing_squared > r_in * r_in;
 }
 
 double dot_product(double vector_1[3], double vector_2[3]) {

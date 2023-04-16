@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    @ Version: 3.5.3                                                                               |
+|    @ Version: 3.8.1                                                                               |
 |    @ Author: Valentin Deliyski                                                                    |
 |    @ Description: This program numeriaclly integrates the equations of motion                     |
 |    for null geodesics and radiative transfer in a curved spacetime,then projects                  |
@@ -13,6 +13,8 @@
 |      * Static Regular Black Holes                                                                 |
 |      * Rotating Traversable Wormholes                                                             |
 |      * Janis - Newman - Winicour Naked Singularities                                              |
+|      * Gauss - Bonnet Black Holes / Naked Singularities                                           |
+|      * Black Holes with a Dark Matter Halo                                                        |
 |                                                                                                   |
 |    @ Supported Disk Models                                                                        |
 |      * Novikov-Thorne                                                                             |
@@ -22,16 +24,10 @@
 
 #define _USE_MATH_DEFINES
 
-#include <string>
-#include <iostream>
-#include <iomanip> 
-#include <fstream>
-#include <cmath>
-#include <string>
 #include <vector>
 
-#include "Spacetimes.h"
 #include "Constants.h"
+#include "Spacetimes.h"
 #include "Enumerations.h"
 #include "IO_files.h"
 
@@ -41,8 +37,7 @@
 
 #include "Rendering_Engine.h"
 
-Spacetime_enums e_metric = Naked_Singularity;
-Emission_model_enums e_emission = Synchotron_phenomenological;
+#include "Sim_Modes.h"
 
 /* 
 
@@ -50,12 +45,23 @@ Define classes that holds the spacetime properites
 
 */
 
-std::vector<c_Spacetime_Base*> Spacetimes = {
 
-    new derived_Kerr_class(),
-    new derived_RBH_class(),
-    new derived_Wormhole_class(),
-    new derived_JNW_class()
+Kerr_class Kerr_class_instance = Kerr_class();
+Wormhole_class Wormhole_class_instance = Wormhole_class();
+RBH_class RHB_class_instance = RBH_class();
+JNW_class JNW_class_intance = JNW_class();
+Gauss_Bonnet_class Gauss_Bonet_class_instance = Gauss_Bonnet_class();
+Black_Hole_w_Dark_Matter_Halo_class BH_w_DM_class_instace = Black_Hole_w_Dark_Matter_Halo_class();
+
+Spacetime_Base_Class* Spacetimes[] = {
+
+    &Kerr_class_instance,
+    &Wormhole_class_instance,
+    &RHB_class_instance,
+    &JNW_class_intance,
+    &Gauss_Bonet_class_instance,
+    &BH_w_DM_class_instace
+
 };
 
 /*
@@ -63,10 +69,6 @@ std::vector<c_Spacetime_Base*> Spacetimes = {
 Define the Observer class
 
 */
-
-extern Real r_obs = 1e4;
-extern Real theta_obs = 20. / 180 * M_PI;
-Real phi_obs = 0;
 
 c_Observer Observer_class(r_obs, theta_obs, phi_obs);
 
@@ -76,7 +78,7 @@ Define the Optically Thin Disk Class
 
 */
 
-Optically_Thin_Toroidal_Model OTT_Model;
+Optically_Thin_Toroidal_Model OTT_Model(HOTSPOT_R_COORD, 0);
 
 /*
 
@@ -84,19 +86,7 @@ Define the Novikov-Thorne Disk Class
 
 */
 
-Real r_in = 3;
-Real r_out = 1500;
-
 Novikov_Thorne_Model NT_Model(r_in, r_out);
-
-/*
-
-Define some global boolians
-
-*/
-
-extern Const_bool lens_from_file = true;
-extern Const_bool truncate = true;
 
 /*
 
@@ -105,9 +95,45 @@ Rendering Engine variables
 */
 
 float Max_Intensity{};
-int texture_indexer{};
-bool Normalizing_colormap{};
 float texture_buffer[TEXTURE_BUFFER_SIZE * 3]{};
+
+/*
+
+Initialize the file manager
+
+*/
+
+File_manager_class File_manager(input_file_path, Truncate_files);
+
+/*
+
+Precomputed variables definitions
+
+*/
+
+double sin_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
+double one_over_sqrt_sin[NUM_SAMPLES_TO_AVG];
+double one_over_cbrt_sin[NUM_SAMPLES_TO_AVG];
+double one_over_sin_to_1_6[NUM_SAMPLES_TO_AVG];
+
+void precompute_electron_pitch_angles() {
+
+    for (int index = 0; index <= NUM_SAMPLES_TO_AVG - 1; index++) {
+
+        double pitch_angle = double(index) / NUM_SAMPLES_TO_AVG * M_PI;
+        sin_electron_pitch_angles[index] = sin(pitch_angle);
+
+        if (sin_electron_pitch_angles[index] != 0) {
+
+            one_over_sqrt_sin[index]   = 1. / sqrt(sin_electron_pitch_angles[index]);
+            one_over_cbrt_sin[index]   = 1. / cbrt(sin_electron_pitch_angles[index]);
+            one_over_sin_to_1_6[index] = 1. / sqrt(one_over_cbrt_sin[index]);
+
+        }
+
+    }
+
+}
 
 void print_ASCII_art() {
 
@@ -125,88 +151,13 @@ void print_ASCII_art() {
 
 }
 
-void print_progress(int current, int max, bool lens_from_file, bool Normalizing_colormap) {
+int main() {
 
-    int current_digits = 1;
-
-    if (current != 0) {
-
-        current_digits = floor(log10f(current) + 1);
-
-    }
-
-    int max_digits = floor(log10f(max) + 1);
-
-    if (current == 0) {
-
-        if (lens_from_file) {
-
-            std::cout << "Number Of Rays Cast: ";
-
-        }
-        else if(!Normalizing_colormap){
-
-            std::cout << "Number Of Lines Scanned: ";
-
-        }
-        else {
-
-            std::cout << "Progress: ";
-
-        }
-
-        for (int i = 0; i <= max_digits + current_digits; i += 1) {
-
-            std::cout << "0";
-
-        }
-
-    }
-
-    for (int i = 0; i <= max_digits + current_digits + 1; i += 1) {
-
-        std::cout << "\b";
-
-    }
-
-    std::cout << current + 1 << "/" << max + 1 << " ";
-
-}
-
-/*
-
-Setup a viewing window for the observer
-
-*/
-
-double V_angle_min = -atan(30 / r_obs);
-double V_angle_max = atan(30 / r_obs);
-
-double H_angle_min = -atan(30 / r_obs);
-double H_angle_max = atan(30 / r_obs);
-
-void main() {
-    
-    auto start_time = std::chrono::high_resolution_clock::now();
-
-    double Scan_Step = (H_angle_max - H_angle_min) / (RESOLUTION - 1);
-
-    GLFWwindow* window = OpenGL_init(H_angle_max / V_angle_max);
-    glfwSetKeyCallback(window, Window_Callbacks::define_button_callbacks);
+    precompute_electron_pitch_angles();
 
     /*
-    
-    Create/Open the logging files
 
-    */
-
-    std::ofstream data[4], momentum_data[4];
-
-        open_output_files(data, momentum_data);
-  
-    /*
-    
-    Get the metric at the observer to feed into the initial conditions functions
+    Get the metric at the observer to feed into the initial conditions struct
 
     */
 
@@ -217,118 +168,49 @@ void main() {
 
     double metric[4][4]{}, N_obs, omega_obs;
 
-        Spacetimes[e_metric]->get_metric(s_Initial_Conditions.init_metric, &N_obs, &omega_obs, r_obs, theta_obs);
-    
-        s_Initial_Conditions.init_metric_Redshift_func = N_obs;
-        s_Initial_Conditions.init_metric_Shitft_func   = omega_obs;
+    Spacetimes[e_metric]->get_metric(s_Initial_Conditions.init_metric, &N_obs, &omega_obs, r_obs, theta_obs);
+
+    s_Initial_Conditions.init_metric_Redshift_func = N_obs;
+    s_Initial_Conditions.init_metric_Shitft_func   = omega_obs;
 
     print_ASCII_art();
 
     std::cout << "Observer Radial Position [GM/c^2] = " << r_obs << '\n';
     std::cout << "Observer Inclination [deg]        = " << int(theta_obs / M_PI * 180) << '\n';
 
-    if (lens_from_file) {
+    switch (Active_Sim_Mode) {
 
-        /*
-        
-        Read the initial conditions from file
+        case 1:
 
-        */
+            run_simulation_mode_1(&s_Initial_Conditions);
 
-        double J_data[500]{}, p_theta_data[500]{};
-        int Data_number = 0;
+            break;
 
-        get_geodesic_data(J_data, p_theta_data, &Data_number);
+        case 2:
 
-        for (int photon = 0; photon <= Data_number; photon += 1) {
+            run_simulation_mode_2(&s_Initial_Conditions);
 
-            /*
+            break;
 
-            This function polulates the initial momentum inside the s_Initial_Conditions struct
+        case 3:
 
-            */
+            run_simulation_mode_3(&s_Initial_Conditions);
 
-            Spacetimes[e_metric]->get_initial_conditions_from_file(&s_Initial_Conditions, J_data, p_theta_data, photon);
+            break;
 
-            Lens(&s_Initial_Conditions, data, momentum_data);
-    
-            print_progress(photon, Data_number, lens_from_file, Normalizing_colormap);
-        }
+        case 4:
 
-        std::cout << '\n';
-    }
-    else{
+            run_simulation_mode_4(&s_Initial_Conditions);
 
-        /*
-        
-        Do one scan line in the middle of the image to find the maximum intensity for use in the colormap
-        
-        */
-        
-        Normalizing_colormap = true;
+            break;
 
-        std::cout << "Initial y = 0 scan to normalize the colormap..." << '\n';
-  
-        for (int pixel_num = 0; pixel_num <= RESOLUTION - 1; pixel_num++) {
+        default:
 
-            get_intitial_conditions_from_angles(&s_Initial_Conditions, 0, H_angle_max - pixel_num * Scan_Step);
+            std::cout << "Unsuported simulation mode!";
 
-            Lens(&s_Initial_Conditions, data, momentum_data);
-
-            print_progress(pixel_num, RESOLUTION - 1, lens_from_file, Normalizing_colormap);
-
-        }
-
-        Normalizing_colormap = false;
-
-        /*
-        
-        Loop trough the viewing window
-
-        */
-   
-        int progress = 0;
-
-        std::cout << '\n' << "Simulation starts..." << '\n';
-
-        for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
-
-            update_rendering_window(window, V_angle_max / H_angle_max);
-            print_progress(progress, RESOLUTION - 1, lens_from_file, Normalizing_colormap);
-
-            progress += 1;
-
-            for (int H_pixel_num = 0; H_pixel_num <= RESOLUTION - 1; H_pixel_num++) {
-
-                /*
-                
-                This function polulates the initial momentum inside the s_Initial_Conditions struct
-                
-                */
-
-                get_intitial_conditions_from_angles(&s_Initial_Conditions, V_angle_min + V_pixel_num * Scan_Step,
-                                                                           H_angle_max - H_pixel_num * Scan_Step);
-
-                Lens(&s_Initial_Conditions, data, momentum_data);
-
-            }
-
-        }
-    
-    }            
-
-    auto end_time = std::chrono::high_resolution_clock::now();
-
-    close_output_files(data, momentum_data);
-
-    std::cout << '\n' << "Simulation finished!" << '\n';
-
-    std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
-
-    while (!glfwWindowShouldClose(window)) {
-
-        update_rendering_window(window, V_angle_max / H_angle_max);
+            return ERROR;
 
     }
 
+    return OK;
 }

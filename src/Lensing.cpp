@@ -14,16 +14,25 @@
 #include "Lensing.h"
 #include <iostream>
 
-extern Spacetime_enums e_metric;
-extern std::vector<c_Spacetime_Base*> Spacetimes;
+extern Spacetime_Base_Class* Spacetimes[];
 extern c_Observer Observer_class;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 extern Novikov_Thorne_Model NT_Model;
-extern int texture_indexer;
-extern float Max_Intensity;
-extern bool Normalizing_colormap;
+extern File_manager_class File_manager;
 
-void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], std::ofstream momentum_data[]) {
+void log_ray(double State_Vector[], std::vector<double> *State_log, Results_type *s_Ray_Results) {
+
+    for (int index = e_r; index <= e_State_Number - 1; index++) {
+
+        State_log->at(index) = State_Vector[index];
+
+    }
+
+    s_Ray_Results->Ray_log.push_back(*State_log);
+
+}
+
+Results_type Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
     /*************************************************************************************************
     |                                                                                                |
@@ -59,9 +68,15 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
     s_Ray_results.Parameters[Wormhole]          = WH_REDSHIFT;
     s_Ray_results.Parameters[Reg_Black_Hole]    = RBH_PARAM;
     s_Ray_results.Parameters[Naked_Singularity] = JNW_GAMMA;
+    s_Ray_results.Parameters[Gauss_Bonnet]      = GAUSS_BONNET_GAMMA;
+    s_Ray_results.Parameters[BH_w_Dark_Matter]  = M_HALO / A_0;
 
-    // Initialize initial State Vector
-    double State_vector[e_State_Number] = { r_obs, theta_obs, phi_obs, 0., p_theta_0, p_r_0, 0., 0. };
+    // Initialize the State Vector
+    double State_vector[] = {r_obs, theta_obs, phi_obs, 0., p_theta_0, p_r_0, 0., 0.};
+
+    std::vector<double> State_log(e_State_Number, 0);
+
+    log_ray(State_vector, &State_log, &s_Ray_results);
 
     // Initialize a vector that stores the old state
     double Old_state[e_State_Number]{};
@@ -77,7 +92,7 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
     }
 
     // Initialize counters for the Number Of Integration Steps, the Image Order and the Number Of Equator Crossings
-    int integration_count{}, Image_Order[DISK_MODEL_NUM]{};
+    int integration_count{}, Image_Order[DISK_MODEL_NUM]{}, N_theta_turning_points{};
 
     // Calculate the image coordinates from the initial conditions
     get_impact_parameters(s_Initial_Conditions, s_Ray_results.Image_Coords);
@@ -95,15 +110,22 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
 
             double crossing_coords[3]{}, crossing_momenta[3]{};
 
+            N_theta_turning_points += Increment_theta_turning_points(State_vector, Old_state);
+
             if (interpolate_crossing(State_vector, Old_state, crossing_coords, crossing_momenta)) {
 
-                Image_Order[Novikov_Thorne] = compute_order_no_spin(State_vector);
+                Image_Order[Novikov_Thorne] = compute_image_order(N_theta_turning_points, s_Initial_Conditions);
 
                 double r_crossing = sqrt(crossing_coords[x] * crossing_coords[x] + crossing_coords[y] * crossing_coords[y]);
                 double state_crossing[2] = { r_crossing, M_PI_2 };
 
-                s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]]             = NT_Model.Redshift(J, state_crossing, r_obs, theta_obs, Spacetimes);
-                s_Ray_results.Flux_NT[Image_Order[Novikov_Thorne]] = 0;
+                s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]] = NT_Model.Redshift(J, state_crossing, r_obs, theta_obs, Spacetimes);
+                
+                if (s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]] != 0) {
+
+                    s_Ray_results.Flux_NT[Image_Order[Novikov_Thorne]] = 0;
+
+                }
 
                 s_Ray_results.Source_Coords[e_r][Image_Order[Novikov_Thorne]]      = r_crossing;
                 s_Ray_results.Source_Coords[e_phi][Image_Order[Novikov_Thorne]]    = State_vector[e_phi];
@@ -111,20 +133,39 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
                 s_Ray_results.Three_Momentum[e_r][Image_Order[Novikov_Thorne]]     = crossing_momenta[e_r];
                 s_Ray_results.Three_Momentum[e_theta][Image_Order[Novikov_Thorne]] = crossing_momenta[e_theta];
 
-
             }
 
-            if (compute_order_no_spin(State_vector) != Image_Order[Optically_Thin_Toroidal]) {
+            if (compute_image_order(N_theta_turning_points, s_Initial_Conditions) != Image_Order[Optically_Thin_Toroidal]) {
 
-                s_Ray_results.Intensity[Image_Order[Optically_Thin_Toroidal]] = State_vector[e_Intensity];
-
-                Image_Order[Optically_Thin_Toroidal] = compute_order_no_spin(State_vector);
+                s_Ray_results.Intensity[Image_Order[Optically_Thin_Toroidal]] = Old_state[e_Intensity]; 
                 
                 for (int order_scan = Image_Order[Optically_Thin_Toroidal] - 1; order_scan >= 0; order_scan -= 1) {
 
                     s_Ray_results.Intensity[Image_Order[Optically_Thin_Toroidal]] -= s_Ray_results.Intensity[order_scan];
 
-                }        
+                }      
+
+                Image_Order[Optically_Thin_Toroidal] = compute_image_order(N_theta_turning_points, s_Initial_Conditions);
+
+            }
+
+            // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
+            // Close enough that it requires "manual" scattering, by flipping the p_r sign.
+            // Otherwise the photons never reach the turning point and the integration grinds to a halt.
+
+            if (e_metric == Naked_Singularity) {
+
+                if (State_vector[e_r] - JNW_R_SINGULARITY < 5e-8) {
+
+                    State_vector[e_p_r] *= -1;
+
+                }
+
+            }
+
+            if (Active_Sim_Mode == 4) {
+
+                log_ray(State_vector, &State_log, &s_Ray_results);
 
             }
 
@@ -133,9 +174,9 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
             if (Spacetimes[e_metric]->terminate_integration(State_vector, Derivatives) ||
                 integration_count >= MAX_INTEGRATION_COUNT) {    
 
-                s_Ray_results.Intensity[compute_order_no_spin(State_vector)] = State_vector[e_Intensity];
+                Image_Order[Optically_Thin_Toroidal] = compute_image_order(N_theta_turning_points, s_Initial_Conditions);
 
-                Image_Order[Optically_Thin_Toroidal] = compute_order_no_spin(State_vector);
+                s_Ray_results.Intensity[Image_Order[Optically_Thin_Toroidal]] = State_vector[e_Intensity];
 
                 for (int order_scan = Image_Order[Optically_Thin_Toroidal] - 1; order_scan >= 0; order_scan -= 1) {
 
@@ -144,21 +185,6 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
                 }
 
                 s_Ray_results.Optical_Depth = State_vector[e_Optical_Depth];
-
-                if (!Normalizing_colormap) {
-
-                    set_pixel_color(State_vector[e_Intensity], texture_indexer);
-
-                    write_to_file(s_Ray_results, data, momentum_data);
-                    
-                    texture_indexer += 3;
-
-                }
-                else if(State_vector[e_Intensity] > Max_Intensity) {
-
-                    Max_Intensity = State_vector[e_Intensity];
-
-                }
 
                 if (integration_count >= MAX_INTEGRATION_COUNT) {
 
@@ -184,5 +210,6 @@ void Lens(Initial_conditions_type* s_Initial_Conditions, std::ofstream data[], s
 
     }
 
-}
+    return s_Ray_results;
 
+}

@@ -35,4 +35,8 @@
 
     int compute_order_no_spin(double State_Vector[]);
 
+    int Increment_theta_turning_points(double State_Vector[], double Old_State[]);
+
+    int compute_image_order(int N_theta_turning_points, Initial_conditions_type* p_Initial_Conditions);
+
 #endif 

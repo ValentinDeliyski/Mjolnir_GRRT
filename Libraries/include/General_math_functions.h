@@ -8,7 +8,7 @@
 
 	double vector_norm(double Vector[], int Vector_size);
 
-	double my_max(double vector[]);
+	double my_max(double vector[], int element_number);
 
 	bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[], double crossing_momenta[]);
 
