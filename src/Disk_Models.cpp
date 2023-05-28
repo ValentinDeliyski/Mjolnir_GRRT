@@ -265,6 +265,28 @@ double Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]
 
     double T = T_ELECTRON_EXACT_CGS * R_0 / r;
 
+    double Radial_Cutoff{};
+
+    if (R_Cutoff == NULL) {
+
+        Radial_Cutoff = (r - Spacetimes[e_metric]->get_ISCO()[Inner]) * (r - Spacetimes[e_metric]->get_ISCO()[Inner]) / DISK_CUTOFF_SCALE / DISK_CUTOFF_SCALE;
+
+    }
+    else {
+
+        Radial_Cutoff = (r - R_Cutoff) * (r - R_Cutoff) / DISK_CUTOFF_SCALE / DISK_CUTOFF_SCALE;
+
+    }
+
+    if (r < (Spacetimes[e_metric]->get_ISCO()[Inner] * bool(R_Cutoff == NULL) +
+             Spacetimes[e_metric]->get_ISCO()[Outer] * bool(R_Cutoff < 0) +
+                                            R_Cutoff * bool(R_Cutoff != NULL)))
+    {
+
+        T *= exp(-Radial_Cutoff);
+
+    }
+
     return T;
 
 }
@@ -280,7 +302,7 @@ int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], dou
     }
 
     double& theta_source = State_Vector[e_theta];
-    double metric_source[4][4], N_source, omega_source;
+    double metric_source[4][4]{}, N_source{}, omega_source{};
 
     Spacetimes[e_metric]->get_metric(metric_source, &N_source, &omega_source, r_source, theta_source);
 
@@ -294,6 +316,12 @@ int Optically_Thin_Toroidal_Model::get_disk_velocity(double Disk_velocity[], dou
 
     double sqrt_rho = sqrt(rho);
     double ell      = sqrt_rho * sqrt_rho * sqrt_rho / (1 + rho);
+
+    if (e_metric == Naked_Singularity) {
+
+        ell *= pow(1 - JNW_R_SINGULARITY / r_source, JNW_GAMMA);
+
+    }
 
     double u_t{}, u_phi{};
 
@@ -359,7 +387,19 @@ double Optically_Thin_Toroidal_Model::get_disk_density_profile(double State_Vect
     double h   = cos(State_Vector[e_theta]);
 
     double Height_Cutoff = h * h / (2 * (DISK_OPENING_ANGLE * rho) * (DISK_OPENING_ANGLE * rho));
-    double Radial_Cutoff = (r - Spacetimes[e_metric]->get_ISCO()[Inner]) * (r - Spacetimes[e_metric]->get_ISCO()[Inner]) / DISK_CUTOFF_SCALE / DISK_CUTOFF_SCALE;
+
+    double Radial_Cutoff{};
+
+    if (R_Cutoff == NULL) {
+
+        Radial_Cutoff = (r - Spacetimes[e_metric]->get_ISCO()[Inner]) * (r - Spacetimes[e_metric]->get_ISCO()[Inner]) / DISK_CUTOFF_SCALE / DISK_CUTOFF_SCALE;
+
+    }
+    else {
+
+        Radial_Cutoff = (r - R_Cutoff) * (r - R_Cutoff) / DISK_CUTOFF_SCALE / DISK_CUTOFF_SCALE;
+
+    }
 
     double electron_density{};
     
@@ -367,13 +407,16 @@ double Optically_Thin_Toroidal_Model::get_disk_density_profile(double State_Vect
 
         case Power_law:
 
-            electron_density = exp(-Height_Cutoff) / (r / R_0) / (r / R_0);
+           electron_density = exp(-Height_Cutoff) / (r / R_0) / (r / R_0);
 
-  /*          if (r < Spacetimes[e_metric]->get_ISCO()[Inner]) {
+           if (r < (Spacetimes[e_metric]->get_ISCO()[Inner] * bool(R_Cutoff == NULL) + 
+                    Spacetimes[e_metric]->get_ISCO()[Outer] * bool(R_Cutoff < 0) +
+                    R_Cutoff * bool(R_Cutoff != NULL))) 
+           {
 
                 electron_density *= exp(-Radial_Cutoff);
 
-            }*/
+           }
 
             break;
 
@@ -389,7 +432,16 @@ double Optically_Thin_Toroidal_Model::get_disk_density_profile(double State_Vect
 
     }
 
-    return electron_density + get_disk_hotspot(State_Vector);
+    if (HOTSPOT_REL_SCALE != 0.0f) {
+
+        return electron_density + get_disk_hotspot(State_Vector);
+
+    }
+    else {
+
+        return electron_density;
+
+    }
 
 }
 
@@ -561,12 +613,24 @@ double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomeno
 double Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Function, double State_vector[], double redshift, double Frequency, double Temperature) {
 
     double absorbtion_function{};
+    double Planck_function_CGS{};
 
     switch (e_emission) {
 
     case Synchotron_exact: 
 
-        return Emission_Function / get_planck_function_CGS(Frequency, Temperature);
+        Planck_function_CGS = get_planck_function_CGS(Frequency, Temperature);
+
+        if (Planck_function_CGS != 0.) {
+
+            return Emission_Function / get_planck_function_CGS(Frequency, Temperature);;
+
+        }
+        else {
+
+            return 0;
+
+        }
 
     case Synchotron_phenomenological:
 

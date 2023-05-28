@@ -64,14 +64,14 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
     case Synchotron_exact:
 
         Emission_function = OTT_Model.get_emission_fucntion_synchotron_exact(temp_State_Vector, J, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(temp_State_Vector));
 
         break;
 
     case Synchotron_phenomenological:
 
         Emission_function = OTT_Model.get_emission_fucntion_synchotron_phenomenological(temp_State_Vector, J, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(temp_State_Vector));
     
         break;
 
@@ -181,9 +181,9 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
     //}
 
-    if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2.5) {
+    if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2.2) {
 
-        controller->step /= 4;
+        controller->step /= 3;
 
     }
 
@@ -221,7 +221,7 @@ Step_controller::Step_controller(double init_stepsize) {
 
 void Step_controller::update_step() {
 
-    if (current_err < RK45_ACCURACY)
+    if (current_err < RK45_ACCURACY )
     {
         step = pow(RK45_ACCURACY / (current_err  + SAFETY_2), Gain_I) *
                pow(RK45_ACCURACY / (prev_err     + SAFETY_2), Gain_P) *

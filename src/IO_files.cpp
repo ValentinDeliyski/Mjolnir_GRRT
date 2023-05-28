@@ -54,7 +54,8 @@ void File_manager_class::write_simulation_metadata() {
                                         << Image_order
                                         << "\n"
                                         << "Observer Radial Position [M]: " << r_obs << '\n'
-                                        << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI
+                                        << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI << '\n'
+                                        << "Observation Frequency [Hz]: " << OBS_FREQUENCY_SI
                                         << '\n'
                                         << "------------------------------------------------------- Optically Thin Disk Metadata -------------------------------------------------------"
                                         << "\n"
@@ -69,9 +70,28 @@ void File_manager_class::write_simulation_metadata() {
                                             << "Disk Opening Angle [tan(angle)]: "
                                             << DISK_OPENING_ANGLE
                                             << "\n"
-                                            << "R_0[M]: "
+                                            << "R_0 [M]: "
                                             << R_0
-                                            << "\n";
+                                            << "\n"
+                                            << "R_Cutoff [M]: ";
+
+            if (R_Cutoff < 0) {
+
+                Image_Output_files[Image_order] << Spacetimes[e_metric]->get_ISCO()[Outer] << "\n";
+
+            }
+            else if (R_Cutoff == NULL) {
+
+                Image_Output_files[Image_order] << Spacetimes[e_metric]->get_ISCO()[Inner] << "\n";
+
+            }
+            else {
+
+                Image_Output_files[Image_order] << R_Cutoff << "\n";
+
+            }
+                     
+            Image_Output_files[Image_order] << "Cutoff Scale [M]: " << DISK_CUTOFF_SCALE << "\n";
 
             break;
 

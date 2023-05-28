@@ -52,7 +52,7 @@ GLFWwindow* OpenGL_init(double aspect_ratio) {
     Vertex_array.Linkattrib(Vertex_buffer, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     // Generates a Shader object using the shaders defualt.vert and default.frag
-    Shader shaderProgram(".\\Libraries\\shaders\\default.vert", ".\\Libraries\\shaders\\default.frag");
+    Shader shaderProgram(vert_shader_path, frag_shader_path);
     shaderProgram.Activate();
 
     // Generates a float (with an int ID), that scales the output image

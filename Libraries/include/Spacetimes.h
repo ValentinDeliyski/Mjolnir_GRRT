@@ -223,10 +223,6 @@
 
     class Gauss_Bonnet_class : public Spacetime_Base_Class {
 
-    private:
-
-        double r_ISCO[2];
-
     public:
 
         double* get_ISCO() ;

@@ -412,7 +412,7 @@ if __name__ == "__main__":
 
     JNW_PARAM = 0.48  # [ - ]
 
-    GAUSS_BONET_PARAM = 1.15 # [ - ]
+    GAUSS_BONET_PARAM = 1.6 # [ - ]
 
     #------      Metrics      -------#
 
@@ -420,15 +420,15 @@ if __name__ == "__main__":
     WH  = Wormhole(r_throat = WH_THROAT, parameter = WH_ALPHA)
     RBH = Regular_Black_Hole(parameter = RBH_PARAM)
     JNW = JNW_Naked_Singularity(parameter = JNW_PARAM)
-    GBNS = Gaus_Bonet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
+    GBNS = Gaus_Bonnet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
 
     Spacetime_dict ={"Schwarzshild":       SCH, 
                      "Wormhole":            WH,
                      "Regular Black Hole": RBH,
                      "Naked Singularity":  JNW,
-                     "Gauss - Bonet"    : GBNS}
+                     "Gauss - Bonnet"    : GBNS}
 
-    Active_spacetime = "Gauss - Bonet"
+    Active_spacetime = "Schwarzshild"
 
     #----- Observer / Source  -------#
 
@@ -436,7 +436,7 @@ if __name__ == "__main__":
     inclination_obs = 80 * DEG_TO_RAD   # [ rad ]
 
     ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
-                                       Granularity = 500 , 
+                                       Granularity = 5000 , 
                                        r_source = 6, 
                                        r_obs = r_obs, 
                                        inclination = inclination_obs, 

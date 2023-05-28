@@ -4,123 +4,84 @@ from matplotlib import pyplot as plt
 from Support_functions.Parsers import*
 from Support_functions.Shadows import*
 
-SIM_CASE = str(7)
+Units        = Units_class()
+Sim_Parser_0 = Simulation_Parser("..\\Sim_results\\Kerr_n0")
+Sim_Parser_1 = Simulation_Parser("..\\Sim_results\\Kerr_n1")
+Sim_Parser_2 = Simulation_Parser("..\\Sim_results\\Kerr_n2")
+Sim_Parser_3 = Simulation_Parser("..\\Sim_results\\Kerr_n3")
 
-Sim_Parser_0 = Simulation_Parser("Gauss_Bonnet_n0_alpha_0.3")
-Sim_Parser_1 = Simulation_Parser("Gauss_Bonnet_n1_alpha_0.3")
-Sim_Parser_2 = Simulation_Parser("Gauss_Bonnet_n2_alpha_0.3")
-Sim_Parser_3 = Simulation_Parser("Gauss_Bonnet_n3_alpha_0.3")
+Obs_effective_distance = Units.M87_DISTANCE_GEOMETRICAL
+
 Intensity_0, NT_Flux_0, NT_Redshift_0, NT_Flux_Shifted_0, Metadata_0 = Sim_Parser_0.get_plottable_sim_data()
 Intensity_1, NT_Flux_1, NT_Redshift_1, NT_Flux_Shifted_1, Metadata_1 = Sim_Parser_1.get_plottable_sim_data()
 Intensity_2, NT_Flux_2, NT_Redshift_2, NT_Flux_Shifted_2, Metadata_2 = Sim_Parser_2.get_plottable_sim_data()
 Intensity_3, NT_Flux_3, NT_Redshift_3, NT_Flux_Shifted_3, Metadata_3 = Sim_Parser_3.get_plottable_sim_data()
 
-# Sim_Parser.export_ehtim_data(Intensity)
-axes_limits = np.array([(limit) for limit in Metadata_0[2]])
+#=============== PLot the Simulated Image ===============#
 
 Main_Figure = plt.figure()
-Subplot = Main_Figure.add_subplot(121)
 
+# Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation OBS_DISTANCE, and converto to micro AS 
+axes_limits = np.array([(limit) for limit in Metadata_0[2]]) * Sim_Parser_0.OBS_DISTANCE / Obs_effective_distance * Units.RAD_TO_MICRO_AS
+
+Subplot      = Main_Figure.add_subplot(121)
 Data_to_plot = Intensity_0 + Intensity_1 + Intensity_2 + Intensity_3
-# print(np.max(np.array(Intensity_0 + Intensity_2 + Intensity_1 + Intensity_3).flatten()))
-Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits, vmin = -0, vmax = 8.03811e+16)
-Subplot.set_xlabel(r'$\alpha_{rel}$ [rad]')
-Subplot.set_ylabel(r'$\delta_{rel}$ [rad]')
+Image_norm   = max(Data_to_plot.flatten())
 
-Sim_Parser_0 = Simulation_Parser("Gauss_Bonnet_n0")
-Sim_Parser_1 = Simulation_Parser("Gauss_Bonnet_n1")
-Sim_Parser_2 = Simulation_Parser("Gauss_Bonnet_n2")
-Sim_Parser_3 = Simulation_Parser("Gauss_Bonnet_n3")
-Intensity_0, NT_Flux_0, NT_Redshift_0, NT_Flux_Shifted_0, Metadata_0 = Sim_Parser_0.get_plottable_sim_data()
-Intensity_1, NT_Flux_1, NT_Redshift_1, NT_Flux_Shifted_1, Metadata_1 = Sim_Parser_1.get_plottable_sim_data()
-Intensity_2, NT_Flux_2, NT_Redshift_2, NT_Flux_Shifted_2, Metadata_2 = Sim_Parser_2.get_plottable_sim_data()
-Intensity_3, NT_Flux_3, NT_Redshift_3, NT_Flux_Shifted_3, Metadata_3 = Sim_Parser_3.get_plottable_sim_data()
+# Create the plot of the Simulated Image
+Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits, vmin = 0, vmax = Image_norm)
+Subplot.set_title("Simulated Image")
+Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
+Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+
+#=============== PLot the Brigtness Temperature at y = 0 of the Simulated Image ===============#
 
 Subplot = Main_Figure.add_subplot(122)
 
-Data_to_plot = Intensity_0 + Intensity_1 + Intensity_2 + Intensity_3
-# print(np.max(np.array(Intensity_0 + Intensity_2 + Intensity_1 + Intensity_3).flatten()))
-Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits, vmin = -0, vmax = 8.03811e+16)
-Subplot.set_xlabel(r'$\alpha_{rel}$ [rad]')
-Subplot.set_ylabel(r'$\delta_{rel}$ [rad]')
+# Convert the spectral density at y = 0 to brightness temperature, normalized to GK
+T_Brightness = Units.Spectral_density_to_T(Data_to_plot[int(Sim_Parser_0.Y_PIXEL_COUNT / 2) ] / Units.W_M2_TO_JY, Sim_Parser_0.OBS_FREQUENCY) / Units.GIGA
+T_Brightness_norm = max(T_Brightness)
 
-# Subplot = Main_Figure.add_subplot(122)
+# Rescale the celestial coordinates for an observer, located at "Obs_effective_distance", rather than the simulation OBS_DISTANCE, and converto to micro AS
+x_coords  = np.linspace(Sim_Parser_0.WINDOW_LIMITS[0], Sim_Parser_0.WINDOW_LIMITS[1], Sim_Parser_0.X_PIXEL_COUNT) # These limits are in radians, for an observer located at the ray-tracer's OBS_DISTANCE
+x_coords *= Sim_Parser_0.OBS_DISTANCE / Obs_effective_distance * Units.RAD_TO_MICRO_AS
 
-# Data_to_plot = Intensity_1
-# # print(np.max(np.array(Intensity_0 + Intensity_2 + Intensity_1 + Intensity_3).flatten()))
-# Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits, vmin = 0, vmax = 3.913125e+18/2)
-# Subplot.set_xlabel(r'$\alpha_{rel}$ [rad]')
-# Subplot.set_ylabel(r'$\delta_{rel}$ [rad]')
+# Set the aspect ratio of the figure to 1:1 (y:x)
+Subplot.set_aspect(2 * x_coords[-1] / T_Brightness_norm )
 
-# figure = plt.figure()
+# Create the plot of "T_b(alpha) | y = 0"
+Subplot.plot(x_coords, T_Brightness)
+Subplot.set_ylim([0, 1.1 * T_Brightness_norm])
+Subplot.set_title("Brightness temperature at " + r'$\delta_{rel} = 0$')
+Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
+Subplot.set_ylabel(r'$T_b\,\,[10^9\, K]$')
 
-# subfig_sim = figure.add_subplot(1, 2, 1)
-# imgplot = plt.imshow(Intensity, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits)
-# subfig_sim.set_title('Ray Tracer')
-# subfig_sim.set_xlabel(r'$\alpha$ [rad]')
-# subfig_sim.set_ylabel(r'$\beta$ [rad]')
+Total_flux = (Sim_Parser_0.get_total_flux(Obs_effective_distance) + 
+              Sim_Parser_1.get_total_flux(Obs_effective_distance) + 
+              Sim_Parser_2.get_total_flux(Obs_effective_distance) + 
+              Sim_Parser_3.get_total_flux(Obs_effective_distance))
 
-# subfig_eht = figure.add_subplot(1, 2, 2)
-# imgplot = plt.imshow(ehtim_Intensity, interpolation = 'bilinear', cmap = 'hot', extent = ehtim_axes_limits*1e6)
-# subfig_eht.set_title('Eht Imager')
-# subfig_eht.set_xlabel(r'$\alpha$ [$\mu$as]')
-# subfig_eht.set_ylabel(r'$\beta$  [$\mu$as]')
+if Sim_Parser_0.emission_model == " Phenomenological":
 
-# # add_Kerr_Shadow(0.998, obs_distance = Metadata[0], obs_inclanation = np.deg2rad(Metadata[1]))
-# add_Wormhole_Shadow(spin = -0.98, alpha = 2, obs_distance = Metadata_0[0], obs_inclanation = np.deg2rad(Metadata_0[1]), figure = Subplot)
+    Fig_title = (Sim_Parser_0.metric + ", " + Sim_Parser_0.disk_profile + 
+                 ", Height Scale [M] = {}".format(Sim_Parser_0.height_scale) + 
+                 ", Radial Scale [M] = {}".format(Sim_Parser_0.radial_scale) + 
+                 ", Total Flux [Jy] = {}".format(np.round(Total_flux,4)) +
+                 ", Emission constant = {}".format(Sim_Parser_0.Emission_Scale))
+else:
 
-# #---- Figure Labels -----#
+    Fig_title = (Sim_Parser_0.metric + ", " + Sim_Parser_0.disk_profile + 
+                 ", Opening Angle [deg] = {}".format(np.round(np.arctan(Sim_Parser_0.disk_opening_angle) * Units.RAD_TO_DEG, 2)) + 
+                 ", R_0 [M] = {}".format(Sim_Parser_0.R_0) + 
+                 ", Cutoff [M] = {}".format(Sim_Parser_0.R_Cutoff) + 
+                 ", Total Flux [Jy] = {}".format(np.round(Total_flux,4)))
+
+
+Main_Figure.suptitle(Fig_title)
+
+# Sim_Parser_0.export_ehtim_data(data = Data_to_plot)
 
 plt.rcParams['text.usetex'] = True
 plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 plt.show()
 
-"""
-    Image cases:
-
-        Case 1: 
-            @ Thin disk - DISK_HEIGHT_SCALE = 100. / 3
-            @ Radial Scale = 10 [M]
-            @ Inclination = 80 [deg]
-            @ Obs Window - X: [-30 30] [M], Y: [-30 30] [M]
-            @ Absorbtion Coeff = 0
-            @ Spin = 0.9
-            @ Wormhole Alpha = 2
-
-        Case 2: 
-            @ Thick disk - DISK_HEIGHT_SCALE = 10. / 3
-            @ Radial Scale = 10 [M]
-            @ Inclination = 80 [deg]
-            @ Obs Window - X: [-30 30] [M], Y: [-30 30] [M]
-            @ Absorbtion Coeff = 0
-            @ Spin = 0.9
-            @ Wormhole Alpha = 2
-
-        Case 3: 
-            @ Thick disk - DISK_HEIGHT_SCALE = 10. / 3
-            @ Radial Scale = 10 [M]
-            @ Inclination = 20 [deg]
-            @ Obs Window - X: [-30 30] [M], Y: [-30 30] [M]
-            @ Absorbtion Coeff = 0
-            @ Spin = 0.9
-            @ Wormhole Alpha = 2
-
-        Case 4: 
-            @ Thick disk - DISK_HEIGHT_SCALE = 10. / 3
-            @ Radial Scale = 5 [M]
-            @ Inclination = 20 [deg]
-            @ Obs Window - X: [-30 30] [M], Y: [-30 30] [M]
-            @ Absorbtion Coeff = 10e5
-            @ Spin = 0.9
-            @ Wormhole Alpha = 2
-
-        Case 5: 
-            @ Thick disk - DISK_HEIGHT_SCALE = 10. / 3
-            @ Radial Scale = 5 [M]
-            @ Inclination = 20 [deg]
-            @ Obs Window - X: [-30 30] [M], Y: [-30 30] [M]
-            @ Absorbtion Coeff = 1e3
-            @ Spin = 0.9
-            @ Wormhole Alpha = 2
-            
-"""

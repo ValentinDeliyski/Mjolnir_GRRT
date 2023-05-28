@@ -24,8 +24,6 @@
 
 #define _USE_MATH_DEFINES
 
-#include <vector>
-
 #include "Constants.h"
 #include "Spacetimes.h"
 #include "Enumerations.h"

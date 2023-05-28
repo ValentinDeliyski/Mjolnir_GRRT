@@ -13,21 +13,21 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Wormhole; // Spacetime to be used
+    const Spacetime_enums e_metric = Kerr; // Spacetime to be used
 
-    Real MASS = 1.0;
+    Real MASS = 1.0f;
     Real SPIN = 0.94;
 
     // Wormhole spacetime parameters //
 
-    Real WH_REDSHIFT = 2.0;
+    Real WH_REDSHIFT = 2.0f;
     Real WH_R_THROAT = MASS;
 
     const bool STOP_AT_THROAT = false;
  
     // Regular Black Hole spacetime parameters //
 
-    Real RBH_PARAM = 0.00;
+    Real RBH_PARAM = 0.0f;
 
     // Janis - Newman - Winicour Naked Singularity spacetime parameters //
 
@@ -36,7 +36,7 @@
 
     // Gauss - Bonnet spacetime parameters //
 
-    Real GAUSS_BONNET_GAMMA = 1.1495190525;
+    Real GAUSS_BONNET_GAMMA = 1.15;
 
     // Black Hole with Dark Matter Halo parameters //
 
@@ -47,8 +47,8 @@
     // ======================== Observer Inputs ======================== //
 
     Real r_obs	   = 1e4;			    // Radial potision of the observer [ M ]
-    Real theta_obs = 160. / 180 * M_PI; // Polar angle of the observer [ Rad ]
-    Real phi_obs   = 0;				    // Azimuthal angle of the observer ( not used ) [ Rad ]
+    Real theta_obs = 20.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real phi_obs   = 0.0f;				    // Azimuthal angle of the observer ( not used ) [ Rad ]
 
     // ======================== Emission Model Inputs ======================== //
 
@@ -58,42 +58,43 @@
     // Novikov - Thorne accretion disk parameters
 
     Real r_in  = NULL;	// Inner accretion idsk radius [ M ]
-    Real r_out = 35;    // Outer accretion disk radius [ M ]
+    Real r_out = 35.0f;    // Outer accretion disk radius [ M ]
 
     // Exponential disk profile parameters //
 
-    Real DISK_HEIGHT_SCALE = 1. / (10. / 3); // disk density ~ exp( - cos(theta)^2 / DISK_HEIGHT_SCALE^2 / 2 )
-    Real DISK_RADIAL_SCALE = 10;		     // disk density ~ exp( - r^2 / DISK_RADIAL_SCALE^2 / 2)
+    Real DISK_HEIGHT_SCALE = 1.0f / (10.0f / 0.1); // disk density ~ exp( - cos(theta)^2 / DISK_HEIGHT_SCALE^2 / 2 )
+    Real DISK_RADIAL_SCALE = 5.0f;             // disk density ~ exp( - r^2 / DISK_RADIAL_SCALE^2 / 2)
 
     // Power law disk profile parameters //
 
-    Real DISK_OPENING_ANGLE = 1;   // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
-    Real DISK_CUTOFF_SCALE  = 0.5; // disk density ~ exp( - (r - r_ISCO)^2 / DISK_CUTOFF_SCALE^2) if r < r_ISCO
-    Real R_0                = 1;
+    Real DISK_OPENING_ANGLE = 1.0f;  // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
+    Real DISK_CUTOFF_SCALE  = 0.4f;  // disk density ~ exp( - (r - R_Cutoff)^2 / DISK_CUTOFF_SCALE^2) if r < R_Cutoff
+    Real R_Cutoff           = NULL;  // = r_isco[Inner] if = NULL or = r_isco[Outer] if < 0
+    Real R_0                = 1 + sqrt(1 - SPIN * SPIN);
 
     // Phenomenological Synchotron emission parameters //
     
-    Real EMISSION_POWER_LAW    = 0;   // emission   ~ pow( redshity, EMISSION_POWER_LAW )
-    Real SOURCE_F_POWER_LAW	   = 2.5; // absorbtion ~ pow( redshity, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
-    Real DISK_ABSORBTION_COEFF = 0;   // absorbtion ~ DISK_ABSORBTION_COEFF
+    Real EMISSION_POWER_LAW    = 0.0f;  // emission   ~ pow( redshity, EMISSION_POWER_LAW )
+    Real SOURCE_F_POWER_LAW	   = 2.5;   // absorbtion ~ pow( redshity, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
+    Real DISK_ABSORBTION_COEFF = 0.0f;  // absorbtion ~ DISK_ABSORBTION_COEFF
 
-    Real EMISSION_SCALE_PHENOMENOLOGICAL = 3e-18;
+    Real EMISSION_SCALE_PHENOMENOLOGICAL = 9.58857e-19;
 
     // Exact Synchotron emission parameters //
     
     Real DISK_MAGNETIZATION    = 0.01;
     Real MAG_FIELD_GEOMETRY[3] = { 1, 0, 0 }; // Unused for now
-
-    Real N_ELECTRON_EXACT_CGS = 2e6;
-    Real T_ELECTRON_EXACT_CGS = 2e11;
+    
+    Real N_ELECTRON_EXACT_CGS = 2e+06;
+    Real T_ELECTRON_EXACT_CGS = 1e+11;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
 
     // Hotspot paramteres //
 
-    Real HOTSPOT_REL_SCALE  = 0. / 2; // Hotspot density ~ HOTSPOT_REL_SCALE
-    Real HOTSPOT_SCALE      = 1.;
-    Real HOTSPOT_R_COORD    = 6.;
+    Real HOTSPOT_REL_SCALE  = 0.0f; // Hotspot density ~ HOTSPOT_REL_SCALE
+    Real HOTSPOT_SCALE      = 1.0f;
+    Real HOTSPOT_R_COORD    = 6.0f;
     const int HOTSPOT_ANIMATION_NUMBER = 8;
 
     // ======================== Simulation Modes Inputs ======================== //
@@ -109,8 +110,8 @@
     Real H_angle_min = -atan(15 / r_obs);
     Real H_angle_max =  atan(15 / r_obs);
 
-    const int RESOLUTION = 1500;                  // Linear size of the square pixel grid that makes up the image
-    const int TEXTURE_BUFFER_SIZE = 3000 * 3000; // The size of the buffer to store the texture - must be >= RESOLUTION^2
+    const int RESOLUTION = 1024;                             // Linear size of the square pixel grid that makes up the image
+    const int TEXTURE_BUFFER_SIZE = RESOLUTION * RESOLUTION; // The size of the buffer to store the texture
 
     Real Scan_Step = (H_angle_max - H_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons
 
@@ -120,13 +121,13 @@
 
     // Sim Mode 4 Initial Conditions //
 
-    Real X_INIT = 1.;
-    Real Y_INIT = 1.;
+    Real X_INIT = 1.0f;
+    Real Y_INIT = 1.0f;
 
     // ======================== Integrator Inputs ======================== //
 
     Real INIT_STEPSIZE     = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
-    Real INTEGRAL_ACCURACY = 5e-9;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
+    Real INTEGRAL_ACCURACY = 1e-8;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
     Real RK45_ACCURACY     = 1e-8;  // 1e-8 Seems to be an opitimal tradeoff between accuracy and performace 
     Real SAFETY_1          = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Real SAFETY_2          = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
