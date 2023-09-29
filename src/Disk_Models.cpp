@@ -518,7 +518,7 @@ double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_vect
 
 }
 
-double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(double State_vector[], double J, Spacetime_Base_Class* Spacetimes[]) {
+double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_exact(double State_vector[], Spacetime_Base_Class* Spacetimes[]) {
 
     /* Electron Density in CGS */
 
@@ -542,7 +542,7 @@ double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(dou
 
     /* Redshit */
 
-    double redshift = Redshift(J, State_vector, U_source_coord);
+    double redshift = Redshift(State_vector, U_source_coord);
 
     /* Cyclotron Frequency */
 
@@ -594,7 +594,7 @@ double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_exact(dou
 
 }
 
-double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, Spacetime_Base_Class* Spacetimes[]) {
+double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_phenomenological(double State_vector[], Spacetime_Base_Class* Spacetimes[]) {
 
 
     double electron_density = EMISSION_SCALE_PHENOMENOLOGICAL * get_disk_density_profile(State_vector);
@@ -604,13 +604,13 @@ double Optically_Thin_Toroidal_Model::get_emission_fucntion_synchotron_phenomeno
     double U_source_coord[4]{};
     get_disk_velocity(U_source_coord, State_vector, Spacetimes);
 
-    double redshift = Redshift(J, State_vector, U_source_coord);
+    double redshift = Redshift(State_vector, U_source_coord);
 
     return electron_density * pow(redshift, EMISSION_POWER_LAW);
 
 }
 
-double Optically_Thin_Toroidal_Model::get_absorbtion_fucntion(double Emission_Function, double State_vector[], double redshift, double Frequency, double Temperature) {
+double Optically_Thin_Toroidal_Model::get_absorbtion_function(double Emission_Function, double State_vector[], double redshift, double Frequency, double Temperature) {
 
     double absorbtion_function{};
     double Planck_function_CGS{};

@@ -69,7 +69,7 @@
 
             /* Equations of motion */
 
-            virtual int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+            virtual int get_EOM(double inter_State_vector[], double Derivatives[], int iteration) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
                 
@@ -113,7 +113,7 @@
 
             /* Equations of motion */
 
-            int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+            int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
 
             /* Integration Termination Conditions */
 
@@ -146,7 +146,7 @@
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
 
         /* Integration Termination Conditions */
 
@@ -179,7 +179,7 @@
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
 
         /* Integration Termination Conditions */
 
@@ -212,7 +212,7 @@
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
 
         /* Integration Termination Conditions */
 
@@ -245,7 +245,7 @@
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
 
         /* Integration Termination Conditions */
 
@@ -274,7 +274,7 @@
  
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
 
         /* Integration Termination Conditions */
 
@@ -282,7 +282,7 @@
 
     };
 
-    typedef class tag_observer {
+    class Observer_class {
 
     private:
 
@@ -293,7 +293,7 @@
 
     public:
 
-        tag_observer(double r, double theta, double phi);
+        Observer_class(double r, double theta, double phi);
 
         double get_r_obs();
         double get_theta_obs();
@@ -301,6 +301,6 @@
 
         int get_obs_velocity(double Obs_velocity[4]);
 
-    }c_Observer;
+    };
 
 #endif

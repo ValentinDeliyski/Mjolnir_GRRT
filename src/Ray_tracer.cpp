@@ -2,7 +2,7 @@
 |                                                                                                   |
 |                          ---------  Gravitational Ray Tracer  ---------                           | 
 |                                                                                                   |
-|    @ Version: 3.8.1                                                                               |
+|    @ Version: 3.9.2                                                                               |
 |    @ Author: Valentin Deliyski                                                                    |
 |    @ Description: This program numeriaclly integrates the equations of motion                     |
 |    for null geodesics and radiative transfer in a curved spacetime,then projects                  |
@@ -28,6 +28,7 @@
 #include "Spacetimes.h"
 #include "Enumerations.h"
 #include "IO_files.h"
+#include <iostream>
 
 #include "Disk_Models.h"
 #include "General_GR_functions.h"
@@ -42,7 +43,6 @@
 Define classes that holds the spacetime properites
 
 */
-
 
 Kerr_class Kerr_class_instance = Kerr_class();
 Wormhole_class Wormhole_class_instance = Wormhole_class();
@@ -68,7 +68,7 @@ Define the Observer class
 
 */
 
-c_Observer Observer_class(r_obs, theta_obs, phi_obs);
+Observer_class Observer(r_obs, theta_obs, phi_obs);
 
 /*
 
@@ -85,15 +85,6 @@ Define the Novikov-Thorne Disk Class
 */
 
 Novikov_Thorne_Model NT_Model(r_in, r_out);
-
-/*
-
-Rendering Engine variables
-
-*/
-
-float Max_Intensity{};
-float texture_buffer[TEXTURE_BUFFER_SIZE * 3]{};
 
 /*
 

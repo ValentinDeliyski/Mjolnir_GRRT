@@ -5,11 +5,9 @@
 #include "General_GR_functions.h"
 #include "General_math_functions.h"
 #include "Sim_Modes.h"
+#include <iostream>
 
-extern float Max_Intensity;
-extern float texture_buffer[];
-
-GLFWwindow* OpenGL_init(double aspect_ratio) {
+void Rendering_engine::OpenGL_init() {
 
     // Initialize GLFW
     glfwInit();
@@ -21,7 +19,7 @@ GLFWwindow* OpenGL_init(double aspect_ratio) {
     // Tell GLFW we are using the CORE profile -> we only have the modern functions
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(1200, 1200, "Gravitational Ray Tracer", NULL, NULL);
+    window = glfwCreateWindow(1200, 1200, "Gravitational Ray Tracer", NULL, NULL);
 
     // Introduce the window into the current context
     glfwMakeContextCurrent(window);
@@ -67,11 +65,9 @@ GLFWwindow* OpenGL_init(double aspect_ratio) {
     // Binds the texture array (RGB values 
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    return window;
-
 }
 
-void update_rendering_window(GLFWwindow* window, double aspect_ratio) {
+void Rendering_engine::update_rendering_window() {
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, RESOLUTION, RESOLUTION * aspect_ratio, 0, GL_RGB, GL_FLOAT, texture_buffer);
     // Specify the color of the background
@@ -87,7 +83,18 @@ void update_rendering_window(GLFWwindow* window, double aspect_ratio) {
 
 }
 
-void set_pixel_color(double Intensity, int texture_indexer) {
+void Rendering_engine::update_max_intensity(float Intensity) {
+
+    if (Intensity > Max_Intensity) {
+
+        Max_Intensity = Intensity;
+        renormalize_colormap_flag = true;
+
+    }
+
+}
+
+void Rendering_engine::set_pixel_color(float Intensity, int texture_indexer) {
 
     float x = Intensity / Max_Intensity;
 
@@ -119,7 +126,7 @@ void set_pixel_color(double Intensity, int texture_indexer) {
 
 }
 
-void set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J) {
+void Rendering_engine::set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J) {
 
     double theta = (State_vector[e_theta] + old_state[e_theta]) / 2;
     double phi = (State_vector[e_phi] + old_state[e_phi]) / 2;
@@ -134,13 +141,13 @@ void set_background_pattern_color(double State_vector[], double old_state[], int
 
 
 
-    texture_buffer[texture_indexer] = grayscale_value;
+    texture_buffer[texture_indexer]     = grayscale_value;
     texture_buffer[texture_indexer + 1] = grayscale_value;
     texture_buffer[texture_indexer + 2] = grayscale_value;
 
 }
 
-void normalize_colormap(Initial_conditions_type* s_Initial_Conditions) {
+void Rendering_engine::normalize_colormap(Initial_conditions_type* s_Initial_Conditions) {
 
     /*
 
@@ -175,13 +182,40 @@ void normalize_colormap(Initial_conditions_type* s_Initial_Conditions) {
 
 }
 
+void Rendering_engine::renormalize_colormap() {
+
+    if (renormalize_colormap_flag == true) {
+
+        for (int index = 0; index <= texture_indexer - 1; index += 3) {
+
+
+            set_pixel_color(Intensity_buffer[int(index / 3)], index);
+
+
+        }
+
+        renormalize_colormap_flag = false;
+
+    }
+    else {
+
+        for (int index = texture_indexer - (RESOLUTION) * 3; index <= texture_indexer - 1; index += 3) {
+
+            set_pixel_color(Intensity_buffer[int(index / 3)], index);
+
+        }
+
+    }
+
+}
+
 /*******************************************
 |                                          |
 | Vertex Buffer Class Function Definitions |
 |                                          |
 *******************************************/
 
-Vertex_Buffer::Vertex_Buffer(const GLfloat* vertices, GLsizeiptr size) {
+Rendering_engine::Vertex_Buffer::Vertex_Buffer(const GLfloat* vertices, GLsizeiptr size) {
 
     glGenBuffers(1, &ID);
     glBindBuffer(GL_ARRAY_BUFFER, ID);
@@ -189,21 +223,21 @@ Vertex_Buffer::Vertex_Buffer(const GLfloat* vertices, GLsizeiptr size) {
 
 }
 
-void Vertex_Buffer::Bind()
+void Rendering_engine::Vertex_Buffer::Bind()
 {
 
     glBindBuffer(GL_ARRAY_BUFFER, ID);
 
 }
 
-void Vertex_Buffer::Unbind()
+void Rendering_engine::Vertex_Buffer::Unbind()
 {
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 }
 
-void Vertex_Buffer::Delete()
+void Rendering_engine::Vertex_Buffer::Delete()
 {
 
     glDeleteBuffers(1, &ID);
@@ -216,12 +250,12 @@ void Vertex_Buffer::Delete()
 |                                         |
 ******************************************/
 
-Vertex_array::Vertex_array()
+Rendering_engine::Vertex_array::Vertex_array()
 {
     glGenVertexArrays(1, &ID);
 }
 
-void Vertex_array::Linkattrib(Vertex_Buffer Vertex_Buffer, GLuint index, GLuint numComponents, GLenum type, GLsizei stride, void* offset) {
+void Rendering_engine::Vertex_array::Linkattrib(Vertex_Buffer Vertex_Buffer, GLuint index, GLuint numComponents, GLenum type, GLsizei stride, void* offset) {
 
 
     Vertex_Buffer.Bind();
@@ -232,19 +266,19 @@ void Vertex_array::Linkattrib(Vertex_Buffer Vertex_Buffer, GLuint index, GLuint 
 
 }
 
-void Vertex_array::Bind() {
+void Rendering_engine::Vertex_array::Bind() {
 
     glBindVertexArray(ID);
 
 }
 
-void Vertex_array::Unbind() {
+void Rendering_engine::Vertex_array::Unbind() {
 
     glBindVertexArray(0);
 
 }
 
-void Vertex_array::Delete() {
+void Rendering_engine::Vertex_array::Delete() {
 
 
     glDeleteVertexArrays(1, &ID);
@@ -257,7 +291,7 @@ void Vertex_array::Delete() {
 |                                           |
 ********************************************/
 
-Element_Buffer::Element_Buffer(const GLuint* vertices, GLsizeiptr size) {
+Rendering_engine::Element_Buffer::Element_Buffer(const GLuint* vertices, GLsizeiptr size) {
 
     glGenBuffers(1, &ID);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
@@ -265,28 +299,28 @@ Element_Buffer::Element_Buffer(const GLuint* vertices, GLsizeiptr size) {
 
 }
 
-void Element_Buffer::Bind()
+void Rendering_engine::Element_Buffer::Bind()
 {
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
 
 }
 
-void Element_Buffer::Unbind()
+void Rendering_engine::Element_Buffer::Unbind()
 {
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
 
-void Element_Buffer::Delete()
+void Rendering_engine::Element_Buffer::Delete()
 {
 
     glDeleteBuffers(1, &ID);
 
 }
 
-GLuint init_texture() {
+GLuint Rendering_engine::init_texture() {
 
     // Texture
 
@@ -305,7 +339,7 @@ GLuint init_texture() {
     return texture;
 }
 
-std::string get_file_contents(const char* filename)
+std::string Rendering_engine::get_file_contents(const char* filename)
 {
     std::ifstream in(filename, std::ios::binary);
 
@@ -322,7 +356,7 @@ std::string get_file_contents(const char* filename)
     throw(errno);
 }
 
-Shader::Shader(const char* vertexFile, const char* fragmentFile)
+Rendering_engine::Shader::Shader(const char* vertexFile, const char* fragmentFile)
 {
 
     std::string vertexCode = get_file_contents(vertexFile);
@@ -359,20 +393,20 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
 
 }
 
-void Shader::Activate() {
+void Rendering_engine::Shader::Activate() {
 
     glUseProgram(ID);
     
 
 }
 
-void Shader::Delete() {
+void Rendering_engine::Shader::Delete() {
 
     glDeleteProgram(ID);
 
 }
 
-void Window_Callbacks::define_button_callbacks(GLFWwindow* window, int key, int scancode, int action, int mods) {
+void Rendering_engine::Window_Callbacks::define_button_callbacks(GLFWwindow* window, int key, int scancode, int action, int mods) {
     
     if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
 

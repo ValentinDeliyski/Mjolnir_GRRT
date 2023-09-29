@@ -58,11 +58,11 @@
 
             double get_magnetic_field(double B_field[3], double State_vector[]);
 
-            double get_emission_fucntion_synchotron_exact(double State_vector[], double J, Spacetime_Base_Class* Spacetimes[]);
+            double get_emission_function_synchotron_exact(double State_vector[], Spacetime_Base_Class* Spacetimes[]);
 
-            double get_emission_fucntion_synchotron_phenomenological(double State_vector[], double J, Spacetime_Base_Class* Spacetimes[]);
+            double get_emission_function_synchotron_phenomenological(double State_vector[], Spacetime_Base_Class* Spacetimes[]);
 
-            double get_absorbtion_fucntion(double Emission_Function, double State_vector[], double J, double Frequency, double Temperature);
+            double get_absorbtion_function(double Emission_Function, double State_vector[], double redshift, double Frequency, double Temperature);
 
             double get_electron_pitch_angle(double State_vector[], double B_field_local[], Spacetime_Base_Class* Spacetimes[]);
 

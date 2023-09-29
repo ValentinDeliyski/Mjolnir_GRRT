@@ -20,8 +20,8 @@ class Analytical_ray_tracer():
         self.r_obs        = r_obs
         self.inclincation = inclination
 
-        self.raw_Impact_params = [[], []]
-        self.raw_Azimuths      = [[], []]
+        self.raw_Impact_params = [[], []] # List of direct and indirect impact parameters
+        self.raw_Azimuths      = [[], []] # List of direct and indirect azimuths
 
         self.raw_Image_angular_coords = []
         self.raw_Image_radial_coords  = []
@@ -278,7 +278,7 @@ def plot_splined_data(figure_num, Splines):
 
         color_index = (color_index + 1) % len(COLOR_CYCLE)
 
-    subfigure_spline.set_title(r'Splined Results From The Integration')
+    subfigure_spline.set_title(r'Images of the r = 6M orbit, Schwarzschild')
     subfigure_spline.set_xlabel(r'x [M]')
     subfigure_spline.set_ylabel(r'y [M]')
     subfigure_spline.set_aspect(1)
@@ -433,10 +433,10 @@ if __name__ == "__main__":
     #----- Observer / Source  -------#
 
     r_obs = 1e3                         # [ M ]
-    inclination_obs = 80 * DEG_TO_RAD   # [ rad ]
+    inclination_obs = 70 * DEG_TO_RAD   # [ rad ]
 
     ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
-                                       Granularity = 5000 , 
+                                       Granularity = 1000 , 
                                        r_source = 6, 
                                        r_obs = r_obs, 
                                        inclination = inclination_obs, 

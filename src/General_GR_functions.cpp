@@ -5,7 +5,7 @@
 #include <cmath>
 
 extern Spacetime_Base_Class* Spacetimes[];
-extern c_Observer Observer_class;
+extern Observer_class Observer;
 
 /* Metric Related Functions */
 
@@ -75,7 +75,25 @@ void Contravariant_coord_to_ZAMO(double metric[4][4], double Contravariant_Vecto
 
 /* Other Functions */
 
-void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Conditions, double V_angle, double H_angle) {
+void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Conditions, double V_angle_cam, double H_angle_cam) {
+
+    /*
+    
+     n_cam is the direction vector of the light ray in the camera frame ( {r, theta, phi} components)
+     n_FIDO is the "non-rotated" observer (a.e. his camera "y" axis is aligned with the spin axis of the central object)
+    
+    */
+
+    double n_cam[3] = { cos(V_angle_cam) * cos(H_angle_cam), sin(V_angle_cam), sin(H_angle_cam) * cos(V_angle_cam)}; 
+    double n_FIDO[3]{};
+
+
+    n_FIDO[e_phi]   =  n_cam[e_phi] * cos(obs_cam_rotation_angle) + n_cam[e_theta] * sin(obs_cam_rotation_angle);
+    n_FIDO[e_theta] = -n_cam[e_phi] * sin(obs_cam_rotation_angle) + n_cam[e_theta] * cos(obs_cam_rotation_angle);
+    n_FIDO[e_r]     =  n_cam[e_r];
+
+    double V_angle = asin(n_FIDO[e_theta]);
+    double H_angle = atan2(n_FIDO[e_phi], n_FIDO[e_r]);
 
     double g2, gamma, ksi, L_z, E;
 
@@ -88,9 +106,9 @@ void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Cond
     L_z = sqrt(metric[3][3]) * sin(H_angle + 2 * M_PI) * cos(V_angle);
     E = (1 + gamma * L_z) / ksi;
 
-    p_Initial_Conditions->init_Three_Momentum[e_phi] = L_z / E;
+    p_Initial_Conditions->init_Three_Momentum[e_phi]   = L_z / E;
     p_Initial_Conditions->init_Three_Momentum[e_theta] = sqrt(metric[2][2]) * sin(V_angle) / E;
-    p_Initial_Conditions->init_Three_Momentum[e_r] = sqrt(metric[1][1]) * cos(H_angle + 2 * M_PI) * cos(V_angle) / E;
+    p_Initial_Conditions->init_Three_Momentum[e_r]     = sqrt(metric[1][1]) * cos(H_angle + 2 * M_PI) * cos(V_angle) / E;
 
 }
 
@@ -113,12 +131,12 @@ void get_impact_parameters(Initial_conditions_type* p_Initial_Conditions, double
 
 }
 
-double Redshift(double J, double State_Vector[], double U_source[]) {
+double Redshift(double State_Vector[], double U_source[]) {
 
     /******************************************************************************
     |																			  |
     |   @ Description: Computes redshift for for a ray at a point, specified by   |
-    |	State_Vector, for an observer, specified bt Observer_class				  |
+    |	State_Vector, for an observer, specified by Observer_class				  |
     |																			  |
     |   @ Inputs:                                                                 |
     |     * J: Covariant, azimuthal component of the ray / photon 4 - momentum	  |
@@ -131,7 +149,9 @@ double Redshift(double J, double State_Vector[], double U_source[]) {
 
     double U_obs[4];
 
-    Observer_class.get_obs_velocity(U_obs);
+    double& J = State_Vector[e_p_phi];
+
+    Observer.get_obs_velocity(U_obs);
 
     double redshift = (-U_obs[0] + U_obs[3] * J) / (-U_source[0] * 1 +
         U_source[1] * State_Vector[e_p_r] +
@@ -139,41 +159,6 @@ double Redshift(double J, double State_Vector[], double U_source[]) {
         U_source[3] * J);
 
     return redshift;
-
-}
-
-double get_photon_t_momentum(double State_vector[], double J, double metric[4][4]) {
-
-    /*
-
-    State_vector holds covariant momentum components
-
-    */
-
-    double p_r = State_vector[e_p_r];
-    double p_theta = State_vector[e_p_theta];
-    double p_phi = J;
-
-    double inv_metric[4][4];
-
-    invert_metric(inv_metric, metric);
-
-    double inv_g2 = inv_metric[e_t_coord][e_phi_coord] * inv_metric[e_t_coord][e_phi_coord]
-                  - inv_metric[e_phi_coord][e_phi_coord] * inv_metric[e_t_coord][e_t_coord];
-
-    double root = p_phi * p_phi * inv_g2 / inv_metric[e_t_coord][e_t_coord] / inv_metric[e_t_coord][e_t_coord]
-                + inv_metric[e_theta_coord][e_theta_coord] / inv_metric[e_t_coord][e_t_coord] * p_theta * p_theta
-                + inv_metric[e_r_coord][e_r_coord] / inv_metric[e_t_coord][e_t_coord] * p_r * p_r;
-
-    double p_t = -inv_metric[0][3] / inv_metric[0][0] * p_phi - sqrt(root);
-
-    /*
-
-    Returns covatiant component
-
-    */
-
-    return p_t;
 
 }
 

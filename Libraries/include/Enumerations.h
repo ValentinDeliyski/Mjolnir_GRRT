@@ -37,7 +37,7 @@
         e_r             = 0,
         e_theta         = 1,
         e_phi           = 2,
-        e_phi_FD        = 3,
+        e_p_phi         = 3,
         e_p_theta       = 4,
         e_p_r           = 5,
         e_Intensity     = 6,

@@ -23,7 +23,6 @@
         double step;
 
         double current_err;
-        double current_rel_err;
         double prev_err;
         double sec_prev_err;
 
@@ -31,9 +30,9 @@
 
     };
 
-    void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J);
+    void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration);
 
-    void RK45(double State_Vector[], double Derivatives[], double J, Step_controller* controller);
+    void RK45(double State_Vector[], double Derivatives[], Step_controller* controller);
 
     Results_type Propagate_ray(Initial_conditions_type* p_Initial_Conditions);
 

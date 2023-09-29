@@ -15,10 +15,7 @@
 #include <iostream>
 
 extern Spacetime_Base_Class* Spacetimes[];
-extern c_Observer Observer_class;
-extern Optically_Thin_Toroidal_Model OTT_Model;
 extern Novikov_Thorne_Model NT_Model;
-extern File_manager_class File_manager;
 
 void log_ray(double State_Vector[], std::vector<double> *State_log, Results_type *s_Ray_Results) {
 
@@ -37,7 +34,7 @@ Results_type Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
     /*************************************************************************************************
     |                                                                                                |
     |   @ Description: Propagates one light ray, specified by the struct "s_Initial_Conditions",     |
-    |     and stores the results in the files "data" and "momentum_data"                             |
+    |     and stores the results in the files "s_Ray_results" struct                                 |
     |                                                                                                |
     |   @ Inputs:                                                                                    |
     |     * s_Initial_Conditions: Struct that holds the initial position and momenta of the photon   |
@@ -72,7 +69,7 @@ Results_type Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
     s_Ray_results.Parameters[BH_w_Dark_Matter]  = M_HALO / A_0;
 
     // Initialize the State Vector
-    double State_vector[] = {r_obs, theta_obs, phi_obs, 0., p_theta_0, p_r_0, 0., 0.};
+    double State_vector[] = {r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0, 0., 0.};
 
     std::vector<double> State_log(e_State_Number, 0);
 
@@ -101,7 +98,7 @@ Results_type Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
     while (true) {
 
-        RK45(State_vector, Derivatives, J, &controller);
+        RK45(State_vector, Derivatives, &controller);
 
         // If error estimate, returned from RK45_EOM < RK45_ACCURACY
         if (controller.continue_integration) {
