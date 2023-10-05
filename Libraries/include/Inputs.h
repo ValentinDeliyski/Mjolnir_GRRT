@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Wormhole; // Spacetime to be used
+    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.5;
+    Real SPIN = 0.9;
 
     // Wormhole spacetime parameters //
 
@@ -70,8 +70,8 @@
 
     Real DISK_OPENING_ANGLE = 1.0f / 10;  // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
     Real DISK_CUTOFF_SCALE  = 0.4f;       // disk density ~ exp( - (r - R_Cutoff)^2 / DISK_CUTOFF_SCALE^2) if r < R_Cutoff
-    Real R_Cutoff           = 4.5f;       // = r_isco[Inner] if = NULL or = r_isco[Outer] if < 0
-    Real R_0                = 4.5f;
+    Real R_Cutoff           = 5.0f;       // = r_isco[Inner] if = NULL or = r_isco[Outer] if < 0
+    Real R_0                = 5.0f;
 
     // Phenomenological Synchotron emission parameters //
     
@@ -87,7 +87,7 @@
     Real MAG_FIELD_GEOMETRY[3] = { 1, 0, 0 }; // Unused for now
     
     Real N_ELECTRON_EXACT_CGS = 5e+05;
-    Real T_ELECTRON_EXACT_CGS = 6.8e+10;
+    Real T_ELECTRON_EXACT_CGS = 5.9e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
 
@@ -111,7 +111,7 @@
     Real H_angle_min = -atan(15 / r_obs);
     Real H_angle_max =  atan(15 / r_obs);
 
-    const int RESOLUTION = 128;                             // Linear size of the square pixel grid that makes up the image
+    const int RESOLUTION = 1024;                             // Linear size of the square pixel grid that makes up the image
     const int NUM_RAYS = RESOLUTION * RESOLUTION; // The size of the buffer to store the texture
 
     Real Scan_Step = (H_angle_max - H_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons

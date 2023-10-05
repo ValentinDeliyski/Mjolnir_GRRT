@@ -48,7 +48,7 @@
     <ClInclude Include="Libraries\include\Sim_Modes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IO_filename_strings.h">
+    <ClInclude Include="Libraries\include\Structs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

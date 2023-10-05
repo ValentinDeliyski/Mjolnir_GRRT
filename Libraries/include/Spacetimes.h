@@ -7,8 +7,17 @@
     #include <iostream>
     #include <vector>
     #include "Enumerations.h"
+    #include "Structs.h"
 
     class Spacetime_Base_Class {
+
+        private:
+
+            Metric_type s_Metric;
+            Metric_type s_dr_Metric;
+            Metric_type s_d2r_Metric;
+            bool eval_bitmask[3]{};
+            bool ignore_flag{};
 
         public:
 
@@ -30,30 +39,27 @@
 
             /* Metric and its derivatives */
 
-            virtual int get_metric(double metric[4][4], double* N_metric, 
-                                   double* omega_metric, double r, double theta) {
+            virtual Metric_type get_metric(double State_vector[]) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
-                return ERROR;
+                return {};
 
             };
 
-            virtual int get_dr_metric(double metric[4][4], double* N_metric,
-                                      double* omega_metric, double r, double theta) {
+            virtual Metric_type get_dr_metric(double State_vector[]) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
-                return ERROR;
+                return {};
 
             };
 
-            virtual int get_d2r_metric(double metric[4][4], double* N_metric,
-                                       double* omega_metric, double r, double theta) {
+            virtual Metric_type get_d2r_metric(double State_vector[]) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
-                return ERROR;
+                return {};
 
             };
 
@@ -87,9 +93,21 @@
             
             };
 
+            virtual void set_ignore_flag(bool flag);
+
+            virtual void reset_eval_bitmask();
+
     };
 
     class Kerr_class : public Spacetime_Base_Class {
+
+        private:
+
+            Metric_type s_Metric;
+            Metric_type s_dr_Metric;
+            Metric_type s_d2r_Metric;
+            bool eval_bitmask[3]{};
+            bool ignore_flag{};
 
         public:
 
@@ -98,16 +116,16 @@
 
             /* Metric and its derivatives */
 
-            int get_metric(double metric[4][4], double* N_metric,
-                           double* omega_metric, double r, double theta) override;
+            int update_metric(double State_vector[]);
+            Metric_type get_metric(double State_vector[]);
 
-            int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
-                              double* dr_omega_metric, double r, double theta);
+            int update_dr_metric(double State_vector[]);
+            Metric_type get_dr_metric(double State_vector[]);
 
-            int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
-                               double* d2r_omega_metric, double r, double theta);
+            int update_d2r_metric(double State_vector[]);
+            Metric_type get_d2r_metric(double State_vector[]);
 
-            ///* Initial conditions derived from images */
+            /* Initial conditions derived from images */
 
             int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
 
@@ -117,28 +135,38 @@
 
             /* Integration Termination Conditions */
 
-            virtual bool terminate_integration(double State_vector[], double Derivatives[]);
-
+            bool terminate_integration(double State_vector[], double Derivatives[]);
+            void set_ignore_flag(bool flag);
+            void reset_eval_bitmask();
 
     };
 
     class Wormhole_class : public Spacetime_Base_Class {
 
+    private:
+
+        Metric_type s_Metric{};
+        Metric_type s_dr_Metric{};
+        Metric_type s_d2r_Metric{};
+        bool eval_bitmask[3]{};
+        bool ignore_flag{};
+
     public:
+
 
         double* get_ISCO();
         double* get_Photon_Sphere();
 
         /* Metric and its derivatives */
 
-        int get_metric(double metric[4][4], double* N_metric,
-                       double* omega_metric, double r, double theta);
+        int update_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]);
 
-        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
-                          double* dr_omega_metric, double r, double theta);
+        int update_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]);
 
-        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
-                           double* d2r_omega_metric, double r, double theta);
+        int update_d2r_metric(double State_vector[]);
+        Metric_type get_d2r_metric(double State_vector[]);
 
         /* Initial conditions derived from images */
 
@@ -151,12 +179,21 @@
         /* Integration Termination Conditions */
 
         bool terminate_integration(double State_vector[], double Derivatives[]);
-
+        void set_ignore_flag(bool flag);
+        void reset_eval_bitmask();
 
     };
 
     class RBH_class : public Spacetime_Base_Class {
 
+    private:
+
+        Metric_type s_Metric{};
+        Metric_type s_dr_Metric{};
+        Metric_type s_d2r_Metric{};
+        bool eval_bitmask[3]{};
+        bool ignore_flag{};
+
     public:
 
         double* get_ISCO();
@@ -164,14 +201,14 @@
 
         /* Metric and its derivatives */
 
-        int get_metric(double metric[4][4], double* N_metric,
-                       double* omega_metric, double r, double theta);
+        int update_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]);
 
-        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
-                          double* dr_omega_metric, double r, double theta);
+        int update_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]);
 
-        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
-                           double* d2r_omega_metric, double r, double theta);
+        int update_d2r_metric(double State_vector[]);
+        Metric_type get_d2r_metric(double State_vector[]);
 
         /* Initial conditions derived from images */
 
@@ -184,12 +221,21 @@
         /* Integration Termination Conditions */
 
         bool terminate_integration(double State_vector[], double Derivatives[]);
-
+        void set_ignore_flag(bool flag);
+        void reset_eval_bitmask();
 
     };
 
     class JNW_class : public Spacetime_Base_Class {
 
+    private:
+
+        Metric_type s_Metric{};
+        Metric_type s_dr_Metric{};
+        Metric_type s_d2r_Metric{};
+        bool eval_bitmask[3] = {false, false, false};
+        bool ignore_flag{};
+
     public:
 
         double* get_ISCO();
@@ -197,14 +243,14 @@
 
         /* Metric and its derivatives */
 
-        int get_metric(double metric[4][4], double* N_metric,
-                       double* omega_metric, double r, double theta);
+        int update_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]);
 
-        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
-                          double* dr_omega_metric, double r, double theta);
+        int update_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]);
 
-        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
-                           double* d2r_omega_metric, double r, double theta);
+        int update_d2r_metric(double State_vector[]);
+        Metric_type get_d2r_metric(double State_vector[]);
 
         /* Initial conditions derived from images */
 
@@ -218,10 +264,20 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]);
 
+        void set_ignore_flag(bool flag);
+        void reset_eval_bitmask();
 
     };
 
     class Gauss_Bonnet_class : public Spacetime_Base_Class {
+
+    private:
+
+        Metric_type s_Metric{};
+        Metric_type s_dr_Metric{};
+        Metric_type s_d2r_Metric{};
+        bool eval_bitmask[3]{};
+        bool ignore_flag{};
 
     public:
 
@@ -230,14 +286,14 @@
 
         /* Metric and its derivatives */
 
-        int get_metric(double metric[4][4], double* N_metric,
-                       double* omega_metric, double r, double theta);
+        int update_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]);
 
-        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
-                          double* dr_omega_metric, double r, double theta);
+        int update_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]);
 
-        int get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric,
-                           double* d2r_omega_metric, double r, double theta);
+        int update_d2r_metric(double State_vector[]);
+        Metric_type get_d2r_metric(double State_vector[]);
 
         /* Initial conditions derived from images */
 
@@ -250,10 +306,19 @@
         /* Integration Termination Conditions */
 
         bool terminate_integration(double State_vector[], double Derivatives[]);
-
+        void set_ignore_flag(bool flag);
+        void reset_eval_bitmask();
     };
 
     class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
+
+    private:
+
+        Metric_type s_Metric{};
+        Metric_type s_dr_Metric{};
+        Metric_type s_d2r_Metric{};
+        bool eval_bitmask[3]{};
+        bool ignore_flag{};
 
     public:
 
@@ -261,12 +326,11 @@
 
         /* Metric and its derivatives */
 
-        int get_metric(double metric[4][4], double* N_metric,
-            double* omega_metric, double r, double theta);
+        int update_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]);
 
-        int get_dr_metric(double dr_metric[4][4], double* dr_N_metric,
-            double* dr_omega_metric, double r, double theta);
-
+        int update_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]);
 
         /* Initial conditions derived from images */
 
@@ -279,6 +343,8 @@
         /* Integration Termination Conditions */
 
         bool terminate_integration(double State_vector[], double Derivatives[]);
+        void set_ignore_flag(bool flag);
+        void reset_eval_bitmask();
 
     };
 

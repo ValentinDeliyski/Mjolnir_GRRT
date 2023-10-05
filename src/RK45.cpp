@@ -12,7 +12,6 @@
 #include "Lensing.h"
 
 extern Spacetime_Base_Class* Spacetimes[];
-extern Novikov_Thorne_Model NT_Model;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 
 void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration) {
@@ -48,9 +47,7 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
 
     /* Get Disk Cooridinate Velocity */
 
-    double U_source_coord[4]{};
-
-    OTT_Model.get_disk_velocity(U_source_coord, temp_State_Vector, Spacetimes);
+    double* U_source_coord = OTT_Model.get_disk_velocity(temp_State_Vector);
 
     /* Get The Redshift */
 
@@ -62,15 +59,15 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
 
     case Synchotron_exact:
 
-        Emission_function = OTT_Model.get_emission_function_synchotron_exact(temp_State_Vector, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(temp_State_Vector));
+        Emission_function = OTT_Model.get_emission_function_synchotron_exact(temp_State_Vector);
+        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
 
         break;
 
     case Synchotron_phenomenological:
 
-        Emission_function = OTT_Model.get_emission_function_synchotron_phenomenological(temp_State_Vector, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(temp_State_Vector));
+        Emission_function = OTT_Model.get_emission_function_synchotron_phenomenological(temp_State_Vector);
+        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
     
         break;
 
@@ -125,6 +122,8 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
         get_Radiative_Transfer(inter_State_vector, Derivatives, iteration);
 
         iteration += 1;
+
+        Spacetimes[e_metric]->reset_eval_bitmask();
 
     }
 

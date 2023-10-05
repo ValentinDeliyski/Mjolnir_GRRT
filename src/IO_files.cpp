@@ -309,7 +309,7 @@ void File_manager_class::open_image_output_files() {
                 + "_n"
                 + std::to_string(File_Index)
                 + "_"
-                + std::to_string(OTT_Model.HOTSPOT_PHI_COORD * 10);
+                + std::to_string(0.0 * 10);
 
             Image_file_names[File_Index].replace_extension(file_extention);
             Image_full_path[File_Index] = dir / "Hotspot_animation_frames" / Image_file_names[File_Index];

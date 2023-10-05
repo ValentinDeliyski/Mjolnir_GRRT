@@ -67,7 +67,7 @@
 
     Real PLANCK_CONSTANT_CGS = 6.626196e-27;
 
-    Real OBS_FREQUENCY_CGS = 375e9;
+    Real OBS_FREQUENCY_CGS = 345e9;
 
     Real CGS_TO_JANSKY = 1e+23;
 

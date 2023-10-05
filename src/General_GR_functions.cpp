@@ -278,4 +278,3 @@ int compute_image_order(int N_theta_turning_points, Initial_conditions_type* p_I
     return order * bool(order > 0);
 
 }
-

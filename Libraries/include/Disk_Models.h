@@ -5,7 +5,7 @@
     #define DISK_MODELS
 
     #include "Spacetimes.h"
-
+    #include "Structs.h"
     #include <iostream>
     #include <vector>
 
@@ -43,30 +43,44 @@
 
     class Optically_Thin_Toroidal_Model {
 
+        private:
+            Disk_model_parameters s_Disk_Parameters{};
+            Emission_law_parameters s_Emission_Parameters{};
+            Precomputed_e_pitch_angles s_Precomputed_e_pitch_angles{};
+            double Disk_velocity[4]{};
+            double Disk_Temperature{};
+            double Disk_density_profile{};
+            double Disk_hotspot;
+
+            int update_disk_velocity(double State_vector[]);
+            int update_disk_temperature(double State_vector[]);
+            int update_disk_density_profile(double State_vector[]);
+            int update_disk_hotspot(double State_vector[]);
+
         public:
 
-            double HOTSPOT_R_COORD;
-            double HOTSPOT_PHI_COORD;
+            Optically_Thin_Toroidal_Model(Disk_model_parameters* p_Disk_Parameters, Emission_law_parameters* p_Emission_Parameters);
 
-            Optically_Thin_Toroidal_Model(double hotspot_radial_position ,double hotspot_phi_angle);
-     
-            int get_disk_velocity(double Disk_velocity[], double State_vector[], Spacetime_Base_Class* Spacetimes[]);
-
-            double get_disk_hotspot(double State_Vector[]);
-
-            double get_disk_density_profile(double State_vector[]);
+            double  get_disk_temperature(double State_vector[]);
+            double* get_disk_velocity(double State_vector[]);
+            double  get_disk_density_profile(double State_vector[]);
+            double  get_disk_hotspot(double State_Vector[]);
 
             double get_magnetic_field(double B_field[3], double State_vector[]);
 
-            double get_emission_function_synchotron_exact(double State_vector[], Spacetime_Base_Class* Spacetimes[]);
+            double get_emission_function_synchotron_exact(double State_vector[]);
 
-            double get_emission_function_synchotron_phenomenological(double State_vector[], Spacetime_Base_Class* Spacetimes[]);
+            double get_emission_function_synchotron_phenomenological(double State_vector[]);
 
-            double get_absorbtion_function(double Emission_Function, double State_vector[], double redshift, double Frequency, double Temperature);
+            double get_absorbtion_function(double Emission_Function, double State_vector[], double redshift, double Frequency);
 
-            double get_electron_pitch_angle(double State_vector[], double B_field_local[], Spacetime_Base_Class* Spacetimes[]);
+            double get_electron_pitch_angle(double State_vector[], double B_field_local[]);
 
-            double get_disk_temperature(double State_vector[]);
+            void precompute_electron_pitch_angles();
+
+            int load_parameters(Disk_model_parameters* p_Disk_Parameters, Emission_law_parameters* p_Emission_Parameters);
+
+            Disk_model_parameters get_disk_params();
 
     };
 

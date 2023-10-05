@@ -35,7 +35,7 @@
 #include "Lensing.h"
 
 #include "Rendering_Engine.h"
-
+#include"Structs.h"
 #include "Sim_Modes.h"
 
 /* 
@@ -76,7 +76,7 @@ Define the Optically Thin Disk Class
 
 */
 
-Optically_Thin_Toroidal_Model OTT_Model(HOTSPOT_R_COORD, 0);
+Optically_Thin_Toroidal_Model OTT_Model({}, {});
 
 /*
 
@@ -93,36 +93,6 @@ Initialize the file manager
 */
 
 File_manager_class File_manager(input_file_path, Truncate_files);
-
-/*
-
-Precomputed variables definitions
-
-*/
-
-double sin_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
-double one_over_sqrt_sin[NUM_SAMPLES_TO_AVG];
-double one_over_cbrt_sin[NUM_SAMPLES_TO_AVG];
-double one_over_sin_to_1_6[NUM_SAMPLES_TO_AVG];
-
-void precompute_electron_pitch_angles() {
-
-    for (int index = 0; index <= NUM_SAMPLES_TO_AVG - 1; index++) {
-
-        double pitch_angle = double(index) / NUM_SAMPLES_TO_AVG * M_PI;
-        sin_electron_pitch_angles[index] = sin(pitch_angle);
-
-        if (sin_electron_pitch_angles[index] != 0) {
-
-            one_over_sqrt_sin[index]   = 1. / sqrt(sin_electron_pitch_angles[index]);
-            one_over_cbrt_sin[index]   = 1. / cbrt(sin_electron_pitch_angles[index]);
-            one_over_sin_to_1_6[index] = 1. / sqrt(one_over_cbrt_sin[index]);
-
-        }
-
-    }
-
-}
 
 void print_ASCII_art() {
 
@@ -142,32 +112,53 @@ void print_ASCII_art() {
 
 int main() {
 
-    precompute_electron_pitch_angles();
+    OTT_Model.precompute_electron_pitch_angles();
 
-    /*
+    Disk_model_parameters Disk_params{ { HOTSPOT_R_COORD, 0.0, 0.0 },
+                                         HOTSPOT_SCALE,
+                                         HOTSPOT_REL_SCALE,
+                                         N_ELECTRON_EXACT_CGS,
+                                         DISK_OPENING_ANGLE,
+                                         DISK_CUTOFF_SCALE,
+                                         R_Cutoff,
+                                         R_0,
+                                         DISK_HEIGHT_SCALE,
+                                         DISK_RADIAL_SCALE,
+                                         T_ELECTRON_EXACT_CGS,
+                                         DISK_MAGNETIZATION };
 
-    Get the metric at the observer to feed into the initial conditions struct
+    Emission_law_parameters Emission_params{ EMISSION_SCALE_PHENOMENOLOGICAL, 
+                                             DISK_ABSORBTION_COEFF, 
+                                             EMISSION_POWER_LAW, 
+                                             SOURCE_F_POWER_LAW };
 
-    */
+    int result = OTT_Model.load_parameters(&Disk_params, &Emission_params);
 
-    Initial_conditions_type s_Initial_Conditions{};
-    s_Initial_Conditions.init_Pos[e_r]     = r_obs;
-    s_Initial_Conditions.init_Pos[e_theta] = theta_obs;
-    s_Initial_Conditions.init_Pos[e_phi]   = phi_obs;
+    if (ERROR != result) {
 
-    double metric[4][4]{}, N_obs, omega_obs;
+        /*
 
-    Spacetimes[e_metric]->get_metric(s_Initial_Conditions.init_metric, &N_obs, &omega_obs, r_obs, theta_obs);
+        Get the metric at the observer to feed into the initial conditions struct
 
-    s_Initial_Conditions.init_metric_Redshift_func = N_obs;
-    s_Initial_Conditions.init_metric_Shitft_func   = omega_obs;
+        */
 
-    print_ASCII_art();
+        Initial_conditions_type s_Initial_Conditions{};
+        s_Initial_Conditions.init_Pos[e_r]     = r_obs;
+        s_Initial_Conditions.init_Pos[e_theta] = theta_obs;
+        s_Initial_Conditions.init_Pos[e_phi]   = phi_obs;
 
-    std::cout << "Observer Radial Position [GM/c^2] = " << r_obs << '\n';
-    std::cout << "Observer Inclination [deg]        = " << int(theta_obs / M_PI * 180) << '\n';
+        Metric_type s_Metric = Spacetimes[e_metric]->get_metric(s_Initial_Conditions.init_Pos);
+        
+        memcpy(s_Initial_Conditions.init_metric, s_Metric.Metric, sizeof(s_Metric.Metric));
+        s_Initial_Conditions.init_metric_Redshift_func = s_Metric.Lapse_function;
+        s_Initial_Conditions.init_metric_Shitft_func   = s_Metric.Shift_function;
 
-    switch (Active_Sim_Mode) {
+        print_ASCII_art();
+
+        std::cout << "Observer Radial Position [GM/c^2] = " << r_obs << '\n';
+        std::cout << "Observer Inclination [deg]        = " << int(theta_obs / M_PI * 180) << '\n';
+
+        switch (Active_Sim_Mode) {
 
         case 1:
 
@@ -199,7 +190,9 @@ int main() {
 
             return ERROR;
 
-    }
+        }
 
-    return OK;
+        return OK;
+
+    }
 }
