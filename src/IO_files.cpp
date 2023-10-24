@@ -55,7 +55,7 @@ void File_manager_class::write_simulation_metadata() {
                                         << "\n"
                                         << "Observer Radial Position [M]: " << r_obs << '\n'
                                         << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI << '\n'
-                                        << "Observation Frequency [Hz]: " << OBS_FREQUENCY_SI
+                                        << "Observation Frequency [Hz]: " << OBS_FREQUENCY_CGS
                                         << '\n'
                                         << "------------------------------------------------------- Optically Thin Disk Metadata -------------------------------------------------------"
                                         << "\n"

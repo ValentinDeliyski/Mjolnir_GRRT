@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
+    const Spacetime_enums e_metric = Naked_Singularity; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.9;
+    Real SPIN = 0.01;
 
     // Wormhole spacetime parameters //
 
@@ -87,7 +87,7 @@
     Real MAG_FIELD_GEOMETRY[3] = { 1, 0, 0 }; // Unused for now
     
     Real N_ELECTRON_EXACT_CGS = 5e+05;
-    Real T_ELECTRON_EXACT_CGS = 5.9e+10;
+    Real T_ELECTRON_EXACT_CGS = 7.2e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
 

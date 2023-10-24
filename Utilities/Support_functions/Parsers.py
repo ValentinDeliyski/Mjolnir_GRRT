@@ -12,7 +12,7 @@ class Simulation_Parser():
 
             _ = csvreader.__next__()
 
-            self.metric = str(csvreader.__next__()[1])
+            self.metric = str(csvreader.__next__()[1]).split(" ")[1]
 
             _ = csvreader.__next__()
 
@@ -119,9 +119,7 @@ class Simulation_Parser():
         NT_Flux_Shifted = self.NT_Flux_Shifted.reshape(self.X_PIXEL_COUNT,self.Y_PIXEL_COUNT)
         NT_Flux_Shifted = np.flip(NT_Flux_Shifted, 0)
 
-        Metadata = self.OBS_DISTANCE, self.OBS_INCLICATION, self.WINDOW_LIMITS, self.Legend
-        
-        return Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted, Metadata
+        return Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted
     
     def export_ehtim_data(self, Spacetime: str, data: np.array, path: str):
 
@@ -147,13 +145,13 @@ class Simulation_Parser():
                   "RA: 12 h 30 m 49.3920 s \n"    +
                   "DEC: 12 deg 23 m 27.9600 s \n" +
                   "MJD: 58211.000000 \n"          + 
-                  "RF: 230.0000 GHz \n"           +
+                  "RF: {} GHz \n".format(self.OBS_FREQUENCY / 1e9)    +
                   "FOVX: {} pix 0.000110 as \n".format(self.X_PIXEL_COUNT) +
                   "FOVY: {} pix 0.000110 as \n".format(self.Y_PIXEL_COUNT) +
                   "------------------------------------ \n" +
                   "x (as)     y (as)       I (Jy/pixel)")
 
-        with open(path + '{}_data_for_ehtim.csv'.format(Spacetime), 'w') as my_file:
+        with open(path + '{}_data_for_ehtim_{}.csv'.format(Spacetime, int(self.OBS_FREQUENCY / 1e9)), 'w') as my_file:
             np.savetxt(my_file, array_to_export, fmt = '%0.4e', header = header)
 
         print('Array exported to file!')
@@ -176,12 +174,12 @@ class ehtim_Parser():
             X_data_line = csvreader.__next__()
     
             self.X_PIXEL_COUNT = int(X_data_line[2])
-            X_range        = float(X_data_line[4]) / 2
+            X_range            = float(X_data_line[4]) / 2
 
             Y_data_line = csvreader.__next__()
 
             self.Y_PIXEL_COUNT = int(Y_data_line[2])
-            Y_range        = float(Y_data_line[4]) / 2
+            Y_range            = float(Y_data_line[4]) / 2
 
             self.WINDOW_LIMITS = [-X_range, X_range, -Y_range, Y_range]
 

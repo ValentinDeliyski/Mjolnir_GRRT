@@ -46,8 +46,6 @@
 
     Real PLANCK_CONSTANT_SI = 6.62607015e-34;
 
-    Real OBS_FREQUENCY_SI = 230e9;
-
     /*
 
     Physical constants in CGS
@@ -67,7 +65,7 @@
 
     Real PLANCK_CONSTANT_CGS = 6.626196e-27;
 
-    Real OBS_FREQUENCY_CGS = 375e9;
+    Real OBS_FREQUENCY_CGS = 345e9;
 
     Real CGS_TO_JANSKY = 1e+23;
 

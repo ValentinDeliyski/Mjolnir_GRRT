@@ -112,12 +112,20 @@ def get_template_slices(N_pixels: int, template: np.array, template_params: dict
 
     return x_slice, slice_x_offset, y_slice, slice_y_offset
 
-def plot_VIDA_templte(Intensity_ehtim: np.ndarray, axes_limits: np.ndarray, fit_params: str, CROP: str, crop_rel_rage: list) -> None:
+def plot_VIDA_templte(Ehtim_Parser: ehtim_Parser, VIDA_parser: VIDA_params_Parser, CROP: str, crop_rel_rage: list) -> None:
 
-    Ehtim_image_res = int( sqrt(np.size(Intensity_ehtim)) )
-    Ehtim_image_FOV = axes_limits[1] - axes_limits[0] 
+    Units = Units_class()
 
-    VIDA_parser = VIDA_params_Parser(fit_params)
+    Intensity_ehtim, _ = Ehtim_Parser.get_plottable_ehtim_data()
+    axes_limits        = np.array([(limit) for limit in Ehtim_Parser.WINDOW_LIMITS ]) * Units.MEGA
+
+    Ehtim_image_FOV = np.abs(axes_limits[0] - axes_limits[1])  # Units of [uas]
+    pixel_size      = Ehtim_image_FOV / Ehtim_Parser.X_PIXEL_COUNT / Units.MEGA * Units.ARCSEC_TO_RAD 
+
+    # Convert the Flux from [Jy] to brightness temperature in Giga [K]
+    Intensity_ehtim = Units.Spectral_density_to_T(Intensity_ehtim / pixel_size**2 / Units.W_M2_TO_JY, Ehtim_Parser.OBS_FREQUENCY * Units.GIGA) / Units.GIGA
+
+    Ehtim_image_res = Ehtim_Parser.X_PIXEL_COUNT
 
     template = generate_general_gaussian_template(Ehtim_image_res, VIDA_parser.template_params["Gaussian_1"], Ehtim_image_FOV)
 
@@ -138,20 +146,27 @@ def plot_VIDA_templte(Intensity_ehtim: np.ndarray, axes_limits: np.ndarray, fit_
         x_crop_range = np.array([(-(slice_x_offset - Ehtim_image_FOV / 2) - crop_rel_rage[0]), (-(slice_x_offset - Ehtim_image_FOV / 2) + crop_rel_rage[1])])
         y_crop_range = np.array([(-(slice_y_offset - Ehtim_image_FOV / 2) - crop_rel_rage[2]), (-(slice_y_offset - Ehtim_image_FOV / 2) + crop_rel_rage[3])])
         
+        # The desired crop window could "cut" outside the simulated window
         FOV_overshoot_x = max(np.absolute(x_crop_range)) - Ehtim_image_FOV / 2
         FOV_overshoot_y = max(np.absolute(y_crop_range)) - Ehtim_image_FOV / 2
 
         FOV_overshoot = max(FOV_overshoot_x, FOV_overshoot_y)
+        
+        axes_limits = [-crop_rel_rage[0], 
+                        crop_rel_rage[1], 
+                       -crop_rel_rage[2], 
+                        crop_rel_rage[3]]
 
+        # If it does, crop to the end of the simulated window, while keeping the aspec ratio
         if FOV_overshoot > 0:
 
             x_crop_range = x_crop_range - np.array([-FOV_overshoot, FOV_overshoot])
             y_crop_range = y_crop_range - np.array([-FOV_overshoot, FOV_overshoot])
 
-        axes_limits = [-crop_rel_rage[0] + FOV_overshoot, 
-                        crop_rel_rage[1] - FOV_overshoot, 
-                       -crop_rel_rage[2] + FOV_overshoot, 
-                        crop_rel_rage[3] - FOV_overshoot]
+            axes_limits = [-crop_rel_rage[0] + FOV_overshoot, 
+                            crop_rel_rage[1] - FOV_overshoot, 
+                           -crop_rel_rage[2] + FOV_overshoot, 
+                            crop_rel_rage[3] - FOV_overshoot]
 
         x_crop_idx = (x_crop_range / (Ehtim_image_FOV / 2) + 1) / 2 * Ehtim_image_res
         y_crop_idx = (y_crop_range / (Ehtim_image_FOV / 2) + 1) / 2 * Ehtim_image_res
@@ -191,7 +206,7 @@ def plot_VIDA_templte(Intensity_ehtim: np.ndarray, axes_limits: np.ndarray, fit_
 
     Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
     Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
-    Subplot.set_title("EHTIM Output")
+    Subplot.set_title("EHTIM Output at {}GHz".format(int(Ehtim_Parser.OBS_FREQUENCY)))
 
     #========================= Template Plot =========================#
 
@@ -254,8 +269,6 @@ def plot_VIDA_templte(Intensity_ehtim: np.ndarray, axes_limits: np.ndarray, fit_
     template_fig.subplots_adjust(bottom=0.22)
 
     # Subplot.imshow(dark_spot_mask, cmap = "hot", extent = axes_limits)
-
-    print("f = {}".format(get_brigness_depression_ratio(ring_mask, dark_spot_mask, Intensity_ehtim)))
-
+    
     return template_fig
 
