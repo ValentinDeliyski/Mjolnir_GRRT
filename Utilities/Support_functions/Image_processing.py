@@ -112,20 +112,26 @@ def get_template_slices(N_pixels: int, template: np.array, template_params: dict
 
     return x_slice, slice_x_offset, y_slice, slice_y_offset
 
-def plot_VIDA_templte(Ehtim_Parser: ehtim_Parser, VIDA_parser: VIDA_params_Parser, CROP: str, crop_rel_rage: list) -> None:
+def plot_VIDA_templte(Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, CROP: str, crop_rel_rage: list) -> None:
 
     Units = Units_class()
+    Ehtim_Parser = Ehtim_Parsers[0]
 
-    Intensity_ehtim, _ = Ehtim_Parser.get_plottable_ehtim_data()
-    axes_limits        = np.array([(limit) for limit in Ehtim_Parser.WINDOW_LIMITS ]) * Units.MEGA
-
+    axes_limits     = np.array([(limit) for limit in Ehtim_Parser.WINDOW_LIMITS ]) * Units.MEGA
     Ehtim_image_FOV = np.abs(axes_limits[0] - axes_limits[1])  # Units of [uas]
-    pixel_size      = Ehtim_image_FOV / Ehtim_Parser.X_PIXEL_COUNT / Units.MEGA * Units.ARCSEC_TO_RAD 
-
-    # Convert the Flux from [Jy] to brightness temperature in Giga [K]
-    Intensity_ehtim = Units.Spectral_density_to_T(Intensity_ehtim / pixel_size**2 / Units.W_M2_TO_JY, Ehtim_Parser.OBS_FREQUENCY * Units.GIGA) / Units.GIGA
 
     Ehtim_image_res = Ehtim_Parser.X_PIXEL_COUNT
+    pixel_size      = Ehtim_image_FOV / Ehtim_image_res / Units.MEGA * Units.ARCSEC_TO_RAD  
+
+    Intensity_ehtim = np.zeros((Ehtim_image_res, Ehtim_image_res))
+
+    for Parser in Ehtim_Parsers:
+
+        temp_Intensity_ehtim, _ = Parser.get_plottable_ehtim_data()
+        # Convert the Flux from [Jy] to brightness temperature in Giga [K]
+        temp_Intensity_ehtim = Units.Spectral_density_to_T(temp_Intensity_ehtim / pixel_size**2 / Units.W_M2_TO_JY, Parser.OBS_FREQUENCY * Units.GIGA) / Units.GIGA
+        
+        Intensity_ehtim = Intensity_ehtim + temp_Intensity_ehtim
 
     template = generate_general_gaussian_template(Ehtim_image_res, VIDA_parser.template_params["Gaussian_1"], Ehtim_image_FOV)
 
@@ -206,7 +212,27 @@ def plot_VIDA_templte(Ehtim_Parser: ehtim_Parser, VIDA_parser: VIDA_params_Parse
 
     Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
     Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
-    Subplot.set_title("EHTIM Output at {}GHz".format(int(Ehtim_Parser.OBS_FREQUENCY)))
+
+    if len(Ehtim_Parsers) > 1:
+        Frequency_str = "{"
+
+        for Freq_num, Parser in enumerate(Ehtim_Parsers):
+
+            Frequency_str += str(int(Parser.OBS_FREQUENCY))
+
+            if Freq_num < len(Ehtim_Parsers) - 1:
+
+                Frequency_str += ", "
+
+        Frequency_str += "}"
+
+    else:
+        Frequency_str = str(Ehtim_Parser.OBS_FREQUENCY)
+
+    Subplot.set_title("EHTIM Output at {}GHz".format(Frequency_str))
+
+    colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
+    colorbar.set_label(r"Brightness Temperature [$10^9$K]")
 
     #========================= Template Plot =========================#
 
@@ -270,5 +296,8 @@ def plot_VIDA_templte(Ehtim_Parser: ehtim_Parser, VIDA_parser: VIDA_params_Parse
 
     # Subplot.imshow(dark_spot_mask, cmap = "hot", extent = axes_limits)
     
-    return template_fig
+    Brightness_ratio_str = "f at {}GHz = {}".format(Frequency_str, 
+                                                    get_brigness_depression_ratio(ring_mask, dark_spot_mask, Intensity_ehtim))
+    
+    return template_fig, Brightness_ratio_str
 
