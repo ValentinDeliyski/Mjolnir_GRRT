@@ -17,15 +17,15 @@
 
 extern Spacetime_Base_Class* Spacetimes[];
 
-tag_observer::tag_observer(double r, double theta, double phi) {
+Observer_class::Observer_class(double r, double theta, double phi) {
 
     r_obs     = r;
     theta_obs = theta;
     phi_obs   = phi;
 
-    double metric_obs[4][4]{}, N_obs, omega_obs;
+    double Obs_State_Vector[3] = {r, theta, phi};
 
-    Spacetimes[e_metric]->get_metric(metric_obs, &N_obs, &omega_obs, r_obs, theta_obs);
+    Metric_type obs_metric = Spacetimes[e_metric]->get_metric(Obs_State_Vector);
 
     /*
 
@@ -33,18 +33,18 @@ tag_observer::tag_observer(double r, double theta, double phi) {
 
     */
 
-    obs_velocity[0] = 1.0 / N_obs;
+    obs_velocity[0] = 1.0 / obs_metric.Lapse_function;
     obs_velocity[1] = 0;
     obs_velocity[2] = 0;
-    obs_velocity[3] = omega_obs / N_obs;
+    obs_velocity[3] = obs_metric.Shift_function / obs_metric.Lapse_function;
 
 }
 
-double tag_observer::get_r_obs()     { return r_obs; };
-double tag_observer::get_theta_obs() { return theta_obs; };
-double tag_observer::get_phi_obs()   { return phi_obs; };
+double Observer_class::get_r_obs()     { return r_obs; };
+double Observer_class::get_theta_obs() { return theta_obs; };
+double Observer_class::get_phi_obs()   { return phi_obs; };
 
-int tag_observer::get_obs_velocity(double Obs_velocity[4]) {
+int Observer_class::get_obs_velocity(double Obs_velocity[4]) {
 
     for (int index = 0; index <= 3; index++) {
 
@@ -87,10 +87,13 @@ double* Kerr_class::get_Photon_Sphere() {
 
 }
 
-int Kerr_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int Kerr_class::update_metric(double State_Vector[]) {
 
     double M = MASS;
     double a = SPIN;
+
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -98,29 +101,48 @@ int Kerr_class::get_metric(double metric[4][4], double* N_metric, double* omega_
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
-    metric[0][0] = -(1 - 2 * M * r / rho2);
-    metric[0][3] = -2 * M * r * a * sin_theta * sin_theta / rho2;
-    metric[3][0] = metric[0][3];
-    metric[1][1] = rho2 / delta;
-    metric[2][2] = rho2;
-    metric[3][3] = (r2 + a * a + 2 * M * r * a * a / rho2 * sin_theta * sin_theta) * sin_theta * sin_theta;
+    this->s_Metric.Metric[0][0] = -(1 - 2 * M * r / rho2);
+    this->s_Metric.Metric[0][3] = -2 * M * r * a * sin_theta * sin_theta / rho2;
+    this->s_Metric.Metric[3][0] = this->s_Metric.Metric[0][3];
+    this->s_Metric.Metric[1][1] = rho2 / delta;
+    this->s_Metric.Metric[2][2] = rho2;
+    this->s_Metric.Metric[3][3] = (r2 + a * a + 2 * M * r * a * a / rho2 * sin_theta * sin_theta) * sin_theta * sin_theta;
 
     double sigma2 = (r2 + a * a) * (r2 + a * a) - a * a * delta * sin_theta * sin_theta;
 
-    *N_metric = sqrt(rho2 * delta / sigma2);
-    *omega_metric = 2 * a * r / sigma2;
+    this->s_Metric.Lapse_function = sqrt(rho2 * delta / sigma2);
+    this->s_Metric.Shift_function = 2 * a * r / sigma2;
 
     return OK;
+
+};
+
+Metric_type Kerr_class::get_metric(double State_vector[]) {
+
+    if (false == this->eval_bitmask[0] || true == this->ignore_flag) {
+
+        this->update_metric(State_vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[0] = true;
+
+        }
+
+    }
+
+    return this->s_Metric;
 }
 
-int Kerr_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
+int Kerr_class::update_dr_metric(double State_Vector[]) {
 
     double M = MASS;
     double a = SPIN;
 
-    double metric[4][4], N, omega;
+    Metric_type s_Metric = this->get_metric(State_Vector);
 
-    Kerr_class::get_metric(metric, &N, &omega, r, theta);
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -128,34 +150,50 @@ int Kerr_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_o
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
-    dr_metric[0][0] = -2 * M / rho2 * (2 * r2 / rho2 - 1);
-    dr_metric[0][3] = 2 * M * a * sin_theta * sin_theta / rho2 * (2 * r2 / rho2 - 1);
-    dr_metric[1][1] = 2 * r / delta * (1 - rho2 / delta * (1 - M / r));
-    dr_metric[2][2] = 2 * r;
-    dr_metric[3][3] = 2 * (r - M * a * a / rho2 * (2 * r2 / rho2 - 1) * sin_theta * sin_theta) * sin_theta * sin_theta;
+    this->s_dr_Metric.Metric[0][0] = -2 * M / rho2 * (2 * r2 / rho2 - 1);
+    this->s_dr_Metric.Metric[0][3] = 2 * M * a * sin_theta * sin_theta / rho2 * (2 * r2 / rho2 - 1);
+    this->s_dr_Metric.Metric[3][0] = this->s_dr_Metric.Metric[0][3];
+    this->s_dr_Metric.Metric[1][1] = 2 * r / delta * (1 - rho2 / delta * (1 - M / r));
+    this->s_dr_Metric.Metric[2][2] = 2 * r;
+    this->s_dr_Metric.Metric[3][3] = 2 * (r - M * a * a / rho2 * (2 * r2 / rho2 - 1) * sin_theta * sin_theta) * sin_theta * sin_theta;
 
-    double sigma2 = rho2 * metric[3][3] / sin_theta / sin_theta;
-    double dr_sigma2 = 2 * r * metric[3][3] + rho2 * dr_metric[3][3];
+    double sigma2 = rho2 * this->s_Metric.Metric[3][3] / sin_theta / sin_theta;
+    double dr_sigma2 = 2 * r * this->s_Metric.Metric[3][3] + rho2 * this->s_dr_Metric.Metric[3][3];
 
-    *dr_N = N * (r / rho2 + (r - M) / delta - dr_sigma2 / 2 / sigma2);
-    *dr_omega = omega / r * (1 - r * dr_sigma2 / sigma2);
+    this->s_dr_Metric.Lapse_function = this->s_Metric.Lapse_function * (r / rho2 + (r - M) / delta - dr_sigma2 / 2 / sigma2);
+    this->s_dr_Metric.Shift_function = this->s_Metric.Shift_function / r * (1 - r * dr_sigma2 / sigma2);
 
     return OK;
 
 }
 
-int Kerr_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
+Metric_type Kerr_class::get_dr_metric(double State_Vector[]) {
+
+    if (false == this->eval_bitmask[1] || true == this->ignore_flag) {
+
+        this->update_dr_metric(State_Vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[1] = true;
+
+        }
+
+    }
+
+    return this->s_dr_Metric;
+}
+
+int Kerr_class::update_d2r_metric(double State_Vector[]) {
 
     double M = MASS;
     double a = SPIN;
 
-    double metric[4][4], N, omega;
+    Metric_type s_Metric    = this->get_metric(State_Vector);
+    Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
 
-    Kerr_class::get_metric(metric, &N, &omega, r, theta);
-
-    double dr_metric[4][4], dr_N, dr_omega;
-
-    Kerr_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -163,22 +201,46 @@ int Kerr_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
-    d2r_metric[0][0] = 4 * M * r / rho2 / rho2 * (4 * r2 / rho2 - 3);
-    d2r_metric[0][3] = -4 * M * a * r * sin_theta * sin_theta / rho2 / rho2 * (4 * r2 / rho2 - 3);
-    d2r_metric[1][1] = 2 / delta * (1 - 4 * (r2 - r * M) / delta + rho2 / delta * (2 * (r - M) * (r - M) / delta - 1));
-    d2r_metric[2][2] = 2.0;
-    d2r_metric[3][3] = 2 * (1 + 2 * M * a * a * r / rho2 / rho2 * (4 * r2 / rho2 - 3) * sin_theta * sin_theta) * sin_theta * sin_theta;
+    this->s_d2r_Metric.Metric[0][0] = 4 * M * r / rho2 / rho2 * (4 * r2 / rho2 - 3);
+    this->s_d2r_Metric.Metric[0][3] = -4 * M * a * r * sin_theta * sin_theta / rho2 / rho2 * (4 * r2 / rho2 - 3);
+    this->s_d2r_Metric.Metric[3][0] = this->s_d2r_Metric.Metric[0][3];
+    this->s_d2r_Metric.Metric[1][1] = 2 / delta * (1 - 4 * (r2 - r * M) / delta + rho2 / delta * (2 * (r - M) * (r - M) / delta - 1));
+    this->s_d2r_Metric.Metric[2][2] = 2.0;
+    this->s_d2r_Metric.Metric[3][3] = 2 * (1 + 2 * M * a * a * r / rho2 / rho2 * (4 * r2 / rho2 - 3) * sin_theta * sin_theta) * sin_theta * sin_theta;
 
-    double sigma2 = rho2 * metric[3][3] / sin_theta / sin_theta;
-    double dr_sigma2 = (2 * r * metric[3][3] + rho2 * dr_metric[3][3]) / sin_theta / sin_theta;
-    double d2r_sigma2 = (2 * metric[3][3] + 4 * r * dr_metric[3][3] + rho2 * d2r_metric[3][3]) / sin_theta / sin_theta;
+    double sigma2     = rho2 * this->s_Metric.Metric[3][3] / sin_theta / sin_theta;
+    double dr_sigma2  = (2 * r * this->s_Metric.Metric[3][3] + rho2 * this->s_dr_Metric.Metric[3][3]) / sin_theta / sin_theta;
+    double d2r_sigma2 = (2 * this->s_Metric.Metric[3][3] + 4 * r * this->s_dr_Metric.Metric[3][3] + rho2 * this->s_d2r_Metric.Metric[3][3]) / sin_theta / sin_theta;
 
-    *d2r_N = dr_N * dr_N / N + N / rho2 * (1 - 2 * r2 / rho2 + rho2 / delta * (1 - (r - M) * (r - M) / delta) - rho2 / sigma2 / 2 * (d2r_sigma2 - dr_sigma2 * dr_sigma2 / sigma2));
-    *d2r_omega = -omega / r2 * (1 - r * dr_omega / omega + r * dr_sigma2 / sigma2) * (1 - r * dr_sigma2 / sigma2);
+    double& N    = this->s_Metric.Lapse_function;
+    double& dr_N = this->s_dr_Metric.Lapse_function;
+    this->s_d2r_Metric.Lapse_function = dr_N * dr_N / N + N / rho2 * (1 - 2 * r2 / rho2 + rho2 / delta * (1 - (r - M) * (r - M) / delta) - rho2 / sigma2 / 2 * (d2r_sigma2 - dr_sigma2 * dr_sigma2 / sigma2));
+
+    double& omega    = this->s_Metric.Shift_function;
+    double& dr_omega = this->s_dr_Metric.Shift_function;
+    this->s_d2r_Metric.Shift_function = -omega / r2 * (1 - r * dr_omega / omega + r * dr_sigma2 / sigma2) * (1 - r * dr_sigma2 / sigma2);
 
     return OK;
 
 }
+
+Metric_type Kerr_class::get_d2r_metric(double State_Vector[]) {
+
+    if (false == this->eval_bitmask[2] || true == this->ignore_flag) {
+
+        this->update_d2r_metric(State_Vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[2] = true;
+
+        }
+
+    }
+
+    return this->s_d2r_Metric;
+}
+
 
 int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
@@ -204,10 +266,12 @@ int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Init
     return OK;
 }
 
-int Kerr_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int Kerr_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration) {
 
     double& r = inter_State_vector[e_r + iteration * e_State_Number];
     double r2 = r * r;
+
+    double& J = inter_State_vector[e_p_phi];
 
     double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
     double sin2 = sin1 * sin1;
@@ -227,7 +291,7 @@ int Kerr_class::get_EOM(double inter_State_vector[], double J, double Derivative
     Derivatives[e_r      + iteration * e_State_Number] = delta / rho2 * p_r;
     Derivatives[e_theta  + iteration * e_State_Number] = 1.0 / rho2 * p_theta;
     Derivatives[e_phi    + iteration * e_State_Number] = 1.0 / (delta * rho2) * (P * SPIN + delta * (J / sin2 - SPIN));
-    Derivatives[e_phi_FD + iteration * e_State_Number] = -1.0 / rho2; /* Mino Time */
+    Derivatives[e_p_phi  + iteration * e_State_Number] = 0.0;
 
     double theta_term_1 = -(delta * p_r * p_r + p_theta * p_theta) * SPIN * SPIN * cos1 * sin1 / (rho2 * rho2);
     double theta_term_2 = F * SPIN * SPIN * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - SPIN * SPIN * cos1 * sin1) / rho2;
@@ -253,6 +317,22 @@ bool Kerr_class::terminate_integration(double State_vector[], double Derivatives
     bool hit_horizon = State_vector[e_r] - r_horizon < 1e-5;
 
     return scatter || hit_horizon;
+
+};
+
+void Kerr_class::reset_eval_bitmask() {
+
+    for (int index = 0; index <= 2; index++) {
+
+        this->eval_bitmask[index] = false;
+
+    }
+
+}
+
+void Kerr_class::set_ignore_flag(bool flag) {
+
+    this->ignore_flag = flag;
 
 };
 
@@ -286,29 +366,50 @@ double* RBH_class::get_Photon_Sphere() {
 
 }
 
-int RBH_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int RBH_class::update_metric(double State_Vector[]) {
+
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
     double rho = sqrt(r2 + RBH_PARAM * RBH_PARAM);
 
-    metric[0][0] = -(1 - 2 * MASS / rho);
-    metric[0][3] = 0.0;
-    metric[1][1] = -1.0 / metric[0][0];
-    metric[2][2] = rho * rho;
-    metric[3][3] = metric[2][2] * sin_theta * sin_theta;
+    this->s_Metric.Metric[0][0] = -(1 - 2 * MASS / rho);
+    this->s_Metric.Metric[0][3] = 0.0;
+    this->s_Metric.Metric[1][1] = -1.0 / this->s_Metric.Metric[0][0];
+    this->s_Metric.Metric[2][2] = rho * rho;
+    this->s_Metric.Metric[3][3] = this->s_Metric.Metric[2][2] * sin_theta * sin_theta;
 
-    *N_metric = -metric[0][0];
-    *omega_metric = 0.0;
+    this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
+    this->s_Metric.Shift_function = 0.0;
 
     return OK;
 }
 
-int RBH_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
+Metric_type RBH_class::get_metric(double State_vector[]) {
 
-    double metric[4][4], N, omega;
+    if (false == this->eval_bitmask[0] || true == this->ignore_flag) {
 
-    RBH_class::get_metric(metric, &N, &omega, r, theta);
+        this->update_metric(State_vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[0] = true;
+
+        }
+
+    }
+
+    return this->s_Metric;
+}
+
+int RBH_class::update_dr_metric(double State_Vector[]) {
+
+    Metric_type s_Metric = this->get_metric(State_Vector);
+
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -316,28 +417,44 @@ int RBH_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_om
     double rho = sqrt(r2 + RBH_PARAM * RBH_PARAM);
     double rho3 = rho * rho * rho;
 
-    dr_metric[0][0] = -2 * MASS * r / rho3;
-    dr_metric[0][3] = 0.0;
-    dr_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * dr_metric[0][0];
-    dr_metric[2][2] = 2 * r;
-    dr_metric[3][3] = 2 * r * sin_theta * sin_theta;
+    this->s_dr_Metric.Metric[0][0] = -2 * MASS * r / rho3;
+    this->s_dr_Metric.Metric[0][3] = 0.0;
+    this->s_dr_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0];
+    this->s_dr_Metric.Metric[2][2] = 2 * r;
+    this->s_dr_Metric.Metric[3][3] = 2 * r * sin_theta * sin_theta;
 
-    *dr_N = -dr_metric[0][0];
-    *dr_omega = 0.0;
+    this->s_dr_Metric.Lapse_function = -this->s_dr_Metric.Metric[0][0];
+    this->s_dr_Metric.Shift_function = 0.0;
 
     return OK;
 
 }
 
-int RBH_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
+Metric_type RBH_class::get_dr_metric(double State_vector[]) {
 
-    double metric[4][4], N, omega;
+    if (false == this->eval_bitmask[1] || true == this->ignore_flag) {
 
-    RBH_class::get_metric(metric, &N, &omega, r, theta);
+        this->update_dr_metric(State_vector);
 
-    double dr_metric[4][4], dr_N, dr_omega;
+        if (false == this->ignore_flag) {
 
-    RBH_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
+            this->eval_bitmask[1] = true;
+
+        }
+
+    }
+
+    return this->s_dr_Metric;
+}
+
+
+int RBH_class::update_d2r_metric(double State_Vector[]) {
+
+    Metric_type s_Metric    = this->get_metric(State_Vector);
+    Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
+
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -346,18 +463,35 @@ int RBH_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2
     double rho3 = rho * rho * rho;
     double rho5 = rho * rho * rho * rho * rho;
 
-    d2r_metric[0][0] = -2 * MASS / rho3 + 6 * MASS * r2 / (rho5);
-    d2r_metric[0][3] = 0.0;
-    d2r_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * d2r_metric[0][0] - 
-                       2.0 / (metric[0][0] * metric[0][0] * metric[0][0]) * dr_metric[0][0] * dr_metric[0][0];
-    d2r_metric[2][2] = 2.0;
-    d2r_metric[3][3] = 2 * sin_theta * sin_theta;
+    this->s_d2r_Metric.Metric[0][0] = -2 * MASS / rho3 + 6 * MASS * r2 / (rho5);
+    this->s_d2r_Metric.Metric[0][3] = 0.0;
+    this->s_d2r_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_d2r_Metric.Metric[0][0] -
+                       2.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0] * this->s_dr_Metric.Metric[0][0];
+    this->s_d2r_Metric.Metric[2][2] = 2.0;
+    this->s_d2r_Metric.Metric[3][3] = 2 * sin_theta * sin_theta;
 
-    *d2r_N = -d2r_metric[0][0];
-    *d2r_omega = 0.0;
+    this->s_d2r_Metric.Lapse_function = -this->s_d2r_Metric.Metric[0][0];
+    this->s_d2r_Metric.Shift_function = 0.0;
 
     return OK;
 
+}
+
+Metric_type RBH_class::get_d2r_metric(double State_vector[]) {
+
+    if (false == this->eval_bitmask[2] || true == this->ignore_flag) {
+
+        this->update_d2r_metric(State_vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[2] = true;
+
+        }
+
+    }
+
+    return this->s_d2r_Metric;
 }
 
 int RBH_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
@@ -380,10 +514,12 @@ int RBH_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initi
     return OK;
 }
 
-int RBH_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int RBH_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration) {
 
     double r = inter_State_vector[0 + iteration * e_State_Number];
     double rho = sqrt(r * r + RBH_PARAM * RBH_PARAM);
+
+    double& J = inter_State_vector[e_p_phi];
 
     double sin1 = sin(inter_State_vector[1 + iteration * e_State_Number]);
     double sin2 = sin1 * sin1;
@@ -391,10 +527,10 @@ int RBH_class::get_EOM(double inter_State_vector[], double J, double Derivatives
     double cos1 = cos(inter_State_vector[1 + iteration * e_State_Number]);
     double cos2 = cos1 * cos1;
 
-    Derivatives[e_r + iteration * e_State_Number] = (1 - 2 * MASS / rho) * inter_State_vector[e_p_r + iteration * e_State_Number];
-    Derivatives[e_theta + iteration * e_State_Number] = 1.0 / (rho * rho) * inter_State_vector[e_p_theta + iteration * e_State_Number];
-    Derivatives[e_phi + iteration * e_State_Number] = J / (rho * rho * sin2);
-    Derivatives[e_phi_FD + iteration * e_State_Number] = 0.0;
+    Derivatives[e_r       + iteration * e_State_Number] = (1 - 2 * MASS / rho) * inter_State_vector[e_p_r + iteration * e_State_Number];
+    Derivatives[e_theta   + iteration * e_State_Number] = 1.0 / (rho * rho) * inter_State_vector[e_p_theta + iteration * e_State_Number];
+    Derivatives[e_phi     + iteration * e_State_Number] = J / (rho * rho * sin2);
+    Derivatives[e_p_phi   + iteration * e_State_Number] = 0.0;
     Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (rho * rho * sin1 * sin2) * J * J;
 
     double r_term_1 = -MASS * r / (rho * rho * rho) * (1.0 / ((1 - 2 * MASS / rho) * (1 - 2 * MASS / rho)) + inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number]);
@@ -416,6 +552,22 @@ bool RBH_class::terminate_integration(double State_vector[], double Derivatives[
     return scatter || hit_horizon_RBH;
 
 }
+
+void RBH_class::reset_eval_bitmask() {
+
+    for (int index = 0; index <= 2; index++) {
+
+        this->eval_bitmask[index] = false;
+
+    }
+
+}
+
+void RBH_class::set_ignore_flag(bool flag) {
+
+    this->ignore_flag = flag;
+
+};
 
 /***********************************************
 |                                              |
@@ -459,72 +611,137 @@ double* Wormhole_class::get_Photon_Sphere() {
 
 }
 
-int Wormhole_class::get_metric(double metric[4][4], double* N_metric, double* omega, double l, double theta) {
+int Wormhole_class::update_metric(double State_Vector[]) {
 
-    double r = sqrt(l * l + WH_R_THROAT * WH_R_THROAT);
+    double& ell   = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
+
+    double r = sqrt(ell * ell + WH_R_THROAT * WH_R_THROAT);
     double r2 = r * r;
     double sin_theta = sin(theta);
 
     double exponent = -MASS / r - WH_REDSHIFT * MASS * MASS / r2;
 
-    *N_metric = exp(exponent);
-    *omega = 2 * SPIN * MASS * MASS / r2 / r;
+    this->s_Metric.Lapse_function = exp(exponent);
+    this->s_Metric.Shift_function = 2 * SPIN * MASS * MASS / r2 / r;
 
-    metric[0][0] = -*N_metric * *N_metric + r2 * *omega * *omega * sin_theta * sin_theta;
-    metric[0][3] = -r2 * sin_theta * sin_theta * *omega;
-    metric[1][1] = 1. / (1 - WH_R_THROAT / r);
-    metric[2][2] = r2;
-    metric[3][3] = r2 * sin_theta * sin_theta;
+    this->s_Metric.Metric[0][0] = -this->s_Metric.Lapse_function * this->s_Metric.Lapse_function + 
+                                   r2 * this->s_Metric.Shift_function * this->s_Metric.Shift_function * sin_theta * sin_theta;
+    this->s_Metric.Metric[0][3] = -r2 * sin_theta * sin_theta * this->s_Metric.Shift_function;
+    this->s_Metric.Metric[1][1] = 1. / (1 - WH_R_THROAT / r);
+    this->s_Metric.Metric[2][2] = r2;
+    this->s_Metric.Metric[3][3] = r2 * sin_theta * sin_theta;
 
-    return 0;
+    return OK;
 }
 
-int Wormhole_class::get_dr_metric(double dr_metric[4][4], double* dr_N, double* dr_omega, double l, double theta) {
+Metric_type Wormhole_class::get_metric(double State_vector[]) {
 
-    double metric[4][4], N, omega;
+    if (false == this->eval_bitmask[0] || true == this->ignore_flag) {
 
-    Wormhole_class::get_metric(metric, &N, &omega, l, theta);
+        this->update_metric(State_vector);
 
-    double r = sqrt(l * l + WH_R_THROAT * WH_R_THROAT);
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[0] = true;
+
+        }
+
+    }
+
+    return this->s_Metric;
+}
+
+int Wormhole_class::update_dr_metric(double State_Vector[]) {
+
+    Metric_type s_Metric = this->get_metric(State_Vector);
+
+    double& ell   = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
+
+    double r = sqrt(ell * ell + WH_R_THROAT * WH_R_THROAT);
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    *dr_N = N * (1 / r2 + 2 * WH_REDSHIFT / (r2 * r));
-    *dr_omega = -3 * omega / r;
+    this->s_dr_Metric.Lapse_function = this->s_Metric.Lapse_function * (1 / r2 + 2 * WH_REDSHIFT / (r2 * r));
+    this->s_dr_Metric.Shift_function = -3 * this->s_Metric.Shift_function / r;
 
-    dr_metric[0][0] = -2 * N * *dr_N + 2 * r * omega * (omega + r * *dr_omega) * sin_theta * sin_theta;
-    dr_metric[0][3] = -r * (2 * omega + r * *dr_omega) * sin_theta * sin_theta;
-    dr_metric[1][1] = -1. / ((1 - WH_R_THROAT / r) * (1 - WH_R_THROAT / r)) * (WH_R_THROAT / r2);
-    dr_metric[2][2] = 2 * r;
-    dr_metric[3][3] = 2 * r * sin_theta * sin_theta;
+    double& N        = this->s_Metric.Lapse_function;
+    double& dr_N     = this->s_dr_Metric.Lapse_function;
+    double& omega    = this->s_Metric.Shift_function;
+    double& dr_omega = this->s_dr_Metric.Shift_function;
 
-    return 0;
+    this->s_dr_Metric.Metric[0][0] = -2 * N * dr_N + 2 * r * omega * (omega + r * dr_omega) * sin_theta * sin_theta;
+    this->s_dr_Metric.Metric[0][3] = -r * (2 * omega + r * dr_omega) * sin_theta * sin_theta;
+    this->s_dr_Metric.Metric[1][1] = -1. / ((1 - WH_R_THROAT / r) * (1 - WH_R_THROAT / r)) * (WH_R_THROAT / r2);
+    this->s_dr_Metric.Metric[2][2] = 2 * r;
+    this->s_dr_Metric.Metric[3][3] = 2 * r * sin_theta * sin_theta;
+
+    return OK;
 }
 
-int Wormhole_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double l, double theta) {
+Metric_type Wormhole_class::get_dr_metric(double State_vector[]) {
 
-    double metric[4][4], N, omega;
+    if (false == this->eval_bitmask[1] || true == this->ignore_flag) {
 
-    Wormhole_class::get_metric(metric, &N, &omega, l, theta);
+        this->update_dr_metric(State_vector);
 
-    double dr_metric[4][4], dr_N, dr_omega;
+        if (false == this->ignore_flag) {
 
-    Wormhole_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, l, theta);
+            this->eval_bitmask[1] = true;
 
-    double r = sqrt(l * l + WH_R_THROAT * WH_R_THROAT);
+        }
+
+    }
+
+    return this->s_dr_Metric;
+}
+
+int Wormhole_class::update_d2r_metric(double State_Vector[]) {
+
+    Metric_type s_Metric    = this->get_metric(State_Vector);
+    Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
+
+    double& ell   = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
+
+    double r = sqrt(ell * ell + WH_R_THROAT * WH_R_THROAT);
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    *d2r_N = dr_N * (1 / r2 + 2 * WH_REDSHIFT / (r2 * r)) - N * (2. / (r2 * r) + 6 * WH_REDSHIFT / (r2 * r2));
-    *d2r_omega = -3 * dr_omega / r + 3 * omega / r2;
+    double& N        = this->s_Metric.Lapse_function;
+    double& dr_N     = this->s_dr_Metric.Lapse_function;
+    double& omega    = this->s_Metric.Shift_function;
+    double& dr_omega = this->s_dr_Metric.Shift_function;
 
-    d2r_metric[0][0] = -2 * dr_N * dr_N - 2 * N * *d2r_N + 2 * ((omega + r * dr_omega) * (omega + r * dr_omega) + r * omega * (dr_omega + dr_omega + r * *d2r_omega)) * sin_theta * sin_theta;
-    d2r_metric[0][3] = -(2 * omega + r * dr_omega + r * (3 * dr_omega + r * *d2r_omega)) * sin_theta * sin_theta;
-    d2r_metric[1][1] = 2 / ((1 - WH_R_THROAT / r) * (1 - WH_R_THROAT / r)) * ((WH_R_THROAT / r2) * (WH_R_THROAT / r2) / (1 - WH_R_THROAT / r) + WH_R_THROAT / (r2 * r));
-    d2r_metric[2][2] = 2.0;
-    d2r_metric[3][3] = 2 * sin_theta * sin_theta;
+    this->s_d2r_Metric.Lapse_function = dr_N * (1 / r2 + 2 * WH_REDSHIFT / (r2 * r)) - N * (2. / (r2 * r) + 6 * WH_REDSHIFT / (r2 * r2));
+    this->s_d2r_Metric.Shift_function = -3 * dr_omega / r + 3 * omega / r2;
 
-    return 0;
+    this->s_d2r_Metric.Metric[0][0] = -2 * dr_N * dr_N - 2 * N * this->s_d2r_Metric.Lapse_function + 2 * ((omega + r * dr_omega) * (omega + r * dr_omega) + 
+                                      r * omega * (dr_omega + dr_omega + r * this->s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
+     this->s_d2r_Metric.Metric[0][3] = -(2 * omega + r * dr_omega + r * (3 * dr_omega + r * this->s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
+     this->s_d2r_Metric.Metric[1][1] = 2 / ((1 - WH_R_THROAT / r) * (1 - WH_R_THROAT / r)) * ((WH_R_THROAT / r2) * (WH_R_THROAT / r2) / (1 - WH_R_THROAT / r) + WH_R_THROAT / (r2 * r));
+     this->s_d2r_Metric.Metric[2][2] = 2.0;
+     this->s_d2r_Metric.Metric[3][3] = 2 * sin_theta * sin_theta;
+
+    return OK;
+}
+
+Metric_type Wormhole_class::get_d2r_metric(double State_vector[]) {
+
+    if (false == this->eval_bitmask[2] || true == this->ignore_flag) {
+
+        this->update_d2r_metric(State_vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[2] = true;
+
+        }
+
+    }
+
+    return this->s_d2r_Metric;
 }
 
 int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
@@ -551,16 +768,18 @@ int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_
     return 0;
 }
 
-int Wormhole_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int Wormhole_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration) {
 
     double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * e_State_Number] * inter_State_vector[0 + iteration * e_State_Number] + WH_R_THROAT * WH_R_THROAT);
     double d_ell_r = inter_State_vector[0 + iteration * e_State_Number] / sqrt_r2;
+
+    double& J = inter_State_vector[e_p_phi];
 
     double omega = 2 * SPIN / (sqrt_r2 * sqrt_r2 * sqrt_r2);
     double d_ell_omega = -3 * omega / sqrt_r2 * d_ell_r;
 
     double exponent = -1 / sqrt_r2 - WH_REDSHIFT / (sqrt_r2 * sqrt_r2);
-    double N = exp(exponent);
+    double N = this->get_metric(inter_State_vector).Lapse_function;
     double d_ell_N = N * (1 / (sqrt_r2 * sqrt_r2) + 2 * WH_REDSHIFT / (sqrt_r2 * sqrt_r2 * sqrt_r2)) * d_ell_r;
 
     double N2 = N * N;
@@ -570,8 +789,8 @@ int Wormhole_class::get_EOM(double inter_State_vector[], double J, double Deriva
 
     Derivatives[e_r       + iteration * e_State_Number] = 1.0 / (1 + WH_R_THROAT / sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number];
     Derivatives[e_theta   + iteration * e_State_Number] = 1.0 / (sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_theta + iteration * e_State_Number];
-    Derivatives[e_phi     + iteration * e_State_Number] = J / (sqrt_r2 * sqrt_r2 * sin2);
-    Derivatives[e_phi_FD  + iteration * e_State_Number] = omega * (1 - omega * J) / N2;
+    Derivatives[e_phi     + iteration * e_State_Number] = J / (sqrt_r2 * sqrt_r2 * sin2) + omega * (1 - omega * J) / N2;
+    Derivatives[e_p_phi   + iteration * e_State_Number] = 0.0;
     Derivatives[e_p_theta + iteration * e_State_Number] = (cos(inter_State_vector[1 + iteration * e_State_Number]) / sin1) / (sqrt_r2 * sqrt_r2) * J * J / sin2;
 
     double term_1 = -1.0 / ((1 + WH_R_THROAT / sqrt_r2) * (1 + WH_R_THROAT / sqrt_r2)) * WH_R_THROAT * inter_State_vector[e_r + iteration * e_State_Number] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] / 2;
@@ -599,6 +818,23 @@ bool Wormhole_class::terminate_integration(double State_vector[], double Derivat
 
     }
 };
+
+void Wormhole_class::reset_eval_bitmask() {
+
+    for (int index = 0; index <= 2; index++) {
+
+        this->eval_bitmask[index] = false;
+
+    }
+
+}
+
+void Wormhole_class::set_ignore_flag(bool flag) {
+
+    this->ignore_flag = flag;
+
+};
+
 
 /******************************************************************************
 |                                                                             |
@@ -649,79 +885,134 @@ double* JNW_class::get_Photon_Sphere() {
 
 };
 
-int JNW_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int JNW_class::update_metric(double State_Vector[]) {
+
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    metric[0][0] = -pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA);
-    metric[1][1] = -1.0 / metric[0][0];
-    metric[2][2] = pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) * r2;
-    metric[3][3] = metric[2][2] * sin_theta * sin_theta;
-    metric[0][3] = 0.;
-    metric[3][0] = metric[0][3];
+    this->s_Metric.Metric[0][0] = -pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA);
+    this->s_Metric.Metric[1][1] = -1.0 / this->s_Metric.Metric[0][0];
+    this->s_Metric.Metric[2][2] = pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) * r2;
+    this->s_Metric.Metric[3][3] = this->s_Metric.Metric[2][2] * sin_theta * sin_theta;
+    this->s_Metric.Metric[0][3] = 0.;
+    this->s_Metric.Metric[3][0] = this->s_Metric.Metric[0][3];
 
-    *N_metric = -metric[0][0];
-    *omega_metric = 0.;
+    this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
+    this->s_Metric.Shift_function = 0.;
 
     return OK;
 
 }
 
-int JNW_class::get_dr_metric( double dr_metric[4][4], double* dr_N, double* dr_omega, double r, double theta) {
+Metric_type JNW_class::get_metric(double State_Vector[]) {
 
-    double metric[4][4], N, omega;
+    if (false == this->eval_bitmask[0] || true == this->ignore_flag) {
 
-    JNW_class::get_metric(metric, &N, &omega, r, theta);
+        this->update_metric(State_Vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[0] = true;
+
+        }
+    }
+
+    return this->s_Metric;
+
+}
+
+int JNW_class::update_dr_metric(double State_Vector[]) {
+
+    Metric_type Metric = this->get_metric(State_Vector);
+
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    dr_metric[0][0] = -JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1) * JNW_R_SINGULARITY / r2;
-    dr_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * dr_metric[0][0];;
-    dr_metric[2][2] = 2 * r * pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) + (1 - JNW_GAMMA) * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA) * JNW_R_SINGULARITY;
-    dr_metric[3][3] = dr_metric[2][2] * sin_theta * sin_theta;
-    dr_metric[0][3] = 0;
-    dr_metric[3][0] = dr_metric[0][3];
+    this->s_dr_Metric.Metric[0][0] = -JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1) * JNW_R_SINGULARITY / r2;
+    this->s_dr_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0];;
+    this->s_dr_Metric.Metric[2][2] = 2 * r * pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) + (1 - JNW_GAMMA) * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA) * JNW_R_SINGULARITY;
+    this->s_dr_Metric.Metric[3][3] = this->s_dr_Metric.Metric[2][2] * sin_theta * sin_theta;
+    this->s_dr_Metric.Metric[0][3] = 0;
+    this->s_dr_Metric.Metric[3][0] = this->s_dr_Metric.Metric[0][3];
 
-    *dr_N = -dr_metric[0][0];
-    *dr_omega = 0.0;
+    this->s_dr_Metric.Lapse_function = -this->s_dr_Metric.Metric[0][0];
+    this->s_dr_Metric.Shift_function = 0.0;
 
     return OK;
 
 };
 
-int JNW_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N, double* d2r_omega, double r, double theta) {
+Metric_type JNW_class::get_dr_metric(double State_Vector[]) {
 
-    double metric[4][4], N, omega;
+    if (false == this->eval_bitmask[1] || true == this->ignore_flag) {
 
-    JNW_class::get_metric(metric, &N, &omega, r, theta);
+        this->update_dr_metric(State_Vector);
 
-    double dr_metric[4][4], dr_N, dr_omega;
+        if (false == this->ignore_flag) {
 
-    JNW_class::get_dr_metric(dr_metric, &dr_N, &dr_omega, r, theta);
+            this->eval_bitmask[1] = true;
+
+        }
+
+    }
+
+    return this->s_dr_Metric;
+
+}
+
+int JNW_class::update_d2r_metric(double State_Vector[]) {
+
+    Metric_type s_Metric = this->get_metric(State_Vector);
+    Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
+
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    d2r_metric[0][0] = -JNW_GAMMA * (JNW_GAMMA - 1) * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 2) * JNW_R_SINGULARITY * JNW_R_SINGULARITY / r2 / r2
-                     + 2 * JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1) * JNW_R_SINGULARITY / r2 / r;
+    this->s_d2r_Metric.Metric[0][0] = -JNW_GAMMA * (JNW_GAMMA - 1) * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 2) * JNW_R_SINGULARITY * JNW_R_SINGULARITY / r2 / r2
+                                    + 2 * JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1) * JNW_R_SINGULARITY / r2 / r;
 
-    d2r_metric[0][3] = 0.0;
+    this->s_d2r_Metric.Metric[0][3] = 0.0;
 
-    d2r_metric[1][1] = 1.0 / (metric[0][0] * metric[0][0]) * d2r_metric[0][0] 
-                     - 2.0 / (metric[0][0] * metric[0][0] * metric[0][0]) * dr_metric[0][0] * dr_metric[0][0];
+    this->s_d2r_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_d2r_Metric.Metric[0][0]
+                     - 2.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0] * this->s_dr_Metric.Metric[0][0];
 
-    d2r_metric[2][2] = 2 * pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) + 2 * (1 - JNW_GAMMA) * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA) * JNW_R_SINGULARITY / r
+    this->s_d2r_Metric.Metric[2][2] = 2 * pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) + 2 * (1 - JNW_GAMMA) * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA) * JNW_R_SINGULARITY / r
                      - (1 - JNW_GAMMA) * JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA - 1) * JNW_R_SINGULARITY * JNW_R_SINGULARITY / r2;
 
-    d2r_metric[3][3] = d2r_metric[2][2] * sin_theta * sin_theta;
+    this->s_d2r_Metric.Metric[3][3] = this->s_d2r_Metric.Metric[2][2] * sin_theta * sin_theta;
 
-    *d2r_N = -d2r_metric[0][0];
-    *d2r_omega = 0.0;
+    this->s_d2r_Metric.Lapse_function = -this->s_d2r_Metric.Metric[0][0];
+    this->s_d2r_Metric.Shift_function = 0.0;
 
     return OK;
+
+}
+
+Metric_type JNW_class::get_d2r_metric(double State_Vector[]) {
+
+    if (false == this->eval_bitmask[2] || true == this->ignore_flag) {
+
+        this->update_d2r_metric(State_Vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[2] = true;
+
+        }
+
+    }
+
+    return this->s_d2r_Metric;
 
 }
 
@@ -745,10 +1036,12 @@ int JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initi
 
 }
 
-int JNW_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration)
+int JNW_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration)
 {
 
     double r = inter_State_vector[0 + iteration * e_State_Number];
+
+    double& J = inter_State_vector[e_p_phi];
 
     double sin1 = sin(inter_State_vector[1 + iteration * e_State_Number]);
     double sin2 = sin1 * sin1;
@@ -762,7 +1055,7 @@ int JNW_class::get_EOM(double inter_State_vector[], double J, double Derivatives
     Derivatives[e_r       + iteration * e_State_Number] = pow_gamma * inter_State_vector[e_p_r + iteration * e_State_Number];
     Derivatives[e_theta   + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
     Derivatives[e_phi     + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r * sin2) * J;
-    Derivatives[e_phi_FD  + iteration * e_State_Number] = 0.0;
+    Derivatives[e_p_phi   + iteration * e_State_Number] = 0.0;
     Derivatives[e_p_theta + iteration * e_State_Number] = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
 
     double r_term_1 = -JNW_GAMMA * JNW_R_SINGULARITY / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma
@@ -783,6 +1076,22 @@ bool JNW_class::terminate_integration(double State_vector[], double Derivatives[
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
     return scatter ;
+
+};
+
+void JNW_class::reset_eval_bitmask() {
+
+    for (int index = 0; index <= 2; index++) {
+
+        this->eval_bitmask[index] = false;
+
+    }
+
+}
+
+void JNW_class::set_ignore_flag(bool flag) {
+
+    this->ignore_flag = flag;
 
 };
 
@@ -851,54 +1160,99 @@ double* Gauss_Bonnet_class::get_Photon_Sphere() {
 
 };
 
-int Gauss_Bonnet_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int Gauss_Bonnet_class::update_metric(double State_Vector[]) {
 
-    double M = MASS;
+    double  M     = MASS;
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
+
     double r2 = r * r;
     double sin_theta = sin(theta);
 
     double f = 1. + r2 / GAUSS_BONNET_GAMMA / 2. * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
 
-    metric[0][0] = -f;
-    metric[1][1] = 1. / f;
-    metric[2][2] = r2;
-    metric[3][3] = r2 * sin_theta * sin_theta;
-    metric[0][3] = 0.;
-    metric[3][0] = 0.;
+    this->s_Metric.Metric[0][0] = -f;
+    this->s_Metric.Metric[1][1] = 1. / f;
+    this->s_Metric.Metric[2][2] = r2;
+    this->s_Metric.Metric[3][3] = r2 * sin_theta * sin_theta;
+    this->s_Metric.Metric[0][3] = 0.;
+    this->s_Metric.Metric[3][0] = 0.;
 
-    *N_metric     = -metric[0][0];
-    *omega_metric = 0.;
+    this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
+    this->s_Metric.Shift_function = 0.;
 
     return OK;
 
 }
 
-int Gauss_Bonnet_class::get_dr_metric(double dr_metric[4][4], double* dr_N_metric, double* dr_omega_metric, double r, double theta) {
+Metric_type Gauss_Bonnet_class::get_metric(double State_Vector[]) {
 
-    double M  = MASS;
+    if (false == this->eval_bitmask[0] || true == this->ignore_flag) {
+
+        this->update_metric(State_Vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[0] = true;
+
+        }
+
+    }
+
+    return this->s_Metric;
+
+}
+
+int Gauss_Bonnet_class::update_dr_metric(double State_Vector[]) {
+
+    double M      = MASS;
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
+
     double r2 = r * r;
     double sin_theta = sin(theta);
 
     double f    = 1. + r2 / GAUSS_BONNET_GAMMA / 2. * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
     double dr_f = 2. / r * (f - 1.) + 6. * M / sqrt(r2 * r2 + 8. * GAUSS_BONNET_GAMMA * M * r);
 
-    dr_metric[0][0] = -dr_f;
-    dr_metric[1][1] = -1. / f / f * dr_f;
-    dr_metric[2][2] = 2. * r;
-    dr_metric[3][3] = 2. * r * sin_theta * sin_theta;
-    dr_metric[0][3] = 0.;
-    dr_metric[3][0] = 0.;
+    this->s_dr_Metric.Metric[0][0] = -dr_f;
+    this->s_dr_Metric.Metric[1][1] = -1. / f / f * dr_f;
+    this->s_dr_Metric.Metric[2][2] = 2. * r;
+    this->s_dr_Metric.Metric[3][3] = 2. * r * sin_theta * sin_theta;
+    this->s_dr_Metric.Metric[0][3] = 0.;
+    this->s_dr_Metric.Metric[3][0] = 0.;
 
-    *dr_N_metric     = -dr_metric[0][0];
-    *dr_omega_metric = 0.;
+    this->s_dr_Metric.Lapse_function = -this->s_dr_Metric.Metric[0][0];
+    this->s_dr_Metric.Shift_function = 0.;
 
     return OK;
 
 }
 
-int Gauss_Bonnet_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N_metric, double* d2r_omega_metric, double r, double theta) {
+Metric_type Gauss_Bonnet_class::get_dr_metric(double State_Vector[]) {
 
-    double M = MASS;
+    if (false == this->eval_bitmask[1] || true == this->ignore_flag) {
+
+        this->update_dr_metric(State_Vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[1] = true;
+
+        }
+
+    }
+
+    return this->s_dr_Metric;
+
+}
+
+int Gauss_Bonnet_class::update_d2r_metric(double State_Vector[]) {
+
+    double  M     = MASS;
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
+
     double r2 = r * r;
     double sin_theta = sin(theta);
 
@@ -908,17 +1262,35 @@ int Gauss_Bonnet_class::get_d2r_metric(double d2r_metric[4][4], double* d2r_N_me
     double dr_f  =  2. / r * (f - 1.) + 6 * M / root;
     double d2r_f = -2. / r2 * (f - 1.) + 2. / r * dr_f - 12. * M / root / root / root * (r2 * r + 2. * GAUSS_BONNET_GAMMA * M);
 
-    d2r_metric[0][0] = -d2r_f;
-    d2r_metric[1][1] = 2. / f / f / f * dr_f - 1. / f / f * d2r_f;
-    d2r_metric[2][2] = 2.;
-    d2r_metric[3][3] = 2. * sin_theta * sin_theta;
-    d2r_metric[0][3] = 0.;
-    d2r_metric[3][0] = 0.;
+    this->s_d2r_Metric.Metric[0][0] = -d2r_f;
+    this->s_d2r_Metric.Metric[1][1] = 2. / f / f / f * dr_f - 1. / f / f * d2r_f;
+    this->s_d2r_Metric.Metric[2][2] = 2.;
+    this->s_d2r_Metric.Metric[3][3] = 2. * sin_theta * sin_theta;
+    this->s_d2r_Metric.Metric[0][3] = 0.;
+    this->s_d2r_Metric.Metric[3][0] = 0.;
 
-    *d2r_N_metric     = -d2r_metric[0][0];
-    *d2r_omega_metric = 0.;
+    this->s_d2r_Metric.Lapse_function = -this->s_d2r_Metric.Metric[0][0];
+    this->s_d2r_Metric.Shift_function = 0.;
 
     return OK;
+
+}
+
+Metric_type Gauss_Bonnet_class::get_d2r_metric(double State_Vector[]) {
+
+    if (false == this->eval_bitmask[2] || true == this->ignore_flag) {
+
+        this->update_d2r_metric(State_Vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[2] = true;
+
+        }
+
+    }
+
+    return this->s_d2r_Metric;
 
 }
 
@@ -943,9 +1315,11 @@ int Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditions_type
 
 }
 
-int Gauss_Bonnet_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration){
+int Gauss_Bonnet_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration){
 
     double& r = inter_State_vector[e_r + iteration * e_State_Number];
+
+    double& J = inter_State_vector[e_p_phi];
 
     double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
     double sin2 = sin1 * sin1;
@@ -961,7 +1335,7 @@ int Gauss_Bonnet_class::get_EOM(double inter_State_vector[], double J, double De
     Derivatives[e_r       + iteration * e_State_Number] = f * inter_State_vector[e_p_r + iteration * e_State_Number];
     Derivatives[e_theta   + iteration * e_State_Number] = 1. / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
     Derivatives[e_phi     + iteration * e_State_Number] = J / (r * r * sin2);
-    Derivatives[e_phi_FD  + iteration * e_State_Number] = 0.0;
+    Derivatives[e_p_phi   + iteration * e_State_Number] = 0.0;
     Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (r * r * sin1 * sin2) * J * J;
 
     double r_term_1 = -1. / 2 * (1.0 / f / f + inter_State_vector[e_p_r] * inter_State_vector[e_p_r]) * dr_f;
@@ -992,6 +1366,23 @@ bool Gauss_Bonnet_class::terminate_integration(double State_vector[], double Der
     return scatter || too_high_order || hit_horizon;
 
 };
+
+void Gauss_Bonnet_class::reset_eval_bitmask() {
+
+    for (int index = 0; index <= 2; index++) {
+
+        this->eval_bitmask[index] = false;
+
+    }
+
+}
+
+void Gauss_Bonnet_class::set_ignore_flag(bool flag) {
+
+    this->ignore_flag = flag;
+
+};
+
 
 /***********************************************************************
 |                                                                      |
@@ -1070,9 +1461,12 @@ double* Black_Hole_w_Dark_Matter_Halo_class::get_ISCO() {
 
 };
 
-int Black_Hole_w_Dark_Matter_Halo_class::get_metric(double metric[4][4], double* N_metric, double* omega_metric, double r, double theta) {
+int Black_Hole_w_Dark_Matter_Halo_class::update_metric(double State_Vector[]) {
 
-    double M  = MASS;
+    double  M     = MASS;
+    double& r     = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
+
     double r2 = r * r;
     double sin_theta = sin(theta);
 
@@ -1081,22 +1475,43 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_metric(double metric[4][4], double*
     double f   = (1 - 2 * M / r) * exp(Y);
     double m   = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
 
-    metric[0][0] = -f;
-    metric[1][1] = 1. / (1 - 2 * m / r);
-    metric[2][2] = r2;
-    metric[3][3] = r2 * sin_theta * sin_theta;
-    metric[0][3] = 0.;
-    metric[3][0] = 0.;
+    this->s_Metric.Metric[0][0] = -f;
+    this->s_Metric.Metric[1][1] = 1. / (1 - 2 * m / r);
+    this->s_Metric.Metric[2][2] = r2;
+    this->s_Metric.Metric[3][3] = r2 * sin_theta * sin_theta;
+    this->s_Metric.Metric[0][3] = 0.;
+    this->s_Metric.Metric[3][0] = 0.;
 
-    *N_metric     = -metric[0][0];
-    *omega_metric = 0.;
+    this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
+    this->s_Metric.Shift_function = 0.;
 
     return OK;
 }
 
-int Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(double dr_metric[4][4], double* dr_N_metric, double* dr_omega_metric, double r, double theta) {
+Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_metric(double State_Vector[]) {
+
+    if (false == this->eval_bitmask[0] || true == this->ignore_flag) {
+
+        this->update_metric(State_Vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[0] = true;
+
+        }
+
+    }
+
+    return this->s_Metric;
+
+}
+
+int Black_Hole_w_Dark_Matter_Halo_class::update_dr_metric(double State_Vector[]) {
 
     double M = MASS;
+    double& r = State_Vector[e_r];
+    double& theta = State_Vector[e_theta];
+
     double r2 = r * r;
     double sin_theta = sin(theta);
 
@@ -1111,17 +1526,35 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(double dr_metric[4][4], d
     double m    = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
     double dr_m = 2 * (1 - 2 * M / r) * ((1 - 2 * M / r) * (1 - r / (r + A_0)) * r + 2 * M) * M_HALO / (r + A_0) / (r + A_0);
 
-    dr_metric[0][0] = -dr_f;
-    dr_metric[1][1] = -1. / (1 - 2 * m / r) / (1 - 2 * m / r) * (2 * m / r2 - 2 / r * dr_m);
-    dr_metric[2][2] = r2;
-    dr_metric[3][3] = r2 * sin_theta * sin_theta;
-    dr_metric[0][3] = 0.;
-    dr_metric[3][0] = 0.;
+    this->s_Metric.Metric[0][0] = -dr_f;
+    this->s_Metric.Metric[1][1] = -1. / (1 - 2 * m / r) / (1 - 2 * m / r) * (2 * m / r2 - 2 / r * dr_m);
+    this->s_Metric.Metric[2][2] = r2;
+    this->s_Metric.Metric[3][3] = r2 * sin_theta * sin_theta;
+    this->s_Metric.Metric[0][3] = 0.;
+    this->s_Metric.Metric[3][0] = 0.;
 
-    *dr_N_metric = -dr_metric[0][0];
-    *dr_omega_metric = 0.;
+    this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
+    this->s_Metric.Shift_function = 0.;
 
     return OK;
+}
+
+Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(double State_Vector[]) {
+
+    if (false == this->eval_bitmask[1] || true == this->ignore_flag) {
+
+        this->update_dr_metric(State_Vector);
+
+        if (false == this->ignore_flag) {
+
+            this->eval_bitmask[1] = true;
+
+        }
+
+    }
+
+    return this->s_dr_Metric;
+
 }
 
 int Black_Hole_w_Dark_Matter_Halo_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
@@ -1152,9 +1585,11 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_initial_conditions_from_file(Initia
 
 }
 
-int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double inter_State_vector[], double J, double Derivatives[], int iteration) {
+int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration) {
 
     double& r = inter_State_vector[e_r + iteration * e_State_Number];
+
+    double& J = inter_State_vector[e_p_phi];
 
     double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
     double sin2 = sin1 * sin1;
@@ -1179,7 +1614,7 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double inter_State_vector[], do
     Derivatives[e_r       + iteration * e_State_Number] = (1 - 2 * m / r) * inter_State_vector[e_p_r + iteration * e_State_Number];
     Derivatives[e_theta   + iteration * e_State_Number] = 1. / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
     Derivatives[e_phi     + iteration * e_State_Number] = J / (r * r * sin2);
-    Derivatives[e_phi_FD  + iteration * e_State_Number] = 0.0;
+    Derivatives[e_p_phi   + iteration * e_State_Number] = 0.0;
     Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (r * r * sin1 * sin2) * J * J;
 
     double r_term_1 = -1. / 2 / f / f * dr_f + (dr_m / r - m / r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number];
@@ -1197,5 +1632,21 @@ bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(double State_vec
     bool hit_horizon = State_vector[e_r] - 2 * MASS < 1e-5;
 
     return scatter || hit_horizon;
+
+};
+
+void Black_Hole_w_Dark_Matter_Halo_class::reset_eval_bitmask() {
+
+    for (int index = 0; index <= 2; index++) {
+
+        this->eval_bitmask[index] = false;
+
+    }
+
+}
+
+void Black_Hole_w_Dark_Matter_Halo_class::set_ignore_flag(bool flag) {
+
+    this->ignore_flag = flag;
 
 };

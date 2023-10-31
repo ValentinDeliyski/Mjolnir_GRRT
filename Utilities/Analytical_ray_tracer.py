@@ -20,8 +20,8 @@ class Analytical_ray_tracer():
         self.r_obs        = r_obs
         self.inclincation = inclination
 
-        self.raw_Impact_params = [[], []]
-        self.raw_Azimuths      = [[], []]
+        self.raw_Impact_params = [[], []] # List of direct and indirect impact parameters
+        self.raw_Azimuths      = [[], []] # List of direct and indirect azimuths
 
         self.raw_Image_angular_coords = []
         self.raw_Image_radial_coords  = []
@@ -278,7 +278,7 @@ def plot_splined_data(figure_num, Splines):
 
         color_index = (color_index + 1) % len(COLOR_CYCLE)
 
-    subfigure_spline.set_title(r'Splined Results From The Integration')
+    subfigure_spline.set_title(r'Images of the r = 6M orbit, Schwarzschild')
     subfigure_spline.set_xlabel(r'x [M]')
     subfigure_spline.set_ylabel(r'y [M]')
     subfigure_spline.set_aspect(1)
@@ -412,7 +412,7 @@ if __name__ == "__main__":
 
     JNW_PARAM = 0.48  # [ - ]
 
-    GAUSS_BONET_PARAM = 1.15 # [ - ]
+    GAUSS_BONET_PARAM = 1.6 # [ - ]
 
     #------      Metrics      -------#
 
@@ -420,23 +420,23 @@ if __name__ == "__main__":
     WH  = Wormhole(r_throat = WH_THROAT, parameter = WH_ALPHA)
     RBH = Regular_Black_Hole(parameter = RBH_PARAM)
     JNW = JNW_Naked_Singularity(parameter = JNW_PARAM)
-    GBNS = Gaus_Bonet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
+    GBNS = Gaus_Bonnet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
 
     Spacetime_dict ={"Schwarzshild":       SCH, 
                      "Wormhole":            WH,
                      "Regular Black Hole": RBH,
                      "Naked Singularity":  JNW,
-                     "Gauss - Bonet"    : GBNS}
+                     "Gauss - Bonnet"    : GBNS}
 
-    Active_spacetime = "Gauss - Bonet"
+    Active_spacetime = "Schwarzshild"
 
     #----- Observer / Source  -------#
 
     r_obs = 1e3                         # [ M ]
-    inclination_obs = 80 * DEG_TO_RAD   # [ rad ]
+    inclination_obs = 70 * DEG_TO_RAD   # [ rad ]
 
     ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
-                                       Granularity = 500 , 
+                                       Granularity = 1000 , 
                                        r_source = 6, 
                                        r_obs = r_obs, 
                                        inclination = inclination_obs, 

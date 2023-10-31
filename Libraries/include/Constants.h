@@ -5,6 +5,7 @@
     #define CONSTANTS
     
     #include "Inputs.h"
+    #include <string>
 
     const int RK45_size			    = 7;   // Number of integration sub-steps
     const int MAX_INTEGRATION_COUNT = 1e9; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
@@ -45,8 +46,6 @@
 
     Real PLANCK_CONSTANT_SI = 6.62607015e-34;
 
-    Real OBS_FREQUENCY_SI = 230e9;
-
     /*
 
     Physical constants in CGS
@@ -66,8 +65,17 @@
 
     Real PLANCK_CONSTANT_CGS = 6.626196e-27;
 
-    Real OBS_FREQUENCY_CGS = 230e9;
+    Real OBS_FREQUENCY_CGS = 345e9;
 
     Real CGS_TO_JANSKY = 1e+23;
+
+    /*
+    
+    Shader File Paths
+    
+    */
+
+    const auto vert_shader_path = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Libraries\\shaders\\default.vert";
+    const auto frag_shader_path = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Libraries\\shaders\\default.frag";
 
 #endif

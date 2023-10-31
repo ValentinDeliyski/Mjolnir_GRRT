@@ -201,13 +201,21 @@ class JNW_Naked_Singularity:
 
         return higher_order_impact_params, higher_order_turning_points
         
-class Gaus_Bonet_Naked_Singularity:
+class Gaus_Bonnet_Naked_Singularity:
 
     def __init__(self, parameter):
 
         self.MASS = 1
         self.PARAMETER = parameter
-        self.HAS_PHOTON_SPHERE = True
+
+        if self.PARAMETER < 1.35:
+
+            self.HAS_PHOTON_SPHERE = True
+
+        else:
+
+            self.HAS_PHOTON_SPHERE = False
+
         self.HAS_R_OF_B = True
 
     def metric(self, r, theta) -> np.array:
@@ -246,13 +254,19 @@ class Gaus_Bonet_Naked_Singularity:
         metric_source       = self.metric(r_source, np.pi / 2)
         impact_param_source = np.sqrt(-metric_source[3] / metric_source[0])
 
-        metric_photon_sphere       = self.metric(self.photon_sphere(), np.pi / 2) 
-        impact_param_photon_sphere = np.sqrt(-metric_photon_sphere[3] / metric_photon_sphere[0])
+        if self.HAS_PHOTON_SPHERE:
 
-        higher_order_impact_params1 = impact_param_source        + beta.cdf(distribution_range, density_parameter, density_parameter) * (impact_param_photon_sphere - impact_param_source)
-        higher_order_impact_params2 = impact_param_photon_sphere + beta.cdf(distribution_range, density_parameter, density_parameter) * (1e-2 - impact_param_photon_sphere)
-                                                                                                                                             
-        higher_order_impact_params = np.append(higher_order_impact_params1, higher_order_impact_params2)
+            metric_photon_sphere       = self.metric(self.photon_sphere(), np.pi / 2) 
+            impact_param_photon_sphere = np.sqrt(-metric_photon_sphere[3] / metric_photon_sphere[0])
+
+            higher_order_impact_params1 = impact_param_source        + beta.cdf(distribution_range, density_parameter, density_parameter) * (impact_param_photon_sphere - impact_param_source)
+            higher_order_impact_params2 = impact_param_photon_sphere + beta.cdf(distribution_range, density_parameter, density_parameter) * (1e-2 - impact_param_photon_sphere)
+                                                                                                                                                
+            higher_order_impact_params = np.append(higher_order_impact_params1, higher_order_impact_params2)
+
+        else:
+
+            higher_order_impact_params = impact_param_source + beta.cdf(distribution_range, density_parameter, density_parameter) * (1e-2 - impact_param_source)
         
         #-------- Calculate the impact parameters for the correspoinding turning points --------#
         
@@ -269,10 +283,13 @@ class Gaus_Bonet_Naked_Singularity:
             polynom_coeffs = [a, b, c, d, e]
                               
             roots = np.roots(polynom_coeffs)
-            roots = roots[np.isreal(roots)]
+            roots = roots[np.abs(np.imag(roots)) < 1e-14]
+            roots = np.real(roots)
             roots = roots[roots > 0]
-                          
-            if len(roots) != 2:
+
+            if len(roots) == 0:
+                higher_order_turning_points.append(1e-10)      
+            elif len(roots) != 2:
                 higher_order_turning_points.append(np.max(roots))
             else:
                 higher_order_turning_points.append(np.min(roots))

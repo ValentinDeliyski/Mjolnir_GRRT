@@ -12,10 +12,9 @@
 #include "Lensing.h"
 
 extern Spacetime_Base_Class* Spacetimes[];
-extern Novikov_Thorne_Model NT_Model;
 extern Optically_Thin_Toroidal_Model OTT_Model;
 
-void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration, double J) {
+void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration) {
 
     /************************************************************************************************
     |                                                                                               |
@@ -27,7 +26,6 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
     |     * State_Vector: Pointer to an array that holds the ray / photon State Vector              |
     |     * Derivatives: Pointer to an array that holds the evaluation of the E.O.M                 |
     |     * iteration: The current RK45 iteration (0 to 7 - 1)                                      |
-    |     * J: Covariant, azimuthal component of the ray / photon 4 - momentum                      |
     |                                                                                               |
     |   @ Ouput: None                                                                               |
     |                                                                                               |
@@ -37,25 +35,23 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
 
     for (int index = e_r; index < e_State_Number - 1; index++) {
 
-        temp_State_Vector[index] = State_Vector[index];
+        temp_State_Vector[index] = State_Vector[index + iteration * e_State_Number];
 
     }
 
     if (e_metric == Wormhole) {
 
-        temp_State_Vector[e_r] = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+        temp_State_Vector[e_r] = sqrt(State_Vector[e_r + iteration * e_State_Number] * State_Vector[e_r + iteration * e_State_Number] + WH_R_THROAT * WH_R_THROAT);
 
     }
 
     /* Get Disk Cooridinate Velocity */
 
-    double U_source_coord[4]{};
-
-    OTT_Model.get_disk_velocity(U_source_coord, temp_State_Vector, Spacetimes);
+    double* U_source_coord = OTT_Model.get_disk_velocity(temp_State_Vector);
 
     /* Get The Redshift */
 
-    double redshift = Redshift(J, temp_State_Vector, U_source_coord);
+    double redshift = Redshift(temp_State_Vector, U_source_coord);
 
     double Emission_function{}, Absorbtion_function{};
 
@@ -63,15 +59,15 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
 
     case Synchotron_exact:
 
-        Emission_function = OTT_Model.get_emission_fucntion_synchotron_exact(temp_State_Vector, J, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+        Emission_function = OTT_Model.get_emission_function_synchotron_exact(temp_State_Vector);
+        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
 
         break;
 
     case Synchotron_phenomenological:
 
-        Emission_function = OTT_Model.get_emission_fucntion_synchotron_phenomenological(temp_State_Vector, J, Spacetimes);
-        Absorbtion_function = OTT_Model.get_absorbtion_fucntion(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift, OTT_Model.get_disk_temperature(State_Vector));
+        Emission_function = OTT_Model.get_emission_function_synchotron_phenomenological(temp_State_Vector);
+        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
     
         break;
 
@@ -84,7 +80,7 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
 
 }
 
-void RK45(double State_Vector[], double Derivatives[], double J, Step_controller* controller) {
+void RK45(double State_Vector[], double Derivatives[], Step_controller* controller) {
 
     /*************************************************************************************************
     |                                                                                                |
@@ -122,20 +118,12 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
         }
 
-        Spacetimes[e_metric]->get_EOM(inter_State_vector, J, Derivatives, iteration);
-            
-        double current_iteration[] = {inter_State_vector[e_r             + iteration * e_State_Number],
-                                      inter_State_vector[e_theta         + iteration * e_State_Number],
-                                      inter_State_vector[e_phi           + iteration * e_State_Number],
-                                      inter_State_vector[e_phi_FD        + iteration * e_State_Number],
-                                      inter_State_vector[e_p_theta       + iteration * e_State_Number],
-                                      inter_State_vector[e_p_r           + iteration * e_State_Number],
-                                      inter_State_vector[e_Intensity     + iteration * e_State_Number],
-                                      inter_State_vector[e_Optical_Depth + iteration * e_State_Number] };
-
-        get_Radiative_Transfer(current_iteration, Derivatives, iteration, J);
+        Spacetimes[e_metric]->get_EOM(inter_State_vector, Derivatives, iteration);
+        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration);
 
         iteration += 1;
+
+        Spacetimes[e_metric]->reset_eval_bitmask();
 
     }
 
@@ -151,25 +139,11 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
         }
 
-        state_error[vector_indexer]   = New_State_vector_O5[vector_indexer] - New_State_vector_O4[vector_indexer];
-
-        if (New_State_vector_O5[vector_indexer] != 0) {
-
-            state_rel_err[vector_indexer] = state_error[vector_indexer] / New_State_vector_O5[vector_indexer];
-
-        }
-        else {
-
-            state_rel_err[vector_indexer] = 0;
-
-        }
-
+        state_error[vector_indexer] = New_State_vector_O5[vector_indexer] - New_State_vector_O4[vector_indexer];
        
     }
 
-    controller->current_err     = my_max(state_error,   e_State_Number);
-    controller->current_rel_err = my_max(state_rel_err, e_State_Number);
-
+    controller->current_err = my_max(state_error, e_State_Number);
     controller->update_step();
 
     //bool near_NT_disk = State_Vector[e_r] * State_Vector[e_r] * cos(State_Vector[e_theta]) * cos(State_Vector[e_theta]) < 0.5 * 0.5 &&
@@ -181,9 +155,9 @@ void RK45(double State_Vector[], double Derivatives[], double J, Step_controller
 
     //}
 
-    if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2.5) {
+    if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2.2) {
 
-        controller->step /= 4;
+        controller->step /= 3;
 
     }
 
@@ -211,7 +185,6 @@ Step_controller::Step_controller(double init_stepsize) {
     step = init_stepsize;
 
     current_err     = RK45_ACCURACY;
-    current_rel_err = RK45_ACCURACY;
     prev_err        = RK45_ACCURACY;
     sec_prev_err    = RK45_ACCURACY;
 
@@ -221,7 +194,7 @@ Step_controller::Step_controller(double init_stepsize) {
 
 void Step_controller::update_step() {
 
-    if (current_err < RK45_ACCURACY)
+    if (current_err < RK45_ACCURACY )
     {
         step = pow(RK45_ACCURACY / (current_err  + SAFETY_2), Gain_I) *
                pow(RK45_ACCURACY / (prev_err     + SAFETY_2), Gain_P) *

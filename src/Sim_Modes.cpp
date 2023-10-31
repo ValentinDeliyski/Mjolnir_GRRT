@@ -73,31 +73,28 @@
 
         /*
 
-        Initialize the rendering engine
+        Initialize the rendering engine (the Renderer instance must be static to not blow up the stack - the texture and intensity buffer are inside of it)
 
         */
 
-        GLFWwindow* window = OpenGL_init(H_angle_max / V_angle_max);
-        glfwSetKeyCallback(window, Window_Callbacks::define_button_callbacks);
-
-        auto start_time = std::chrono::high_resolution_clock::now();
-
-        normalize_colormap(s_Initial_Conditions);
-
+        static Rendering_engine Renderer = Rendering_engine();
+        Renderer.OpenGL_init();
+        glfwSetKeyCallback(Renderer.window, Rendering_engine::Window_Callbacks::define_button_callbacks);
+        
         /*
 
         Loop trough the viewing window
 
         */
 
+        auto start_time = std::chrono::high_resolution_clock::now();
         int progress = 0;
-        int texture_indexer{};
 
         std::cout << '\n' << "Simulation starts..." << '\n';
 
         for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
 
-            update_rendering_window(window, V_angle_max / H_angle_max);
+            Renderer.update_rendering_window();
             print_progress(progress, RESOLUTION - 1, false, false);
 
             progress += 1;
@@ -122,18 +119,26 @@
 
                Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
 
-               double Pixel_intensity = s_Ray_results.Intensity[direct] +
-                                        s_Ray_results.Intensity[first]  +
-                                        s_Ray_results.Intensity[second] +
-                                        s_Ray_results.Intensity[third];
+               /*
 
-               set_pixel_color(Pixel_intensity, texture_indexer);
+               Updating the visualization happens here
+
+               */
+
+               Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results.Intensity[direct] +
+                                                                              s_Ray_results.Intensity[first]  +
+                                                                              s_Ray_results.Intensity[second] +
+                                                                              s_Ray_results.Intensity[third];
+
+               Renderer.update_max_intensity(Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)]);
+
+               Renderer.texture_indexer += 3;
 
                File_manager.write_image_data_to_file(s_Ray_results);
 
-               texture_indexer += 3;
-
             }
+
+            Renderer.renormalize_colormap();
 
         }
 
@@ -144,15 +149,15 @@
 
         File_manager.close_image_output_files();
 
-        while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(Renderer.window)) {
 
-            update_rendering_window(window, V_angle_max / H_angle_max);
+            Renderer.update_rendering_window();
 
         }
 
     }
 
-	void run_simulation_mode_2(Initial_conditions_type* s_Initial_Conditions) {
+    void run_simulation_mode_2(Initial_conditions_type* s_Initial_Conditions) {
         
         /*
 
@@ -170,7 +175,6 @@
 
         double J_data[500]{}, p_theta_data[500]{};
         int Data_number{};
-        int texture_indexer{};
 
         File_manager.get_geodesic_data(J_data, p_theta_data, &Data_number);
 
@@ -194,24 +198,27 @@
 
             File_manager.write_image_data_to_file(s_Ray_results);
 
-            texture_indexer += 3;
-
             print_progress(photon, Data_number, true, false);
         }
 
         std::cout << '\n';
 
         File_manager.close_image_output_files();
-	}
+    }
     
     void run_simulation_mode_3(Initial_conditions_type* s_Initial_Conditions) {
 
-        GLFWwindow* window = OpenGL_init(H_angle_max / V_angle_max);
-        glfwSetKeyCallback(window, Window_Callbacks::define_button_callbacks);
+        /*
+
+        Initialize the rendering engine (the Renderer instance must be static to not blow up the stack - the texture and intensity buffer are inside of it)
+
+        */
+
+        static Rendering_engine Renderer = Rendering_engine();
+        Renderer.OpenGL_init();
+        glfwSetKeyCallback(Renderer.window, Rendering_engine::Window_Callbacks::define_button_callbacks);
 
         auto start_time = std::chrono::high_resolution_clock::now();
-
-        normalize_colormap(s_Initial_Conditions);
 
         /*
         
@@ -223,9 +230,7 @@
 
         for (int hotspot_number = 0; hotspot_number <= HOTSPOT_ANIMATION_NUMBER - 1; hotspot_number++) {
 
-            OTT_Model.HOTSPOT_PHI_COORD = double(hotspot_number) / HOTSPOT_ANIMATION_NUMBER * 2 * M_PI;
-
-            int texture_indexer{};
+            /*OTT_Model.HOTSPOT_PHI_COORD = double(hotspot_number) / HOTSPOT_ANIMATION_NUMBER * 2 * M_PI;*/
 
             /*
 
@@ -247,7 +252,7 @@
 
             for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
 
-                update_rendering_window(window, V_angle_max / H_angle_max);
+                Renderer.update_rendering_window();
                 print_progress(progress, RESOLUTION - 1, false, false);
 
                 progress += 1;
@@ -270,19 +275,21 @@
 
                     Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
 
-                    double Pixel_intensity = s_Ray_results.Intensity[direct] +
-                                             s_Ray_results.Intensity[first]  +
-                                             s_Ray_results.Intensity[second] +
-                                             s_Ray_results.Intensity[third];
+                    Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results.Intensity[direct] +
+                                                                                   s_Ray_results.Intensity[first]  +
+                                                                                   s_Ray_results.Intensity[second] +
+                                                                                   s_Ray_results.Intensity[third];
 
-                    set_pixel_color(Pixel_intensity, texture_indexer);
-                    File_manager.write_image_data_to_file(s_Ray_results);
+                    Renderer.update_max_intensity(Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)]);
 
-                    texture_indexer += 3;
+                    Renderer.texture_indexer += 3;
 
                 }
 
+                Renderer.renormalize_colormap();
             }
+
+            Renderer.texture_indexer = 0;
 
             std::cout << "\n";
 
@@ -294,9 +301,9 @@
         std::cout << "Simulation finished!" << '\n';
         std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
 
-        while (!glfwWindowShouldClose(window)) {
+        while (!glfwWindowShouldClose(Renderer.window)) {
 
-            update_rendering_window(window, V_angle_max / H_angle_max);
+            Renderer.update_rendering_window();
 
         }
 
