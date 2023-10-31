@@ -112,7 +112,7 @@ def get_template_slices(N_pixels: int, template: np.array, template_params: dict
 
     return x_slice, slice_x_offset, y_slice, slice_y_offset
 
-def plot_VIDA_templte(Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, CROP: str, crop_rel_rage: list) -> None:
+def plot_VIDA_templte(Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, CROP: str, crop_rel_rage: list, Plot_Brihtness_T: bool) -> None:
 
     Units = Units_class()
     Ehtim_Parser = Ehtim_Parsers[0]
@@ -123,15 +123,17 @@ def plot_VIDA_templte(Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, CROP
     Ehtim_image_res = Ehtim_Parser.X_PIXEL_COUNT
     pixel_size      = Ehtim_image_FOV / Ehtim_image_res / Units.MEGA * Units.ARCSEC_TO_RAD  
 
-    Intensity_ehtim = np.zeros((Ehtim_image_res, Ehtim_image_res))
+    Intensity_ehtim_jy = np.zeros((Ehtim_image_res, Ehtim_image_res))
+    Intensity_ehtim_T = np.zeros((Ehtim_image_res, Ehtim_image_res))
 
     for Parser in Ehtim_Parsers:
 
-        temp_Intensity_ehtim, _ = Parser.get_plottable_ehtim_data()
+        temp_Intensity_ehtim_jy, _ = Parser.get_plottable_ehtim_data()
         # Convert the Flux from [Jy] to brightness temperature in Giga [K]
-        temp_Intensity_ehtim = Units.Spectral_density_to_T(temp_Intensity_ehtim / pixel_size**2 / Units.W_M2_TO_JY, Parser.OBS_FREQUENCY * Units.GIGA) / Units.GIGA
+        temp_Intensity_ehtim_T = Units.Spectral_density_to_T(temp_Intensity_ehtim_jy / pixel_size**2 / Units.W_M2_TO_JY, Parser.OBS_FREQUENCY * Units.GIGA) / Units.GIGA
         
-        Intensity_ehtim = Intensity_ehtim + temp_Intensity_ehtim
+        Intensity_ehtim_jy += temp_Intensity_ehtim_jy
+        Intensity_ehtim_T  += temp_Intensity_ehtim_T
 
     template = generate_general_gaussian_template(Ehtim_image_res, VIDA_parser.template_params["Gaussian_1"], Ehtim_image_FOV)
 
@@ -139,6 +141,14 @@ def plot_VIDA_templte(Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, CROP
         
         template_2 = generate_general_gaussian_template(Ehtim_image_res, VIDA_parser.template_params["Gaussian_2"], Ehtim_image_FOV)
         template = template + template_2
+
+    if Plot_Brihtness_T:
+        Intensity_ehtim = Intensity_ehtim_T
+        colorbar_legend = r"Brightness Temperature [$10^9$K]"
+
+    else:
+        Intensity_ehtim = Intensity_ehtim_jy * Units.KILO
+        colorbar_legend = r"Flux Per Pixel [mJy]"
 
     template_x_slice, slice_x_offset, template_y_slice, slice_y_offset = get_template_slices(Ehtim_image_res, template, VIDA_parser.template_params, Ehtim_image_FOV)
     Ehtim_x_slice, _, Ehtim_y_slice, _ = get_template_slices(Ehtim_image_res, Intensity_ehtim, VIDA_parser.template_params, Ehtim_image_FOV)
@@ -232,7 +242,7 @@ def plot_VIDA_templte(Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, CROP
     Subplot.set_title("EHTIM Output at {}GHz".format(Frequency_str))
 
     colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
-    colorbar.set_label(r"Brightness Temperature [$10^9$K]")
+    colorbar.set_label(colorbar_legend)
 
     #========================= Template Plot =========================#
 
@@ -256,7 +266,7 @@ def plot_VIDA_templte(Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, CROP
     Subplot.set_title("VIDA Template")
 
     colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
-    colorbar.set_label(r"Brightness Temperature [$10^9$K]")
+    colorbar.set_label(colorbar_legend)
 
     #------------------------ Y Slice Plot ------------------------#
 
@@ -297,7 +307,7 @@ def plot_VIDA_templte(Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, CROP
     # Subplot.imshow(dark_spot_mask, cmap = "hot", extent = axes_limits)
     
     Brightness_ratio_str = "f at {}GHz = {}".format(Frequency_str, 
-                                                    get_brigness_depression_ratio(ring_mask, dark_spot_mask, Intensity_ehtim))
+                                                    get_brigness_depression_ratio(ring_mask, dark_spot_mask, Intensity_ehtim_jy))
     
     return template_fig, Brightness_ratio_str
 

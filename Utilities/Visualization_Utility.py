@@ -311,10 +311,11 @@ class Sim_Visualizer():
                 Ehtim_Parser_Blur = self.Ehtim_Parsers[Index][self.BLUR]
                 Vida_Parser = self.VIDA_Parsers[Index]
 
-                Ehtim_Vida_plot, Brightness_ratio_str = plot_VIDA_templte([Ehtim_Parser_Blur], 
-                                                                           Vida_Parser, 
-                                                                           Center_plot, 
-                                                                          [50, 50, 50, 50])
+                Ehtim_Vida_plot, Brightness_ratio_str = plot_VIDA_templte(Ehtim_Parsers    = [Ehtim_Parser_Blur], 
+                                                                          VIDA_parser      = Vida_Parser, 
+                                                                          CROP             = Center_plot, 
+                                                                          crop_rel_rage    = [50, 50, 50, 50],
+                                                                          Plot_Brihtness_T = True)
                 
                 Ehtim_Vida_plot.suptitle("Using Array {}".format(Array_str))
                 Ehtim_Vida_plot.tight_layout()
@@ -363,7 +364,7 @@ class Sim_Visualizer():
 
                 print("Superposition of {} Array exported to fits file!".format(Array_str))
 
-    def plot_superposition(self):
+    def plot_superposition(self, Center_plot: bool):
 
         for Array_num, Array_str in enumerate(self.Arrays):
 
@@ -374,11 +375,20 @@ class Sim_Visualizer():
             else:
                 print("Not enough frequency bins to make a superposition!")
                 return
+            
+            try:
+                VIDA_Parser = VIDA_params_Parser(self.Sim_path + "\\Superposition\\fit_params_superposition")
 
-            Ehtim_Vida_plot, Brightness_ratio_str = plot_VIDA_templte(Ehtim_Parsers, 
-                                                    VIDA_params_Parser(self.Sim_path + "\\Superposition\\fit_params_superposition"), 
-                                                    False, 
-                                                    [50, 50, 50, 50])
+            except:
+                print("Could not parse VIDA template!")
+                print("I looked at this path: {}".format(self.Sim_path + "\\Superposition\\fit_params_superposition"))
+                return 
+            
+            Ehtim_Vida_plot, Brightness_ratio_str = plot_VIDA_templte(Ehtim_Parsers    = Ehtim_Parsers, 
+                                                                      VIDA_parser      = VIDA_Parser, 
+                                                                      CROP             = Center_plot, 
+                                                                      crop_rel_rage    = [50, 50, 50, 50],
+                                                                      Plot_Brihtness_T = False)
             
             print(Brightness_ratio_str)
 
@@ -420,7 +430,7 @@ if __name__ == "__main__":
     Visualizer.plot_EHTIM_results(Make_contour_plots = True)
     Visualizer.plot_VIDA_template(Center_plot = False)
     # Visualizer.create_EHTIM_superposition()
-    Visualizer.plot_superposition()
+    Visualizer.plot_superposition(Center_plot = False)
     Visualizer.save_console_log_to_file()
 
     plt.rcParams['text.usetex'] = True
