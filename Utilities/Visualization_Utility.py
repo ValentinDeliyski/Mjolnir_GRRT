@@ -114,7 +114,7 @@ class Sim_Visualizer():
                 
                 self.Ehtim_paths.append(Sim_path + freq + "GHz\\" + "Sim_Results\\Ehtim_" + array + "\\")
         
-    def plot_ray_tracer_results(self, Export_data_for_Ehtim: bool):
+    def plot_ray_tracer_results(self, Export_data_for_Ehtim: bool, Save_Figures: bool):
 
         Obs_effective_distance = self.Units.M87_DISTANCE_GEOMETRICAL
         Frequency_str_addon    = ""
@@ -198,25 +198,35 @@ class Sim_Visualizer():
 
         Main_Figure.tight_layout()
 
-        if not os.path.exists(Sim_path + "Figures\\"):
-            os.makedirs(Sim_path + "Figures\\")
+        if Save_Figures:
 
-        Main_Figure.savefig(Sim_path + 
-                            "Figures\\" + 
-                            "Ray_tracer_plot_" + 
-                            Frequency_str_addon +
-                            ".png", bbox_inches = 'tight')
+            if not os.path.exists(Sim_path + "Figures\\"):
+                os.makedirs(Sim_path + "Figures\\")
 
-    def plot_EHTIM_results(self, Make_contour_plots: bool):
+            Main_Figure.savefig(Sim_path + 
+                                "Figures\\" + 
+                                "Ray_tracer_plot_" + 
+                                Frequency_str_addon +
+                                ".png", bbox_inches = 'tight')
+
+    def plot_EHTIM_results(self, Make_contour_plots: bool, Contour_specs: list, Save_Figures: bool, Plot_no_blur: bool):
 
         for Array_num, Array_str in enumerate(self.Arrays):
 
-            if len(self.Frequency_Bins) == 1:
+            if Plot_no_blur:
+                if len(self.Frequency_Bins) == 1:            
+                    Ehtim_figure = plt.figure(figsize = (20, 10))
 
-                Ehtim_figure = plt.figure(figsize = (20, 8))
-                
+                else:
+                    Ehtim_figure = plt.figure(figsize = (12, 10))
+
             else:
-                Ehtim_figure = plt.figure(figsize = (12, 10))
+                if len(self.Frequency_Bins) == 1:            
+                    Ehtim_figure = plt.figure(figsize = (9, 8))
+
+                else:
+                    Ehtim_figure = plt.figure(figsize = (20, 10))
+
 
             for Sim_number, _ in enumerate(self.Frequency_Bins):
 
@@ -228,8 +238,8 @@ class Sim_Visualizer():
 
                 #========================= EHTIM Parsing/Plotting =========================#
 
-                Intensity_ehtim_no_blur, _                = Ehtim_Parser_no_Blur.get_plottable_ehtim_data()
-                Intensity_ehtim_blur, Ehtim_metadata_blur = Ehtim_Parser_Blur.get_plottable_ehtim_data()
+                Intensity_ehtim_no_blur_jy, _                = Ehtim_Parser_no_Blur.get_plottable_ehtim_data()
+                Intensity_ehtim_blur_jy, Ehtim_metadata_blur = Ehtim_Parser_Blur.get_plottable_ehtim_data()
 
                 #========================= Plot the main EHTIM image =========================#
 
@@ -243,63 +253,64 @@ class Sim_Visualizer():
 
                 pixel_size = np.abs(axes_limits[0] - axes_limits[1]) / Ehtim_Parser_no_Blur.X_PIXEL_COUNT / self.Units.MEGA * self.Units.ARCSEC_TO_RAD 
 
-                Intensity_ehtim_no_blur = self.Units.Spectral_density_to_T(Intensity_ehtim_no_blur / pixel_size**2 / self.Units.W_M2_TO_JY, Ehtim_Parser_no_Blur.OBS_FREQUENCY * self.Units.GIGA) / self.Units.GIGA
-                Intensity_ehtim_blur    = self.Units.Spectral_density_to_T(Intensity_ehtim_blur    / pixel_size**2 / self.Units.W_M2_TO_JY, Ehtim_Parser_Blur.OBS_FREQUENCY * self.Units.GIGA) / self.Units.GIGA
+                Intensity_ehtim_no_blur_T = self.Units.Spectral_density_to_T(Intensity_ehtim_no_blur_jy / pixel_size**2 / self.Units.W_M2_TO_JY, Ehtim_Parser_no_Blur.OBS_FREQUENCY * self.Units.GIGA) / self.Units.GIGA
+                Intensity_ehtim_blur_T    = self.Units.Spectral_density_to_T(Intensity_ehtim_blur_jy    / pixel_size**2 / self.Units.W_M2_TO_JY, Ehtim_Parser_Blur.OBS_FREQUENCY * self.Units.GIGA) / self.Units.GIGA
 
                 # Create the plot of the Simulated Observations
+                if Plot_no_blur:
+                    Subplot = Ehtim_figure.add_subplot(len(self.Frequency_Bins) * 100 + 20 + (2 * Sim_number + 1))
 
-                Subplot_count = 100 * len(self.Frequency_Bins)
-                Subplot = Ehtim_figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 1))
+                    Subplot.set_title("Pre-Clean Beam Convolution at {}GHz".format(self.Ehtim_Parsers[Index][self.NO_BLUR].OBS_FREQUENCY))
+                    Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
+                    Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
 
-                pre_Convolution = Subplot.imshow(Intensity_ehtim_no_blur, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits)
-                Subplot.set_title("Pre-Clean Beam Convolution at {}GHz".format(self.Ehtim_Parsers[Index][self.NO_BLUR].OBS_FREQUENCY))
-                Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-                Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+                    pre_Convolution_T = Subplot.imshow(Intensity_ehtim_no_blur_T,  interpolation = 'bilinear', cmap = 'hot', extent = axes_limits)              
+                    colorbar = Ehtim_figure.colorbar(pre_Convolution_T, ax = Subplot, fraction=0.046, pad=0.04)
+                    colorbar.set_label(r"Brightness Temperature [$10^9$K]")
 
-                colorbar = Ehtim_figure.colorbar(pre_Convolution, ax = Subplot, fraction=0.046, pad=0.04)
-                colorbar.set_label(r"Brightness Temperature [$10^9$K]")
+                    Subplot = Ehtim_figure.add_subplot(len(self.Frequency_Bins) * 100 + 20 + (2 * Sim_number + 2))
 
-                #================= MAKE CONOUR PLOTS =================#
+                else:
+                    Subplot = Ehtim_figure.add_subplot(100 + len(self.Frequency_Bins) * 10 + (Sim_number + 1))
 
+                # Make the contour plots
                 if Make_contour_plots:
+                    self.plot_contours([Ehtim_Parser_Blur], self.VIDA_Parsers[Index], Subplot, Contour_specs[Sim_number])
 
-                    max_value = np.max(Intensity_ehtim_no_blur)
-
-                    # Im not even sure what is going on with the axis limits at this points - TODO: figure out the axis inversion
-                    x_axis = np.linspace(axes_limits[0],axes_limits[1], Ehtim_Parser_no_Blur.X_PIXEL_COUNT)
-                    y_axis = np.linspace(axes_limits[3],axes_limits[2], Ehtim_Parser_no_Blur.Y_PIXEL_COUNT)
-
-                    ring_mask, dark_spot_mask = get_template_pixel_mask(template_params = self.VIDA_Parsers[Sim_number].template_params, 
-                                                                        FOV             = np.abs(axes_limits[0] - axes_limits[1]), 
-                                                                        N_pixels        = Ehtim_Parser_no_Blur.X_PIXEL_COUNT)
-                    
-                    Contour_mask = np.ma.array(Intensity_ehtim_no_blur)
-                    Contour = Subplot.contour(x_axis, y_axis, Contour_mask, levels = [max_value * 1e-1 / 4, max_value * 1e-1], colors = "b")
-                    Subplot.clabel(Contour, inline = True, fontsize = 10, fmt = "%1.1e")
-
-                Subplot = Ehtim_figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 2))
-
-                post_Convolution = Subplot.imshow(Intensity_ehtim_blur, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits)
                 Subplot.set_title("Post-Clean Beam Convolution at {}GHz".format(Ehtim_Parser_Blur.OBS_FREQUENCY))
                 Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
                 Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
 
-                colorbar = Ehtim_figure.colorbar(post_Convolution, ax = Subplot, fraction=0.046, pad=0.04)
+                post_Convolution_T = Subplot.imshow(Intensity_ehtim_blur_T, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits)
+                colorbar = Ehtim_figure.colorbar(post_Convolution_T, ax = Subplot, fraction = 0.046, pad = 0.04)
                 colorbar.set_label(r"Brightness Temperature [$10^9$K]")
 
             Ehtim_figure.suptitle("Using Array {}".format(Array_str))
             Ehtim_figure.tight_layout()
 
-            if not os.path.exists(self.Sim_path + "Figures\\"):
-                os.makedirs(self.Sim_path + "Figures\\")
+            if Save_Figures:
 
-            Ehtim_figure.savefig(Sim_path + 
+                if not os.path.exists(self.Sim_path + "Figures\\"):
+                    os.makedirs(self.Sim_path + "Figures\\")
+
+                fig_title = "Ehtim_plot_" + Array_str
+
+                if Plot_no_blur:
+                    fig_title += "_no_blur"
+
+                if Make_contour_plots:
+                    fig_title += "_contour"  
+
+                if Array_str == "ngEHT" and len(self.Frequency_Bins) == 1:
+                    fig_title += "_" + str(int(Ehtim_Parser_Blur.OBS_FREQUENCY))
+
+                fig_title += ".png"
+
+                Ehtim_figure.savefig(Sim_path + 
                                     "Figures\\" + 
-                                    "Ehtim_plot_" + 
-                                     Array_str + 
-                                     ".png", bbox_inches = 'tight')
+                                    fig_title, bbox_inches = 'tight')
 
-    def plot_VIDA_template(self, Center_plot: bool):
+    def plot_VIDA_style(self, Center_plot: bool, Save_Figures: bool):
 
         for Array_num, Array_str in enumerate(self.Arrays):
             
@@ -311,7 +322,7 @@ class Sim_Visualizer():
                 Ehtim_Parser_Blur = self.Ehtim_Parsers[Index][self.BLUR]
                 Vida_Parser = self.VIDA_Parsers[Index]
 
-                Ehtim_Vida_plot, Brightness_ratio_str = plot_VIDA_templte(Ehtim_Parsers    = [Ehtim_Parser_Blur], 
+                Ehtim_Vida_plot, Brightness_ratio_str = self.plot_VIDA_templte(Ehtim_Parsers= [Ehtim_Parser_Blur], 
                                                                           VIDA_parser      = Vida_Parser, 
                                                                           CROP             = Center_plot, 
                                                                           crop_rel_rage    = [50, 50, 50, 50],
@@ -324,16 +335,18 @@ class Sim_Visualizer():
 
                 self.Console_log_str[Array_num] += "\n" + Brightness_ratio_str
 
-                if not os.path.exists(self.Sim_path + "Figures\\"):
-                    os.makedirs(self.Sim_path + "Figures\\")
+                if Save_Figures:
 
-                Ehtim_Vida_plot.savefig(self.Sim_path + 
-                                       "Figures\\" + 
-                                       "Ehtim_Vida_plot_" + 
-                                        Array_str + 
-                                        "_" +
-                                        Freq_str + 
-                                        ".png", bbox_inches = 'tight')
+                    if not os.path.exists(self.Sim_path + "Figures\\"):
+                        os.makedirs(self.Sim_path + "Figures\\")
+
+                    Ehtim_Vida_plot.savefig(self.Sim_path + 
+                                        "Figures\\" + 
+                                        "Ehtim_Vida_plot_" + 
+                                            Array_str + 
+                                            "_" +
+                                            Freq_str + 
+                                            ".png", bbox_inches = 'tight')
 
     def create_EHTIM_superposition(self):
         
@@ -364,7 +377,7 @@ class Sim_Visualizer():
 
                 print("Superposition of {} Array exported to fits file!".format(Array_str))
 
-    def plot_superposition(self, Center_plot: bool):
+    def plot_superposition(self, Center_plot: bool, Save_Figures: bool):
 
         for Array_num, Array_str in enumerate(self.Arrays):
 
@@ -384,11 +397,11 @@ class Sim_Visualizer():
                 print("I looked at this path: {}".format(self.Sim_path + "\\Superposition\\fit_params_superposition"))
                 return 
             
-            Ehtim_Vida_plot, Brightness_ratio_str = plot_VIDA_templte(Ehtim_Parsers    = Ehtim_Parsers, 
-                                                                      VIDA_parser      = VIDA_Parser, 
-                                                                      CROP             = Center_plot, 
-                                                                      crop_rel_rage    = [50, 50, 50, 50],
-                                                                      Plot_Brihtness_T = False)
+            Ehtim_Vida_plot, Brightness_ratio_str = self.plot_VIDA_templte(Ehtim_Parsers    = Ehtim_Parsers, 
+                                                                           VIDA_parser      = VIDA_Parser, 
+                                                                           CROP             = Center_plot, 
+                                                                           crop_rel_rage    = [50, 50, 50, 50],
+                                                                           Plot_Brihtness_T = False)
             
             print(Brightness_ratio_str)
 
@@ -396,13 +409,18 @@ class Sim_Visualizer():
 
             Ehtim_Vida_plot.suptitle("Using Array {}".format(Array_str))
             Ehtim_Vida_plot.tight_layout()
+  
+            if Save_Figures:
 
-            Ehtim_Vida_plot.savefig(self.Sim_path + 
-                                    "Figures\\" + 
-                                    "Ehtim_Vida_Superposition_plot_" + 
-                                     Array_str +  
-                                     ".png", bbox_inches = 'tight')
+                if not os.path.exists(self.Sim_path + "Figures\\"):
+                    os.makedirs(self.Sim_path + "Figures\\")
 
+                Ehtim_Vida_plot.savefig(self.Sim_path + 
+                                        "Figures\\" + 
+                                        "Ehtim_Vida_Superposition_plot_" + 
+                                         Array_str +  
+                                        ".png", bbox_inches = 'tight')
+                
     def save_console_log_to_file(self):
 
         for Array_num, Array_str in enumerate(self.Arrays):
@@ -415,27 +433,411 @@ class Sim_Visualizer():
 
         print("=" * len(self.Fig_title))
 
+    def plot_contours(self, Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, Subplot, Contour_specs: tuple):
+        
+        Contour_levels, Contour_colors = Contour_specs
+
+        Ehtim_Parser    = Ehtim_Parsers[0]
+        axes_limits     = np.array([(limit) for limit in Ehtim_Parser.WINDOW_LIMITS ]) * self.Units.MEGA
+
+        Intensity_ehtim_jy, _, _ = self.get_plottable_intensity_from_parsers(Ehtim_Parsers)
+
+        # The literature (for some reason) has the X axis going positive to negative, 
+        # so I invert the X axis limits
+        axes_limits[0] = -axes_limits[0]
+        axes_limits[1] = -axes_limits[1]
+
+        max_value = np.max(Intensity_ehtim_jy)
+
+        # Im not even sure what is going on with the axis limits at this points - TODO: figure out the axis inversion
+        x_axis = np.linspace(axes_limits[0],axes_limits[1], Ehtim_Parser.X_PIXEL_COUNT)
+        y_axis = np.linspace(axes_limits[3],axes_limits[2], Ehtim_Parser.Y_PIXEL_COUNT)
+
+        ring_mask, dark_spot_mask = get_template_pixel_mask(template_params = VIDA_parser.template_params, 
+                                                            FOV             = np.abs(axes_limits[0] - axes_limits[1]), 
+                                                            N_pixels        = Ehtim_Parser.X_PIXEL_COUNT,
+                                                            std_scale       = 0.5)
+                    
+        # Cast to a numpy array, so I can scale it by max_value
+        Contour_levels = np.array(Contour_levels)
+
+        format = {}
+        for label_idx, string in zip(max_value * Contour_levels, Contour_levels):
+            format[label_idx] = str(string)
+        
+        Contour_mask = np.ma.array(Intensity_ehtim_jy, 
+                                    mask = np.logical_and(np.logical_not(dark_spot_mask), np.logical_not(ring_mask)))
+                    
+        Contour = Subplot.contour(x_axis, y_axis, Contour_mask, levels = max_value * Contour_levels, colors = Contour_colors)
+        Labels  = Subplot.clabel(Contour, inline = True, fontsize = 8, fmt = format)
+                    
+        for label in Labels:
+            label.set_rotation(0)
+    
+    def plot_VIDA_templte(self, 
+                          Ehtim_Parsers: list,
+                          VIDA_parser: VIDA_params_Parser, 
+                          CROP: str, 
+                          crop_rel_rage: list, 
+                          Plot_Brihtness_T: bool) -> None:
+
+        Ehtim_Parser = Ehtim_Parsers[0]
+
+        axes_limits     = np.array([(limit) for limit in Ehtim_Parser.WINDOW_LIMITS ]) * self.Units.MEGA
+        Ehtim_image_FOV = np.abs(axes_limits[0] - axes_limits[1])  # Units of [uas]
+        Ehtim_image_res = Ehtim_Parser.X_PIXEL_COUNT
+
+        Intensity_ehtim_jy, Intensity_ehtim_T, Frequency_str = self.get_plottable_intensity_from_parsers(Ehtim_Parsers)
+
+        template = generate_general_gaussian_template(Ehtim_image_res, VIDA_parser.template_params["Gaussian_1"], Ehtim_image_FOV)
+
+        if VIDA_parser.template_params["Gaussian_2"] != None:
+            
+            template_2 = generate_general_gaussian_template(Ehtim_image_res, VIDA_parser.template_params["Gaussian_2"], Ehtim_image_FOV)
+            template = template + template_2
+
+        if Plot_Brihtness_T:
+            Intensity_ehtim = Intensity_ehtim_T
+            colorbar_legend = r"Brightness Temperature [$10^9$K]"
+
+        else:
+            Intensity_ehtim = Intensity_ehtim_jy * self.Units.KILO
+            colorbar_legend = r"Flux Per Pixel [mJy]"
+
+        template_x_slice, slice_x_offset, template_y_slice, slice_y_offset = get_template_slices(Ehtim_image_res, template, VIDA_parser.template_params, Ehtim_image_FOV)
+        Ehtim_x_slice, _, Ehtim_y_slice, _ = get_template_slices(Ehtim_image_res, Intensity_ehtim, VIDA_parser.template_params, Ehtim_image_FOV)
+
+        template_fig = plt.figure(figsize=(21,5))
+
+        #========================= Ehtim Image Plot =========================#
+
+        if CROP:
+
+            x_crop_range = np.array([(-(slice_x_offset - Ehtim_image_FOV / 2) - crop_rel_rage[0]), (-(slice_x_offset - Ehtim_image_FOV / 2) + crop_rel_rage[1])])
+            y_crop_range = np.array([(-(slice_y_offset - Ehtim_image_FOV / 2) - crop_rel_rage[2]), (-(slice_y_offset - Ehtim_image_FOV / 2) + crop_rel_rage[3])])
+            
+            # The desired crop window could "cut" outside the simulated window
+            FOV_overshoot_x = max(np.absolute(x_crop_range)) - Ehtim_image_FOV / 2
+            FOV_overshoot_y = max(np.absolute(y_crop_range)) - Ehtim_image_FOV / 2
+
+            FOV_overshoot = max(FOV_overshoot_x, FOV_overshoot_y)
+            
+            axes_limits = [-crop_rel_rage[0], 
+                            crop_rel_rage[1], 
+                           -crop_rel_rage[2], 
+                            crop_rel_rage[3]]
+
+            # If it does, crop to the end of the simulated window, while keeping the aspec ratio
+            if FOV_overshoot > 0:
+
+                x_crop_range = x_crop_range - np.array([-FOV_overshoot, FOV_overshoot])
+                y_crop_range = y_crop_range - np.array([-FOV_overshoot, FOV_overshoot])
+
+                axes_limits = [-crop_rel_rage[0] + FOV_overshoot, 
+                                crop_rel_rage[1] - FOV_overshoot, 
+                               -crop_rel_rage[2] + FOV_overshoot, 
+                                crop_rel_rage[3] - FOV_overshoot]
+
+            x_crop_idx = (x_crop_range / (Ehtim_image_FOV / 2) + 1) / 2 * Ehtim_image_res
+            y_crop_idx = (y_crop_range / (Ehtim_image_FOV / 2) + 1) / 2 * Ehtim_image_res
+
+            x_crop_idx = x_crop_idx.astype(int) - 1
+            y_crop_idx = y_crop_idx.astype(int) - 1
+
+        else:
+        
+            x_crop_idx = [0, (Ehtim_image_res - 1)]
+            y_crop_idx = [0, (Ehtim_image_res - 1)]
+
+        crop_res = x_crop_idx[1] - x_crop_idx[0]
+
+        # The literature (for some reason) has the X axis going positive to negative, 
+        # so I invert the X axis limits
+
+        axes_limits[0] = -axes_limits[0]
+        axes_limits[1] = -axes_limits[1]
+
+        x_coords = np.linspace(axes_limits[0], axes_limits[1], crop_res)
+        y_coords = np.linspace(axes_limits[2], axes_limits[3], crop_res)
+
+        Subplot = template_fig.add_subplot(141)
+        Ehtim_crop        = Intensity_ehtim[y_crop_idx[0] : y_crop_idx[1], x_crop_idx[0] : x_crop_idx[1]]
+        Ehtim_crop_figure = Subplot.imshow(Ehtim_crop, cmap = "hot", extent = axes_limits)
+
+        if CROP:
+
+            Subplot.plot(np.zeros(crop_res), y_coords, "r")
+            Subplot.plot(x_coords, np.zeros(crop_res), "b")
+
+        else:
+
+            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), y_coords, "r")
+            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), "b")
+
+        Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
+        Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+
+        Subplot.set_title("EHTIM Output at {}GHz".format(Frequency_str))
+
+        colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
+        colorbar.set_label(colorbar_legend)
+
+        #========================= Template Plot =========================#
+
+        Subplot = template_fig.add_subplot(142)
+        Subplot.imshow(template[y_crop_idx[0] : y_crop_idx[1], x_crop_idx[0] : x_crop_idx[1]], cmap = "hot", extent = axes_limits)
+
+        if CROP:
+
+            Subplot.plot(np.zeros(crop_res), y_coords, "r--")
+            Subplot.plot(x_coords, np.zeros(crop_res), "b--")
+
+        else:
+
+            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), y_coords, "r--")
+            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), "b--")
+
+        Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
+        Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+
+        ring_mask, dark_spot_mask = get_template_pixel_mask(VIDA_parser.template_params, Ehtim_image_FOV, Ehtim_image_res)
+        Subplot.set_title("VIDA Template")
+
+        colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
+        colorbar.set_label(colorbar_legend)
+
+        #------------------------ Y Slice Plot ------------------------#
+
+        Subplot = template_fig.add_subplot(143)
+        Subplot.plot(y_coords, Ehtim_y_slice[Ehtim_image_res - y_crop_idx[1] : Ehtim_image_res - y_crop_idx[0]], "r")
+        Subplot.plot(y_coords, template_y_slice[Ehtim_image_res - y_crop_idx[1] : Ehtim_image_res - y_crop_idx[0]], "r--")
+
+        Subplot.set_ylim([0,1])
+        Subplot.set_xlim([axes_limits[0], axes_limits[1]])
+
+        Subplot.set_aspect(np.absolute(axes_limits[1] - axes_limits[0]))
+        Subplot.tick_params(left = True, right = False, labelleft = True,
+                            labelbottom = True, bottom = True)
+
+        Subplot.set_xlabel(r'$\delta_{rel}\,\,[\mu$as]')
+        Subplot.set_ylabel('Relative Intensity')
+        Subplot.set_title("Y Intensity Slice")
+
+        # Subplot.imshow(ring_mask, cmap = "hot", extent = axes_limits)
+
+        #------------------------ X Slice Plot ------------------------#
+
+        Subplot = template_fig.add_subplot(144)
+        Subplot.plot(x_coords, Ehtim_x_slice[x_crop_idx[0] : x_crop_idx[1]], "b")
+        Subplot.plot(x_coords, template_x_slice[x_crop_idx[0] : x_crop_idx[1]], "b--")
+
+        Subplot.set_ylim([0,1])
+        Subplot.set_xlim([axes_limits[0], axes_limits[1]])
+
+        Subplot.set_aspect(np.absolute(axes_limits[1] - axes_limits[0]))
+        Subplot.tick_params(left = True, right = False, labelleft = True,
+                                labelbottom = True, bottom = True)
+            
+        Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
+        Subplot.set_ylabel('Relative Intensity')
+        Subplot.set_title("X Intensity Slice")
+
+        template_fig.subplots_adjust(bottom=0.22)
+
+        # Subplot.imshow(dark_spot_mask, cmap = "hot", extent = axes_limits)
+        
+        Brightness_ratio_str = "f at {}GHz = {}".format(Frequency_str, 
+                                                        get_brigness_depression_ratio(ring_mask, dark_spot_mask, Intensity_ehtim_jy))
+        
+        return template_fig, Brightness_ratio_str
+    
+    def get_plottable_intensity_from_parsers(self, Ehtim_Parsers: list):
+
+        Ehtim_Parser    = Ehtim_Parsers[0]
+        Ehtim_image_res = Ehtim_Parser.X_PIXEL_COUNT
+
+        axes_limits     = np.array([(limit) for limit in Ehtim_Parser.WINDOW_LIMITS ]) * self.Units.MEGA
+        Ehtim_image_FOV = np.abs(axes_limits[0] - axes_limits[1])  # Units of [uas]
+        pixel_size      = Ehtim_image_FOV / Ehtim_image_res / self.Units.MEGA * self.Units.ARCSEC_TO_RAD  
+
+        Intensity_ehtim_jy = np.zeros((Ehtim_image_res, Ehtim_image_res))
+        Intensity_ehtim_T  = np.zeros((Ehtim_image_res, Ehtim_image_res))
+
+        for Parser in Ehtim_Parsers:
+
+            temp_Intensity_ehtim_jy, _ = Parser.get_plottable_ehtim_data()
+            # Convert the Flux from [Jy] to brightness temperature in Giga [K]
+            temp_Intensity_ehtim_T = self.Units.Spectral_density_to_T(temp_Intensity_ehtim_jy / pixel_size**2 / self.Units.W_M2_TO_JY, Parser.OBS_FREQUENCY * self.Units.GIGA) / self.Units.GIGA
+            
+            Intensity_ehtim_jy += temp_Intensity_ehtim_jy
+            Intensity_ehtim_T  += temp_Intensity_ehtim_T
+
+        if len(Ehtim_Parsers) > 1:
+            Frequency_str = "{"
+
+            for Freq_num, Parser in enumerate(Ehtim_Parsers):
+
+                Frequency_str += str(int(Parser.OBS_FREQUENCY))
+
+                if Freq_num < len(Ehtim_Parsers) - 1:
+
+                    Frequency_str += ", "
+
+            Frequency_str += "}"
+
+        else:
+            Frequency_str = str(Ehtim_Parser.OBS_FREQUENCY)
+
+
+        return Intensity_ehtim_jy, Intensity_ehtim_T, Frequency_str
+
+    def compare_superpos_w_single_freq(self, 
+                                       Contour_specs: list):
+        
+        for Array_num, Array_str in enumerate(self.Arrays):
+            
+            if len(self.Frequency_Bins) > 1:
+                Ehtim_Parsers = [self.Ehtim_Parsers[Sim_num + Array_num * (len(self.Arrays) - 1)][self.BLUR] 
+                                for Sim_num, _ in enumerate(self.Frequency_Bins)]
+                        
+            else:
+                print("Not enough frequency bins to make a superposition!")
+                return
+                
+            try:
+                VIDA_Parser = VIDA_params_Parser(self.Sim_path + "\\Superposition\\fit_params_superposition")
+
+            except:
+                print("Could not parse VIDA template!")
+                print("I looked at this path: {}".format(self.Sim_path + "\\Superposition\\fit_params_superposition"))
+                return 
+
+            Intensity_ehtim_jy, _, Frequency_str = self.get_plottable_intensity_from_parsers(Ehtim_Parsers)
+            axes_limits     = np.array([(limit) for limit in Ehtim_Parsers[0].WINDOW_LIMITS ]) * self.Units.MEGA
+
+            # The literature (for some reason) has the X axis going positive to negative, 
+            # so I invert the X axis limits
+            axes_limits[0] = -axes_limits[0]
+            axes_limits[1] = -axes_limits[1]
+
+            # Convert the flux to [mJy]
+            Intensity_ehtim_mjy = Intensity_ehtim_jy * 1e3
+
+            Superposition_w_contour_fig = plt.figure(figsize=(16,5))
+            Superposition_w_contour_fig.suptitle("Using Array {}".format(Array_str))
+
+            Subplot = Superposition_w_contour_fig.add_subplot(131)
+            Superposition_subplot = Subplot.imshow(Intensity_ehtim_mjy, cmap = "hot", extent = axes_limits, interpolation = 'bilinear',)
+
+            Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
+            Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+            Subplot.set_title("EHTIM Output at {}GHz".format(Frequency_str))
+
+            colorbar = Superposition_w_contour_fig.colorbar(Superposition_subplot, ax = Subplot, fraction=0.046, pad=0.04)
+            colorbar.set_label(r"Flux Per Pixel [mJy]")
+
+            self.plot_contours(Ehtim_Parsers, VIDA_Parser, Subplot, Contour_specs[0])
+            
+            for Sim_number, _ in enumerate(self.Frequency_Bins):
+                
+                Subplot = Superposition_w_contour_fig.add_subplot(132 + Sim_number)
+
+                Index = Sim_number + Array_num * len(self.Frequency_Bins)
+                Ehtim_Parser_Blur = self.Ehtim_Parsers[Index][self.BLUR]
+
+                Intensity_ehtim_blur_jy, _ = Ehtim_Parser_Blur.get_plottable_ehtim_data()
+                Intensity_ehtim_blur_mjy = Intensity_ehtim_blur_jy * self.Units.KILO
+
+                Subplot.set_title("Post-Clean Beam Convolution at {}GHz".format(Ehtim_Parser_Blur.OBS_FREQUENCY))
+                Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
+                Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+
+                post_Convolution_T = Subplot.imshow(Intensity_ehtim_blur_mjy, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits)
+                colorbar = Superposition_w_contour_fig.colorbar(post_Convolution_T, ax = Subplot, fraction = 0.046, pad = 0.04)
+                colorbar.set_label(r"Flux Per Pixel [mJy]")
+
+                self.plot_contours([self.Ehtim_Parsers[Sim_number + Array_num * (len(self.Arrays) - 1)][self.BLUR]], 
+                                   VIDA_Parser, 
+                                   Subplot, 
+                                   Contour_specs[1 + Sim_number])
+                
+            Superposition_w_contour_fig.tight_layout()
+
 if __name__ == "__main__":
 
     EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:\\Users\\Valentin\\Documents\\Papers\\Sim_paper\\JNW\\"
-    Sim_Frequency_Bins  = ["230" , "345"] # In units of [GHz]
+    Sim_path            = "C:\\Users\\Valentin\\Documents\\Papers\\Sim_paper\\Gauss_Bonnet\\"
+    Sim_Frequency_Bins  = ["230", "345"] # In units of [GHz]
 
     Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
                                 Sim_Frequency_Bins = Sim_Frequency_Bins,
                                 Array              = EHT_Array,
                                 Units_class_inst   = Units_class())
 
-    Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False)    
-    Visualizer.plot_EHTIM_results(Make_contour_plots = True)
-    Visualizer.plot_VIDA_template(Center_plot = False)
+    Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, Save_Figures = False)    
+
+    Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
+                                  Contour_specs = [([0.15, 0.2, 0.3], ["w", "k", "r"]),
+                                                   ([0.095, 0.14, 0.2], ["w", "k", "r"])], 
+                                  Save_Figures = False,
+                                  Plot_no_blur = True)
+
+    Visualizer.plot_VIDA_style(Center_plot = False, Save_Figures = False)
+
     # Visualizer.create_EHTIM_superposition()
-    Visualizer.plot_superposition(Center_plot = False)
-    Visualizer.save_console_log_to_file()
+
+    Visualizer.plot_superposition(Center_plot = False,
+                                  Save_Figures = False)
+
+    Visualizer.compare_superpos_w_single_freq(Contour_specs = [([0.12, 0.15 , 0.2, 0.3], ["k", "r", "b", "w"]),
+                                                               ([0.12, 0.15 , 0.2, 0.3], ["k", "r", "b", "w"]),
+                                                               ([0.095, 0.14],           ["r", "w"])])
+
+    # # Visualizer.save_console_log_to_file()
 
     plt.rcParams['text.usetex'] = True
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
     plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # #     Ehtim_Parser_no_blur = ehtim_Parser("Results_specIDX_blur")
 # #     Intensity_ehtim_no_blur, Ehtim_metadata_no_blur = Ehtim_Parser_no_blur.get_plottable_ehtim_data()

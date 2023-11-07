@@ -246,26 +246,27 @@ class Gaus_Bonnet_Naked_Singularity:
 
         return np.max(roots)
     
-    def get_impact_params_and_turning_points(self, GRANULARITY, r_source):
+    def get_impact_params_and_turning_points(self, GRANULARITY: int, r_source: float) -> tuple:
 
         density_parameter  = 5.5
-        distribution_range = np.linspace(0, 1, GRANULARITY)
 
         metric_source       = self.metric(r_source, np.pi / 2)
         impact_param_source = np.sqrt(-metric_source[3] / metric_source[0])
 
         if self.HAS_PHOTON_SPHERE:
+            distribution_range_1 = np.linspace(0, 1, int(GRANULARITY / 2))
+            distribution_range_2 = np.linspace(0, 1, GRANULARITY - int(GRANULARITY / 2))
 
             metric_photon_sphere       = self.metric(self.photon_sphere(), np.pi / 2) 
             impact_param_photon_sphere = np.sqrt(-metric_photon_sphere[3] / metric_photon_sphere[0])
 
-            higher_order_impact_params1 = impact_param_source        + beta.cdf(distribution_range, density_parameter, density_parameter) * (impact_param_photon_sphere - impact_param_source)
-            higher_order_impact_params2 = impact_param_photon_sphere + beta.cdf(distribution_range, density_parameter, density_parameter) * (1e-2 - impact_param_photon_sphere)
+            higher_order_impact_params1 = impact_param_source        + beta.cdf(distribution_range_1, density_parameter, density_parameter) * (impact_param_photon_sphere - impact_param_source)
+            higher_order_impact_params2 = impact_param_photon_sphere + beta.cdf(distribution_range_2, density_parameter, density_parameter) * (1e-2 - impact_param_photon_sphere)
                                                                                                                                                 
             higher_order_impact_params = np.append(higher_order_impact_params1, higher_order_impact_params2)
 
         else:
-
+            distribution_range = np.linspace(0, 1, GRANULARITY)
             higher_order_impact_params = impact_param_source + beta.cdf(distribution_range, density_parameter, density_parameter) * (1e-2 - impact_param_source)
         
         #-------- Calculate the impact parameters for the correspoinding turning points --------#

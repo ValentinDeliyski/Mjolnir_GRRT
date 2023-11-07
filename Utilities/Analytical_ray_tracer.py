@@ -412,7 +412,7 @@ if __name__ == "__main__":
 
     JNW_PARAM = 0.48  # [ - ]
 
-    GAUSS_BONET_PARAM = 1.6 # [ - ]
+    GAUSS_BONET_PARAM = 1.15 # [ - ]
 
     #------      Metrics      -------#
 
@@ -428,7 +428,7 @@ if __name__ == "__main__":
                      "Naked Singularity":  JNW,
                      "Gauss - Bonnet"    : GBNS}
 
-    Active_spacetime = "Schwarzshild"
+    Active_spacetime = "Gauss - Bonnet"
 
     #----- Observer / Source  -------#
 
@@ -436,7 +436,7 @@ if __name__ == "__main__":
     inclination_obs = 70 * DEG_TO_RAD   # [ rad ]
 
     ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
-                                       Granularity = 1000 , 
+                                       Granularity = 1000, 
                                        r_source = 6, 
                                        r_obs = r_obs, 
                                        inclination = inclination_obs, 
