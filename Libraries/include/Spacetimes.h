@@ -216,7 +216,7 @@
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[]);
 
         /* Integration Termination Conditions */
 
