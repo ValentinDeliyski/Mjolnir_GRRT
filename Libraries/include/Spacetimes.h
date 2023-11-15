@@ -75,7 +75,7 @@
 
             /* Equations of motion */
 
-            virtual int get_EOM(double inter_State_vector[], double Derivatives[], int iteration) {
+            virtual int get_EOM(double inter_State_vector[], double Derivatives[]) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
                 
@@ -131,7 +131,7 @@
 
             /* Equations of motion */
 
-            int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
+            int get_EOM(double inter_State_vector[], double Derivatives[]);
 
             /* Integration Termination Conditions */
 
@@ -174,7 +174,7 @@
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[]);
 
         /* Integration Termination Conditions */
 
@@ -258,7 +258,7 @@
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[]);
 
         /* Integration Termination Conditions */
 
@@ -301,7 +301,7 @@
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[]);
 
         /* Integration Termination Conditions */
 
@@ -338,7 +338,7 @@
  
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[], int iteration);
+        int get_EOM(double inter_State_vector[], double Derivatives[]);
 
         /* Integration Termination Conditions */
 

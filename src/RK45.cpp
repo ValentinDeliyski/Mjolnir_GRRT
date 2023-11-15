@@ -14,7 +14,7 @@
 extern Spacetime_Base_Class* Spacetimes[];
 extern Optically_Thin_Toroidal_Model OTT_Model;
 
-void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration) {
+void get_Radiative_Transfer(double State_Vector[], double Derivatives[]) {
 
     /************************************************************************************************
     |                                                                                               |
@@ -25,23 +25,16 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
     |   @ Inputs:                                                                                   |
     |     * State_Vector: Pointer to an array that holds the ray / photon State Vector              |
     |     * Derivatives: Pointer to an array that holds the evaluation of the E.O.M                 |
-    |     * iteration: The current RK45 iteration (0 to 7 - 1)                                      |
     |                                                                                               |
     |   @ Ouput: None                                                                               |
     |                                                                                               |
     ************************************************************************************************/
 
-    double temp_State_Vector[e_State_Number]{};
-
-    for (int index = e_r; index < e_State_Number - 1; index++) {
-
-        temp_State_Vector[index] = State_Vector[index + iteration * e_State_Number];
-
-    }
+    double* temp_State_Vector = State_Vector;
 
     if (e_metric == Wormhole) {
 
-        temp_State_Vector[e_r] = sqrt(State_Vector[e_r + iteration * e_State_Number] * State_Vector[e_r + iteration * e_State_Number] + WH_R_THROAT * WH_R_THROAT);
+        temp_State_Vector[e_r] = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
 
     }
 
@@ -59,24 +52,28 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int ite
 
     case Synchotron_exact:
 
-        Emission_function = OTT_Model.get_emission_function_synchotron_exact(temp_State_Vector);
+        Emission_function   = OTT_Model.get_emission_function_synchotron_exact(temp_State_Vector);
         Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
 
         break;
 
     case Synchotron_phenomenological:
 
-        Emission_function = OTT_Model.get_emission_function_synchotron_phenomenological(temp_State_Vector);
+        Emission_function   = OTT_Model.get_emission_function_synchotron_phenomenological(temp_State_Vector);
         Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
     
         break;
+
+    default:
+
+        std::cout << "Unsupported emission model!" << "\n";
 
     }
 
     /* Fill in radiative transfer derivatives */
 
-    Derivatives[e_Intensity     + iteration * e_State_Number] = -redshift * redshift * Emission_function * exp(-State_Vector[e_Optical_Depth]) * MASS_TO_CM;
-    Derivatives[e_Optical_Depth + iteration * e_State_Number] = -Absorbtion_function / redshift * MASS_TO_CM;
+    *(Derivatives + e_Intensity    ) = -redshift * redshift * Emission_function * exp(-State_Vector[e_Optical_Depth]) * MASS_TO_CM;
+    *(Derivatives + e_Optical_Depth) = -Absorbtion_function / redshift * MASS_TO_CM;
 
 }
 
@@ -118,8 +115,8 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
 
         }
 
-        Spacetimes[e_metric]->get_EOM(inter_State_vector, Derivatives, iteration);
-        get_Radiative_Transfer(inter_State_vector, Derivatives, iteration);
+        Spacetimes[e_metric]->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
+        get_Radiative_Transfer(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
 
         iteration += 1;
 
@@ -143,7 +140,10 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
        
     }
 
-    controller->current_err = my_max(state_error, e_State_Number);
+
+    controller->sec_prev_err = controller->prev_err;
+    controller->prev_err     = controller->current_err;
+    controller->current_err  = my_max(state_error, e_State_Number);
     controller->update_step();
 
     //bool near_NT_disk = State_Vector[e_r] * State_Vector[e_r] * cos(State_Vector[e_theta]) * cos(State_Vector[e_theta]) < 0.5 * 0.5 &&
@@ -171,8 +171,7 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
 
     }
     
-    controller->sec_prev_err = controller->prev_err;
-    controller->prev_err     = controller->current_err;
+
 
 }
 
