@@ -322,13 +322,13 @@ class Sim_Visualizer():
                 Ehtim_Parser_Blur = self.Ehtim_Parsers[Index][self.BLUR]
                 Vida_Parser = self.VIDA_Parsers[Index]
 
-                Ehtim_Vida_plot, Brightness_ratio_str = self.plot_VIDA_templte(Ehtim_Parsers= [Ehtim_Parser_Blur], 
-                                                                          VIDA_parser      = Vida_Parser, 
-                                                                          CROP             = Center_plot, 
-                                                                          crop_rel_rage    = [50, 50, 50, 50],
-                                                                          Plot_Brihtness_T = True)
+                Ehtim_Vida_plot, Brightness_ratio_str = self.plot_VIDA_templte(Ehtim_Parsers    = [Ehtim_Parser_Blur], 
+                                                                               VIDA_parser      = Vida_Parser, 
+                                                                               CROP             = Center_plot, 
+                                                                               crop_rel_rage    = [50, 50, 50, 50],
+                                                                               Plot_Brihtness_T = True,
+                                                                               Array_str        = Array_str)
                 
-                Ehtim_Vida_plot.suptitle("Using Array {}".format(Array_str))
                 Ehtim_Vida_plot.tight_layout()
 
                 print(Brightness_ratio_str)
@@ -401,13 +401,13 @@ class Sim_Visualizer():
                                                                            VIDA_parser      = VIDA_Parser, 
                                                                            CROP             = Center_plot, 
                                                                            crop_rel_rage    = [50, 50, 50, 50],
-                                                                           Plot_Brihtness_T = False)
+                                                                           Plot_Brihtness_T = False,
+                                                                           Array_str        = Array_str)
             
             print(Brightness_ratio_str)
 
             self.Console_log_str[Array_num] += "\n" + Brightness_ratio_str
 
-            Ehtim_Vida_plot.suptitle("Using Array {}".format(Array_str))
             Ehtim_Vida_plot.tight_layout()
   
             if Save_Figures:
@@ -477,9 +477,10 @@ class Sim_Visualizer():
     def plot_VIDA_templte(self, 
                           Ehtim_Parsers: list,
                           VIDA_parser: VIDA_params_Parser, 
-                          CROP: str, 
+                          CROP: bool, 
                           crop_rel_rage: list, 
-                          Plot_Brihtness_T: bool) -> None:
+                          Plot_Brihtness_T: bool,
+                          Array_str: str = None) -> None:
 
         Ehtim_Parser = Ehtim_Parsers[0]
 
@@ -577,7 +578,16 @@ class Sim_Visualizer():
         Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
         Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
 
-        Subplot.set_title("EHTIM Output at {}GHz".format(Frequency_str))
+        if Array_str != None:
+
+            if Array_str in ["2017", "2025"]:
+                Subplot.set_title("EHT {} at {}GHz".format(Array_str, Frequency_str))
+
+            else:
+                Subplot.set_title("ngEHT at {}GHz".format(Frequency_str))
+
+        else:
+            Subplot.set_title("EHT ?????? at {}GHz".format(Array_str, Frequency_str))
 
         colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
         colorbar.set_label(colorbar_legend)
@@ -692,7 +702,8 @@ class Sim_Visualizer():
         return Intensity_ehtim_jy, Intensity_ehtim_T, Frequency_str
 
     def compare_superpos_w_single_freq(self, 
-                                       Contour_specs: list):
+                                       Contour_specs: list,
+                                       Save_Figures: bool):
         
         for Array_num, Array_str in enumerate(self.Arrays):
             
@@ -724,14 +735,13 @@ class Sim_Visualizer():
             Intensity_ehtim_mjy = Intensity_ehtim_jy * 1e3
 
             Superposition_w_contour_fig = plt.figure(figsize=(16,5))
-            Superposition_w_contour_fig.suptitle("Using Array {}".format(Array_str))
 
             Subplot = Superposition_w_contour_fig.add_subplot(131)
             Superposition_subplot = Subplot.imshow(Intensity_ehtim_mjy, cmap = "hot", extent = axes_limits, interpolation = 'bilinear',)
 
             Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
             Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
-            Subplot.set_title("EHTIM Output at {}GHz".format(Frequency_str))
+            Subplot.set_title("ngEHT at {}GHz".format(Frequency_str))
 
             colorbar = Superposition_w_contour_fig.colorbar(Superposition_subplot, ax = Subplot, fraction=0.046, pad=0.04)
             colorbar.set_label(r"Flux Per Pixel [mJy]")
@@ -748,7 +758,7 @@ class Sim_Visualizer():
                 Intensity_ehtim_blur_jy, _ = Ehtim_Parser_Blur.get_plottable_ehtim_data()
                 Intensity_ehtim_blur_mjy = Intensity_ehtim_blur_jy * self.Units.KILO
 
-                Subplot.set_title("Post-Clean Beam Convolution at {}GHz".format(Ehtim_Parser_Blur.OBS_FREQUENCY))
+                Subplot.set_title("ngEHT at {}GHz".format(Ehtim_Parser_Blur.OBS_FREQUENCY))
                 Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
                 Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
 
@@ -763,35 +773,46 @@ class Sim_Visualizer():
                 
             Superposition_w_contour_fig.tight_layout()
 
+            if Save_Figures:
+
+                if not os.path.exists(self.Sim_path + "Figures\\"):
+                    os.makedirs(self.Sim_path + "Figures\\")
+
+                fig_title = "Superpos_Compare.png"
+
+                Superposition_w_contour_fig.savefig(Sim_path + 
+                                                    "Figures\\" + 
+                                                    fig_title, bbox_inches = 'tight')
+
 if __name__ == "__main__":
 
     EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:\\Users\\Valentin\\Documents\\Papers\\Sim_paper\\Gauss_Bonnet\\"
-    Sim_Frequency_Bins  = ["230", "345"] # In units of [GHz]
+    Sim_path            = "C:\\Users\\Valentin\\Documents\\Papers\\Sim_paper\\Kerr_same_T\\Kerr_0.5_6.8\\"
+    Sim_Frequency_Bins  = ["345"] # In units of [GHz]
 
     Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
                                 Sim_Frequency_Bins = Sim_Frequency_Bins,
                                 Array              = EHT_Array,
                                 Units_class_inst   = Units_class())
 
-    Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, Save_Figures = False)    
+    # Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, Save_Figures = True)    
 
     Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
-                                  Contour_specs = [([0.15, 0.2, 0.3], ["w", "k", "r"]),
-                                                   ([0.095, 0.14, 0.2], ["w", "k", "r"])], 
-                                  Save_Figures = False,
-                                  Plot_no_blur = True)
+                                  Contour_specs      = [([0.005, 0.02, 0.1], ["b", "r", "w"])], 
+                                  Save_Figures       = True,
+                                  Plot_no_blur       = True) 
 
-    Visualizer.plot_VIDA_style(Center_plot = False, Save_Figures = False)
+    Visualizer.plot_VIDA_style(Center_plot = False, Save_Figures = True)
 
-    # Visualizer.create_EHTIM_superposition()
+    # # Visualizer.create_EHTIM_superposition()
 
-    Visualizer.plot_superposition(Center_plot = False,
-                                  Save_Figures = False)
+    # Visualizer.plot_superposition(Center_plot = False,
+    #                               Save_Figures = True)
 
-    Visualizer.compare_superpos_w_single_freq(Contour_specs = [([0.12, 0.15 , 0.2, 0.3], ["k", "r", "b", "w"]),
-                                                               ([0.12, 0.15 , 0.2, 0.3], ["k", "r", "b", "w"]),
-                                                               ([0.095, 0.14],           ["r", "w"])])
+    # Visualizer.compare_superpos_w_single_freq(Contour_specs = [([0.005, 0.02, 0.1], ["b", "r", "w"]),
+    #                                                            ([0.005, 0.02, 0.1], ["b", "r", "w"]),
+    #                                                            ([0.005, 0.02, 0.1], ["b", "r", "w"])],
+    #                                         Save_Figures = True)
 
     # # Visualizer.save_console_log_to_file()
 

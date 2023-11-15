@@ -278,7 +278,7 @@ def plot_splined_data(figure_num, Splines):
 
         color_index = (color_index + 1) % len(COLOR_CYCLE)
 
-    subfigure_spline.set_title(r'Images of the r = 6M orbit, Schwarzschild')
+    subfigure_spline.set_title(r'Images of the r = 6M orbit')
     subfigure_spline.set_xlabel(r'x [M]')
     subfigure_spline.set_ylabel(r'y [M]')
     subfigure_spline.set_aspect(1)
@@ -428,7 +428,7 @@ if __name__ == "__main__":
                      "Naked Singularity":  JNW,
                      "Gauss - Bonnet"    : GBNS}
 
-    Active_spacetime = "Gauss - Bonnet"
+    Active_spacetime = "Naked Singularity"
 
     #----- Observer / Source  -------#
 
@@ -446,12 +446,12 @@ if __name__ == "__main__":
     ray_tracer.create_spline()
     ray_tracer.construct_images()
  
-    if Spacetime_dict[Active_spacetime].HAS_PHOTON_SPHERE:
-        plot_splined_data(figure_num = 1, 
+    
+    plot_splined_data(figure_num = 1, 
                           Splines = ray_tracer.Image_Spline)
         
-    else:
-        plot_raw_data(figure_num = 2, 
+    
+    plot_raw_data(figure_num = 2, 
                       Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
                       Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
 

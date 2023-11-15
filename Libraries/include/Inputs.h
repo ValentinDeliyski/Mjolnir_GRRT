@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Naked_Singularity; // Spacetime to be used
+    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.01;
+    Real SPIN = 0.5;
 
     // Wormhole spacetime parameters //
 
@@ -47,7 +47,7 @@
     // ======================== Observer Inputs ======================== //
 
     Real r_obs	   = 1e4;			     // Radial potision of the observer [ M ]
-    Real theta_obs = 160.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real theta_obs = 70.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			     // Azimuthal angle of the observer ( not used ) [ Rad ]
     Real obs_cam_rotation_angle = -70.0f / 180 * M_PI - M_PI_4;
 

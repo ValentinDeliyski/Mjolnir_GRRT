@@ -266,17 +266,17 @@ int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Init
     return OK;
 }
 
-int Kerr_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration) {
+int Kerr_class::get_EOM(double State_vector[], double Derivatives[]) {
 
-    double& r = inter_State_vector[e_r + iteration * e_State_Number];
+    double& r = State_vector[e_r];
     double r2 = r * r;
 
-    double& J = inter_State_vector[e_p_phi];
+    double& J = State_vector[e_p_phi];
 
-    double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double sin1 = sin(State_vector[e_theta]);
     double sin2 = sin1 * sin1;
 
-    double cos1 = cos(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
     double rho2 = r2 + SPIN * SPIN * cos2;
@@ -285,24 +285,24 @@ int Kerr_class::get_EOM(double inter_State_vector[], double Derivatives[], int i
     double delta = r2 - 2 * MASS * r + SPIN * SPIN;
     double F = P * P - delta * ((J - SPIN) * (J - SPIN) + cos2 * (J * J / sin2 - SPIN * SPIN));
 
-    double& p_r     = inter_State_vector[e_p_r     + iteration * e_State_Number];
-    double& p_theta = inter_State_vector[e_p_theta + iteration * e_State_Number];
+    double& p_r     = State_vector[e_p_r    ];
+    double& p_theta = State_vector[e_p_theta];
 
-    Derivatives[e_r      + iteration * e_State_Number] = delta / rho2 * p_r;
-    Derivatives[e_theta  + iteration * e_State_Number] = 1.0 / rho2 * p_theta;
-    Derivatives[e_phi    + iteration * e_State_Number] = 1.0 / (delta * rho2) * (P * SPIN + delta * (J / sin2 - SPIN));
-    Derivatives[e_p_phi  + iteration * e_State_Number] = 0.0;
+    *(Derivatives + e_r    ) = delta / rho2 * p_r;
+    *(Derivatives + e_theta) = 1.0 / rho2 * p_theta;
+    *(Derivatives + e_phi  ) = 1.0 / (delta * rho2) * (P * SPIN + delta * (J / sin2 - SPIN));
+    *(Derivatives + e_p_phi) = 0.0;
 
     double theta_term_1 = -(delta * p_r * p_r + p_theta * p_theta) * SPIN * SPIN * cos1 * sin1 / (rho2 * rho2);
     double theta_term_2 = F * SPIN * SPIN * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - SPIN * SPIN * cos1 * sin1) / rho2;
 
-    Derivatives[e_p_theta + iteration * e_State_Number] = theta_term_1 + theta_term_2;
+    *(Derivatives + e_p_theta) = theta_term_1 + theta_term_2;
 
     double r_term_1 = p_r * p_r / (rho2) * (MASS - r * (1 - delta / rho2)) + p_theta * p_theta * r / (rho2 * rho2);
     double r_term_2 = (2 * P * r - (r - MASS) * ((J - SPIN) * (J - SPIN) + cos2 * (J * J / (sin2) - SPIN * SPIN))) / (delta * rho2)
                     - F * (rho2 * (r - MASS) + r * delta) / (delta * delta * rho2 * rho2);
 
-    Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
+    *(Derivatives + e_p_r) = r_term_1 + r_term_2;
 
     return OK;
 
@@ -768,36 +768,36 @@ int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_
     return 0;
 }
 
-int Wormhole_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration) {
+int Wormhole_class::get_EOM(double State_Vector[], double Derivatives[]) {
 
-    double sqrt_r2 = sqrt(inter_State_vector[0 + iteration * e_State_Number] * inter_State_vector[0 + iteration * e_State_Number] + WH_R_THROAT * WH_R_THROAT);
-    double d_ell_r = inter_State_vector[0 + iteration * e_State_Number] / sqrt_r2;
+    double sqrt_r2 = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+    double d_ell_r = State_Vector[e_r] / sqrt_r2;
 
-    double& J = inter_State_vector[e_p_phi];
+    double& J = State_Vector[e_p_phi];
 
-    double omega = 2 * SPIN / (sqrt_r2 * sqrt_r2 * sqrt_r2);
+    double omega = this->get_metric(State_Vector).Shift_function;
     double d_ell_omega = -3 * omega / sqrt_r2 * d_ell_r;
 
     double exponent = -1 / sqrt_r2 - WH_REDSHIFT / (sqrt_r2 * sqrt_r2);
-    double N = this->get_metric(inter_State_vector).Lapse_function;
+    double N = this->get_metric(State_Vector).Lapse_function;
     double d_ell_N = N * (1 / (sqrt_r2 * sqrt_r2) + 2 * WH_REDSHIFT / (sqrt_r2 * sqrt_r2 * sqrt_r2)) * d_ell_r;
 
     double N2 = N * N;
 
-    double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double sin1 = sin(State_Vector[e_theta]);
     double sin2 = sin1 * sin1;
 
-    Derivatives[e_r       + iteration * e_State_Number] = 1.0 / (1 + WH_R_THROAT / sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number];
-    Derivatives[e_theta   + iteration * e_State_Number] = 1.0 / (sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_theta + iteration * e_State_Number];
-    Derivatives[e_phi     + iteration * e_State_Number] = J / (sqrt_r2 * sqrt_r2 * sin2) + omega * (1 - omega * J) / N2;
-    Derivatives[e_p_phi   + iteration * e_State_Number] = 0.0;
-    Derivatives[e_p_theta + iteration * e_State_Number] = (cos(inter_State_vector[1 + iteration * e_State_Number]) / sin1) / (sqrt_r2 * sqrt_r2) * J * J / sin2;
+    *(Derivatives + e_r      ) = 1.0 / (1 + WH_R_THROAT / sqrt_r2) * State_Vector[e_p_r];
+    *(Derivatives + e_theta  ) = 1.0 / (sqrt_r2 * sqrt_r2) * State_Vector[e_p_theta];
+    *(Derivatives + e_phi    ) = J / (sqrt_r2 * sqrt_r2 * sin2) + omega * (1 - omega * J) / N2;
+    *(Derivatives + e_p_phi  ) = 0.0;
+    *(Derivatives + e_p_theta) = (cos(State_Vector[e_theta]) / sin1) / (sqrt_r2 * sqrt_r2) * J * J / sin2;
 
-    double term_1 = -1.0 / ((1 + WH_R_THROAT / sqrt_r2) * (1 + WH_R_THROAT / sqrt_r2)) * WH_R_THROAT * inter_State_vector[e_r + iteration * e_State_Number] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number] / 2;
-    double term_2 = 1.0 / (sqrt_r2 * sqrt_r2 * sqrt_r2) * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2) * d_ell_r;
+    double term_1 = -1.0 / ((1 + WH_R_THROAT / sqrt_r2) * (1 + WH_R_THROAT / sqrt_r2)) * WH_R_THROAT * State_Vector[e_r] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * State_Vector[e_p_r] * State_Vector[e_p_r] / 2;
+    double term_2 = 1.0 / (sqrt_r2 * sqrt_r2 * sqrt_r2) * (State_Vector[e_p_theta] * State_Vector[e_p_theta] + J * J / sin2) * d_ell_r;
     double term_3 = -(1.0 / (N2 * N) * d_ell_N * ((1 - omega * J) * (1 - omega * J)) - 1.0 / N2 * (-d_ell_omega * (1 - omega * J) * J));
 
-    Derivatives[e_p_r + iteration * e_State_Number] = term_1 + term_2 + term_3;
+    *(Derivatives + e_p_r) = term_1 + term_2 + term_3;
 
     return OK;
 }
@@ -1036,34 +1036,34 @@ int JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initi
 
 }
 
-int JNW_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration)
+int JNW_class::get_EOM(double State_vector[], double Derivatives[])
 {
 
-    double r = inter_State_vector[0 + iteration * e_State_Number];
+    double r = State_vector[e_r];
 
-    double& J = inter_State_vector[e_p_phi];
+    double& J = State_vector[e_p_phi];
 
-    double sin1 = sin(inter_State_vector[1 + iteration * e_State_Number]);
+    double sin1 = sin(State_vector[e_theta]);
     double sin2 = sin1 * sin1;
 
-    double cos1 = cos(inter_State_vector[1 + iteration * e_State_Number]);
+    double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
     double pow_gamma = pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA);
     double pow_gamma_minus_1 = pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1);
 
-    Derivatives[e_r       + iteration * e_State_Number] = pow_gamma * inter_State_vector[e_p_r + iteration * e_State_Number];
-    Derivatives[e_theta   + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
-    Derivatives[e_phi     + iteration * e_State_Number] = pow_gamma_minus_1 / (r * r * sin2) * J;
-    Derivatives[e_p_phi   + iteration * e_State_Number] = 0.0;
-    Derivatives[e_p_theta + iteration * e_State_Number] = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
+    *(Derivatives + e_r      ) = pow_gamma * State_vector[e_p_r];
+    *(Derivatives + e_theta  ) = pow_gamma_minus_1 / (r * r) * State_vector[e_p_theta];
+    *(Derivatives + e_phi    ) = pow_gamma_minus_1 / (r * r * sin2) * J;
+    *(Derivatives + e_p_phi  ) = 0.0;
+    *(Derivatives + e_p_theta) = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
 
     double r_term_1 = -JNW_GAMMA * JNW_R_SINGULARITY / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma
-                    + inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number]);
+                    + State_vector[e_p_r] * State_vector[e_p_r]);
     double r_term_2 = 1.0 / r / r / r * pow_gamma_minus_1 * (1 - JNW_R_SINGULARITY / 2 / r * (JNW_GAMMA - 1) / (1 - JNW_R_SINGULARITY / r))
-                    * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
+                    * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
-    Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
+    *(Derivatives + e_p_r) = r_term_1 + r_term_2;
 
     return OK;
 
@@ -1315,16 +1315,16 @@ int Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditions_type
 
 }
 
-int Gauss_Bonnet_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration){
+int Gauss_Bonnet_class::get_EOM(double State_vector[], double Derivatives[]){
 
-    double& r = inter_State_vector[e_r + iteration * e_State_Number];
+    double& r = State_vector[e_r];
 
-    double& J = inter_State_vector[e_p_phi];
+    double& J = State_vector[e_p_phi];
 
-    double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double sin1 = sin(State_vector[e_theta]);
     double sin2 = sin1 * sin1;
 
-    double cos1 = cos(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
     double root = sqrt(1. + 8. * GAUSS_BONNET_GAMMA * MASS / r / r / r);
@@ -1332,16 +1332,16 @@ int Gauss_Bonnet_class::get_EOM(double inter_State_vector[], double Derivatives[
     double f    = 1. + r * r / GAUSS_BONNET_GAMMA / 2. * (1. - root);
     double dr_f = 2. / r * (f - 1.) + 6. * MASS / root / r / r;
 
-    Derivatives[e_r       + iteration * e_State_Number] = f * inter_State_vector[e_p_r + iteration * e_State_Number];
-    Derivatives[e_theta   + iteration * e_State_Number] = 1. / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
-    Derivatives[e_phi     + iteration * e_State_Number] = J / (r * r * sin2);
-    Derivatives[e_p_phi   + iteration * e_State_Number] = 0.0;
-    Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (r * r * sin1 * sin2) * J * J;
+    *(Derivatives + e_r      ) = f * State_vector[e_p_r];
+    *(Derivatives + e_theta  ) = 1. / (r * r) * State_vector[e_p_theta];
+    *(Derivatives + e_phi    ) = J / (r * r * sin2);
+    *(Derivatives + e_p_phi  ) = 0.0;
+    *(Derivatives + e_p_theta) = cos1 / (r * r * sin1 * sin2) * J * J;
 
-    double r_term_1 = -1. / 2 * (1.0 / f / f + inter_State_vector[e_p_r] * inter_State_vector[e_p_r]) * dr_f;
-    double r_term_2 = 1.0 / r / r / r * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
+    double r_term_1 = -1. / 2 * (1.0 / f / f + State_vector[e_p_r] * State_vector[e_p_r]) * dr_f;
+    double r_term_2 = 1.0 / r / r / r * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
-    Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
+    Derivatives[e_p_r] = r_term_1 + r_term_2;
 
     return OK;
 
@@ -1585,16 +1585,16 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_initial_conditions_from_file(Initia
 
 }
 
-int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double inter_State_vector[], double Derivatives[], int iteration) {
+int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double State_vector[], double Derivatives[]) {
 
-    double& r = inter_State_vector[e_r + iteration * e_State_Number];
+    double& r = State_vector[e_r];
 
-    double& J = inter_State_vector[e_p_phi];
+    double& J = State_vector[e_p_phi];
 
-    double sin1 = sin(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double sin1 = sin(State_vector[e_theta]);
     double sin2 = sin1 * sin1;
 
-    double cos1 = cos(inter_State_vector[e_theta + iteration * e_State_Number]);
+    double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
     double M  = MASS;
@@ -1611,16 +1611,16 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double inter_State_vector[], do
     double m    = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
     double dr_m = 2 * (1 - 2 * M / r) * ((1 - 2 * M / r) * (1 - r / (r + A_0)) * r + 2 * M) * M_HALO / (r + A_0) / (r + A_0);
 
-    Derivatives[e_r       + iteration * e_State_Number] = (1 - 2 * m / r) * inter_State_vector[e_p_r + iteration * e_State_Number];
-    Derivatives[e_theta   + iteration * e_State_Number] = 1. / (r * r) * inter_State_vector[e_p_theta + iteration * e_State_Number];
-    Derivatives[e_phi     + iteration * e_State_Number] = J / (r * r * sin2);
-    Derivatives[e_p_phi   + iteration * e_State_Number] = 0.0;
-    Derivatives[e_p_theta + iteration * e_State_Number] = cos1 / (r * r * sin1 * sin2) * J * J;
+    *(Derivatives + e_r      ) = (1 - 2 * m / r) * State_vector[e_p_r];
+    *(Derivatives + e_theta  ) = 1. / (r * r) * State_vector[e_p_theta];
+    *(Derivatives + e_phi    ) = J / (r * r * sin2);
+    *(Derivatives + e_p_phi  ) = 0.0;
+    *(Derivatives + e_p_theta) = cos1 / (r * r * sin1 * sin2) * J * J;
 
-    double r_term_1 = -1. / 2 / f / f * dr_f + (dr_m / r - m / r2) * inter_State_vector[e_p_r + iteration * e_State_Number] * inter_State_vector[e_p_r + iteration * e_State_Number];
-    double r_term_2 = 1.0 / r / r / r * (inter_State_vector[e_p_theta + iteration * e_State_Number] * inter_State_vector[e_p_theta + iteration * e_State_Number] + J * J / sin2);
+    double r_term_1 = -1. / 2 / f / f * dr_f + (dr_m / r - m / r2) * State_vector[e_p_r] * State_vector[e_p_r];
+    double r_term_2 = 1.0 / r / r / r * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
-    Derivatives[e_p_r + iteration * e_State_Number] = r_term_1 + r_term_2;
+    *(Derivatives + e_p_r) = r_term_1 + r_term_2;
 
     return OK;
 
