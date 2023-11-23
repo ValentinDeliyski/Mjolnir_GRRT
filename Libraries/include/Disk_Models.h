@@ -4,10 +4,9 @@
 
     #define DISK_MODELS
 
-    #include "Spacetimes.h"
     #include "Structs.h"
-    #include <iostream>
-    #include <vector>
+
+    class Spacetime_Base_Class;
 
     class Novikov_Thorne_Model {
 
@@ -18,7 +17,7 @@
 
         public:
 
-            Novikov_Thorne_Model(double x, double y);
+            Novikov_Thorne_Model(double x, double y, Spacetime_Base_Class* Spacetimes[]);
 
             double get_r_in();
             double get_r_out();
@@ -50,9 +49,9 @@
             double Disk_velocity[4]{};
             double Disk_Temperature{};
             double Disk_density_profile{};
-            double Disk_hotspot;
+            double Disk_hotspot_density{};
 
-            int update_disk_velocity(double State_vector[]);
+            int update_disk_velocity(double State_vector[], Initial_conditions_type* s_Initial_Conditions);
             int update_disk_temperature(double State_vector[]);
             int update_disk_density_profile(double State_vector[]);
             int update_disk_hotspot(double State_vector[]);
@@ -62,19 +61,19 @@
             Optically_Thin_Toroidal_Model(Disk_model_parameters* p_Disk_Parameters, Emission_law_parameters* p_Emission_Parameters);
 
             double  get_disk_temperature(double State_vector[]);
-            double* get_disk_velocity(double State_vector[]);
+            double* get_disk_velocity(double State_vector[], Initial_conditions_type* s_Initial_Conditions);
             double  get_disk_density_profile(double State_vector[]);
             double  get_disk_hotspot(double State_Vector[]);
 
             double get_magnetic_field(double B_field[3], double State_vector[]);
 
-            double get_emission_function_synchotron_exact(double State_vector[]);
+            double get_emission_function_synchotron_exact(double State_vector[], Initial_conditions_type* s_Initial_Conditions);
 
-            double get_emission_function_synchotron_phenomenological(double State_vector[]);
+            double get_emission_function_synchotron_phenomenological(double State_vector[], Initial_conditions_type* s_Initial_Conditions);
 
             double get_absorbtion_function(double Emission_Function, double State_vector[], double redshift, double Frequency);
 
-            double get_electron_pitch_angle(double State_vector[], double B_field_local[]);
+            double get_electron_pitch_angle(double State_vector[], double B_field_local[], Initial_conditions_type* s_Initial_Conditions);
 
             void precompute_electron_pitch_angles();
 

@@ -4,14 +4,9 @@
 
     #define _USE_MATH_DEFINES
 
-    #include "Enumerations.h"
-    #include "Spacetimes.h"
-
-    #include <iostream>
-    #include <cmath>
-    #include <vector>
-
     #define GENERAL_FUNCTIONS
+
+    struct Initial_conditions_type;
 
     double get_planck_function_CGS(double Frequency, double Temperature);
 

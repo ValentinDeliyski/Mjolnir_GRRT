@@ -9,6 +9,7 @@
     #include <fstream>
     #include <sstream>
     #include "Constants.h"
+    #include "Structs.h"
 
     class Rendering_engine {
 
@@ -50,8 +51,6 @@
             void update_max_intensity(float Intensity);
 
             void set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J);
-
-            void normalize_colormap(Initial_conditions_type* s_Initial_Conditions);
 
             /***************************************
             |									   |

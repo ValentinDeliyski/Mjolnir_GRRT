@@ -4,6 +4,9 @@
 
     #define STRUCTS
     #include "Inputs.h"
+    #include <vector>
+
+    
 
     struct Disk_model_parameters {
 
@@ -64,6 +67,56 @@
         double Metric[4][4];
         double Lapse_function;
         double Shift_function;
+
+    };
+
+    class Spacetime_Base_Class;
+    class Optically_Thin_Toroidal_Model;
+    class Novikov_Thorne_Model;
+
+    struct Initial_conditions_type {
+
+        double init_metric[4][4];
+        double init_metric_Redshift_func;
+        double init_metric_Shitft_func;
+
+        double init_Pos[3];
+        double init_Three_Momentum[3];
+
+        Spacetime_Base_Class* Spacetimes[SPACETIME_NUMBER];
+        Optically_Thin_Toroidal_Model* OTT_model;
+        Novikov_Thorne_Model* NT_model;
+
+    };
+
+    struct Results_type {
+
+        double Flux_NT[ORDER_NUM]{};
+        double Redshift_NT[ORDER_NUM]{};
+
+        double Intensity[ORDER_NUM]{};
+        double Optical_Depth{};
+
+        double Source_Coords[3][ORDER_NUM]{};
+        double Three_Momentum[3][ORDER_NUM]{};
+
+        double Image_Coords[2]{};
+
+        std::vector<std::vector<double>> Ray_log;
+
+        double Parameters[SPACETIME_NUMBER]{};
+
+    };
+
+    struct Trace_Results_type {
+
+        double Intensity;
+        double Optical_Depth;
+
+        double Coordinates[3];
+        double Three_Momentum[3];
+
+        double Image_Coords[2];
 
     };
 

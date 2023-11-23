@@ -2,16 +2,13 @@
 
 #define _USE_MATH_DEFINES
 
-#include "Spacetimes.h"
-#include "General_GR_functions.h"
 #include "General_math_functions.h"
+#include "General_GR_functions.h"
 #include "Disk_Models.h"
-#include <assert.h>
-
-#include <vector>
+#include "Spacetimes.h"
 #include "Constants.h"
 
-extern Spacetime_Base_Class* Spacetimes[];
+#include <vector>
 
 /***************************************************
 |                                                  |
@@ -19,7 +16,7 @@ extern Spacetime_Base_Class* Spacetimes[];
 |                                                  |
 ***************************************************/
 
-Novikov_Thorne_Model::Novikov_Thorne_Model(double x, double y) {
+Novikov_Thorne_Model::Novikov_Thorne_Model(double x, double y, Spacetime_Base_Class* Spacetimes[]) {
 
     r_in = x;
 
@@ -365,12 +362,12 @@ double Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]
 
 /* Disk Velocity Functions */
 
-int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[]) {
+int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[], Initial_conditions_type* s_Initial_Conditions) {
 
     double& r_source     = State_Vector[e_r];
     double& theta_source = State_Vector[e_theta];
 
-    Metric_type s_Metric = Spacetimes[e_metric]->get_metric(State_Vector);
+    Metric_type s_Metric = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_Vector);
 
     double rho = r_source * sin(theta_source);
 
@@ -411,9 +408,9 @@ int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[]) {
 
 }
 
-double* Optically_Thin_Toroidal_Model::get_disk_velocity(double State_vector[]) {
+double* Optically_Thin_Toroidal_Model::get_disk_velocity(double State_vector[], Initial_conditions_type* s_Initial_Conditions) {
 
-    int result = this->update_disk_velocity(State_vector);
+    int result = this->update_disk_velocity(State_vector, s_Initial_Conditions);
 
     if (ERROR == result) {
 
@@ -459,9 +456,9 @@ int Optically_Thin_Toroidal_Model::update_disk_hotspot(double State_Vector[]) {
            hotspot_density *= exp(-(z_center - z_photon) * (z_center - z_photon) / HOTSPOT_SCALE / HOTSPOT_SCALE);
            hotspot_density *= HOTSPOT_REL_SCALE;
 
-    this->Disk_hotspot = hotspot_density;
+    this->Disk_hotspot_density = hotspot_density;
 
-    if (Disk_hotspot = hotspot_density < 0) {
+    if (Disk_hotspot_density < 0) {
 
         return ERROR;
 
@@ -477,12 +474,12 @@ double Optically_Thin_Toroidal_Model::get_disk_hotspot(double State_Vector[]) {
 
     if (ERROR != result) {
 
-        return this->Disk_hotspot;
+        return this->Disk_hotspot_density;
 
     }
     else {
 
-        std::cout << "Invalid Hotspot density: " << this->Disk_hotspot << "\n";
+        std::cout << "Invalid Hotspot density: " << this->Disk_hotspot_density << "\n";
 
         return ERROR;
 
@@ -589,9 +586,9 @@ double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], doub
 
 }
 
-double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vector[], double B_field_local[]) {
+double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vector[], double B_field_local[], Initial_conditions_type* s_Initial_Conditions) {
 
-    double* U_source_coord = get_disk_velocity(State_Vector);
+    double* U_source_coord = get_disk_velocity(State_Vector, s_Initial_Conditions);
 
     /*
 
@@ -599,7 +596,7 @@ double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vect
 
     */
 
-    Metric_type s_Metric = Spacetimes[e_metric]->get_metric(State_Vector);
+    Metric_type s_Metric = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_Vector);
 
     double U_source_ZAMO[4]{};
     Contravariant_coord_to_ZAMO(s_Metric.Metric, U_source_coord, U_source_ZAMO);
@@ -641,7 +638,7 @@ double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vect
 
 /* Disk Emission Functions */
 
-double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_exact(double State_vector[]) {
+double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_exact(double State_vector[], Initial_conditions_type* s_Initial_conditions) {
 
     /* Electron Density in CGS */
 
@@ -660,7 +657,7 @@ double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_exact(dou
 
     /* Disk Coordinate Velocity */
 
-    double* U_source_coord = this->get_disk_velocity(State_vector);
+    double* U_source_coord = this->get_disk_velocity(State_vector, s_Initial_conditions);
 
     /* Redshit */
 
@@ -716,7 +713,7 @@ double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_exact(dou
 
 }
 
-double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_phenomenological(double State_vector[]) {
+double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_phenomenological(double State_vector[], Initial_conditions_type* s_Initial_conditions) {
 
     double& emission_power_law = this->s_Emission_Parameters.Emission_power_law;
     double& emission_scale     = this->s_Emission_Parameters.Emission_scale;
@@ -725,7 +722,7 @@ double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_phenomeno
 
     /* Disk Coordinate Velocity */
 
-    double* U_source_coord = this->get_disk_velocity(State_vector);
+    double* U_source_coord = this->get_disk_velocity(State_vector, s_Initial_conditions);
 
     double redshift = Redshift(State_vector, U_source_coord);
 

@@ -2,10 +2,11 @@
 
 #define _USE_MATH_DEFINES
 
-#include <iostream>
-
 #include "IO_files.h"
 #include "Constants.h"
+#include "Disk_models.h"
+#include "Spacetimes.h"
+#include <iostream>
 
 extern Spacetime_Base_Class* Spacetimes[];
 extern Optically_Thin_Toroidal_Model OTT_Model;

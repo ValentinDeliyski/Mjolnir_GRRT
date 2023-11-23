@@ -10,7 +10,9 @@
 
 	double my_max(double vector[], int element_number);
 
-	bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[], double crossing_momenta[]);
+	class Novikov_Thorne_Model;
+
+	bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[], double crossing_momenta[], Novikov_Thorne_Model* NT_model);
 
 	double dot_product(double vector_1[3], double vector_2[3]);
 

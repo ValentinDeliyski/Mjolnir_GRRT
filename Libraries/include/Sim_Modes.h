@@ -4,8 +4,7 @@
 
 	#define SIM_MODES
 
-	#include "Constants.h"
-	#include <iostream>
+	struct Initial_conditions_type;
 
 	void run_simulation_mode_1(Initial_conditions_type* s_Initial_Conditions);
 

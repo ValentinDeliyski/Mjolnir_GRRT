@@ -14,8 +14,6 @@
 #include "Lensing.h"
 #include <iostream>
 
-extern Spacetime_Base_Class* Spacetimes[];
-extern Novikov_Thorne_Model NT_Model;
 
 void log_ray(double State_Vector[], std::vector<double> *State_log, Results_type *s_Ray_Results) {
 
@@ -98,7 +96,7 @@ Results_type Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
     while (true) {
 
-        RK45(State_vector, Derivatives, &controller);
+        RK45(State_vector, Derivatives, &controller, s_Initial_Conditions);
 
         // If error estimate, returned from RK45_EOM < RK45_ACCURACY
         if (controller.continue_integration) {
@@ -109,14 +107,14 @@ Results_type Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
             N_theta_turning_points += Increment_theta_turning_points(State_vector, Old_state);
 
-            if (interpolate_crossing(State_vector, Old_state, crossing_coords, crossing_momenta)) {
+            if (Evaluate_NT_disk && interpolate_crossing(State_vector, Old_state, crossing_coords, crossing_momenta, s_Initial_Conditions->NT_model)) {
 
                 Image_Order[Novikov_Thorne] = compute_image_order(N_theta_turning_points, s_Initial_Conditions);
 
-                double r_crossing = sqrt(crossing_coords[x] * crossing_coords[x] + crossing_coords[y] * crossing_coords[y]);
+                double r_crossing = std::sqrt(crossing_coords[x] * crossing_coords[x] + crossing_coords[y] * crossing_coords[y]);
                 double state_crossing[2] = { r_crossing, M_PI_2 };
 
-                s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]] = NT_Model.Redshift(J, state_crossing, r_obs, theta_obs, Spacetimes);
+                s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]] = s_Initial_Conditions->NT_model->Redshift(J, state_crossing, r_obs, theta_obs, s_Initial_Conditions->Spacetimes);
                 
                 if (s_Ray_results.Redshift_NT[Image_Order[Novikov_Thorne]] != 0) {
 
@@ -146,20 +144,6 @@ Results_type Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
             }
 
-            // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
-            // Close enough that it requires "manual" scattering, by flipping the p_r sign.
-            // Otherwise the photons never reach the turning point and the integration grinds to a halt.
-
-            if (e_metric == Naked_Singularity) {
-
-                if (State_vector[e_r] - JNW_R_SINGULARITY < 5e-8) {
-
-                    State_vector[e_p_r] *= -1;
-
-                }
-
-            }
-
             if (Active_Sim_Mode == 4) {
 
                 log_ray(State_vector, &State_log, &s_Ray_results);
@@ -168,7 +152,7 @@ Results_type Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
             // Evaluate logical flags for terminating the integration
 
-            if (Spacetimes[e_metric]->terminate_integration(State_vector, Derivatives) ||
+            if (s_Initial_Conditions->Spacetimes[e_metric]->terminate_integration(State_vector, Derivatives) ||
                 integration_count >= MAX_INTEGRATION_COUNT) {    
 
                 Image_Order[Optically_Thin_Toroidal] = compute_image_order(N_theta_turning_points, s_Initial_Conditions);

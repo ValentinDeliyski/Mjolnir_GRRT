@@ -2,9 +2,10 @@
 
 #include "General_GR_functions.h"
 #include "Constants.h"
+#include "Spacetimes.h"
+
 #include <cmath>
 
-extern Spacetime_Base_Class* Spacetimes[];
 extern Observer_class Observer;
 
 /* Metric Related Functions */

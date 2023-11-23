@@ -5,8 +5,6 @@
     #define SPACETIMES
 
     #include <iostream>
-    #include <vector>
-    #include "Enumerations.h"
     #include "Structs.h"
 
     class Spacetime_Base_Class {

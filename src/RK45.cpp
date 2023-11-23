@@ -11,10 +11,7 @@
 #include <vector>
 #include "Lensing.h"
 
-extern Spacetime_Base_Class* Spacetimes[];
-extern Optically_Thin_Toroidal_Model OTT_Model;
-
-void get_Radiative_Transfer(double State_Vector[], double Derivatives[]) {
+void get_Radiative_Transfer(double State_Vector[], double Derivatives[], Initial_conditions_type* s_Initial_Conditions) {
 
     /************************************************************************************************
     |                                                                                               |
@@ -40,7 +37,7 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[]) {
 
     /* Get Disk Cooridinate Velocity */
 
-    double* U_source_coord = OTT_Model.get_disk_velocity(temp_State_Vector);
+    double* U_source_coord = s_Initial_Conditions->OTT_model->get_disk_velocity(temp_State_Vector, s_Initial_Conditions);
 
     /* Get The Redshift */
 
@@ -52,15 +49,15 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[]) {
 
     case Synchotron_exact:
 
-        Emission_function   = OTT_Model.get_emission_function_synchotron_exact(temp_State_Vector);
-        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
+        Emission_function   = s_Initial_Conditions->OTT_model->get_emission_function_synchotron_exact(temp_State_Vector, s_Initial_Conditions);
+        Absorbtion_function = s_Initial_Conditions->OTT_model->get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
 
         break;
 
     case Synchotron_phenomenological:
 
-        Emission_function   = OTT_Model.get_emission_function_synchotron_phenomenological(temp_State_Vector);
-        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
+        Emission_function   = s_Initial_Conditions->OTT_model->get_emission_function_synchotron_phenomenological(temp_State_Vector, s_Initial_Conditions);
+        Absorbtion_function = s_Initial_Conditions->OTT_model->get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
     
         break;
 
@@ -77,7 +74,7 @@ void get_Radiative_Transfer(double State_Vector[], double Derivatives[]) {
 
 }
 
-void RK45(double State_Vector[], double Derivatives[], Step_controller* controller) {
+void RK45(double State_Vector[], double Derivatives[], Step_controller* controller, Initial_conditions_type* s_Initial_Conditions) {
 
     /*************************************************************************************************
     |                                                                                                |
@@ -115,12 +112,12 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
 
         }
 
-        Spacetimes[e_metric]->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
-        get_Radiative_Transfer(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
+        s_Initial_Conditions->Spacetimes[e_metric]->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
+        get_Radiative_Transfer(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number], s_Initial_Conditions);
 
         iteration += 1;
 
-        Spacetimes[e_metric]->reset_eval_bitmask();
+        s_Initial_Conditions->Spacetimes[e_metric]->reset_eval_bitmask();
 
     }
 
@@ -140,24 +137,46 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
        
     }
 
-
     controller->sec_prev_err = controller->prev_err;
     controller->prev_err     = controller->current_err;
     controller->current_err  = my_max(state_error, e_State_Number);
     controller->update_step();
 
-    //bool near_NT_disk = State_Vector[e_r] * State_Vector[e_r] * cos(State_Vector[e_theta]) * cos(State_Vector[e_theta]) < 0.5 * 0.5 &&
-    //                    State_Vector[e_r] * State_Vector[e_r] < NT_Model.get_r_out() * NT_Model.get_r_out();
+    // For the Novikov-Thorne disk, depenging on where the equatorial crossing happens, the linear interpolation
+    // of the crossing point might not be accurate enough, so halving the step is required.
 
-    //if (near_NT_disk) {
+    double z = State_Vector[e_r] * cos(State_Vector[e_theta]);
+    bool near_NT_disk = z * z < 0.5 * 0.5 &&
+                        State_Vector[e_r] * State_Vector[e_r] < s_Initial_Conditions->NT_model->get_r_out() * s_Initial_Conditions->NT_model->get_r_out() &&
+                        State_Vector[e_r] * State_Vector[e_r] > s_Initial_Conditions->NT_model->get_r_in() *  s_Initial_Conditions->NT_model->get_r_in();
 
-    //    controller->step /= 2;
+    if (Evaluate_NT_disk && near_NT_disk) {
 
-    //}
+        controller->step /= 2;
+
+    }
+
+    // For the Gauss-Bonnet Naked Singularity, certain photons scatter from very close to the singularity.
+    // Generating the correct form of the images produced from those photons requires a finer step.
+    // Otherwise the images look wonky.
 
     if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2.2) {
 
         controller->step /= 3;
+
+    }
+
+    // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
+    // Close enough that it requires "manual" scattering, by flipping the p_r sign.
+    // Otherwise the photons never reach the turning point and the integration grinds to a halt.
+
+    if (e_metric == Naked_Singularity) {
+
+        if (State_Vector[e_r] - JNW_R_SINGULARITY < 5e-8) {
+
+            State_Vector[e_p_r] *= -1;
+
+        }
 
     }
 
@@ -170,8 +189,6 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
         }
 
     }
-    
-
 
 }
 

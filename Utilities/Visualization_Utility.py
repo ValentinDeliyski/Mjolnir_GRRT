@@ -9,7 +9,7 @@ from Support_functions.Image_processing import*
 
 class Sim_Visualizer():
 
-    def __init__(self, Sim_path: str, Sim_Frequency_Bins: list, Array: str, Units_class_inst: Units_class):
+    def __init__(self, Sim_path: str, Sim_Frequency_Bins: list, Array: str, Units_class_inst: Units_class, Respect_folder_structure: bool):
 
         self.Sim_Parsers     = []
         self.Ehtim_Parsers   = []
@@ -20,6 +20,7 @@ class Sim_Visualizer():
         self.Frequency_Bins  = Sim_Frequency_Bins
         self.Total_flux_str  = []
         self.Console_log_str = []
+        self.Respect_folder_structure = Respect_folder_structure
         #========= Enums =========#
 
         self.NO_BLUR = 0
@@ -105,9 +106,15 @@ class Sim_Visualizer():
         if Metric not in ["JNW", "Gauss_Bonnet", "Wormhole"]:
             Metric = "Kerr"
 
-        for freq in self.Frequency_Bins:
+        if self.Respect_folder_structure:
 
-            self.Ray_tracer_paths.append(Sim_path + freq + "GHz\\" + "Sim_Results\\Ray_tracer_output\\" + Metric)
+            for freq in self.Frequency_Bins:
+
+                self.Ray_tracer_paths.append(Sim_path + freq + "GHz\\" + "Sim_Results\\Ray_tracer_output\\" + Metric)
+
+        else:
+
+            self.Ray_tracer_paths.append(Sim_path)
 
         for array in self.Arrays:
             for freq in self.Frequency_Bins:
@@ -200,11 +207,15 @@ class Sim_Visualizer():
 
         if Save_Figures:
 
-            if not os.path.exists(Sim_path + "Figures\\"):
-                os.makedirs(Sim_path + "Figures\\")
+            if self.Respect_folder_structure:
+                Figures_folder_path = Sim_path + "Figures\\"
+            else:
+                Figures_folder_path = Sim_path + "\\Figures\\"
 
-            Main_Figure.savefig(Sim_path + 
-                                "Figures\\" + 
+            if not os.path.exists(Figures_folder_path):
+                os.makedirs(Figures_folder_path)
+
+            Main_Figure.savefig(Figures_folder_path + 
                                 "Ray_tracer_plot_" + 
                                 Frequency_str_addon +
                                 ".png", bbox_inches = 'tight')
@@ -469,7 +480,7 @@ class Sim_Visualizer():
                                     mask = np.logical_and(np.logical_not(dark_spot_mask), np.logical_not(ring_mask)))
                     
         Contour = Subplot.contour(x_axis, y_axis, Contour_mask, levels = max_value * Contour_levels, colors = Contour_colors)
-        Labels  = Subplot.clabel(Contour, inline = True, fontsize = 8, fmt = format)
+        Labels  = Subplot.clabel(Contour, inline = True, fontsize = 10, fmt = format)
                     
         for label in Labels:
             label.set_rotation(0)
@@ -786,35 +797,36 @@ class Sim_Visualizer():
 
 if __name__ == "__main__":
 
-    EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:\\Users\\Valentin\\Documents\\Papers\\Sim_paper\\Kerr_same_T\\Kerr_0.5_6.8\\"
-    Sim_Frequency_Bins  = ["345"] # In units of [GHz]
+    EHT_Array           = ["2017"]
+    Sim_path            = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Wormhole"
+    Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
     Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
                                 Sim_Frequency_Bins = Sim_Frequency_Bins,
                                 Array              = EHT_Array,
-                                Units_class_inst   = Units_class())
+                                Units_class_inst   = Units_class(),
+                                Respect_folder_structure = False)
 
-    # Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, Save_Figures = True)    
+    Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, Save_Figures = True)    
 
-    Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
-                                  Contour_specs      = [([0.005, 0.02, 0.1], ["b", "r", "w"])], 
-                                  Save_Figures       = True,
-                                  Plot_no_blur       = True) 
+    # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
+    #                               Contour_specs      = [([0.005, 0.02, 0.1], ["b", "r", "w"])], 
+    #                               Save_Figures       = True,
+    #                               Plot_no_blur       = True) 
 
-    Visualizer.plot_VIDA_style(Center_plot = False, Save_Figures = True)
+    # Visualizer.plot_VIDA_style(Center_plot = False, Save_Figures = True)
 
-    # # Visualizer.create_EHTIM_superposition()
+    # Visualizer.create_EHTIM_superposition()
 
     # Visualizer.plot_superposition(Center_plot = False,
     #                               Save_Figures = True)
 
-    # Visualizer.compare_superpos_w_single_freq(Contour_specs = [([0.005, 0.02, 0.1], ["b", "r", "w"]),
-    #                                                            ([0.005, 0.02, 0.1], ["b", "r", "w"]),
-    #                                                            ([0.005, 0.02, 0.1], ["b", "r", "w"])],
+    # Visualizer.compare_superpos_w_single_freq(Contour_specs = [([0.15, 0.2, 0.3], ["b", "w", "k"]),
+    #                                                            ([0.15, 0.2, 0.3], ["b", "w", "k"]),
+    #                                                            ([0.05, 0.1, 0.2], ["k", "r", "w"])],
     #                                         Save_Figures = True)
 
-    # # Visualizer.save_console_log_to_file()
+    # Visualizer.save_console_log_to_file()
 
     plt.rcParams['text.usetex'] = True
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'

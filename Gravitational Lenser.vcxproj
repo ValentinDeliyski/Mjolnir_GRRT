@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Libraries\include\Console_printing.h" />
     <ClInclude Include="Libraries\include\Structs.h" />
     <ClInclude Include="Libraries\include\Constants.h" />
     <ClInclude Include="Libraries\include\Disk_Models.h" />
@@ -33,6 +34,7 @@
     <ClInclude Include="Libraries\include\Spacetimes.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Console_printing.cpp" />
     <ClCompile Include="src\Disk_Models.cpp" />
     <ClCompile Include="src\General_GR_functions.cpp" />
     <ClCompile Include="src\General_math_functions.cpp" />

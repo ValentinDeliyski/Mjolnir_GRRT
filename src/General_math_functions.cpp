@@ -5,8 +5,6 @@
 #include "inputs.h"
 #include <cmath>
 
-extern Novikov_Thorne_Model NT_Model;
-
 double vector_norm(double Vector[], int Vector_size) {
 
 	/**********************************************************************
@@ -103,7 +101,7 @@ double my_max(double vector[], int element_number) {
 	return max;
 }
 
-bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[], double crossing_momenta[]) {
+bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[], double crossing_momenta[], Novikov_Thorne_Model* NT_Model) {
 
 	/***********************************************************************************************
 	|                                                                                              |
@@ -172,12 +170,12 @@ bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], doub
 		crossing_momenta[index] = momentum_param[index] * State_Vector[5 - index] + (1 - momentum_param[index]) * Old_State_Vector[5 - index];
 	}
 
-	double r_out = NT_Model.get_r_out();
-	double r_in  = NT_Model.get_r_in();
+	double r_out = NT_Model->get_r_out();
+	double r_in  = NT_Model->get_r_in();
 
 	if (e_metric == Wormhole) {
 
-		return r_crossing_squared < r_out* r_out - WH_R_THROAT * WH_R_THROAT && r_crossing_squared > r_in * r_in - WH_R_THROAT * WH_R_THROAT;
+		return r_crossing_squared < r_out * r_out - WH_R_THROAT * WH_R_THROAT && r_crossing_squared > r_in * r_in - WH_R_THROAT * WH_R_THROAT;
 
 	}
 	

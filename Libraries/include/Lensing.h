@@ -4,10 +4,6 @@
 
     #define LENSING
 
-    #include "Enumerations.h"
-    #include "Spacetimes.h"
-    #include "Disk_Models.h"
-
     class Step_controller {
 
     public:
@@ -30,9 +26,9 @@
 
     };
 
-    void get_Radiative_Transfer(double State_Vector[], double Derivatives[], int iteration);
+    void get_Radiative_Transfer(double State_Vector[], double Derivatives[], Initial_conditions_type* s_Initial_Conditions);
 
-    void RK45(double State_Vector[], double Derivatives[], Step_controller* controller);
+    void RK45(double State_Vector[], double Derivatives[], Step_controller* controller, Initial_conditions_type* s_Initial_Conditions);
 
     Results_type Propagate_ray(Initial_conditions_type* p_Initial_Conditions);
 

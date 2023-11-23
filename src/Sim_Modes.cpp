@@ -8,9 +8,12 @@
     #include "Constants.h"
     #include "General_GR_functions.h"
     #include "Rendering_Engine.h"
+    #include "Disk_models.h"
+    #include "Lensing.h"
+    #include "Spacetimes.h"
 
-    extern Spacetime_Base_Class* Spacetimes[];
-    extern Optically_Thin_Toroidal_Model OTT_Model;
+    #include <iostream>
+
     extern File_manager_class File_manager;
 
     void print_progress(int current, int max, bool lens_from_file, bool Normalizing_colormap) {
@@ -61,6 +64,23 @@
 
     }
 
+    void Rendering_function(Rendering_engine* Renderer) {
+
+        Renderer->OpenGL_init();
+        glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);
+
+        while (!glfwWindowShouldClose(Renderer->window)) {
+
+            Renderer->renormalize_colormap();
+
+            Renderer->update_rendering_window();
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+        }
+
+    }
+
     void run_simulation_mode_1(Initial_conditions_type* s_Initial_Conditions) {
 
         /*
@@ -78,9 +98,9 @@
         */
 
         static Rendering_engine Renderer = Rendering_engine();
-        Renderer.OpenGL_init();
-        glfwSetKeyCallback(Renderer.window, Rendering_engine::Window_Callbacks::define_button_callbacks);
-        
+
+        std::jthread GUI_Thread(Rendering_function, &Renderer);
+
         /*
 
         Loop trough the viewing window
@@ -94,7 +114,6 @@
 
         for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
 
-            Renderer.update_rendering_window();
             print_progress(progress, RESOLUTION - 1, false, false);
 
             progress += 1;
@@ -130,15 +149,11 @@
                                                                               s_Ray_results.Intensity[second] +
                                                                               s_Ray_results.Intensity[third];
 
-               Renderer.update_max_intensity(Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)]);
-
                Renderer.texture_indexer += 3;
 
                File_manager.write_image_data_to_file(s_Ray_results);
 
             }
-
-            Renderer.renormalize_colormap();
 
         }
 
@@ -148,12 +163,6 @@
         std::cout << '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
 
         File_manager.close_image_output_files();
-
-        while (!glfwWindowShouldClose(Renderer.window)) {
-
-            Renderer.update_rendering_window();
-
-        }
 
     }
 
@@ -186,7 +195,7 @@
 
             */
 
-            Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, J_data, p_theta_data, photon);
+            s_Initial_Conditions->Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, J_data, p_theta_data, photon);
 
             /*
             
@@ -286,7 +295,7 @@
 
                 }
 
-                Renderer.renormalize_colormap();
+               
             }
 
             Renderer.texture_indexer = 0;
@@ -311,7 +320,7 @@
 
     void run_simulation_mode_4(Initial_conditions_type* s_Initial_Conditions) {
 
-        Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, (double*) &X_INIT, (double*) &Y_INIT, 0);
+        s_Initial_Conditions->Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, (double*) &X_INIT, (double*) &Y_INIT, 0);
 
         Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
 

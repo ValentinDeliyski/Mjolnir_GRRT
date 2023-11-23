@@ -7,8 +7,9 @@
 	#include <filesystem>
 	#include <string>
 	#include <fstream>
+	#include "Enumerations.h"
 
-	#include "Lensing.h"
+	struct Results_type;
 
 	class File_manager_class {
 

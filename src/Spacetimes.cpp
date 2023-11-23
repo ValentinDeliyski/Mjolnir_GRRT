@@ -4,9 +4,9 @@
 #include <iostream>
 #include <vector>
 
-#include "Constants.h"
-#include "Enumerations.h"
+#include "Structs.h"
 #include "Spacetimes.h"
+#include "Constants.h"
 #include "General_GR_functions.h"
 
 /***************************************
