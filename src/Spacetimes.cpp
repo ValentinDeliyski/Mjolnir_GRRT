@@ -1039,8 +1039,7 @@ int JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initi
 int JNW_class::get_EOM(double State_vector[], double Derivatives[])
 {
 
-    double r = State_vector[e_r];
-
+    double& r = State_vector[e_r];
     double& J = State_vector[e_p_phi];
 
     double sin1 = sin(State_vector[e_theta]);
@@ -1318,7 +1317,6 @@ int Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditions_type
 int Gauss_Bonnet_class::get_EOM(double State_vector[], double Derivatives[]){
 
     double& r = State_vector[e_r];
-
     double& J = State_vector[e_p_phi];
 
     double sin1 = sin(State_vector[e_theta]);

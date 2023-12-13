@@ -354,34 +354,34 @@ void File_manager_class::open_log_output_file() {
 
 }
 
-void File_manager_class::write_image_data_to_file(Results_type s_Ray_results) {
+void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
     for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
-        Image_Output_files[Image_order] << s_Ray_results.Image_Coords[x]
-                                  << " "
-                                  << s_Ray_results.Image_Coords[y]
-                                  << " "
-                                  << s_Ray_results.Redshift_NT[Image_order]
-                                  << " "
-                                  << s_Ray_results.Flux_NT[Image_order]
-                                  << " "
-                                  << s_Ray_results.Intensity[Image_order] * CGS_TO_JANSKY;
+        Image_Output_files[Image_order] << s_Ray_results->Image_Coords[x]
+            << " "
+            << s_Ray_results->Image_Coords[y]
+            << " "
+            << s_Ray_results->Redshift_NT[Image_order]
+            << " "
+            << s_Ray_results->Flux_NT[Image_order]
+            << " "
+            << s_Ray_results->Intensity[Image_order] * CGS_TO_JANSKY;
 
         if (Active_Sim_Mode == 2) {
 
             Image_Output_files[Image_order] << " "
-                                            << s_Ray_results.Source_Coords[e_r][Image_order]
+                                            << s_Ray_results->Source_Coords[e_r][Image_order]
                                             << " "
-                                            << s_Ray_results.Source_Coords[e_phi][Image_order]
+                                            << s_Ray_results->Source_Coords[e_phi][Image_order]
                                             << " "
-                                            << s_Ray_results.Three_Momentum[e_r][Image_order]
+                                            << s_Ray_results->Three_Momentum[e_r][Image_order]
                                             << " "
-                                            << s_Ray_results.Three_Momentum[e_theta][Image_order]
+                                            << s_Ray_results->Three_Momentum[e_theta][Image_order]
                                             << " "
-                                            << s_Ray_results.Three_Momentum[e_phi][Image_order]
+                                            << s_Ray_results->Three_Momentum[e_phi][Image_order]
                                             << " "
-                                            << s_Ray_results.Parameters[e_metric];
+                                            << s_Ray_results->Parameters[e_metric];
 
         }
 
@@ -390,18 +390,18 @@ void File_manager_class::write_image_data_to_file(Results_type s_Ray_results) {
 
 };
 
-void File_manager_class::log_photon_path(Results_type s_Ray_results) {
+void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
-    for (int log_index = 0; log_index <= s_Ray_results.Ray_log.size() - 1; log_index++) {
+    //for (int log_index = 0; log_index <= s_Ray_results->Ray_log.size() - 1; log_index++) {
 
-        for (int state_index = e_r; state_index <= e_State_Number - 1; state_index++) {
+    //    for (int state_index = e_r; state_index <= e_State_Number - 1; state_index++) {
 
-            Log_Output_File << s_Ray_results.Ray_log[log_index][state_index] << " ";
-          
-        }
+    //        Log_Output_File << s_Ray_results->Ray_log[log_index][state_index] << " ";
+    //      
+    //    }
 
-        Log_Output_File << '\n';
-    }
+    //    Log_Output_File << '\n';
+    //}
    
 };
 

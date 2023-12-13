@@ -16,7 +16,7 @@
 
     extern File_manager_class File_manager;
 
-    void print_progress(int current, int max, bool lens_from_file, bool Normalizing_colormap) {
+    void print_progress(int current, int max, bool lens_from_file) {
 
         int current_digits = 1;
 
@@ -35,14 +35,9 @@
                 std::cout << "Number Of Rays Cast: ";
 
             }
-            else if (!Normalizing_colormap) {
-
-                std::cout << "Number Of Lines Scanned: ";
-
-            }
             else {
 
-                std::cout << "Progress: ";
+                std::cout << "Number Of Lines Scanned: ";
 
             }
 
@@ -114,7 +109,7 @@
 
         for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
 
-            print_progress(progress, RESOLUTION - 1, false, false);
+            print_progress(progress, RESOLUTION - 1, false);
 
             progress += 1;
 
@@ -136,7 +131,7 @@
 
                */
 
-               Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
+               Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
 
                /*
 
@@ -144,10 +139,10 @@
 
                */
 
-               Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results.Intensity[direct] +
-                                                                              s_Ray_results.Intensity[first]  +
-                                                                              s_Ray_results.Intensity[second] +
-                                                                              s_Ray_results.Intensity[third];
+               Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results->Intensity[direct] +
+                                                                              s_Ray_results->Intensity[first] +
+                                                                              s_Ray_results->Intensity[second] +
+                                                                              s_Ray_results->Intensity[third];
 
                Renderer.texture_indexer += 3;
 
@@ -203,11 +198,11 @@
             
             */
 
-            Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
+            Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
 
             File_manager.write_image_data_to_file(s_Ray_results);
 
-            print_progress(photon, Data_number, true, false);
+            print_progress(photon, Data_number, true);
         }
 
         std::cout << '\n';
@@ -224,8 +219,8 @@
         */
 
         static Rendering_engine Renderer = Rendering_engine();
-        Renderer.OpenGL_init();
-        glfwSetKeyCallback(Renderer.window, Rendering_engine::Window_Callbacks::define_button_callbacks);
+
+        std::jthread GUI_Thread(Rendering_function, &Renderer);
 
         auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -239,7 +234,7 @@
 
         for (int hotspot_number = 0; hotspot_number <= HOTSPOT_ANIMATION_NUMBER - 1; hotspot_number++) {
 
-            /*OTT_Model.HOTSPOT_PHI_COORD = double(hotspot_number) / HOTSPOT_ANIMATION_NUMBER * 2 * M_PI;*/
+            //s_Initial_Conditions->OTT_model->HOTSPOT_PHI_COORD = double(hotspot_number) / HOTSPOT_ANIMATION_NUMBER * 2 * M_PI;
 
             /*
 
@@ -261,8 +256,7 @@
 
             for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
 
-                Renderer.update_rendering_window();
-                print_progress(progress, RESOLUTION - 1, false, false);
+                print_progress(progress, RESOLUTION - 1, false);
 
                 progress += 1;
 
@@ -282,16 +276,16 @@
             
                     */
 
-                    Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
+                    Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
 
-                    Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results.Intensity[direct] +
-                                                                                   s_Ray_results.Intensity[first]  +
-                                                                                   s_Ray_results.Intensity[second] +
-                                                                                   s_Ray_results.Intensity[third];
-
-                    Renderer.update_max_intensity(Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)]);
+                    Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results->Intensity[direct] +
+                                                                                   s_Ray_results->Intensity[first]  +
+                                                                                   s_Ray_results->Intensity[second] +
+                                                                                   s_Ray_results->Intensity[third];
 
                     Renderer.texture_indexer += 3;
+
+                    File_manager.write_image_data_to_file(s_Ray_results);
 
                 }
 
@@ -310,19 +304,13 @@
         std::cout << "Simulation finished!" << '\n';
         std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
 
-        while (!glfwWindowShouldClose(Renderer.window)) {
-
-            Renderer.update_rendering_window();
-
-        }
-
     }
 
     void run_simulation_mode_4(Initial_conditions_type* s_Initial_Conditions) {
 
         s_Initial_Conditions->Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, (double*) &X_INIT, (double*) &Y_INIT, 0);
 
-        Results_type s_Ray_results = Propagate_ray(s_Initial_Conditions);
+        Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
 
         File_manager.open_log_output_file();
         File_manager.log_photon_path(s_Ray_results);

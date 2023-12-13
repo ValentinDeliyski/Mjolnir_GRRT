@@ -8,7 +8,7 @@
     #include <string>
 
     const int RK45_size			    = 7;   // Number of integration sub-steps
-    const int MAX_INTEGRATION_COUNT = 1e9; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
+    const int MAX_INTEGRATION_COUNT = 1e6; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
     Real Coeff_deriv[RK45_size][RK45_size - 1] =
     {
@@ -65,7 +65,7 @@
 
     Real PLANCK_CONSTANT_CGS = 6.626196e-27;
 
-    Real OBS_FREQUENCY_CGS = 345e9;
+    Real OBS_FREQUENCY_CGS = 230e9;
 
     Real CGS_TO_JANSKY = 1e+23;
 

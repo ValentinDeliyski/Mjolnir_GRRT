@@ -679,6 +679,8 @@ double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_exact(dou
 
     }
 
+    /* The exact form of the emission function is from "Images and photon ring signatures of thick disks around black holes" */
+
     double X_1_2 = sqrt(X);
     double X_1_3 = cbrt(X);
     double X_1_6 = sqrt(X_1_3);

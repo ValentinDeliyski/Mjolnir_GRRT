@@ -40,11 +40,11 @@
 
 			void open_log_output_file();
 
-			void write_image_data_to_file(Results_type Ray_results);
+			void write_image_data_to_file(Results_type* Ray_results);
 
 			void write_simulation_metadata();
 
-			void log_photon_path(Results_type s_Ray_results);
+			void log_photon_path(Results_type* s_Ray_results);
 
 			void close_image_output_files();
 

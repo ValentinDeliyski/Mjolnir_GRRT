@@ -3,10 +3,8 @@
 #ifndef STRUCTS
 
     #define STRUCTS
-    #include "Inputs.h"
+    #include "Constants.h"
     #include <vector>
-
-    
 
     struct Disk_model_parameters {
 
@@ -89,12 +87,22 @@
 
     };
 
+    struct s_Ray_log_type {
+
+        double Ray_path_log[MAX_INTEGRATION_COUNT * e_path_log_number];
+        double Ray_emission_log[MAX_INTEGRATION_COUNT * 2];
+        int Log_offset{};
+        int Log_length{};
+
+    };
+
     struct Results_type {
 
         double Flux_NT[ORDER_NUM]{};
         double Redshift_NT[ORDER_NUM]{};
 
         double Intensity[ORDER_NUM]{};
+        double test_intensity{};
         double Optical_Depth{};
 
         double Source_Coords[3][ORDER_NUM]{};
@@ -102,21 +110,9 @@
 
         double Image_Coords[2]{};
 
-        std::vector<std::vector<double>> Ray_log;
+        s_Ray_log_type Ray_log_struct;
 
         double Parameters[SPACETIME_NUMBER]{};
-
-    };
-
-    struct Trace_Results_type {
-
-        double Intensity;
-        double Optical_Depth;
-
-        double Coordinates[3];
-        double Three_Momentum[3];
-
-        double Image_Coords[2];
 
     };
 

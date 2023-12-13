@@ -38,9 +38,20 @@
         e_p_phi         = 3,
         e_p_theta       = 4,
         e_p_r           = 5,
-        e_Intensity     = 6,
-        e_Optical_Depth = 7,
-        e_State_Number  = 8
+        e_State_Number  = 6
+
+    };
+
+    enum Ray_path_log_enums {
+
+        e_path_log_r = 0,
+        e_path_log_theta = 1,
+        e_path_log_phi = 2,
+        e_path_log_p_phi = 3,
+        e_path_log_p_theta = 4,
+        e_path_log_p_r = 5,
+        e_path_log_step = 6,
+        e_path_log_number = 7
 
     };
 
@@ -90,6 +101,14 @@
 
         Inner = 0,
         Outer = 1,
+
+    };
+
+    enum Emission_Interpolation_points {
+
+        Current  = 0,
+        Next     = 1,
+        INTERPOLATION_NUM = 2,
 
     };
 

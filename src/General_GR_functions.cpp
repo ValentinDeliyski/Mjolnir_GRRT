@@ -255,7 +255,7 @@ int compute_order_no_spin(double State_Vector[]) {
 int Increment_theta_turning_points(double State_Vector[], double Old_State[]) {
 
     if (State_Vector[e_p_theta] * Old_State[e_p_theta] < 0){
-    
+
         return 1;
     
     }
@@ -268,8 +268,8 @@ int Increment_theta_turning_points(double State_Vector[], double Old_State[]) {
 
 int compute_image_order(int N_theta_turning_points, Initial_conditions_type* p_Initial_Conditions) {
 
-    int order = N_theta_turning_points - bool(p_Initial_Conditions->init_Three_Momentum[e_theta] > 0);
-        
+    int order = N_theta_turning_points - bool(p_Initial_Conditions->init_Three_Momentum[e_theta] < 0);
+
     if (order > 3) {
 
         order = 3;
