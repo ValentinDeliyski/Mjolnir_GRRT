@@ -298,6 +298,6 @@ class Units_class():
     
     def Spectral_density_to_T(self, I_nu, f):
 
-        I_nu += 1e-15 # To avoid division by 0 errors
+        I_nu += 1e-10 # To avoid division by 0 errors
 
         return self.PLANCK_SI * f / self.BOLTZMANN_SI / np.log(1 + 2 * self.PLANCK_SI * f**3 / self.C_LIGHT_SI**2 / I_nu)

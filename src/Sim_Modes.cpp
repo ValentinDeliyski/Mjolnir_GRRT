@@ -139,10 +139,10 @@
 
                */
 
-               Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results->Intensity[direct] +
-                                                                              s_Ray_results->Intensity[first] +
-                                                                              s_Ray_results->Intensity[second] +
-                                                                              s_Ray_results->Intensity[third];
+               Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results->Intensity[direct][I] +
+                                                                              s_Ray_results->Intensity[first][I] +
+                                                                              s_Ray_results->Intensity[second][I] +
+                                                                              s_Ray_results->Intensity[third][I];
 
                Renderer.texture_indexer += 3;
 
@@ -278,11 +278,11 @@
 
                     Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
 
-                    Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results->Intensity[direct] +
-                                                                                   s_Ray_results->Intensity[first]  +
-                                                                                   s_Ray_results->Intensity[second] +
-                                                                                   s_Ray_results->Intensity[third];
-
+                    Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results->Intensity[direct][I] +
+                                                                                   s_Ray_results->Intensity[first][I] +
+                                                                                   s_Ray_results->Intensity[second][I] +
+                                                                                   s_Ray_results->Intensity[third][I];
+                    
                     Renderer.texture_indexer += 3;
 
                     File_manager.write_image_data_to_file(s_Ray_results);

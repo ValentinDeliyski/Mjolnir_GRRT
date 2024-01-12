@@ -49,6 +49,11 @@ int mat_vec_multiply_4D(double Matrix[4][4], double Vector[4], double result[4])
 	|                                                                             |
 	******************************************************************************/
 
+	for (int index = 0; index <= 3; index += 1) {
+
+		result[index] = 0;
+
+	}
 
 	for (int row = 0; row <= 3; row += 1) {
 

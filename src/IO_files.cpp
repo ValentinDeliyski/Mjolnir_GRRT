@@ -271,7 +271,13 @@ void File_manager_class::write_simulation_metadata() {
                                             << " "
                                             << "Novikov-Thorne Flux [M^-2],"
                                             << " "
-                                            << "Optically Thin Disk Intensity [Jy/sRad]"
+                                            << "Synchotron Intensity I [Jy/sRad]"
+                                            << " "
+                                            << "Synchotron Intensity Q [Jy/sRad]"
+                                            << " "
+                                            << "Synchotron Intensity U [Jy/sRad]"
+                                            << " "
+                                            << "Synchotron Intensity V [Jy/sRad]"
                                             << '\n';
 
         }
@@ -366,7 +372,13 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
             << " "
             << s_Ray_results->Flux_NT[Image_order]
             << " "
-            << s_Ray_results->Intensity[Image_order] * CGS_TO_JANSKY;
+            << s_Ray_results->Intensity[Image_order][I] * CGS_TO_JANSKY
+            << " "
+            << s_Ray_results->Intensity[Image_order][Q] * CGS_TO_JANSKY
+            << " "
+            << s_Ray_results->Intensity[Image_order][U] * CGS_TO_JANSKY
+            << " "
+            << s_Ray_results->Intensity[Image_order][V] * CGS_TO_JANSKY;
 
         if (Active_Sim_Mode == 2) {
 

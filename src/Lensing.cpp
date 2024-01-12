@@ -20,7 +20,7 @@ void log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Step_contr
     int &log_offset = s_Ray_Results->Ray_log_struct.Log_offset;
 
     // The loop continues up untill e_path_log_number - 2 in order to exclude the log step from the loop,
-    // because its not parat of the photon state vector - I take care of it after the loop "by hand"
+    // because its not parat of the photon state vector - I take care of it after the loop "by hand".
 
     for (int index = e_r; index <= e_path_log_number - 2; index++) {
 
@@ -30,12 +30,26 @@ void log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Step_contr
 
     s_Ray_Results->Ray_log_struct.Ray_path_log[e_path_log_step + log_offset * e_path_log_number] = Controller.previous_step;
 
+    // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
+    // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead.
+
+    if (e_metric == Wormhole) {
+
+        double& WH_radial_coord = s_Ray_Results->Ray_log_struct.Ray_path_log[e_r + log_offset * e_path_log_number];
+
+        WH_radial_coord = sqrt(WH_R_THROAT * WH_R_THROAT + WH_radial_coord * WH_radial_coord);
+
+    }
+
 }
 
-void log_ray_emission(double Intensity, double Optical_depth, Results_type* s_Ray_Results, int log_index) {
+void log_ray_emission(double Intensity[STOKES_PARAM_NUM], double Optical_depth, Results_type* s_Ray_Results, int log_index) {
+    
+    for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
 
-    s_Ray_Results->Ray_log_struct.Ray_emission_log[0 + 2 * log_index] = Intensity;
-    s_Ray_Results->Ray_log_struct.Ray_emission_log[1 + 2 * log_index] = Optical_depth;
+        s_Ray_Results->Ray_log_struct.Ray_emission_log[0 + 2 * log_index][stokes_idx] = Intensity[stokes_idx];
+        s_Ray_Results->Ray_log_struct.Ray_emission_log[1 + 2 * log_index][stokes_idx] = Optical_depth;
+    }
 
 }
 
@@ -60,9 +74,9 @@ void Evaluate_Novikov_Thorne_disk(Initial_conditions_type* const s_Initial_Condi
                                                                                            theta_obs, 
                                                                                            s_Initial_Conditions->Spacetimes);
 
-        if (s_Ray_results->Redshift_NT[Image_Order] != 0) {
+        if (s_Ray_results->Redshift_NT[Image_Order] > std::numeric_limits<double>::min()) {
 
-            s_Ray_results->Flux_NT[Image_Order] = 0;
+            s_Ray_results->Flux_NT[Image_Order] = s_Initial_Conditions->NT_model->get_flux(r_crossing, s_Initial_Conditions->Spacetimes);
 
         }
 
@@ -79,49 +93,288 @@ void Seperate_Image_into_orders(int const Max_theta_turning_points,
                                 int const N_theta_turning_points,
                                 Initial_conditions_type* const s_Initial_Conditions, 
                                 Results_type* const p_Ray_results,
-                                double const Intensity) {
+                                double const Intensity[STOKES_PARAM_NUM]) {
 
         int Image_Order = compute_image_order(Max_theta_turning_points - N_theta_turning_points, s_Initial_Conditions);
 
-        p_Ray_results->Intensity[Image_Order] = Intensity;
+        for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
 
-        for (int order_scan = Image_Order + 1; order_scan <= compute_image_order(Max_theta_turning_points, s_Initial_Conditions); order_scan++) {
+            p_Ray_results->Intensity[Image_Order][stokes_idx] = Intensity[stokes_idx];
 
-            p_Ray_results->Intensity[Image_Order] -= p_Ray_results->Intensity[order_scan];
+            for (int order_scan = Image_Order + 1; order_scan <= compute_image_order(Max_theta_turning_points, s_Initial_Conditions); order_scan++) {
+
+                p_Ray_results->Intensity[Image_Order][stokes_idx] -= p_Ray_results->Intensity[order_scan][stokes_idx];
+                p_Ray_results->Intensity[Image_Order][stokes_idx] *= bool(p_Ray_results->Intensity[Image_Order][stokes_idx] > 0);
+
+            }
 
         }
 
 }
 
-void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditions, Results_type* const s_Ray_results, int* const N_theta_turning_points, int integration_count) {
+void Get_radiative_transfer_matrix(double const redshift, 
+                                   double absorbtion_functions[STOKES_PARAM_NUM],
+                                   double faradey_functions[STOKES_PARAM_NUM], 
+                                   double step, 
+                                   double Transfer_Operator[STOKES_PARAM_NUM][STOKES_PARAM_NUM],
+                                   double Integrated_Transfer_Operator[STOKES_PARAM_NUM][STOKES_PARAM_NUM]) {
+
+    /* The reference for this implementation is from appendix D in https://arxiv.org/pdf/1602.03184.pdf, originally derived in https://doi.org/10.1007/BF00165988 */
+
+    for (int row_idx = 0; row_idx <= STOKES_PARAM_NUM - 1; row_idx++) {
+
+        for (int colum_idx = 0; colum_idx <= STOKES_PARAM_NUM - 1; colum_idx++) {
+
+            Transfer_Operator[row_idx][colum_idx] = 0;
+            Integrated_Transfer_Operator[row_idx][colum_idx] = 0;
+
+        }
+
+    }
+
+
+    // Here I define a bunch of references, because its going to get hairy if I don't...
+    double* alpha = absorbtion_functions;
+    double* rho   = faradey_functions;
+
+    if (redshift > std::numeric_limits<double>::min()) {
+
+        for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
+
+            alpha[index] /= redshift;
+            rho[index] /= redshift;
+
+        }
+
+    }
+    else {
+
+        return;
+
+    }
+
+    /* These are the variables defined in D8 - D13, used in calculating the M matricies */
+    
+    double const alpha_squared = alpha[Q] * alpha[Q] + 
+                                 alpha[U] * alpha[U] + 
+                                 alpha[V] * alpha[V];
+    
+    double const rho_squared = rho[Q] * rho[Q] +
+                               rho[U] * rho[U] +
+                               rho[V] * rho[V];
+
+    double const alpha_rho = alpha[Q] * rho[Q] +
+                             alpha[U] * rho[U] +
+                             alpha[V] * rho[V];
+
+    // sigma is the sign of the variable alpha_rho
+    int const sigma = (alpha_rho >= 0) ? 1 : -1;
+
+    // These quantities can go ever so sligtly negative, which physically should not happen, but nmerically it does.
+    // This breaks the sqrt() functions, and so guards have to be put in place
+    double Theta = (alpha_squared - rho_squared) * (alpha_squared - rho_squared) / 4 + alpha_rho * alpha_rho;
+
+    if (Theta > 0) {
+
+        Theta = sqrt(Theta);
+
+    }
+    else {
+
+        Theta = 0;
+
+    }
+    
+    double Lambda[2] = { (Theta / 2 + (alpha_squared - rho_squared) / 2),
+                         (Theta / 2 - (alpha_squared - rho_squared) / 2) };
+
+    if (Lambda[0] > 0 && Lambda[1] > 0) {
+
+        Lambda[0] = sqrt(Lambda[0]);
+        Lambda[1] = sqrt(Lambda[1]);
+
+    }
+    else {
+
+        Lambda[0] = 0;
+        Lambda[1] = 0;
+
+    }
+
+
+    /* Thesse are used in the "scaling factors" infront of the M matricies */
+
+    double const exp_I = exp(-alpha[I] * step);
+
+    double const cosh_term = cosh(Lambda[0] * step);
+    double const cos_term  = cos(Lambda[1] * step);
+
+    double const sinh_term = sinh(Lambda[0] * step);
+    double const sin_term  = sin(Lambda[1] * step);
+
+    /* ========================== M_1 Matrix calculation ========================== */
+
+    double const M_1_scale_factor = exp_I * (cosh_term + cos_term) / 2;
+
+    double const M_1[4][4] = { {1, 0, 0, 0},
+                               {0, 1, 0, 0},
+                               {0, 0, 1, 0},
+                               {0, 0, 0, 1} };
+
+    /* ========================== M_2 Matrix calculation ========================== */
+
+    double M_2_scale_factor{};
+
+    if (Theta > std::numeric_limits<double>::min()) {
+
+        M_2_scale_factor = -exp_I * sin_term / Theta;
+    }
+
+    double const M_2[4][4] = { {                         0,                          ( Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]), ( Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), ( Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V])},
+                               {(Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]),                           0,                          ( sigma * Lambda[0] * alpha[V] + Lambda[1] * rho[V]), (-sigma * Lambda[0] * alpha[U] - Lambda[1] * rho[U])},
+                               {(Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (-sigma * Lambda[0] * alpha[V] - Lambda[1] * rho[V]),                           0,                          ( sigma * Lambda[0] * alpha[Q] + Lambda[1] * rho[Q])},
+                               {(Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V]), ( sigma * Lambda[0] * alpha[U] + Lambda[1] * rho[U]), (-sigma * Lambda[0] * alpha[Q] - Lambda[1] * rho[Q]),                           0                         } };
+
+    /* ========================== M_3 Matrix calculation ========================== */
+
+    double M_3_scale_factor{};
+
+    if (Theta > std::numeric_limits<double>::min()) {
+
+        M_3_scale_factor = -exp_I * sinh_term / Theta;
+    }
+
+    double const M_3[4][4] = { {						 0,							 ( Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]), ( Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[Q]), ( Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V])},
+                               {(Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]),	 		               0,                          (-sigma * Lambda[1] * alpha[V] + Lambda[0] * rho[V]), ( sigma * Lambda[1] * alpha[U] - Lambda[0] * rho[U])},
+                               {(Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[U]), ( sigma * Lambda[1] * alpha[V] - Lambda[0] * rho[V]),	                         0,	                         (-sigma * Lambda[1] * alpha[Q] + Lambda[0] * rho[Q])},
+                               {(Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V]), (-sigma * Lambda[1] * alpha[U] + Lambda[0] * rho[U]), ( sigma * Lambda[1] * alpha[Q] - Lambda[0] * rho[Q]),                           0                         } };
+
+    /* ========================== M_4 Matrix calculation ========================== */
+
+    double M_4_scale_factor{};
+
+    if (Theta > std::numeric_limits<double>::min()) {
+
+        M_4_scale_factor = exp_I * (cosh_term - cos_term) / Theta;
+    }
+
+    double const M_4[4][4] = { {   (alpha_squared + rho_squared) / 2,                      (alpha[V] * rho[U] - alpha[U] * rho[V]),                                     (alpha[Q] * rho[V] - alpha[V] * rho[Q]),                                     (alpha[U] * rho[Q] - alpha[Q] * rho[U])},
+                               {(alpha[U] * rho[V] - alpha[V] * rho[U]), (alpha[Q] * alpha[Q] + rho[Q] * rho[Q] - (alpha_squared + rho_squared) / 2),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                                     (alpha[V] * alpha[Q] + rho[V] * rho[Q])},
+                               {(alpha[V] * rho[Q] - alpha[Q] * rho[V]),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                   (alpha[U] * alpha[U] + rho[U] * rho[U] - (alpha_squared + rho_squared) / 2),                   (alpha[U] * alpha[V] + rho[U] * rho[V])},
+                               {(alpha[Q] * rho[U] - alpha[U] * rho[Q]),                   (alpha[V] * alpha[Q] + rho[V] * rho[Q]),                                     (alpha[U] * alpha[V] + rho[U] * rho[V]),                   (alpha[V] * alpha[V] + rho[V] * rho[V] - (alpha_squared + rho_squared) / 2)}};
+
+    /* ========================== This is the formal operator O(s,s') - the solution to D1 ========================== */
+
+    for (int row_idx = 0; row_idx <= STOKES_PARAM_NUM - 1; row_idx++) {
+
+        for (int colum_idx = 0; colum_idx <= STOKES_PARAM_NUM - 1; colum_idx++) {
+
+            Transfer_Operator[row_idx][colum_idx] = M_1_scale_factor * M_1[row_idx][colum_idx] +
+                                                    M_2_scale_factor * M_2[row_idx][colum_idx] + 
+                                                    M_3_scale_factor * M_3[row_idx][colum_idx] + 
+                                                    M_4_scale_factor * M_4[row_idx][colum_idx];
+
+        }
+
+    }
+
+    /* ========================== The intergral of O(s,s') for constant M matricies ========================== */
+
+    /* This part of the implementation is adapted from equation (24) of https://academic.oup.com/mnras/article/475/1/43/4712230 */
+
+    bool math_guard_1 = fabs(alpha[I] * alpha[I] - Lambda[0] * Lambda[0]) > std::numeric_limits<double>::min();
+    bool math_guard_2 = fabs(alpha[I] * alpha[I] + Lambda[1] * Lambda[1]) > std::numeric_limits<double>::min();
+
+    if (math_guard_1 && math_guard_2){
+
+        double f_1 = 1.0 / (alpha[I] * alpha[I] - Lambda[0] * Lambda[0]);
+        double f_2 = 1.0 / (alpha[I] * alpha[I] + Lambda[1] * Lambda[1]);
+
+        for (int row_idx = 0; row_idx <= STOKES_PARAM_NUM - 1; row_idx++) {
+
+            for (int colum_idx = 0; colum_idx <= STOKES_PARAM_NUM - 1; colum_idx++) {
+
+            
+                Integrated_Transfer_Operator[row_idx][colum_idx] = -Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) +
+                                                                    Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) -
+                                                                    exp_I * ( ( -Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) ) * cosh_term + 
+                                                                              ( -Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) ) * cos_term + 
+                                                                              ( -alpha[I] * f_2 * M_2[row_idx][colum_idx] - Lambda[1] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) ) * sin_term -
+                                                                              (  alpha[I] * f_1 * M_3[row_idx][colum_idx] - Lambda[0] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) ) * sinh_term);
+                                                                        
+            }
+
+        }
+
+    }
+
+}
+
+void Propagate_Stokes_vector(double redshift, 
+                             double emission_functions[STOKES_PARAM_NUM], 
+                             double absorbtion_functions[STOKES_PARAM_NUM],
+                             double faradey_functions[STOKES_PARAM_NUM], 
+                             double step, 
+                             double Intensity[STOKES_PARAM_NUM]) {
+
+    double transfer_operator[4][4]{};
+    double integrated_transfer_operator[4][4];
+
+    Get_radiative_transfer_matrix(redshift, absorbtion_functions, faradey_functions, step, transfer_operator, integrated_transfer_operator);
+
+    double Transfered_emission_vector[STOKES_PARAM_NUM]{};
+    double temp_Intensity[STOKES_PARAM_NUM]{};
+
+    // Placeholder vector for use in the mat_vec_multiply_4D() function
+    for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
+
+        temp_Intensity[index] = Intensity[index];
+
+    }
+
+    mat_vec_multiply_4D(integrated_transfer_operator, emission_functions, Transfered_emission_vector);
+    mat_vec_multiply_4D(transfer_operator, temp_Intensity, Intensity);
+
+    for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
+
+        Transfered_emission_vector[index] *= redshift * redshift;
+
+        Intensity[index] += Transfered_emission_vector[index];
+
+    }
+}
+
+void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditions, Results_type* const s_Ray_results, int* const N_theta_turning_points, int const log_length) {
 
     int const Max_theta_turning_points = *N_theta_turning_points;
     *N_theta_turning_points = 0;
 
     int Image_Order = compute_image_order(Max_theta_turning_points, s_Initial_Conditions);
 
-    double Intensity{};
+    double Intensity[STOKES_PARAM_NUM]{};
+
+    // TODO: Propagate this aswell
     double Optical_Depth{};
 
     double* Logged_ray_path[INTERPOLATION_NUM];
     double* U_source_coord[INTERPOLATION_NUM];
 
     double redshift[INTERPOLATION_NUM]{};
-    double emission_function[INTERPOLATION_NUM]{};
-    double absorbtion_function[INTERPOLATION_NUM]{};
+    double emission_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
+    double absorbtion_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
 
     /* Initialize the arrays that hold the "current" emission function, 
     because in the loop only the "next" ones are evaluated, and then reused as the "current" on the next iteration */
 
-    Logged_ray_path[Current] = &(s_Ray_results->Ray_log_struct.Ray_path_log[integration_count * e_path_log_number]);
+    Logged_ray_path[Current] = &(s_Ray_results->Ray_log_struct.Ray_path_log[log_length * e_path_log_number]);
 
-    U_source_coord[Current]      = s_Initial_Conditions->OTT_model->get_disk_velocity(Logged_ray_path[Current], s_Initial_Conditions);
-    redshift[Current]            = Redshift(Logged_ray_path[Current], U_source_coord[Current]);
+    U_source_coord[Current] = s_Initial_Conditions->OTT_model->get_disk_velocity(Logged_ray_path[Current], s_Initial_Conditions);
+    redshift[Current]       = Redshift(Logged_ray_path[Current], U_source_coord[Current]);
 
-    emission_function[Current]   = s_Initial_Conditions->OTT_model->get_emission_function_synchotron_exact(Logged_ray_path[Current], s_Initial_Conditions);
-    absorbtion_function[Current] = s_Initial_Conditions->OTT_model->get_absorbtion_function(emission_function[Current], Logged_ray_path[Current], redshift[Current], OBS_FREQUENCY_CGS / redshift[Current]);
+    s_Initial_Conditions->OTT_model->get_emission_function_synchotron_exact(Logged_ray_path[Current], s_Initial_Conditions, emission_functions[Current]);
+    s_Initial_Conditions->OTT_model->get_absorbtion_function(emission_functions[Current], Logged_ray_path[Current], redshift[Current], OBS_FREQUENCY_CGS / redshift[Current], absorbtion_functions[Current]);
     
-    for (int index = integration_count; index > 0; index--) {
+    for (int index = log_length; index > 0; index--) {
 
         /* Pick out the ray position / momenta from the Log, at the given log index */
 
@@ -130,7 +383,7 @@ void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditi
 
         *N_theta_turning_points += Increment_theta_turning_points(Logged_ray_path[Current], Logged_ray_path[Next]);
 
-        /* Reset the ebitmask that checks weather the metric was calculated this step */
+        /* Reset the bitmask that checks weather the metric was calculated this step */
 
         s_Initial_Conditions->Spacetimes[e_metric]->reset_eval_bitmask();
 
@@ -148,45 +401,47 @@ void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditi
         redshift[Next] = Redshift(Logged_ray_path[Next], U_source_coord[Next]);
         double const interpolated_redshit = 0.5 * (redshift[Current] + redshift[Next]);
 
-        /* Get the next emission function and interpolate with the current point along the ray */
+        /* Get the "next" emission function and interpolate with the current point along the ray */
 
-        emission_function[Next] = s_Initial_Conditions->OTT_model->get_emission_function_synchotron_exact(Logged_ray_path[Next], s_Initial_Conditions);
-        double const interpolated_emission_function = 0.5 * (emission_function[Current] + emission_function[Next]);
+        s_Initial_Conditions->OTT_model->get_emission_function_synchotron_exact(Logged_ray_path[Next], s_Initial_Conditions, emission_functions[Next]);
 
-        /* Get the next absorbtion and interpolate with the current point along the ray */
+        double interpolated_emission_function[4] = { 0.5 * (emission_functions[Current][I] + emission_functions[Next][I]),
+                                                     0.5 * (emission_functions[Current][Q] + emission_functions[Next][Q]),
+                                                     0.5 * (emission_functions[Current][V] + emission_functions[Next][V]),
+                                                     0.5 * (emission_functions[Current][U] + emission_functions[Next][U]) };
 
-        absorbtion_function[Next] = s_Initial_Conditions->OTT_model->get_absorbtion_function(emission_function[Next], Logged_ray_path[Next], redshift[Next], OBS_FREQUENCY_CGS / redshift[Next]);
-        double const interpolated_absorbtion_function = 0.5 * (absorbtion_function[Current] + absorbtion_function[Next]);
+        /* Get the "next" absorbtion and interpolate with the current point along the ray */
 
-        double interpolation_step = Logged_ray_path[Current][e_path_log_step] / 2;
+        s_Initial_Conditions->OTT_model->get_absorbtion_function(emission_functions[Next], Logged_ray_path[Next], redshift[Next], OBS_FREQUENCY_CGS / redshift[Next], absorbtion_functions[Next]);
 
-        if (absorbtion_function[Current] != 0) {
+        double  interpolated_absorbtion_function[4] = { 0.5 * (absorbtion_functions[Current][I] + absorbtion_functions[Next][I]),
+                                                        0.5 * (absorbtion_functions[Current][Q] + absorbtion_functions[Next][Q]),
+                                                        0.5 * (absorbtion_functions[Current][V] + absorbtion_functions[Next][V]),
+                                                        0.5 * (absorbtion_functions[Current][U] + absorbtion_functions[Next][U]) };
 
-            double absorbtion_exponent = exp(-absorbtion_function[Current] / redshift[Current] * interpolation_step * MASS_TO_CM);
+        double interpolation_step = Logged_ray_path[Current][e_path_log_step] * MASS_TO_CM / 2;
 
-            Intensity *= absorbtion_exponent;
-            Intensity += redshift[Current] * redshift[Current] * redshift[Current] * emission_function[Current] / absorbtion_function[Current] * (1 - absorbtion_exponent);
-            Optical_Depth = emission_function[Current] * Logged_ray_path[Current][e_path_log_step];
+        // TODO: Add these to the simulation!
+        double faradey_functions[STOKES_PARAM_NUM]{};
+
+        // First half-step
+        Propagate_Stokes_vector(redshift[Current],    emission_functions[Current],    absorbtion_functions[Current],    faradey_functions, interpolation_step, Intensity);
+
+        // Second half-step
+        Propagate_Stokes_vector(interpolated_redshit, interpolated_emission_function, interpolated_absorbtion_function, faradey_functions, interpolation_step, Intensity);
+
+        /* Re-use the "next" emission and absorbtion functions as the "current" for the following iteration of the emission propagation */
+        for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+
+            emission_functions[Current][stokes_index]   = emission_functions[Next][stokes_index];
+            absorbtion_functions[Current][stokes_index] = absorbtion_functions[Next][stokes_index];
 
         }
 
-        if (interpolated_absorbtion_function != 0) {
+        /* Re-use the "next" redshift functions and source velocity as the "current" ones for the following iteration of the emission propagation */
 
-            double absorbtion_exponent = exp(-interpolated_absorbtion_function / interpolated_redshit * interpolation_step * MASS_TO_CM);
-
-            Intensity *= absorbtion_exponent;
-            Intensity += interpolated_redshit * interpolated_redshit * interpolated_redshit * interpolated_emission_function / interpolated_absorbtion_function * (1 - absorbtion_exponent);
-            Optical_Depth = interpolated_absorbtion_function * interpolation_step;
-
-
-        }
-
-        /* Re-use the "next" emission functions as the "current" for the next iteration of the emission propagation */
-
-        redshift[Current]            = redshift[Next];
-        U_source_coord[Current]      = U_source_coord[Next];
-        emission_function[Current]   = emission_function[Next];
-        absorbtion_function[Current] = absorbtion_function[Next];
+        redshift[Current]        = redshift[Next];
+        U_source_coord[Current]  = U_source_coord[Next];
 
         log_ray_emission(Intensity, Optical_Depth, s_Ray_results, index);
 
@@ -220,6 +475,13 @@ Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
     // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer outside of this function!)
     static Results_type s_Ray_results{};
+
+    // The final results must be manually set to 0s because the s_Ray_results struct is STATIC, and therefore not automatically re-initialized to 0s!
+    memset(&s_Ray_results.Intensity,      0, sizeof(s_Ray_results.Intensity));
+    memset(&s_Ray_results.Flux_NT,        0, sizeof(s_Ray_results.Flux_NT));
+    memset(&s_Ray_results.Redshift_NT,    0, sizeof(s_Ray_results.Redshift_NT));
+    memset(&s_Ray_results.Source_Coords,  0, sizeof(s_Ray_results.Source_Coords));
+    memset(&s_Ray_results.Three_Momentum, 0, sizeof(s_Ray_results.Three_Momentum));
 
     for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
@@ -288,7 +550,9 @@ Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
                 }
 
-                Propagate_forward_emission(s_Initial_Conditions, &s_Ray_results, &N_theta_turning_points, integration_count);
+                s_Ray_results.Ray_log_struct.Log_length = integration_count;
+
+                Propagate_forward_emission(s_Initial_Conditions, &s_Ray_results, &N_theta_turning_points, s_Ray_results.Ray_log_struct.Log_length);
 
                 integration_count = 0;
 

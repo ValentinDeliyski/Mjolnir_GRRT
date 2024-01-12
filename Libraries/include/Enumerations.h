@@ -112,4 +112,21 @@
 
     };
 
+    enum Sync_emission_fit_functions {
+
+        Leung_2011  = 0,
+        Dexter_2016 = 1
+
+    };
+
+    enum Stokes_parameters {
+
+        I = 0,
+        Q = 1,
+        U = 2,
+        V = 3,
+        STOKES_PARAM_NUM = 4
+
+    };
+
 #endif

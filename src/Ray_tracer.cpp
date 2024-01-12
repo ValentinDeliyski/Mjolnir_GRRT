@@ -168,11 +168,11 @@ int main() {
 
             break;
 
-        case 4:
+        //case 4:
 
-            run_simulation_mode_4(&s_Initial_Conditions);
+        //    run_simulation_mode_4(&s_Initial_Conditions);
 
-            break;
+        //    break;
 
         default:
 

@@ -54,6 +54,7 @@
     struct Precomputed_e_pitch_angles {
 
         double sin_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
+        double cos_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
         double one_over_sqrt_sin[NUM_SAMPLES_TO_AVG];
         double one_over_cbrt_sin[NUM_SAMPLES_TO_AVG];
         double one_over_sin_to_1_6[NUM_SAMPLES_TO_AVG];
@@ -90,7 +91,7 @@
     struct s_Ray_log_type {
 
         double Ray_path_log[MAX_INTEGRATION_COUNT * e_path_log_number];
-        double Ray_emission_log[MAX_INTEGRATION_COUNT * 2];
+        double Ray_emission_log[MAX_INTEGRATION_COUNT * 2][STOKES_PARAM_NUM];
         int Log_offset{};
         int Log_length{};
 
@@ -101,8 +102,7 @@
         double Flux_NT[ORDER_NUM]{};
         double Redshift_NT[ORDER_NUM]{};
 
-        double Intensity[ORDER_NUM]{};
-        double test_intensity{};
+        double Intensity[ORDER_NUM][STOKES_PARAM_NUM]{};
         double Optical_Depth{};
 
         double Source_Coords[3][ORDER_NUM]{};

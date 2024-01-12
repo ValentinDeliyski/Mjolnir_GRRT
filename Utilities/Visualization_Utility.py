@@ -9,7 +9,13 @@ from Support_functions.Image_processing import*
 
 class Sim_Visualizer():
 
-    def __init__(self, Sim_path: str, Sim_Frequency_Bins: list, Array: str, Units_class_inst: Units_class, Respect_folder_structure: bool):
+    def __init__(self, Sim_path: str, 
+                 Sim_Frequency_Bins: list, 
+                 Array: str, 
+                 Units_class_inst: Units_class,
+                 Font_size: int, 
+                 Label_Pad: int,
+                 Respect_folder_structure: bool):
 
         self.Sim_Parsers     = []
         self.Ehtim_Parsers   = []
@@ -21,6 +27,8 @@ class Sim_Visualizer():
         self.Total_flux_str  = []
         self.Console_log_str = []
         self.Respect_folder_structure = Respect_folder_structure
+        self.Font_size = Font_size
+        self.Label_Pad = Label_Pad
         #========= Enums =========#
 
         self.NO_BLUR = 0
@@ -60,10 +68,10 @@ class Sim_Visualizer():
                             ", Cutoff [M] = {}".format(self.Sim_Parsers[Sim_number][0].R_Cutoff))
                 
                                 
-            Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL) + 
-                          self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL) + 
-                          self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL) + 
-                          self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL))
+            Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL) +
+            self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+ 
+            self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+
+            self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL))
             
             self.Total_flux_str.append("Total flux at {}GHz = {} [Jy]\n".format(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9, np.round(Total_flux, 4)))
 
@@ -121,7 +129,10 @@ class Sim_Visualizer():
                 
                 self.Ehtim_paths.append(Sim_path + freq + "GHz\\" + "Sim_Results\\Ehtim_" + array + "\\")
         
-    def plot_ray_tracer_results(self, Export_data_for_Ehtim: bool, Save_Figures: bool):
+    def plot_ray_tracer_results(self, 
+                                Export_data_for_Ehtim: bool, 
+                                Save_Figures: bool,
+                                Custom_fig_title: str):
 
         Obs_effective_distance = self.Units.M87_DISTANCE_GEOMETRICAL
         Frequency_str_addon    = ""
@@ -131,7 +142,9 @@ class Sim_Visualizer():
             Main_Figure = plt.figure(figsize = (20, 8))
             
         else:
-            Main_Figure = plt.figure(figsize = (10, 8))
+            Main_Figure = plt.figure(figsize = (20, 16))
+
+        Main_Figure.suptitle(Custom_fig_title, fontsize = self.Font_size)
 
         for Sim_number, Freq_str in enumerate(self.Frequency_Bins):
 
@@ -153,7 +166,7 @@ class Sim_Visualizer():
             Subplot_count = 100 * len(Sim_Frequency_Bins)
 
             Subplot      = Main_Figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 1))
-            Data_to_plot = Intensity_0 + Intensity_1 + Intensity_2 + Intensity_3
+            Data_to_plot =  Intensity_0 + Intensity_1 + Intensity_2 + Intensity_3
 
             if Export_data_for_Ehtim:
 
@@ -170,11 +183,15 @@ class Sim_Visualizer():
             Sim_subplot = Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits, vmin = 0, vmax = Image_norm)
 
             colorbar = Main_Figure.colorbar(Sim_subplot, ax = Subplot, fraction=0.046, pad=0.04)
-            colorbar.set_label(r"Brightness Temperature [$10^9$K]")
+            colorbar.set_label(r"Brightness Temperature [$10^9$K]", fontsize = self.Font_size, labelpad = self.Label_Pad)
+            colorbar.ax.tick_params(labelsize = self.Font_size)
 
-            Subplot.set_title("Simulated Image At {}GHz".format(int(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9)))
-            Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-            Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+            Subplot.set_title("Simulated Image at {}GHz".format(int(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9)), fontsize = self.Font_size)
+            Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+            Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+
+            plt.xticks(fontsize = self.Font_size)
+            plt.yticks(fontsize = self.Font_size)
 
             #=============== PLot the Brigtness Temperature at y = 0 of the Simulated Image ===============#
 
@@ -189,17 +206,20 @@ class Sim_Visualizer():
             x_coords *= self.Sim_Parsers[Sim_number][0].OBS_DISTANCE / Obs_effective_distance * self.Units.RAD_TO_MICRO_AS
 
             # Set the aspect ratio of the figure to 1:1 (y:x)
-            Subplot.set_aspect(2 * x_coords[-1] / T_Brightness_norm )
+            Subplot.set_aspect(2 * x_coords[-1] / T_Brightness_norm)
 
             # Create the plot of "T_b(alpha) | y = 0"
             Subplot.plot(-x_coords, T_Brightness)
             Subplot.invert_xaxis()
             Subplot.set_ylim([0, 1.1 * T_Brightness_norm])
-            Subplot.set_title("Brightness temperature at " + r'$\delta_{rel} = 0$')
-            Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-            Subplot.set_ylabel(r'$T_b\,\,[10^9\, K]$')
+            Subplot.set_title("Brightness temperature at " + r'$\delta_{rel} = 0$', fontsize = self.Font_size)
+            Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+            Subplot.set_ylabel(r'$T_b\,\,[10^9\, K]$', fontsize = self.Font_size, labelpad = self.Label_Pad)
 
             Frequency_str_addon += Freq_str + "_"
+
+            plt.xticks(fontsize = self.Font_size)
+            plt.yticks(fontsize = self.Font_size)
 
         Frequency_str_addon = Frequency_str_addon[:len(Frequency_str_addon) - 1]
 
@@ -220,23 +240,23 @@ class Sim_Visualizer():
                                 Frequency_str_addon +
                                 ".png", bbox_inches = 'tight')
 
-    def plot_EHTIM_results(self, Make_contour_plots: bool, Contour_specs: list, Save_Figures: bool, Plot_no_blur: bool):
+    def plot_EHTIM_results(self, Make_contour_plots: bool, Contour_specs: list, Save_Figures: bool, Plot_no_blur: bool, Custom_fig_title: str):
 
         for Array_num, Array_str in enumerate(self.Arrays):
 
             if Plot_no_blur:
                 if len(self.Frequency_Bins) == 1:            
-                    Ehtim_figure = plt.figure(figsize = (20, 10))
+                    Ehtim_figure = plt.figure(figsize = (25, 12))
 
                 else:
-                    Ehtim_figure = plt.figure(figsize = (12, 10))
+                    Ehtim_figure = plt.figure(figsize = (25, 24))
 
             else:
                 if len(self.Frequency_Bins) == 1:            
-                    Ehtim_figure = plt.figure(figsize = (9, 8))
+                    Ehtim_figure = plt.figure(figsize = (14, 13))
 
                 else:
-                    Ehtim_figure = plt.figure(figsize = (20, 10))
+                    Ehtim_figure = plt.figure(figsize = (25, 12))
 
 
             for Sim_number, _ in enumerate(self.Frequency_Bins):
@@ -271,14 +291,18 @@ class Sim_Visualizer():
                 if Plot_no_blur:
                     Subplot = Ehtim_figure.add_subplot(len(self.Frequency_Bins) * 100 + 20 + (2 * Sim_number + 1))
 
-                    Subplot.set_title("Pre-Clean Beam Convolution at {}GHz".format(self.Ehtim_Parsers[Index][self.NO_BLUR].OBS_FREQUENCY))
-                    Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-                    Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+                    Subplot.set_title("Pre-Clean Beam Convolution at {}GHz".format(int(Ehtim_Parser_no_Blur.OBS_FREQUENCY)), fontsize = self.Font_size)
+                    Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+                    Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
 
                     pre_Convolution_T = Subplot.imshow(Intensity_ehtim_no_blur_T,  interpolation = 'bilinear', cmap = 'hot', extent = axes_limits)              
                     colorbar = Ehtim_figure.colorbar(pre_Convolution_T, ax = Subplot, fraction=0.046, pad=0.04)
-                    colorbar.set_label(r"Brightness Temperature [$10^9$K]")
+                    colorbar.set_label(r"Brightness Temperature [$10^9$K]", fontsize = self.Font_size, labelpad = self.Label_Pad)
+                    colorbar.ax.tick_params(labelsize = self.Font_size)
 
+                    plt.xticks(fontsize = self.Font_size)
+                    plt.yticks(fontsize = self.Font_size)
+                    
                     Subplot = Ehtim_figure.add_subplot(len(self.Frequency_Bins) * 100 + 20 + (2 * Sim_number + 2))
 
                 else:
@@ -288,15 +312,29 @@ class Sim_Visualizer():
                 if Make_contour_plots:
                     self.plot_contours([Ehtim_Parser_Blur], self.VIDA_Parsers[Index], Subplot, Contour_specs[Sim_number])
 
-                Subplot.set_title("Post-Clean Beam Convolution at {}GHz".format(Ehtim_Parser_Blur.OBS_FREQUENCY))
-                Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-                Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+                Subplot.set_title("Post-Clean Beam Convolution at {}GHz".format(int(Ehtim_Parser_Blur.OBS_FREQUENCY)), fontsize = self.Font_size)
+                Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+                Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
 
                 post_Convolution_T = Subplot.imshow(Intensity_ehtim_blur_T, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits)
                 colorbar = Ehtim_figure.colorbar(post_Convolution_T, ax = Subplot, fraction = 0.046, pad = 0.04)
-                colorbar.set_label(r"Brightness Temperature [$10^9$K]")
+                colorbar.set_label(r"Brightness Temperature [$10^9$K]", fontsize = self.Font_size, labelpad = self.Label_Pad)
+                colorbar.ax.tick_params(labelsize = self.Font_size)
+                
+                plt.xticks(fontsize = self.Font_size)
+                plt.yticks(fontsize = self.Font_size)
 
-            Ehtim_figure.suptitle("Using Array {}".format(Array_str))
+            if Custom_fig_title != None:
+
+                if Array_str in ["2017", "2022", "2025"]:
+                    Ehtim_figure.suptitle("{}, viewed by EHT {}".format(Custom_fig_title, Array_str), fontsize = 1.2 * self.Font_size) 
+
+                else:
+                    Ehtim_figure.suptitle("{}, viewed by {}".format(Custom_fig_title, Array_str), fontsize = 1.2 * self.Font_size)
+
+            else:
+                Ehtim_figure.suptitle("Using Array {}".format(Array_str), fontsize = 1.2 * self.Font_size)
+
             Ehtim_figure.tight_layout()
 
             if Save_Figures:
@@ -321,7 +359,10 @@ class Sim_Visualizer():
                                     "Figures\\" + 
                                     fig_title, bbox_inches = 'tight')
 
-    def plot_VIDA_style(self, Center_plot: bool, Save_Figures: bool):
+    def plot_VIDA_style(self, 
+                        Center_plot: bool, 
+                        Save_Figures: bool,
+                        Custom_fig_title: str):
 
         for Array_num, Array_str in enumerate(self.Arrays):
             
@@ -338,6 +379,7 @@ class Sim_Visualizer():
                                                                                CROP             = Center_plot, 
                                                                                crop_rel_rage    = [50, 50, 50, 50],
                                                                                Plot_Brihtness_T = True,
+                                                                               Custom_fig_title = Custom_fig_title,
                                                                                Array_str        = Array_str)
                 
                 Ehtim_Vida_plot.tight_layout()
@@ -388,7 +430,7 @@ class Sim_Visualizer():
 
                 print("Superposition of {} Array exported to fits file!".format(Array_str))
 
-    def plot_superposition(self, Center_plot: bool, Save_Figures: bool):
+    def plot_superposition(self, Center_plot: bool, Save_Figures: bool, Custom_fig_title: str):
 
         for Array_num, Array_str in enumerate(self.Arrays):
 
@@ -413,7 +455,8 @@ class Sim_Visualizer():
                                                                            CROP             = Center_plot, 
                                                                            crop_rel_rage    = [50, 50, 50, 50],
                                                                            Plot_Brihtness_T = False,
-                                                                           Array_str        = Array_str)
+                                                                           Array_str        = Array_str,
+                                                                           Custom_fig_title = Custom_fig_title)
             
             print(Brightness_ratio_str)
 
@@ -480,7 +523,7 @@ class Sim_Visualizer():
                                     mask = np.logical_and(np.logical_not(dark_spot_mask), np.logical_not(ring_mask)))
                     
         Contour = Subplot.contour(x_axis, y_axis, Contour_mask, levels = max_value * Contour_levels, colors = Contour_colors)
-        Labels  = Subplot.clabel(Contour, inline = True, fontsize = 10, fmt = format)
+        Labels  = Subplot.clabel(Contour, inline = True, fontsize = 12, fmt = format)
                     
         for label in Labels:
             label.set_rotation(0)
@@ -491,6 +534,7 @@ class Sim_Visualizer():
                           CROP: bool, 
                           crop_rel_rage: list, 
                           Plot_Brihtness_T: bool,
+                          Custom_fig_title: str,
                           Array_str: str = None) -> None:
 
         Ehtim_Parser = Ehtim_Parsers[0]
@@ -519,7 +563,10 @@ class Sim_Visualizer():
         template_x_slice, slice_x_offset, template_y_slice, slice_y_offset = get_template_slices(Ehtim_image_res, template, VIDA_parser.template_params, Ehtim_image_FOV)
         Ehtim_x_slice, _, Ehtim_y_slice, _ = get_template_slices(Ehtim_image_res, Intensity_ehtim, VIDA_parser.template_params, Ehtim_image_FOV)
 
-        template_fig = plt.figure(figsize=(21,5))
+
+        # This figure is a bit large, and with the giant fontsize its going to need to be readable
+        # on an A4 paper, it needs a areal big figsige parameter to look like anything
+        template_fig = plt.figure(figsize = (45, 10))
 
         #========================= Ehtim Image Plot =========================#
 
@@ -578,30 +625,40 @@ class Sim_Visualizer():
 
         if CROP:
 
-            Subplot.plot(np.zeros(crop_res), y_coords, "r")
-            Subplot.plot(x_coords, np.zeros(crop_res), "b")
+            Subplot.plot(np.zeros(crop_res), y_coords, "r", linewidth = 4)
+            Subplot.plot(x_coords, np.zeros(crop_res), "b", linewidth = 4)
 
         else:
 
-            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), y_coords, "r")
-            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), "b")
+            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), y_coords, "r", linewidth = 4)
+            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), "b", linewidth = 4)
 
-        Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-        Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+        Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+        Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+        plt.xticks(fontsize = self.Font_size)
+        plt.yticks(fontsize = self.Font_size)
+
+        if Custom_fig_title != None:
+
+            if Array_str in ["2017", "2022", "2025"]:
+                template_fig.suptitle("{}, viewed by EHT {}".format(Custom_fig_title, Array_str), fontsize = 1.2 * self.Font_size)
+            else:
+                template_fig.suptitle("{}, viewed by {}".format(Custom_fig_title, Array_str), fontsize = 1.2 * self.Font_size)
 
         if Array_str != None:
 
-            if Array_str in ["2017", "2025"]:
-                Subplot.set_title("EHT {} at {}GHz".format(Array_str, Frequency_str))
+            if Array_str in ["2017", "2022", "2025"]:
+                    Subplot.set_title("EHT {} at {}GHz".format(Array_str, Frequency_str.split(".")[0]), fontsize = self.Font_size)
 
             else:
-                Subplot.set_title("ngEHT at {}GHz".format(Frequency_str))
+                Subplot.set_title("ngEHT at {}GHz".format(Frequency_str.split(".")[0]), fontsize = self.Font_size)
 
         else:
-            Subplot.set_title("EHT ?????? at {}GHz".format(Array_str, Frequency_str))
+            Subplot.set_title("EHT ?????? at {}GHz".format(Array_str, Frequency_str.split(".")[0]), fontsize = self.Font_size)
 
         colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
-        colorbar.set_label(colorbar_legend)
+        colorbar.set_label(colorbar_legend, fontsize = self.Font_size, labelpad = self.Label_Pad)
+        colorbar.ax.tick_params(labelsize = self.Font_size)
 
         #========================= Template Plot =========================#
 
@@ -610,28 +667,32 @@ class Sim_Visualizer():
 
         if CROP:
 
-            Subplot.plot(np.zeros(crop_res), y_coords, "r--")
-            Subplot.plot(x_coords, np.zeros(crop_res), "b--")
+            Subplot.plot(np.zeros(crop_res), y_coords, "r--", linewidth = 4)
+            Subplot.plot(x_coords, np.zeros(crop_res), "b--", linewidth = 4)
 
         else:
 
-            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), y_coords, "r--")
-            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), "b--")
+            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), y_coords, "r--", linewidth = 4)
+            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), "b--", linewidth = 4)
 
-        Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-        Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+        Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+        Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+        plt.xticks(fontsize = self.Font_size)
+        plt.yticks(fontsize = self.Font_size)
 
         ring_mask, dark_spot_mask = get_template_pixel_mask(VIDA_parser.template_params, Ehtim_image_FOV, Ehtim_image_res)
-        Subplot.set_title("VIDA Template")
+        Subplot.set_title("VIDA Template", fontsize = self.Font_size)
 
         colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
-        colorbar.set_label(colorbar_legend)
+        colorbar.set_label(colorbar_legend, fontsize = self.Font_size, labelpad = self.Label_Pad)
+        colorbar.ax.tick_params(labelsize = self.Font_size)
+
 
         #------------------------ Y Slice Plot ------------------------#
 
         Subplot = template_fig.add_subplot(143)
-        Subplot.plot(y_coords, Ehtim_y_slice[Ehtim_image_res - y_crop_idx[1] : Ehtim_image_res - y_crop_idx[0]], "r")
-        Subplot.plot(y_coords, template_y_slice[Ehtim_image_res - y_crop_idx[1] : Ehtim_image_res - y_crop_idx[0]], "r--")
+        Subplot.plot(y_coords, Ehtim_y_slice[Ehtim_image_res - y_crop_idx[1] : Ehtim_image_res - y_crop_idx[0]], "r", linewidth = 4)
+        Subplot.plot(y_coords, template_y_slice[Ehtim_image_res - y_crop_idx[1] : Ehtim_image_res - y_crop_idx[0]], "r--", linewidth = 4)
 
         Subplot.set_ylim([0,1])
         Subplot.set_xlim([axes_limits[0], axes_limits[1]])
@@ -640,18 +701,20 @@ class Sim_Visualizer():
         Subplot.tick_params(left = True, right = False, labelleft = True,
                             labelbottom = True, bottom = True)
 
-        Subplot.set_xlabel(r'$\delta_{rel}\,\,[\mu$as]')
-        Subplot.set_ylabel('Relative Intensity')
-        Subplot.set_title("Y Intensity Slice")
+        Subplot.set_xlabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+        Subplot.set_ylabel('Relative Intensity', fontsize = self.Font_size)
+        Subplot.set_title("Y Intensity Slice", fontsize = self.Font_size)
+        plt.xticks(fontsize = self.Font_size)
+        plt.yticks(fontsize = self.Font_size)
 
         # Subplot.imshow(ring_mask, cmap = "hot", extent = axes_limits)
 
         #------------------------ X Slice Plot ------------------------#
 
         Subplot = template_fig.add_subplot(144)
-        Subplot.plot(x_coords, Ehtim_x_slice[x_crop_idx[0] : x_crop_idx[1]], "b")
-        Subplot.plot(x_coords, template_x_slice[x_crop_idx[0] : x_crop_idx[1]], "b--")
-
+        Subplot.plot(x_coords, Ehtim_x_slice[x_crop_idx[0] : x_crop_idx[1]], "b", linewidth = 4)
+        Subplot.plot(x_coords, template_x_slice[x_crop_idx[0] : x_crop_idx[1]], "b--", linewidth = 4)
+        
         Subplot.set_ylim([0,1])
         Subplot.set_xlim([axes_limits[0], axes_limits[1]])
 
@@ -659,9 +722,11 @@ class Sim_Visualizer():
         Subplot.tick_params(left = True, right = False, labelleft = True,
                                 labelbottom = True, bottom = True)
             
-        Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-        Subplot.set_ylabel('Relative Intensity')
-        Subplot.set_title("X Intensity Slice")
+        Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+        Subplot.set_ylabel('Relative Intensity', fontsize = self.Font_size)
+        Subplot.set_title("X Intensity Slice", fontsize = self.Font_size)
+        plt.xticks(fontsize = self.Font_size)
+        plt.yticks(fontsize = self.Font_size)
 
         template_fig.subplots_adjust(bottom=0.22)
 
@@ -714,7 +779,8 @@ class Sim_Visualizer():
 
     def compare_superpos_w_single_freq(self, 
                                        Contour_specs: list,
-                                       Save_Figures: bool):
+                                       Save_Figures: bool,
+                                       Custom_fig_title: str):
         
         for Array_num, Array_str in enumerate(self.Arrays):
             
@@ -745,17 +811,24 @@ class Sim_Visualizer():
             # Convert the flux to [mJy]
             Intensity_ehtim_mjy = Intensity_ehtim_jy * 1e3
 
-            Superposition_w_contour_fig = plt.figure(figsize=(16,5))
+            Superposition_w_contour_fig = plt.figure(figsize = (30, 9))
 
             Subplot = Superposition_w_contour_fig.add_subplot(131)
-            Superposition_subplot = Subplot.imshow(Intensity_ehtim_mjy, cmap = "hot", extent = axes_limits, interpolation = 'bilinear',)
+            Superposition_subplot = Subplot.imshow(Intensity_ehtim_mjy, cmap = "hot", extent = axes_limits, interpolation = 'bilinear')
 
-            Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-            Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
-            Subplot.set_title("ngEHT at {}GHz".format(Frequency_str))
+            Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+            Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+            plt.xticks(fontsize = self.Font_size)
+            plt.yticks(fontsize = self.Font_size)
+
+            Subplot.set_title("ngEHT at {}GHz".format(Frequency_str.split(".")[0]), fontsize = self.Font_size)
+
+            if Custom_fig_title != None:
+                Superposition_w_contour_fig.suptitle("{}, viewed by {}".format(Custom_fig_title, Array_str), fontsize = 1.2 * self.Font_size)
 
             colorbar = Superposition_w_contour_fig.colorbar(Superposition_subplot, ax = Subplot, fraction=0.046, pad=0.04)
-            colorbar.set_label(r"Flux Per Pixel [mJy]")
+            colorbar.set_label(r"Flux Per Pixel [mJy]", fontsize = self.Font_size, labelpad = self.Label_Pad)
+            colorbar.ax.tick_params(labelsize = self.Font_size)
 
             self.plot_contours(Ehtim_Parsers, VIDA_Parser, Subplot, Contour_specs[0])
             
@@ -769,13 +842,16 @@ class Sim_Visualizer():
                 Intensity_ehtim_blur_jy, _ = Ehtim_Parser_Blur.get_plottable_ehtim_data()
                 Intensity_ehtim_blur_mjy = Intensity_ehtim_blur_jy * self.Units.KILO
 
-                Subplot.set_title("ngEHT at {}GHz".format(Ehtim_Parser_Blur.OBS_FREQUENCY))
-                Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]')
-                Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]')
+                Subplot.set_title("ngEHT at {}GHz".format(int(Ehtim_Parser_Blur.OBS_FREQUENCY)), fontsize = self.Font_size)
+                Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+                Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+                plt.xticks(fontsize = self.Font_size)
+                plt.yticks(fontsize = self.Font_size)
 
                 post_Convolution_T = Subplot.imshow(Intensity_ehtim_blur_mjy, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits)
                 colorbar = Superposition_w_contour_fig.colorbar(post_Convolution_T, ax = Subplot, fraction = 0.046, pad = 0.04)
-                colorbar.set_label(r"Flux Per Pixel [mJy]")
+                colorbar.set_label(r"Flux Per Pixel [mJy]", fontsize = self.Font_size, labelpad = self.Label_Pad)
+                colorbar.ax.tick_params(labelsize = self.Font_size)
 
                 self.plot_contours([self.Ehtim_Parsers[Sim_number + Array_num * (len(self.Arrays) - 1)][self.BLUR]], 
                                    VIDA_Parser, 
@@ -796,35 +872,59 @@ class Sim_Visualizer():
                                                     fig_title, bbox_inches = 'tight')
 
 if __name__ == "__main__":
+    
+    plt.rcParams['axes.titlepad'] = 20
 
-    EHT_Array           = ["2017"]
-    Sim_path            = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Wormhole"
+    EHT_Array           = ["ngEHT"]
+    Sim_path            = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\JNW"
     Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
-    Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
+    Visualizer = Sim_Visualizer(Sim_path       = Sim_path, 
                                 Sim_Frequency_Bins = Sim_Frequency_Bins,
                                 Array              = EHT_Array,
                                 Units_class_inst   = Units_class(),
+                                Font_size = 30, 
+                                Label_Pad = 12,
                                 Respect_folder_structure = False)
 
-    Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, Save_Figures = True)    
+    Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
+                                       Save_Figures = False, 
+                                       Custom_fig_title = r"Kerr ($\text{a} = 0.9$)")    
+    
+    # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
+    #                               Contour_specs      = [([0.02, 0.1], ["r", "w"])], 
+    #                               Save_Figures       = True,
+    #                               Plot_no_blur       = False,
+    #                               Custom_fig_title = r"Schwarzschild") 
+    
+    # Visualizer.plot_EHTIM_results(Make_contour_plots = True,                                                      
+    #                               Contour_specs      = [([0.02, 0.1], ["r", "w"])], 
+    #                               Save_Figures       = True,
+    #                               Plot_no_blur       = False,
+    #                               Custom_fig_title = r"Schwarzschild") 
+    
 
     # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
-    #                               Contour_specs      = [([0.005, 0.02, 0.1], ["b", "r", "w"])], 
+    #                               Contour_specs      = [([0.02, 0.1], ["r", "w"])], 
     #                               Save_Figures       = True,
-    #                               Plot_no_blur       = True) 
+    #                               Plot_no_blur       = True,
+    #                               Custom_fig_title = r"Schwarzschild") 
 
-    # Visualizer.plot_VIDA_style(Center_plot = False, Save_Figures = True)
+    # Visualizer.plot_VIDA_style(Center_plot = False, 
+    #                            Save_Figures = False, 
+    #                            Custom_fig_title = r"Kerr ($\text{a} = 0.9$)")
 
     # Visualizer.create_EHTIM_superposition()
 
     # Visualizer.plot_superposition(Center_plot = False,
-    #                               Save_Figures = True)
+    #                               Save_Figures = False,
+    #                               Custom_fig_title = r"Kerr ($\text{a} = 0.9$)")
 
-    # Visualizer.compare_superpos_w_single_freq(Contour_specs = [([0.15, 0.2, 0.3], ["b", "w", "k"]),
-    #                                                            ([0.15, 0.2, 0.3], ["b", "w", "k"]),
-    #                                                            ([0.05, 0.1, 0.2], ["k", "r", "w"])],
-    #                                         Save_Figures = True)
+    # Visualizer.compare_superpos_w_single_freq(Contour_specs = [([0.12, 0.15, 0.2, 0.3], ["k", "r", "b", 'w']),
+    #                                                            ([0.12, 0.15, 0.2, 0.3], ["k", "r", "b", 'w']),
+    #                                                            ([0.095, 0.14], ["r", "w"])],
+    #                                         Save_Figures = False, 
+    #                                         Custom_fig_title = r"Kerr ($\text{a} = 0.9$)")
 
     # Visualizer.save_console_log_to_file()
 

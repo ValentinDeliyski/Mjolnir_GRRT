@@ -56,6 +56,12 @@
             int update_disk_density_profile(double State_vector[]);
             int update_disk_hotspot(double State_vector[]);
 
+            void get_synchotron_emission_fit_function(Sync_emission_fit_functions e_fit_functions,
+                                                         double Emission_functions[4],
+                                                         double X,
+                                                         double X_1_2,
+                                                         double X_1_3);
+
         public:
 
             Optically_Thin_Toroidal_Model(Disk_model_parameters* p_Disk_Parameters, Emission_law_parameters* p_Emission_Parameters);
@@ -67,11 +73,13 @@
 
             double get_magnetic_field(double B_field[3], double State_vector[]);
 
-            double get_emission_function_synchotron_exact(double State_vector[], Initial_conditions_type* s_Initial_Conditions);
+            void get_emission_function_synchotron_exact(double State_vector[], 
+                                                        Initial_conditions_type* s_Initial_Conditions, 
+                                                        double Emission_fucntions[4]);
 
-            double get_emission_function_synchotron_phenomenological(double State_vector[], Initial_conditions_type* s_Initial_Conditions);
+            void get_emission_function_synchotron_phenomenological(double State_vector[], Initial_conditions_type* s_Initial_Conditions, double Emission_functions[4]);
 
-            double get_absorbtion_function(double Emission_Function, double State_vector[], double redshift, double Frequency);
+            void get_absorbtion_function(double Emission_Functions[4], double State_vector[], double redshift, double Frequency, double Absorbtion_functions[4]);
 
             double get_electron_pitch_angle(double State_vector[], double B_field_local[], Initial_conditions_type* s_Initial_Conditions);
 

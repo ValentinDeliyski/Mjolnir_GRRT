@@ -108,7 +108,7 @@ double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_
 
 double Novikov_Thorne_Model::disk_Energy(double r, Spacetime_Base_Class* Spacetimes[]) {
 
-    double State_Vector[2] = { r_obs, M_PI_2 };
+    double State_Vector[2] = { r, M_PI_2 };
 
     Spacetimes[e_metric]->set_ignore_flag(true);
 
@@ -126,7 +126,7 @@ double Novikov_Thorne_Model::disk_Energy(double r, Spacetime_Base_Class* Spaceti
 
 double Novikov_Thorne_Model::disk_Angular_Momentum(double r, Spacetime_Base_Class* Spacetimes[]) {
 
-    double State_Vector[2] = { r_obs, M_PI_2 };
+    double State_Vector[2] = { r, M_PI_2 };
     
     Spacetimes[e_metric]->set_ignore_flag(true);
 
@@ -638,84 +638,163 @@ double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vect
 
 /* Disk Emission Functions */
 
-double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_exact(double State_vector[], Initial_conditions_type* s_Initial_conditions) {
+void Optically_Thin_Toroidal_Model::get_synchotron_emission_fit_function(Sync_emission_fit_functions e_fit_functions,
+                                                                         double Emission_functions[4],
+                                                                         double X,
+                                                                         double X_1_2,
+                                                                         double X_1_3) {
+
+    Emission_functions[I] = 0;
+    Emission_functions[U] = 0;
+    Emission_functions[Q] = 0;
+    Emission_functions[V] = 0;
+
+    switch (e_fit_functions){
+
+    case Leung_2011:
+
+        /*
+
+        The below expressions were originally designed to work with f_s as defined in the paper = 4 / 27 * f_crit. This is annoying for my implementation (I define X = f / f_crit),
+        so I convert the expressions to work with f_crit explicitly.
+        
+        Ontop of that the whole function scales linearly with frequency. This is replaced by the variable "X" in the second line (in order to take the redshift into account without passing it in as an argument, because I don't like that).
+        This is then corrected in the caller function, by multiplying with the critical frequency.
+
+        Ref: https://www.aanda.org/articles/aa/pdf/2022/11/aa44339-22.pdf
+
+        */
+
+        Emission_functions[I] = 0;
+
+        if (X_1_3 > std::numeric_limits<double>::min() && X > std::numeric_limits<double>::min()) {
+
+            Emission_functions[I] = M_SQRT2 * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 3 / C_LIGHT_CGS;
+            Emission_functions[I] *= (4. / 27 * X);
+            Emission_functions[I] *= ((2.5980762113) + (1.3747296369986) * 1.887749 / X_1_3); // The constants inside parentasies here are sqrt(27. / 4) and sqrt(cbrt(27. / 4)), respectfully
+            Emission_functions[I] *= ((2.5980762113) + (1.3747296369986) * 1.887749 / X_1_3); // The other constant is pow (2, 11. / 12)
+            Emission_functions[I] *= exp(-1.889881574 * X_1_3);                               // This constant is cbrt(27. / 4)
+        }
+
+        break;
+
+    case Dexter_2016:
+
+        /*
+        
+        Below for the I and Q functions, the frequency is replaced by the variable "X" (in order to take the redshift into account without passing it in as an argument, because I don't like that).
+        This is then corrected in the caller function, by multiplying with the critical frequency.
+        
+        Ref: https://arxiv.org/pdf/1602.03184.pdf
+
+        */
+
+        if (X_1_3 > std::numeric_limits<double>::min() && X > std::numeric_limits<double>::min()) {
+
+            double exponenet = exp(-1.8899 * X_1_3);
+
+            Emission_functions[I] =     Q_ELECTRON_CGS * Q_ELECTRON_CGS / 1.73205080757 / C_LIGHT_CGS *     X * 2.5651 * (1 +  1.92 / X_1_3 + 0.9977 / X_1_3 / X_1_3) * exponenet;
+            Emission_functions[Q] =     Q_ELECTRON_CGS * Q_ELECTRON_CGS / 1.73205080757 / C_LIGHT_CGS *     X * 2.5651 * (1 + 0.932 / X_1_3 + 0.4998 / X_1_3 / X_1_3) * exponenet;
+            Emission_functions[V] = 4 * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 1.73205080757 / C_LIGHT_CGS / 3 * X * (1.8138 / X + 3.423 / X_1_3 / X_1_3 + 0.02955 / X_1_2 + 2.0377 / X_1_3) * exponenet;
+        }
+
+        break;
+
+    default:
+
+        break;
+    }
+
+}
+
+void Optically_Thin_Toroidal_Model::get_emission_function_synchotron_exact(double State_vector[], Initial_conditions_type* s_Initial_conditions, double Emission_fucntions[4]) {
+
+    /* The Emission_functions array needs to be manually cleared, because this function only adds to it. */
+    for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+
+        Emission_fucntions[stokes_index] = 0;
+
+    }
 
     /* Electron Density in CGS */
-
     double electron_density = this->s_Disk_Parameters.Density_scale * this->get_disk_density_profile(State_vector);
 
     /* Dimentionless Electron Temperature */
-
     double T_electron     = this->get_disk_temperature(State_vector);
     double T_electron_dim = BOLTZMANN_CONST_CGS * T_electron / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
     double divisor        = std::cyl_bessel_k(2.0, 1.0 / T_electron_dim);
 
     /* Magnetic Field */
-
-    double B_field_local[3];
+    double B_field_local[3]{};
     double B_CGS = this->get_magnetic_field(B_field_local, State_vector);
 
     /* Disk Coordinate Velocity */
-
     double* U_source_coord = this->get_disk_velocity(State_vector, s_Initial_conditions);
 
     /* Redshit */
-
     double redshift = Redshift(State_vector, U_source_coord);
 
     /* Cyclotron Frequency */
-
     double f_cyclo = Q_ELECTRON_CGS * B_CGS / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
 
-    /* Synchotron Frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
-
-    double f_s_no_sin = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim;
+    /* The "averaged" critical frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
+    double f_crit_no_sin = 3. / 2 * f_cyclo * T_electron_dim * T_electron_dim;
 
     double X = 1e100;
 
-    if (f_s_no_sin != 0) {
+    if (f_crit_no_sin > std::numeric_limits<double>::min()) {
 
-        X = OBS_FREQUENCY_CGS / f_s_no_sin / redshift;
+        X = OBS_FREQUENCY_CGS / f_crit_no_sin / redshift;
 
     }
 
-    /* The exact form of the emission function is from "Images and photon ring signatures of thick disks around black holes" */
-
     double X_1_2 = sqrt(X);
     double X_1_3 = cbrt(X);
-    double X_1_6 = sqrt(X_1_3);
 
     /* Average the Emission Function over all electron pitch angles */
-
-    double constant_coeff = M_SQRT2 * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 3 / C_LIGHT_CGS;
-    double emission_function{};
 
     for (int averaging_idx = 0; averaging_idx <= NUM_SAMPLES_TO_AVG - 1; averaging_idx++) {
 
         double sin_pitch_angle = this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[averaging_idx];
+        double cos_pitch_angle = this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[averaging_idx];
 
         double X_1_2_angle_corrected = X_1_2 * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
         double X_1_3_angle_corrected = X_1_3 * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
-        double X_1_6_angle_corrected = X_1_6 * this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_6[averaging_idx];
 
-        double X_term = X_1_2_angle_corrected + 1.887749 * X_1_6_angle_corrected; // The constant is = pow(2, 11.0 / 12.0)
-        X_term *= X_term;
+        if (divisor > 1e10 * std::numeric_limits<double>::min()) {
 
-        if (divisor != 0.) {
+            double current_emission_functions[4]{};
 
-            emission_function += constant_coeff * electron_density * (f_s_no_sin * sin_pitch_angle) * X_term * exp(-X_1_3_angle_corrected) / divisor * sin_pitch_angle * M_PI / NUM_SAMPLES_TO_AVG;
+            this->get_synchotron_emission_fit_function(Dexter_2016, current_emission_functions, X / sin_pitch_angle, X_1_2_angle_corrected, X_1_3_angle_corrected);
+
+
+
+            current_emission_functions[I] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / divisor; // Scale the emission by the remaining position-dependant factors
+            current_emission_functions[I] *= sin_pitch_angle * M_PI / NUM_SAMPLES_TO_AVG / 2;                // Scale by the factors coming form averaging over all emission orientations
+
+            current_emission_functions[Q] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / divisor; // Scale the emission by the remaining position-dependant factors
+            current_emission_functions[Q] *= sin_pitch_angle * M_PI / NUM_SAMPLES_TO_AVG / 2;                // Scale by the factors coming form averaging over all emission orientations
+
+            if (sin_pitch_angle > std::numeric_limits<double>::min()) {
+
+                current_emission_functions[V] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / divisor; // Scale the emission by the remaining position-dependant factors
+                current_emission_functions[V] *= (1 / T_electron_dim) * cos_pitch_angle / sin_pitch_angle;       // The V component has some extra angle dependance
+                current_emission_functions[V] *= sin_pitch_angle * M_PI / NUM_SAMPLES_TO_AVG / 2;                // Scale by the factors coming form averaging over all emission orientations
+
+            }
+
+            Emission_fucntions[I] += current_emission_functions[I];
+            Emission_fucntions[Q] += current_emission_functions[Q];
+            Emission_fucntions[V] += current_emission_functions[V];
+            Emission_fucntions[U] += current_emission_functions[U]; // The U component is 0 by construction
 
         }
 
     }
 
-    /* Factor of 1 / 2 from the averaging */
-
-    return emission_function / 2;
-
 }
 
-double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_phenomenological(double State_vector[], Initial_conditions_type* s_Initial_conditions) {
+void Optically_Thin_Toroidal_Model::get_emission_function_synchotron_phenomenological(double State_vector[], Initial_conditions_type* s_Initial_conditions, double Emission_functions[4]) {
 
     double& emission_power_law = this->s_Emission_Parameters.Emission_power_law;
     double& emission_scale     = this->s_Emission_Parameters.Emission_scale;
@@ -728,11 +807,17 @@ double Optically_Thin_Toroidal_Model::get_emission_function_synchotron_phenomeno
 
     double redshift = Redshift(State_vector, U_source_coord);
 
-    return electron_density * pow(redshift, emission_power_law);
+    Emission_functions[I] = electron_density * pow(redshift, emission_power_law);
+
+    for (int stokes_index = 1; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+
+        Emission_functions[stokes_index] = 0;
+
+    }
 
 }
 
-double Optically_Thin_Toroidal_Model::get_absorbtion_function(double Emission_Function, double State_vector[], double redshift, double Frequency) {
+void Optically_Thin_Toroidal_Model::get_absorbtion_function(double Emission_Functions[4], double State_vector[], double redshift, double Frequency, double Absorbtion_functions[4]) {
 
     double Planck_function_CGS{};
 
@@ -747,26 +832,50 @@ double Optically_Thin_Toroidal_Model::get_absorbtion_function(double Emission_Fu
 
         Planck_function_CGS = get_planck_function_CGS(Frequency, this->get_disk_temperature(State_vector));
 
-        if (Planck_function_CGS != 0.) {
+        if (Planck_function_CGS > std::numeric_limits<double>::min()) {
 
-            return Emission_Function / Planck_function_CGS;
+            for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+
+                Absorbtion_functions[stokes_index] = Emission_Functions[stokes_index] / Planck_function_CGS;
+
+            }
 
         }
         else {
 
-            return 0;
+            for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+
+                Absorbtion_functions[stokes_index] = 0;
+
+            }
 
         }
 
+        break;
+
     case Synchotron_phenomenological:
 
-        return abs_coeff * emission_scale * this->get_disk_density_profile(State_vector) * pow(redshift, source_f_power_law + emission_power_law);
+        Absorbtion_functions[I] = abs_coeff * emission_scale * this->get_disk_density_profile(State_vector) * pow(redshift, source_f_power_law + emission_power_law);
+
+        for (int stokes_index = 1; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+
+            Absorbtion_functions[stokes_index] = 0;
+
+        }
+
+        break;
 
     default:
 
         std::cout << "Wrong emission model!" << '\n'; 
 
-        return ERROR; 
+        for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+
+            Absorbtion_functions[stokes_index] = 0;
+
+        }
+
+        break;
 
     }
 }
@@ -777,6 +886,7 @@ void Optically_Thin_Toroidal_Model::precompute_electron_pitch_angles() {
 
         double pitch_angle = double(index) / NUM_SAMPLES_TO_AVG * M_PI;
         this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index] = sin(pitch_angle);
+        this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[index] = cos(pitch_angle);
 
         if (this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index] != 0) {
 
