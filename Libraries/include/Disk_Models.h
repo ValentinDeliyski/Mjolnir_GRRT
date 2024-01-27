@@ -62,6 +62,12 @@
                                                          double X_1_2,
                                                          double X_1_3);
 
+            void get_faradey_functions(double State_vector[], 
+                                       double X, 
+                                       double X_1_2, 
+                                       double X_frac, 
+                                       double faradey_fucntions[STOKES_PARAM_NUM]);
+
         public:
 
             Optically_Thin_Toroidal_Model(Disk_model_parameters* p_Disk_Parameters, Emission_law_parameters* p_Emission_Parameters);
@@ -73,13 +79,15 @@
 
             double get_magnetic_field(double B_field[3], double State_vector[]);
 
-            void get_emission_function_synchotron_exact(double State_vector[], 
-                                                        Initial_conditions_type* s_Initial_Conditions, 
-                                                        double Emission_fucntions[4]);
+            void get_synchotron_transfer_functions(double State_vector[],
+                                                   Initial_conditions_type* s_Initial_Conditions,
+                                                   double Emission_fucntions[STOKES_PARAM_NUM],
+                                                   double Faradey_functions[STOKES_PARAM_NUM],
+                                                   double Absorbtion_functions[STOKES_PARAM_NUM]);
 
             void get_emission_function_synchotron_phenomenological(double State_vector[], Initial_conditions_type* s_Initial_Conditions, double Emission_functions[4]);
 
-            void get_absorbtion_function(double Emission_Functions[4], double State_vector[], double redshift, double Frequency, double Absorbtion_functions[4]);
+            double get_absorbtion_function_phenomenological(double Emission_Functions, double State_vector[], double redshift);
 
             double get_electron_pitch_angle(double State_vector[], double B_field_local[], Initial_conditions_type* s_Initial_Conditions);
 

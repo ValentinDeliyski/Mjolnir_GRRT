@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\Console_printing.h" />
+    <ClInclude Include="Libraries\include\Radiative_Transfer.h" />
     <ClInclude Include="Libraries\include\Structs.h" />
     <ClInclude Include="Libraries\include\Constants.h" />
     <ClInclude Include="Libraries\include\Disk_Models.h" />
@@ -41,6 +42,7 @@
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\IO_files.cpp" />
     <ClCompile Include="src\Lensing.cpp" />
+    <ClCompile Include="src\Radiative_Transfer.cpp" />
     <ClCompile Include="src\Ray_tracer.cpp" />
     <ClCompile Include="src\Rendering_Engine.cpp" />
     <ClCompile Include="src\RK45.cpp" />

@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Naked_Singularity; // Spacetime to be used
+    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.5f;
+    Real SPIN = 0.99f;
 
     // Wormhole spacetime parameters //
 
@@ -49,7 +49,7 @@
     Real r_obs	   = 1e4;			     // Radial potision of the observer [ M ]
     Real theta_obs = 160.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			     // Azimuthal angle of the observer ( not used ) [ Rad ]
-    Real obs_cam_rotation_angle = -70.0f / 180 * M_PI - M_PI_4;
+    Real obs_cam_rotation_angle = -70.0f / 180 * M_PI - M_PI_4; /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
@@ -58,7 +58,7 @@
 
     // Novikov - Thorne accretion disk parameters
 
-    const bool Evaluate_NT_disk = true;
+    const bool Evaluate_NT_disk = false;
 
     Real r_in  = 4.5f;	// Inner accretion idsk radius [ M ]
     Real r_out = 34.0f;    // Outer accretion disk radius [ M ]
@@ -89,7 +89,7 @@
     Real MAG_FIELD_GEOMETRY[3] = { 1, 0, 0 }; // Unused for now
     
     Real N_ELECTRON_EXACT_CGS = 5e+05;
-    Real T_ELECTRON_EXACT_CGS = 7.2e+10;
+    Real T_ELECTRON_EXACT_CGS = 5.9e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
 

@@ -57,7 +57,8 @@
         double cos_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
         double one_over_sqrt_sin[NUM_SAMPLES_TO_AVG];
         double one_over_cbrt_sin[NUM_SAMPLES_TO_AVG];
-        double one_over_sin_to_1_6[NUM_SAMPLES_TO_AVG];
+        double one_over_sin_to_1_4[NUM_SAMPLES_TO_AVG];
+        double one_over_sin_to_frac[NUM_SAMPLES_TO_AVG];
 
     };
 

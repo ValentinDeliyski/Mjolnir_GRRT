@@ -33,7 +33,7 @@ double vector_norm(double Vector[], int Vector_size) {
 
 };
 
-int mat_vec_multiply_4D(double Matrix[4][4], double Vector[4], double result[4]) {
+int mat_vec_multiply_4D(double const Matrix[4][4], double const Vector[4], double result[4]) {
 
 	/******************************************************************************
 	|                                                                             |
@@ -45,17 +45,13 @@ int mat_vec_multiply_4D(double Matrix[4][4], double Vector[4], double result[4])
 	|	  * Result: Pointer to the vector, which stores the result of the		  |
 	|	  multiplication														  |
 	|																			  |
-	|   @ Ouput: Pointer to the result from the multiplication					  |
+	|   @ Ouput: None															  |
 	|                                                                             |
 	******************************************************************************/
 
-	for (int index = 0; index <= 3; index += 1) {
-
-		result[index] = 0;
-
-	}
-
 	for (int row = 0; row <= 3; row += 1) {
+
+		result[row] = 0.0;
 
 		for (int column = 0; column <= 3; column += 1) {
 
@@ -202,5 +198,32 @@ double dot_product(double vector_1[3], double vector_2[3]) {
 	************************************************************************************/
 
 	return vector_1[0] * vector_2[0] + vector_1[1] * vector_2[1] + vector_1[2] * vector_2[2];
+
+}
+
+void convert_spherical_to_cartesian(double* Spherical_Coords, double* Cartesian_Coords) {
+
+	double sin_theta = sin(Spherical_Coords[e_theta]);
+	double cos_theta = cos(Spherical_Coords[e_theta]);
+
+	double sin_phi = sin(Spherical_Coords[e_phi]);
+	double cos_phi = cos(Spherical_Coords[e_phi]);
+
+	Cartesian_Coords[x] = Spherical_Coords[e_r] * sin_theta * cos_phi;
+	Cartesian_Coords[y] = Spherical_Coords[e_r] * sin_theta * sin_phi;
+	Cartesian_Coords[z] = Spherical_Coords[e_r] * cos_theta;
+
+}
+
+void convert_cartesian_to_spherical(double* Cartesian_Coords, double* Spherical_Coords) {
+
+	Spherical_Coords[e_r]  = Cartesian_Coords[x] * Cartesian_Coords[x];
+	Spherical_Coords[e_r] += Cartesian_Coords[y] * Cartesian_Coords[y];
+	Spherical_Coords[e_r] += Cartesian_Coords[z] * Cartesian_Coords[z];
+	Spherical_Coords[e_r]  = sqrt(Spherical_Coords[e_r]);
+
+	Spherical_Coords[e_theta] = acos(Cartesian_Coords[z] / Spherical_Coords[e_r]);
+
+	Spherical_Coords[e_phi] = atan2(Cartesian_Coords[y], Cartesian_Coords[x]);
 
 }

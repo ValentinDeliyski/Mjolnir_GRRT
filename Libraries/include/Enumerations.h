@@ -32,13 +32,15 @@
 
     enum State_enums {
 
-        e_r             = 0,
-        e_theta         = 1,
-        e_phi           = 2,
-        e_p_phi         = 3,
-        e_p_theta       = 4,
-        e_p_r           = 5,
-        e_State_Number  = 6
+        e_r = 0,
+        e_theta = 1,
+        e_phi = 2,
+        e_p_phi = 3,
+        e_p_theta = 4,
+        e_p_r = 5,
+        e_Intensity = 6,
+        e_Optical_Depth = 7,
+        e_State_Number = 8
 
     };
 
@@ -126,6 +128,13 @@
         U = 2,
         V = 3,
         STOKES_PARAM_NUM = 4
+
+    };
+
+    enum Radiative_Transfer_Integrator {
+
+        Analytic = 0,
+        Implicit_Trapezoid = 1
 
     };
 

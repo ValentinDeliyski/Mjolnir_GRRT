@@ -54,6 +54,9 @@
     <ClInclude Include="Libraries\include\Console_printing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Radiative_Transfer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\General_math_functions.cpp">
@@ -90,6 +93,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Console_printing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Radiative_Transfer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

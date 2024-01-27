@@ -69,9 +69,9 @@ class Sim_Visualizer():
                 
                                 
             Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL) +
-            self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+ 
-            self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+
-            self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL))
+                          self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+ 
+                          self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+
+                          self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL))
             
             self.Total_flux_str.append("Total flux at {}GHz = {} [Jy]\n".format(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9, np.round(Total_flux, 4)))
 
@@ -131,6 +131,7 @@ class Sim_Visualizer():
         
     def plot_ray_tracer_results(self, 
                                 Export_data_for_Ehtim: bool, 
+                                Stokes_component: str,
                                 Save_Figures: bool,
                                 Custom_fig_title: str):
 
@@ -148,10 +149,10 @@ class Sim_Visualizer():
 
         for Sim_number, Freq_str in enumerate(self.Frequency_Bins):
 
-            Intensity_0, _, _, _ = self.Sim_Parsers[Sim_number][0].get_plottable_sim_data()
-            Intensity_1, _, _, _ = self.Sim_Parsers[Sim_number][1].get_plottable_sim_data()
-            Intensity_2, _, _, _ = self.Sim_Parsers[Sim_number][2].get_plottable_sim_data()
-            Intensity_3, _, _, _ = self.Sim_Parsers[Sim_number][3].get_plottable_sim_data()
+            I_Intensity_0, Q_Intensity_0, U_Intensity_0, V_Intensity_0, _, _, _ = self.Sim_Parsers[Sim_number][0].get_plottable_sim_data()
+            I_Intensity_1, Q_Intensity_1, U_Intensity_1, V_Intensity_1, _, _, _ = self.Sim_Parsers[Sim_number][1].get_plottable_sim_data()
+            I_Intensity_2, Q_Intensity_2, U_Intensity_2, V_Intensity_2, _, _, _ = self.Sim_Parsers[Sim_number][2].get_plottable_sim_data()
+            I_Intensity_3, Q_Intensity_3, U_Intensity_3, V_Intensity_3, _, _, _ = self.Sim_Parsers[Sim_number][3].get_plottable_sim_data()
 
             #=============== PLot the Simulated Image ===============#
 
@@ -166,7 +167,15 @@ class Sim_Visualizer():
             Subplot_count = 100 * len(Sim_Frequency_Bins)
 
             Subplot      = Main_Figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 1))
-            Data_to_plot =  Intensity_0 + Intensity_1 + Intensity_2 + Intensity_3
+
+            if Stokes_component == "I":
+                Data_to_plot = I_Intensity_0 + I_Intensity_1 + I_Intensity_2 + I_Intensity_3
+            elif Stokes_component == "Q":
+                Data_to_plot = Q_Intensity_0 + Q_Intensity_1 + Q_Intensity_2 + Q_Intensity_3
+            elif Stokes_component == "U":
+                Data_to_plot = U_Intensity_0 + U_Intensity_1 + U_Intensity_2 + U_Intensity_3
+            else:
+                Data_to_plot = V_Intensity_0 + V_Intensity_1 + V_Intensity_2 + V_Intensity_3
 
             if Export_data_for_Ehtim:
 
@@ -177,10 +186,11 @@ class Sim_Visualizer():
             # Create the plot of the Simulated Image
             # I first convert the specific intensity to brightness temperature, so I can make a colorbar
             
-            Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
+            # Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
             Image_norm   = max(Data_to_plot.flatten())
+            Image_min_norm   = min(Data_to_plot.flatten())
 
-            Sim_subplot = Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'hot', extent = axes_limits, vmin = 0, vmax = Image_norm)
+            Sim_subplot = Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'seismic', extent = axes_limits, vmin = Image_min_norm, vmax = Image_norm)
 
             colorbar = Main_Figure.colorbar(Sim_subplot, ax = Subplot, fraction=0.046, pad=0.04)
             colorbar.set_label(r"Brightness Temperature [$10^9$K]", fontsize = self.Font_size, labelpad = self.Label_Pad)
@@ -200,18 +210,18 @@ class Sim_Visualizer():
             # Convert the spectral density at y = 0 to brightness temperature, normalized to 10^9 Kelvin
             T_Brightness = Data_to_plot[int(self.Sim_Parsers[Sim_number][0].Y_PIXEL_COUNT / 2)]
             T_Brightness_norm = max(T_Brightness)
-
+            T_Brightness_min_norm = min(T_Brightness)
             # Rescale the celestial coordinates for an observer, located at "Obs_effective_distance", rather than the simulation OBS_DISTANCE, and converto to micro AS
             x_coords  = np.linspace(self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS[0], self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS[1], self.Sim_Parsers[Sim_number][0].X_PIXEL_COUNT) # These limits are in radians, for an observer located at the ray-tracer's OBS_DISTANCE
             x_coords *= self.Sim_Parsers[Sim_number][0].OBS_DISTANCE / Obs_effective_distance * self.Units.RAD_TO_MICRO_AS
 
             # Set the aspect ratio of the figure to 1:1 (y:x)
-            Subplot.set_aspect(2 * x_coords[-1] / T_Brightness_norm)
+            # Subplot.set_aspect(2 * x_coords[-1] / T_Brightness_norm)
 
             # Create the plot of "T_b(alpha) | y = 0"
             Subplot.plot(-x_coords, T_Brightness)
             Subplot.invert_xaxis()
-            Subplot.set_ylim([0, 1.1 * T_Brightness_norm])
+            Subplot.set_ylim([1.1 * T_Brightness_min_norm, 1.1 * T_Brightness_norm])
             Subplot.set_title("Brightness temperature at " + r'$\delta_{rel} = 0$', fontsize = self.Font_size)
             Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
             Subplot.set_ylabel(r'$T_b\,\,[10^9\, K]$', fontsize = self.Font_size, labelpad = self.Label_Pad)
@@ -238,6 +248,7 @@ class Sim_Visualizer():
             Main_Figure.savefig(Figures_folder_path + 
                                 "Ray_tracer_plot_" + 
                                 Frequency_str_addon +
+                                "_" + Stokes_component +
                                 ".png", bbox_inches = 'tight')
 
     def plot_EHTIM_results(self, Make_contour_plots: bool, Contour_specs: list, Save_Figures: bool, Plot_no_blur: bool, Custom_fig_title: str):
@@ -876,10 +887,10 @@ if __name__ == "__main__":
     plt.rcParams['axes.titlepad'] = 20
 
     EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\JNW"
+    Sim_path            = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Gauss_Bonnet"
     Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
-    Visualizer = Sim_Visualizer(Sim_path       = Sim_path, 
+    Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
                                 Sim_Frequency_Bins = Sim_Frequency_Bins,
                                 Array              = EHT_Array,
                                 Units_class_inst   = Units_class(),
@@ -889,6 +900,7 @@ if __name__ == "__main__":
 
     Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
                                        Save_Figures = False, 
+                                       Stokes_component = "I",
                                        Custom_fig_title = r"Kerr ($\text{a} = 0.9$)")    
     
     # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
