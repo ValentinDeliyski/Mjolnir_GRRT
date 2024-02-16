@@ -62,11 +62,14 @@
                                                          double X_1_2,
                                                          double X_1_3);
 
-            void get_faradey_functions(double State_vector[], 
-                                       double X, 
+            void get_faradey_fit_functions(double X, 
                                        double X_1_2, 
                                        double X_frac, 
                                        double faradey_fucntions[STOKES_PARAM_NUM]);
+
+            void get_transfer_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
+                                            double Faradey_functions[STOKES_PARAM_NUM],
+                                            Emission_functions_arguments* Arguments);
 
         public:
 

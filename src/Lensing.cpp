@@ -142,7 +142,53 @@ void Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
 
 }
 
-void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditions, Results_type* const s_Ray_results, int* const N_theta_turning_points, int const log_length) {
+void Parallel_Transport_Polarization_Vector(double State_Vector[], Initial_conditions_type* const s_Initial_Conditions, double Polarization_Vector[]) {
+
+    Metric_type s_Metric        = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_Vector);
+    Metric_type s_dr_Metric     = s_Initial_Conditions->Spacetimes[e_metric]->get_dr_metric(State_Vector);
+    Metric_type s_dtheta_Metric = s_Initial_Conditions->Spacetimes[e_metric]->get_dtheta_metric(State_Vector);
+
+    double inv_Metric[4][4]{};
+    invert_metric(inv_Metric, s_Metric.Metric);
+    
+    double Connection_Coefficients[4][4][4]{};
+
+    get_connection_coefficients(s_Metric, s_dr_Metric, s_dtheta_Metric, Connection_Coefficients);
+
+    double Polarization_Vector_Derivative[4]{};
+
+  /* ========================== Construct the full CONTRVARIANT photon wave vector ========================== */
+
+    double& J = State_Vector[e_path_log_p_phi];
+
+    double p_t_contravariant     = inv_Metric[e_t_coord][e_t_coord] * 1 + inv_Metric[e_t_coord][e_phi_coord] * J;
+    double p_r_contravariant     = inv_Metric[e_r_coord][e_r_coord] * State_Vector[e_path_log_p_r];
+    double p_theta_contravariant = inv_Metric[e_theta_coord][e_theta_coord] * State_Vector[e_path_log_p_theta];
+    double p_phi_contravariant   = inv_Metric[e_phi_coord][e_phi_coord] * J + inv_Metric[e_phi_coord][e_t_coord] * 1;
+
+    double photon_wave_vector[4] = {p_t_contravariant, p_r_contravariant, p_theta_contravariant, p_phi_contravariant};
+
+  /* ========================== Compute the derivative of the polarization vector from the parallel transport ========================== */
+
+    for (int derivative_index = 0; derivative_index <= STOKES_PARAM_NUM - 1; derivative_index++) {
+
+        for (int polarization_index = 0; polarization_index <= STOKES_PARAM_NUM - 1; polarization_index++) {
+
+            for (int wave_vector_index = 0; wave_vector_index <= STOKES_PARAM_NUM - 1; wave_vector_index++) {
+
+                Polarization_Vector_Derivative[derivative_index] = -Connection_Coefficients[derivative_index][wave_vector_index][polarization_index] * photon_wave_vector[wave_vector_index] * Polarization_Vector[polarization_index];
+
+            }
+
+        }
+
+    }
+
+
+
+}
+
+void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditions, Results_type* const s_Ray_results, int* const N_theta_turning_points) {
 
     int const Max_theta_turning_points = *N_theta_turning_points;
     *N_theta_turning_points = 0;
@@ -155,20 +201,23 @@ void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditi
     // TODO: Propagate this aswell
     double Optical_Depth{};
 
-    for (int index = log_length; index > 0; index--) {
+    for (int log_index = s_Ray_results->Ray_log_struct.Log_length; log_index >= 0; log_index--) {
 
 
-        /* Pick out the ray position / momenta from the Log, at the given log index */
+      /* ================== Pick out the ray position / momenta from the Log, at the given log index ================== */
 
-        Logged_ray_path[Current] = &(s_Ray_results->Ray_log_struct.Ray_path_log[index * e_path_log_number]);
-        Logged_ray_path[Next]    = &(s_Ray_results->Ray_log_struct.Ray_path_log[(index - 1) * e_path_log_number]);
+        Logged_ray_path[Current] = &(s_Ray_results->Ray_log_struct.Ray_path_log[log_index * e_path_log_number]);
+
+        if (log_index > 0) {
+
+            Logged_ray_path[Next] = &(s_Ray_results->Ray_log_struct.Ray_path_log[(log_index - 1) * e_path_log_number]);
+            *N_theta_turning_points += Increment_theta_turning_points(Logged_ray_path[Current], Logged_ray_path[Next]);
+
+        }
 
         double step = Logged_ray_path[Current][e_path_log_step] * MASS_TO_CM;
 
-        *N_theta_turning_points += Increment_theta_turning_points(Logged_ray_path[Current], Logged_ray_path[Next]);
-
         /* Reset the bitmask that checks weather the metric was calculated this step */
-
         s_Initial_Conditions->Spacetimes[e_metric]->set_ignore_flag(true);
 
         double* U_source_coord = s_Initial_Conditions->OTT_model->get_disk_velocity(Logged_ray_path[Current], s_Initial_Conditions);
@@ -177,7 +226,7 @@ void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditi
         double emission_functions[STOKES_PARAM_NUM]{}, faradey_functions[STOKES_PARAM_NUM]{}, absorbtion_functions[STOKES_PARAM_NUM]{};
         s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Current], s_Initial_Conditions, emission_functions, faradey_functions, absorbtion_functions);
 
-        /* ======== Doppler correct the emission functions ======== */
+      /* ========== Doppler correct the transfer functions ========== */
 
         for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
 
@@ -187,13 +236,19 @@ void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditi
 
         }
 
-       /* ===================================== Propagate the radiative fransfer equations ===================================== */
+      /* ======================================== Propagate the radiative transfer equations ======================================== */
 
         Propagate_Stokes_vector(Implicit_Trapezoid, emission_functions, absorbtion_functions, faradey_functions, step, Stokes_Vector);
 
-       /* ====================================================================================================================== */
+      /* ============================================================================================================================ */
 
-        log_ray_emission(Stokes_Vector, Optical_Depth, s_Ray_results, index);
+        if (Stokes_Vector[I] != Stokes_Vector[I]) {
+
+            int test{};
+
+        }
+
+        log_ray_emission(Stokes_Vector, Optical_Depth, s_Ray_results, log_index);
 
         Seperate_Image_into_orders(Max_theta_turning_points, *N_theta_turning_points, s_Initial_Conditions, s_Ray_results, Stokes_Vector);
 
@@ -203,7 +258,7 @@ void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditi
 
 Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
-    /*************************************************************************************************
+    /* ===============================================================================================
     |                                                                                                |
     |   @ Description: Propagates one light ray, specified by the struct "s_Initial_Conditions",     |
     |     and stores the results in the "s_Ray_results" struct                                       |
@@ -214,7 +269,7 @@ Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
     |                                                                                                |
     |   @ Ouput: None                                                                                |
     |                                                                                                |
-    *************************************************************************************************/
+    ================================================================================================ */
 
     double& r_obs     = s_Initial_Conditions->init_Pos[e_r];
     double& theta_obs = s_Initial_Conditions->init_Pos[e_theta];
@@ -247,7 +302,7 @@ Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
     s_Ray_results.Parameters[BH_w_Dark_Matter]  = M_HALO / A_0;
 
     // Initialize the State Vector
-    double State_vector[] = {r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0, 0., 0.};
+    double State_vector[] = {r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0};
 
     // Initialize a vector that stores the old state
     double Old_state[e_State_Number]{};
@@ -259,8 +314,8 @@ Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
     }
 
-    // Initialize counters for the Number Of Integration Steps, the Image Order and the Number Of Equator Crossings
-    int integration_count{}, Image_Order{}, N_theta_turning_points{};
+    // Initialize counters for the Number Of Integration Steps and the Number Of Turning points of the Polar Coordinate
+    int integration_count{}, N_theta_turning_points{};
 
     // Calculate the image coordinates from the initial conditions
     get_impact_parameters(s_Initial_Conditions, s_Ray_results.Image_Coords);
@@ -290,7 +345,7 @@ Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
                 
             }
 
-            // Evaluate logical flags for terminating the integration
+           /* ============= Evaluate logical flags for terminating the integration ============= */
 
             if (controller.integration_complete || integration_count >= MAX_INTEGRATION_COUNT) { 
 
@@ -302,7 +357,11 @@ Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
                 s_Ray_results.Ray_log_struct.Log_length = integration_count;
 
-                Propagate_forward_emission(s_Initial_Conditions, &s_Ray_results, &N_theta_turning_points, s_Ray_results.Ray_log_struct.Log_length);
+              /* =========== Integrate the radiative transfer equations forward along the ray =========== */
+
+                Propagate_forward_emission(s_Initial_Conditions, &s_Ray_results, &N_theta_turning_points);
+
+              /* ======================================================================================== */
 
                 integration_count = 0;
 

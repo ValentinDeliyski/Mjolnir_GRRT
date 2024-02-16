@@ -47,7 +47,13 @@
     <ClCompile Include="src\Rendering_Engine.cpp" />
     <ClCompile Include="src\RK45.cpp" />
     <ClCompile Include="src\Sim_Modes.cpp" />
-    <ClCompile Include="src\Spacetimes.cpp" />
+    <ClCompile Include="src\Spacetimes\Black_Hole_With_Dark_Matter.cpp" />
+    <ClCompile Include="src\Spacetimes\Gauss_Bonnet.cpp" />
+    <ClCompile Include="src\Spacetimes\Janis_Newman_Winicour.cpp" />
+    <ClCompile Include="src\Spacetimes\Kerr.cpp" />
+    <ClCompile Include="src\Spacetimes\Observer.cpp" />
+    <ClCompile Include="src\Spacetimes\Regular_Black_Hole.cpp" />
+    <ClCompile Include="src\Spacetimes\Wormhole.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Libraries\shaders\default.frag" />

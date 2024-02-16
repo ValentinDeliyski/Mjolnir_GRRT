@@ -224,9 +224,9 @@ static void Get_radiative_transfer_matrix(double const absorbtion_functions[STOK
         for (int colum_idx = 0; colum_idx <= STOKES_PARAM_NUM - 1; colum_idx++) {
 
             Transfer_Operator[row_idx][colum_idx] = M_1_scale_factor * M_1[row_idx][colum_idx] +
-                M_2_scale_factor * M_2[row_idx][colum_idx] +
-                M_3_scale_factor * M_3[row_idx][colum_idx] +
-                M_4_scale_factor * M_4[row_idx][colum_idx];
+                                                    M_2_scale_factor * M_2[row_idx][colum_idx] +
+                                                    M_3_scale_factor * M_3[row_idx][colum_idx] +
+                                                    M_4_scale_factor * M_4[row_idx][colum_idx];
 
         }
 

@@ -38,9 +38,7 @@
         e_p_phi = 3,
         e_p_theta = 4,
         e_p_r = 5,
-        e_Intensity = 6,
-        e_Optical_Depth = 7,
-        e_State_Number = 8
+        e_State_Number = 6
 
     };
 
@@ -135,6 +133,15 @@
 
         Analytic = 0,
         Implicit_Trapezoid = 1
+
+    };
+
+    enum Metric_Evaluation_Bitmask {
+
+        Metric = 0,
+        dr_Metric = 1,
+        dtheta_Metric = 2,
+        d2r_Metric = 3,
 
     };
 

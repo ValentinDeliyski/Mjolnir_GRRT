@@ -187,10 +187,9 @@ class Sim_Visualizer():
             # I first convert the specific intensity to brightness temperature, so I can make a colorbar
             
             # Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
-            Image_norm   = max(Data_to_plot.flatten())
-            Image_min_norm   = min(Data_to_plot.flatten())
+            Image_norm   = max(np.abs(Data_to_plot.flatten()))
 
-            Sim_subplot = Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'seismic', extent = axes_limits, vmin = Image_min_norm, vmax = Image_norm)
+            Sim_subplot = Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'seismic', extent = axes_limits, vmin = -Image_norm, vmax = Image_norm)
 
             colorbar = Main_Figure.colorbar(Sim_subplot, ax = Subplot, fraction=0.046, pad=0.04)
             colorbar.set_label(r"Brightness Temperature [$10^9$K]", fontsize = self.Font_size, labelpad = self.Label_Pad)
@@ -887,7 +886,7 @@ if __name__ == "__main__":
     plt.rcParams['axes.titlepad'] = 20
 
     EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Gauss_Bonnet"
+    Sim_path            = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Wormhole"
     Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
     Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
@@ -900,7 +899,7 @@ if __name__ == "__main__":
 
     Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
                                        Save_Figures = False, 
-                                       Stokes_component = "I",
+                                       Stokes_component = "Q",
                                        Custom_fig_title = r"Kerr ($\text{a} = 0.9$)")    
     
     # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      

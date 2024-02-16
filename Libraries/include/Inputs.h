@@ -13,7 +13,7 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
+    const Spacetime_enums e_metric = Wormhole; // Spacetime to be used
 
     Real MASS = 1.0f;
     Real SPIN = 0.99f;
@@ -47,9 +47,9 @@
     // ======================== Observer Inputs ======================== //
 
     Real r_obs	   = 1e4;			     // Radial potision of the observer [ M ]
-    Real theta_obs = 160.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real theta_obs = 75.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			     // Azimuthal angle of the observer ( not used ) [ Rad ]
-    Real obs_cam_rotation_angle = -70.0f / 180 * M_PI - M_PI_4; /*-70.0f / 180 * M_PI - M_PI_4;*/
+    Real obs_cam_rotation_angle = 0.0; /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
@@ -86,12 +86,13 @@
     // Exact Synchotron emission parameters //
     
     Real DISK_MAGNETIZATION    = 0.01;
-    Real MAG_FIELD_GEOMETRY[3] = { 1, 0, 0 }; // Unused for now
+    Real MAG_FIELD_GEOMETRY[3] = { 0.5, 0.5, 0.87 }; // Unused for now
     
     Real N_ELECTRON_EXACT_CGS = 5e+05;
     Real T_ELECTRON_EXACT_CGS = 5.9e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
+    const bool AVERAGE_EMISSION_PITCH_ANGLE = false;
 
     // Hotspot paramteres //
 
@@ -113,7 +114,7 @@
     Real H_angle_min = -atan(15 / r_obs);
     Real H_angle_max =  atan(15 / r_obs);
 
-    const int RESOLUTION = 1024;                             // Linear size of the square pixel grid that makes up the image
+    const int RESOLUTION = 1024;                  // Linear size of the square pixel grid that makes up the image
     const int NUM_RAYS = RESOLUTION * RESOLUTION; // The size of the buffer to store the texture
 
     Real Scan_Step = (H_angle_max - H_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons
