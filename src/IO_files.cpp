@@ -8,8 +8,7 @@
 #include "Spacetimes.h"
 #include <iostream>
 
-extern Spacetime_Base_Class* Spacetimes[];
-extern Optically_Thin_Toroidal_Model OTT_Model;
+extern Initial_conditions_type s_Initial_Conditions;
 
 File_manager_class::File_manager_class(std::string input_file_path, bool truncate) {
 
@@ -78,12 +77,12 @@ void File_manager_class::write_simulation_metadata() {
 
             if (R_Cutoff < 0) {
 
-                Image_Output_files[Image_order] << Spacetimes[e_metric]->get_ISCO()[Outer] << "\n";
+                Image_Output_files[Image_order] << s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Outer] << "\n";
 
             }
             else if (R_Cutoff == NULL) {
 
-                Image_Output_files[Image_order] << Spacetimes[e_metric]->get_ISCO()[Inner] << "\n";
+                Image_Output_files[Image_order] << s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Inner] << "\n";
 
             }
             else {
@@ -173,7 +172,7 @@ void File_manager_class::write_simulation_metadata() {
         Image_Output_files[Image_order] << "------------------------------------------------------- Novikov-Thorne Disk Metadata -------------------------------------------------------"
                                         << "\n"
                                         << "Inner Disk Radius [M]: "
-                                        << r_in * (r_in != NULL) + Spacetimes[e_metric]->get_ISCO()[Inner] * (r_in == NULL)
+                                        << r_in * (r_in != NULL) + s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Inner] * (r_in == NULL)
                                         << "\n"
                                         << "Outer Disk Radius [M]: "
                                         << r_out
@@ -313,10 +312,10 @@ void File_manager_class::open_image_output_files() {
         if (Active_Sim_Mode == 3) {
 
             Image_file_names[File_Index] = Image_File_Names[e_metric]
-                + "_n"
-                + std::to_string(File_Index)
-                + "_"
-                + std::to_string(0.0 * 10);
+                                         + "_frame_"
+                                         + std::to_string(int(s_Initial_Conditions.OTT_model->get_disk_params().Hotspot_position[e_phi] * HOTSPOT_ANIMATION_NUMBER / (2 * M_PI)))
+                                         + "_n"
+                                         + std::to_string(File_Index);
 
             Image_file_names[File_Index].replace_extension(file_extention);
             Image_full_path[File_Index] = dir / "Hotspot_animation_frames" / Image_file_names[File_Index];

@@ -80,6 +80,8 @@
             double  get_disk_density_profile(double State_vector[]);
             double  get_disk_hotspot(double State_Vector[]);
 
+            void update_hotspot_position(int simulation_frame);
+
             double get_magnetic_field(double B_field[3], double State_vector[]);
 
             void get_synchotron_transfer_functions(double State_vector[],

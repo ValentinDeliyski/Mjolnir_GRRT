@@ -7,8 +7,8 @@
     #include "Inputs.h"
     #include <string>
 
-    const int RK45_size			    = 7;   // Number of integration sub-steps
-    const int MAX_INTEGRATION_COUNT = 5e6; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
+    const int RK45_size			    = 7;       // Number of integration sub-steps
+    const int MAX_INTEGRATION_COUNT = 5000000; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
     Real Coeff_deriv[RK45_size][RK45_size - 1] =
     {
@@ -75,7 +75,7 @@
     
     */
 
-    const auto vert_shader_path = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Libraries\\shaders\\default.vert";
-    const auto frag_shader_path = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Libraries\\shaders\\default.frag";
+    const auto vert_shader_path = ".\\Libraries\\shaders\\default.vert";
+    const auto frag_shader_path = ".\\Libraries\\shaders\\default.frag";
 
 #endif

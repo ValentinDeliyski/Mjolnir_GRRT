@@ -84,8 +84,8 @@
 
     enum Return_Values {
 
-        OK    = 0,
-        ERROR = 255
+        OK    =  0,
+        ERROR = -1
 
     };
 
@@ -132,7 +132,8 @@
     enum Radiative_Transfer_Integrator {
 
         Analytic = 0,
-        Implicit_Trapezoid = 1
+        Implicit_Trapezoid = 1,
+        RK4 = 2
 
     };
 

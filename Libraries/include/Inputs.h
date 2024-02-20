@@ -13,7 +13,7 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Wormhole; // Spacetime to be used
+    const Spacetime_enums e_metric = Kerr; // Spacetime to be used
 
     Real MASS = 1.0f;
     Real SPIN = 0.99f;
@@ -46,10 +46,10 @@
 
     // ======================== Observer Inputs ======================== //
 
-    Real r_obs	   = 1e4;			     // Radial potision of the observer [ M ]
-    Real theta_obs = 75.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
-    Real phi_obs   = 0.0f;			     // Azimuthal angle of the observer ( not used ) [ Rad ]
-    Real obs_cam_rotation_angle = 0.0; /*-70.0f / 180 * M_PI - M_PI_4;*/
+    Real r_obs	   = 1e4;			    // Radial potision of the observer [ M ]
+    Real theta_obs = 160.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real phi_obs   = 0.0f;			    // Azimuthal angle of the observer ( not used ) [ Rad ]
+    Real obs_cam_rotation_angle = -70.0f / 180 * M_PI - M_PI_4;  /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
@@ -86,10 +86,10 @@
     // Exact Synchotron emission parameters //
     
     Real DISK_MAGNETIZATION    = 0.01;
-    Real MAG_FIELD_GEOMETRY[3] = { 0.5, 0.5, 0.87 }; // Unused for now
+    Real MAG_FIELD_GEOMETRY[3] = { 1,1, 1 };
     
     Real N_ELECTRON_EXACT_CGS = 5e+05;
-    Real T_ELECTRON_EXACT_CGS = 5.9e+10;
+    Real T_ELECTRON_EXACT_CGS = 7.2e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
     const bool AVERAGE_EMISSION_PITCH_ANGLE = false;
@@ -132,8 +132,8 @@
 
     Real INIT_STEPSIZE     = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
     Real INTEGRAL_ACCURACY = 1e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
-    Real RK45_ACCURACY     = 1e-9;  // 1e-9 Seems to be an opitimal tradeoff between accuracy and performace 
+    Real RK45_ACCURACY     = 1e-12;  // 1e-12 Seems to be an opitimal tradeoff between accuracy and performace 
     Real SAFETY_1          = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
-    Real SAFETY_2          = 1e-16; // Near zero positive number used to avoid division by 0 when calculating the integration step
+    Real SAFETY_2          = 1e-20; // Near zero positive number used to avoid division by 0 when calculating the integration step
 
 #endif

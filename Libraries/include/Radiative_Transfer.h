@@ -19,4 +19,10 @@ void Analytic_Radiative_Transfer(double const emission_functions[STOKES_PARAM_NU
                                  double const step,
                                  double Intensity[STOKES_PARAM_NUM]);
 
+void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM],
+                            double const absorbtion_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM],
+                            double const faradey_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM],
+                            double const step,
+                            double Stokes_Vector[STOKES_PARAM_NUM]);
+
 #endif

@@ -10,7 +10,7 @@
 
         Step_controller(double init_stepsize);
 
-        void update_step();
+        void update_step(double State_Vector[]);
 
         double Gain_I;
         double Gain_P;
@@ -27,8 +27,6 @@
         bool integration_complete;
 
     };
-
-    void get_Radiative_Transfer(double State_Vector[], double Derivatives[], Initial_conditions_type* s_Initial_Conditions);
 
     void RK45(double State_Vector[], Step_controller* controller, Initial_conditions_type* s_Initial_Conditions);
 

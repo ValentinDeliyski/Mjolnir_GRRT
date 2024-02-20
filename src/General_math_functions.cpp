@@ -79,25 +79,44 @@ double my_max(double vector[], int element_number) {
 
 	int index_max = element_number - 1;
 
-	for (int index = 0; index <= index_max; index += 1) {
+	double* temp_vec = (double*) calloc(element_number, sizeof(double));
+	double max{};
 
-		if (vector[index] < 0) {
+	if (NULL == temp_vec) {
 
-			vector[index] = -1.0 * vector[index];
-		}
+		// Putting this check here (which should never pass), so I don't get
+		// compiler warning about dereferencing a null pointer
+
+		exit(ERROR);
+
+	}
+	else {
+
+		max = temp_vec[0];
 
 	}
 
-	double max = vector[0];
+	for (int index = 0; index <= index_max; index += 1) {
+
+		temp_vec[index] = vector[index];
+
+		if (temp_vec[index] < 0) {
+
+			temp_vec[index] = -1.0 * temp_vec[index];
+		}
+
+	}
 
 	for (int index = 1; index <= index_max; index += 1) {
 
-		if (vector[index] > max) {
+		if (temp_vec[index] > max) {
 
-			max = vector[index];
+			max = temp_vec[index];
 
 		}
 	}
+
+	free(temp_vec);
 
 	return max;
 }

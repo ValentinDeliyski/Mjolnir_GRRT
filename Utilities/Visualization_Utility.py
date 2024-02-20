@@ -110,9 +110,14 @@ class Sim_Visualizer():
         # I use the same names as that folder for the sim files, which is why it appends "Metric"
         # at the end of self.Ray_tracer_paths
 
-        Metric = Sim_path.split("\\")[-2]
-        if Metric not in ["JNW", "Gauss_Bonnet", "Wormhole"]:
-            Metric = "Kerr"
+        if self.Respect_folder_structure:
+
+            Metric = Sim_path.split("\\")[-2]
+            if Metric not in ["JNW", "Gauss_Bonnet", "Wormhole"]:
+                Metric = "Kerr"
+        else:
+
+            Metric = Sim_path.split("\\")[-1]
 
         if self.Respect_folder_structure:
 
@@ -166,33 +171,47 @@ class Sim_Visualizer():
             
             Subplot_count = 100 * len(Sim_Frequency_Bins)
 
-            Subplot      = Main_Figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 1))
+            Subplot  = Main_Figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 1))
+            Colormap = "seismic"
 
             if Stokes_component == "I":
                 Data_to_plot = I_Intensity_0 + I_Intensity_1 + I_Intensity_2 + I_Intensity_3
+                Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, 
+                                                                self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
+                Cbar_label = r"Brightness Temperature [$10^9$K]"
+                Colormap = "hot"
+
+                Cmap_max = max(np.abs(Data_to_plot.flatten()))
+                Cmap_min = 0
+
             elif Stokes_component == "Q":
                 Data_to_plot = Q_Intensity_0 + Q_Intensity_1 + Q_Intensity_2 + Q_Intensity_3
+                Cbar_label = r"Q Intensity [Jy / sRad]"
+                Cmap_max = max(np.abs(Data_to_plot.flatten())) 
+                Cmap_min = -Cmap_max
+
             elif Stokes_component == "U":
                 Data_to_plot = U_Intensity_0 + U_Intensity_1 + U_Intensity_2 + U_Intensity_3
+                Cbar_label = r"U Intensity [Jy / sRad]"
+                Cmap_max = max(np.abs(Data_to_plot.flatten()))
+                Cmap_min = -Cmap_max
+
             else:
                 Data_to_plot = V_Intensity_0 + V_Intensity_1 + V_Intensity_2 + V_Intensity_3
+                Cbar_label = r"V Intensity [Jy / sRad]"
+                Cmap_max = max(np.abs(Data_to_plot.flatten()))
+                Cmap_min = -Cmap_max
 
             if Export_data_for_Ehtim:
-
                 self.Sim_Parsers[Sim_number][0].export_ehtim_data(Spacetime = self.Sim_Parsers[Sim_number][0].metric, 
                                                                   data = Data_to_plot, 
                                                                   path = Sim_path + Freq_str + "GHz\\Sim_Results\\")
 
             # Create the plot of the Simulated Image
-            # I first convert the specific intensity to brightness temperature, so I can make a colorbar
-            
-            # Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
-            Image_norm   = max(np.abs(Data_to_plot.flatten()))
-
-            Sim_subplot = Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = 'seismic', extent = axes_limits, vmin = -Image_norm, vmax = Image_norm)
+            Sim_subplot = Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = Colormap, extent = axes_limits, vmin = Cmap_min, vmax = Cmap_max)
 
             colorbar = Main_Figure.colorbar(Sim_subplot, ax = Subplot, fraction=0.046, pad=0.04)
-            colorbar.set_label(r"Brightness Temperature [$10^9$K]", fontsize = self.Font_size, labelpad = self.Label_Pad)
+            colorbar.set_label(Cbar_label, fontsize = self.Font_size, labelpad = self.Label_Pad)
             colorbar.ax.tick_params(labelsize = self.Font_size)
 
             Subplot.set_title("Simulated Image at {}GHz".format(int(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9)), fontsize = self.Font_size)
@@ -886,15 +905,15 @@ if __name__ == "__main__":
     plt.rcParams['axes.titlepad'] = 20
 
     EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Wormhole"
+    Sim_path            = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Gauss_Bonnet"
     Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
     Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
                                 Sim_Frequency_Bins = Sim_Frequency_Bins,
                                 Array              = EHT_Array,
                                 Units_class_inst   = Units_class(),
-                                Font_size = 30, 
-                                Label_Pad = 12,
+                                Font_size = 16, 
+                                Label_Pad = 8,
                                 Respect_folder_structure = False)
 
     Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 

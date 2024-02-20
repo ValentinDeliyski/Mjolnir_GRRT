@@ -136,7 +136,7 @@ void Rendering_engine::set_background_pattern_color(double State_vector[], doubl
 
     }
 
-    double grayscale_value = pow((1 + sin(10 * phi) * sin(10 * theta)) / 2, 1.0 / 5);
+    float grayscale_value = pow((1 + sin(10 * phi) * sin(10 * theta)) / 2, 1.0 / 5);
 
 
 

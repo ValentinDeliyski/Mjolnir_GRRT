@@ -284,7 +284,7 @@ int Gauss_Bonnet_class::get_EOM(double State_vector[], double Derivatives[]){
     double r_term_1 = -1. / 2 * (1.0 / f / f + State_vector[e_p_r] * State_vector[e_p_r]) * dr_f;
     double r_term_2 = 1.0 / r / r / r * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
-    Derivatives[e_p_r] = r_term_1 + r_term_2;
+    *(Derivatives + e_p_r) = r_term_1 + r_term_2;
 
     return OK;
 

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="Libraries\include\Console_printing.h" />
     <ClInclude Include="Libraries\include\Radiative_Transfer.h" />
+    <ClInclude Include="Libraries\include\Spacetimes.h" />
     <ClInclude Include="Libraries\include\Structs.h" />
     <ClInclude Include="Libraries\include\Constants.h" />
     <ClInclude Include="Libraries\include\Disk_Models.h" />
@@ -32,7 +33,6 @@
     <ClInclude Include="Libraries\include\Lensing.h" />
     <ClInclude Include="Libraries\include\Rendering_Engine.h" />
     <ClInclude Include="Libraries\include\Sim_Modes.h" />
-    <ClInclude Include="Libraries\include\Spacetimes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Console_printing.cpp" />

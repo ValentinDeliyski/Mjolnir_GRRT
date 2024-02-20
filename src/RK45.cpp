@@ -74,12 +74,18 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
        
     }
 
+    if (State_Vector[e_r] < 10) {
+
+        int test{};
+
+    }
+
     controller->previous_step = controller->step;
 
     controller->sec_prev_err = controller->prev_err;
     controller->prev_err = controller->current_err;
     controller->current_err = my_max(state_error, e_State_Number);
-    controller->update_step();
+    controller->update_step(State_Vector);
 
     if (controller->continue_integration) {
 
@@ -105,16 +111,6 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
                 controller->step /= 2;
 
             }
-
-        }
-
-        // For the Gauss-Bonnet Naked Singularity, certain photons scatter from very close to the singularity.
-        // Generating the correct form of the images produced from those photons requires a finer step.
-        // Otherwise the images look wonky.
-
-        if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2.2) {
-
-            controller->step /= 3;
 
         }
 
@@ -153,13 +149,17 @@ Step_controller::Step_controller(double init_stepsize) {
 
 }
 
-void Step_controller::update_step() {
+void Step_controller::update_step(double State_Vector[]) {
 
-    if (current_err < RK45_ACCURACY )
+    double const Error_threshold = RK45_ACCURACY + RK45_ACCURACY * my_max(State_Vector, e_State_Number);
+
+    if (current_err < Error_threshold)
     {
-        step = pow(RK45_ACCURACY / (current_err  + SAFETY_2), Gain_I) *
-               pow(RK45_ACCURACY / (prev_err     + SAFETY_2), Gain_P) *
-               pow(RK45_ACCURACY / (sec_prev_err + SAFETY_2), Gain_D) * step;
+        step = pow(Error_threshold / (current_err  + SAFETY_2), Gain_I) *
+               pow(Error_threshold / (prev_err     + SAFETY_2), Gain_P) *
+               pow(Error_threshold / (sec_prev_err + SAFETY_2), Gain_D) * step;
+
+        //step = SAFETY_1 * step * pow((RK45_ACCURACY + 1e-10 * State_Vector[e_r]) / (current_err + SAFETY_2), 0.2);
 
         continue_integration = true;
 
@@ -167,7 +167,7 @@ void Step_controller::update_step() {
     else
     {
 
-        step = SAFETY_1 * step * pow(RK45_ACCURACY / (current_err + SAFETY_2), 0.25);
+        step = SAFETY_1 * step * pow(Error_threshold / (current_err + SAFETY_2), 0.25);
 
         continue_integration = false;
 

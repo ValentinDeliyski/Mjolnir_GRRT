@@ -10,13 +10,14 @@
     #include "Rendering_Engine.h"
     #include "Disk_models.h"
     #include "Lensing.h"
+    #include <thread>
     #include "Spacetimes.h"
 
     #include <iostream>
 
     extern File_manager_class File_manager;
 
-    void print_progress(int current, int max, bool lens_from_file) {
+    void static print_progress(int current, int max, bool lens_from_file) {
 
         int current_digits = 1;
 
@@ -59,7 +60,7 @@
 
     }
 
-    void Rendering_function(Rendering_engine* Renderer) {
+    void static Rendering_function(Rendering_engine* Renderer) {
 
         Renderer->OpenGL_init();
         glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);
@@ -76,7 +77,7 @@
 
     }
 
-    void run_simulation_mode_1(Initial_conditions_type* s_Initial_Conditions) {
+    void static Generate_Image(Initial_conditions_type* s_Initial_Conditions, Rendering_engine* Renderer) {
 
         /*
 
@@ -88,16 +89,6 @@
 
         /*
 
-        Initialize the rendering engine (the Renderer instance must be static to not blow up the stack - the texture and intensity buffer are inside of it)
-
-        */
-
-        static Rendering_engine Renderer = Rendering_engine();
-
-        std::jthread GUI_Thread(Rendering_function, &Renderer);
-
-        /*
-
         Loop trough the viewing window
 
         */
@@ -105,7 +96,7 @@
         auto start_time = std::chrono::high_resolution_clock::now();
         int progress = 0;
 
-        std::cout << '\n' << "Simulation starts..." << '\n';
+        std::cout << '\n' << "Generating image..." << '\n';
 
         for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
 
@@ -139,12 +130,12 @@
 
                */
 
-               Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results->Intensity[direct][I] +
+               Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = s_Ray_results->Intensity[direct][I] +
                                                                               s_Ray_results->Intensity[first][I] +
                                                                               s_Ray_results->Intensity[second][I] +
                                                                               s_Ray_results->Intensity[third][I];
 
-               Renderer.texture_indexer += 3;
+               Renderer->texture_indexer += 3;
 
                File_manager.write_image_data_to_file(s_Ray_results);
 
@@ -154,10 +145,34 @@
 
         auto end_time = std::chrono::high_resolution_clock::now();
 
-        std::cout << '\n' << "Simulation finished!";
-        std::cout << '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
+        std::cout << '\n' << "Image Generation Finished!";
+        std::cout << '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time) << "\n";
 
         File_manager.close_image_output_files();
+
+    }
+
+    void run_simulation_mode_1(Initial_conditions_type* s_Initial_Conditions) {
+
+
+        /*
+
+        Initialize the rendering engine (the Renderer instance must be static to not blow up the stack - the texture and intensity buffer are inside of it)
+
+        */
+
+        static Rendering_engine Renderer = Rendering_engine();
+
+        std::jthread GUI_Thread(Rendering_function, &Renderer);
+
+        /*
+        
+        Run the main ray-tracer "kernel"
+        
+        */
+
+        Generate_Image(s_Initial_Conditions, &Renderer);
+
 
     }
 
@@ -230,79 +245,35 @@
         
         */
 
-        std::cout << '\n' << "Simulation starts..." << '\n';
+        std::cout << '\n' << "Simulation Loop Starts..." << '\n';
+        std::cout << "=============================================================================================================================================" << '\n';
 
         for (int hotspot_number = 0; hotspot_number <= HOTSPOT_ANIMATION_NUMBER - 1; hotspot_number++) {
 
-            //s_Initial_Conditions->OTT_model->HOTSPOT_PHI_COORD = double(hotspot_number) / HOTSPOT_ANIMATION_NUMBER * 2 * M_PI;
+            s_Initial_Conditions->OTT_model->update_hotspot_position(hotspot_number);
+
+            Generate_Image(s_Initial_Conditions, &Renderer);
 
             /*
 
-            Create/Open the logging files
+            Zero out the image (but not the last one), so the subsequent run does not draw ontop of the previous
 
             */
 
-            File_manager.open_image_output_files();
+            if (hotspot_number < HOTSPOT_ANIMATION_NUMBER - 1) {
 
-            /*
+                memset(Renderer.texture_buffer, 0, sizeof(Renderer.texture_buffer));
 
-            Loop trough the viewing window
-
-            */
-
-            int progress = 0;
-
-            std::cout << "Hotspot position at: " << hotspot_number << " / 4 PI" << "\n";
-
-            for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
-
-                print_progress(progress, RESOLUTION - 1, false);
-
-                progress += 1;
-
-                for (int H_pixel_num = 0; H_pixel_num <= RESOLUTION - 1; H_pixel_num++) {
-
-                    /*
-
-                    This function polulates the initial momentum inside the s_Initial_Conditions struct
-
-                    */
-
-                    get_intitial_conditions_from_angles(s_Initial_Conditions, V_angle_min + V_pixel_num * Scan_Step,
-                                                        H_angle_max - H_pixel_num * Scan_Step);
-                    /*
-            
-                    Ray propagation happens here
-            
-                    */
-
-                    Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
-
-                    Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = s_Ray_results->Intensity[direct][I] +
-                                                                                   s_Ray_results->Intensity[first][I] +
-                                                                                   s_Ray_results->Intensity[second][I] +
-                                                                                   s_Ray_results->Intensity[third][I];
-                    
-                    Renderer.texture_indexer += 3;
-
-                    File_manager.write_image_data_to_file(s_Ray_results);
-
-                }
-
-               
             }
 
             Renderer.texture_indexer = 0;
-
-            std::cout << "\n";
-
-            File_manager.close_image_output_files();
         }
 
         auto end_time = std::chrono::high_resolution_clock::now();
-
-        std::cout << "Simulation finished!" << '\n';
-        std::cout << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
+                                                                                  
+        std::cout << '\n' << "=============================================================================================================================================" << '\n';
+        std::cout << "Simulation Loop Finished!" << '\n';
+        std::cout << "Total Simulation Loop time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
 
     }
 

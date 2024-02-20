@@ -294,7 +294,7 @@ int Optically_Thin_Toroidal_Model::load_parameters(Disk_model_parameters* p_Disk
 
         std::cout << "p_Disk_Parameters is a NULL pointer! \n";
 
-        return ERROR;
+        exit(ERROR);
     }
 
     if (NULL != p_Emission_Parameters) {
@@ -306,10 +306,16 @@ int Optically_Thin_Toroidal_Model::load_parameters(Disk_model_parameters* p_Disk
 
         std::cout << "p_Emission_Parameters is a NULL pointer! \n";
 
-        return ERROR;
+        exit(ERROR);
     }
 
     return OK;
+
+}
+
+void Optically_Thin_Toroidal_Model::update_hotspot_position(int simulation_frame) {
+
+    this->s_Disk_Parameters.Hotspot_position[e_phi] += 2 * M_PI / HOTSPOT_ANIMATION_NUMBER;
 
 }
 
@@ -352,7 +358,7 @@ double Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]
 
         std::cout << "Invalid Disk Temperature: " << this->Disk_Temperature << "\n";
 
-        return NULL;
+        exit(ERROR);
 
     }
 
@@ -371,11 +377,11 @@ int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[], I
 
     double rho = r_source * sin(theta_source);
 
-    if (rho < 0.0) {
+    //if (rho < 0.0) {
 
-        rho *= -1.0;
+    //    rho *= -1.0;
 
-    }
+    //}
 
     double sqrt_rho = sqrt(rho);
     double ell = sqrt_rho * sqrt_rho * sqrt_rho / (1 + rho);
@@ -395,20 +401,25 @@ int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[], I
     u_t = -1.0 / sqrt(-(inv_metric[0][0] - 2 * inv_metric[0][3] * ell + inv_metric[3][3] * ell * ell));
     u_phi = -u_t * ell;
 
-    if (isnan(u_t) || isinf(u_t)) {
+    /*
+    * 
+    Convert U_source to contravariant components
+
+    */
+
+    this->Disk_velocity[e_t_coord]     = inv_metric[0][0] * u_t + inv_metric[0][3] * u_phi;
+    this->Disk_velocity[e_r_coord]     = 0.0;
+    this->Disk_velocity[e_theta_coord] = 0.0;
+    this->Disk_velocity[e_phi_coord]   = inv_metric[3][3] * u_phi + inv_metric[3][0] * u_t;
+
+    if (isnan(this->Disk_velocity[e_t_coord])   || 
+        isinf(this->Disk_velocity[e_t_coord])   || 
+        isnan(this->Disk_velocity[e_phi_coord]) ||
+        isinf(this->Disk_velocity[e_phi_coord])) {
 
         return ERROR;
 
     }
-
-    /*
-    Convert U_source to contravariant components
-    */
-
-    this->Disk_velocity[0] = inv_metric[0][0] * u_t + inv_metric[0][3] * u_phi;
-    this->Disk_velocity[1] = 0;
-    this->Disk_velocity[2] = 0;
-    this->Disk_velocity[3] = inv_metric[3][3] * u_phi + inv_metric[3][0] * u_t;
 
     return OK;
 
@@ -431,9 +442,7 @@ double* Optically_Thin_Toroidal_Model::get_disk_velocity(double State_vector[], 
             << this->Disk_velocity[e_phi_coord]
             << "]\n";
 
-        /* This should make the code explode I believe... */
-
-        return NULL;
+        exit(ERROR);
 
     }
 
@@ -445,9 +454,9 @@ double* Optically_Thin_Toroidal_Model::get_disk_velocity(double State_vector[], 
 
 int Optically_Thin_Toroidal_Model::update_disk_hotspot(double State_Vector[]) {
 
-    double& Hotspot_r = this->s_Disk_Parameters.Hotspot_position[e_r];
+    double& Hotspot_r     = this->s_Disk_Parameters.Hotspot_position[e_r];
     double& Hotspot_theta = this->s_Disk_Parameters.Hotspot_position[e_theta];
-    double& Hotspot_phi = this->s_Disk_Parameters.Hotspot_position[e_phi];
+    double& Hotspot_phi   = this->s_Disk_Parameters.Hotspot_position[e_phi];
 
     double x_center = Hotspot_r * sin(Hotspot_theta) * cos(Hotspot_phi);
     double y_center = Hotspot_r * sin(Hotspot_theta) * sin(Hotspot_phi);
@@ -466,7 +475,9 @@ int Optically_Thin_Toroidal_Model::update_disk_hotspot(double State_Vector[]) {
 
     this->Disk_hotspot_density = hotspot_density;
 
-    if (Disk_hotspot_density < 0) {
+    if (isnan(Disk_hotspot_density) || 
+        isinf(Disk_hotspot_density) || 
+        Disk_hotspot_density < 0) {
 
         return ERROR;
 
@@ -489,7 +500,7 @@ double Optically_Thin_Toroidal_Model::get_disk_hotspot(double State_Vector[]) {
 
         std::cout << "Invalid Hotspot density: " << this->Disk_hotspot_density << "\n";
 
-        return ERROR;
+        exit(ERROR);
 
     }
 
@@ -564,7 +575,7 @@ double Optically_Thin_Toroidal_Model::get_disk_density_profile(double State_Vect
 
     if (ERROR == result) {
 
-        return ERROR;
+        exit(ERROR);
 
     }
 
@@ -808,35 +819,37 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
     /* The "averaged" critical frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
     double f_crit_no_sin = 3. / 2 * f_cyclo * T_electron_dim * T_electron_dim;
 
-    Emission_functions_arguments Arguments{};
+    Emission_functions_arguments Arguments_angle_uncorrected{};
 
     /* Both the emission and faradey function expressions are in terms of an dimentionless variable X, but the definitions for X are different */
-    Arguments.X_emission = 1e100;
-    Arguments.X_faradey  = 1e100;
+    Arguments_angle_uncorrected.X_emission = 1e100;
+    Arguments_angle_uncorrected.X_faradey  = 1e100;
 
     if (f_crit_no_sin > std::numeric_limits<double>::min()) {
 
-        Arguments.X_emission = OBS_FREQUENCY_CGS / f_crit_no_sin / redshift;
-        Arguments.X_faradey = T_electron_dim * sqrt(M_SQRT2 * 1e3 * f_cyclo / (OBS_FREQUENCY_CGS / redshift));
+        Arguments_angle_uncorrected.X_emission = OBS_FREQUENCY_CGS / f_crit_no_sin / redshift;
+        Arguments_angle_uncorrected.X_faradey = T_electron_dim * sqrt(M_SQRT2 * 1e3 * f_cyclo / (OBS_FREQUENCY_CGS / redshift));
 
     }
-
-    /* ==========================  Compute all the weird powers of X outside the averaging loop ========================== */
-
-    Arguments.X_1_2_emission = sqrt(Arguments.X_emission);
-    Arguments.X_1_3_emission = cbrt(Arguments.X_emission);
-
-    Arguments.X_to_1_point_2_faradey   = pow(Arguments.X_faradey, 1.2);
-    Arguments.X_to_1_point_035_faradey = pow(Arguments.X_faradey, 1.035f);
-
-    /* =================================================================================================================== */
 
     /* All the functions are normalized by a Bessel function, so I check if I can divide by it */
     if (!isinf(1e10 / K2_Bessel)) {
 
+       /* == Compute all the weird powers of X outside the averaging loop == */
+
+        Arguments_angle_uncorrected.X_1_2_emission = sqrt(Arguments_angle_uncorrected.X_emission);
+        Arguments_angle_uncorrected.X_1_3_emission = cbrt(Arguments_angle_uncorrected.X_emission);
+
+        Arguments_angle_uncorrected.X_to_1_point_2_faradey = pow(Arguments_angle_uncorrected.X_faradey, 1.2);
+        Arguments_angle_uncorrected.X_to_1_point_035_faradey = pow(Arguments_angle_uncorrected.X_faradey, 1.035f);
+
+       /* ================================================================== */
+
         if (AVERAGE_EMISSION_PITCH_ANGLE) {
 
             for (int averaging_idx = 0; averaging_idx <= NUM_SAMPLES_TO_AVG - 1; averaging_idx++) {
+
+                Emission_functions_arguments Arguments_angle_corrected{};
 
                 double sin_pitch_angle = this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[averaging_idx];
                 double cos_pitch_angle = this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[averaging_idx];
@@ -844,15 +857,15 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
                 double temp_emission_functions[STOKES_PARAM_NUM]{};
                 double temp_faradey_functions[STOKES_PARAM_NUM]{};
 
-                Arguments.X_emission     /= sin_pitch_angle;
-                Arguments.X_1_2_emission *= this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
-                Arguments.X_1_3_emission *= this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
+                Arguments_angle_corrected.X_emission     = Arguments_angle_uncorrected.X_emission / sin_pitch_angle;
+                Arguments_angle_corrected.X_1_2_emission = Arguments_angle_uncorrected.X_1_2_emission * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
+                Arguments_angle_corrected.X_1_3_emission = Arguments_angle_uncorrected.X_1_3_emission * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
 
-                Arguments.X_faradey                /= this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
-                Arguments.X_to_1_point_035_faradey /= this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[averaging_idx];
-                Arguments.X_to_1_point_2_faradey   /= this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[averaging_idx];
+                Arguments_angle_corrected.X_faradey                = Arguments_angle_corrected.X_faradey / this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
+                Arguments_angle_corrected.X_to_1_point_035_faradey = Arguments_angle_corrected.X_to_1_point_035_faradey / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[averaging_idx];
+                Arguments_angle_corrected.X_to_1_point_2_faradey   = Arguments_angle_corrected.X_to_1_point_2_faradey /  this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[averaging_idx];
 
-                this->get_transfer_fit_functions(temp_emission_functions, temp_faradey_functions, &Arguments);
+                this->get_transfer_fit_functions(temp_emission_functions, temp_faradey_functions, &Arguments_angle_corrected);
 
                 /* ================================================ The emission functions ================================================ */
 
@@ -861,8 +874,8 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
 
                 temp_emission_functions[Q] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / K2_Bessel; // Scale the emission by the remaining position-dependant factors
                 temp_emission_functions[Q] *= sin_pitch_angle * M_PI / NUM_SAMPLES_TO_AVG / 2;                  // Scale by the factors coming form averaging over all emission orientations
-
-                if (!isnan(1.0 / sin_pitch_angle)) {
+                 
+                if (!isinf(1e2 / sin_pitch_angle)) {
 
                     temp_emission_functions[V] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / K2_Bessel; // Scale the emission by the remaining position-dependant factors
                     temp_emission_functions[V] *= (1. / T_electron_dim) * cos_pitch_angle / sin_pitch_angle;        // The V component has some extra angle dependance
@@ -877,7 +890,6 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
 
                 /* ================================================ The faradey functions ================================================ */
                 /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33 */
-
 
                 double const omega_plasma_squared = 4 * M_PI * electron_density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / M_ELECTRON_CGS;
 
@@ -907,27 +919,17 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
             double one_over_sqrt_sin = 1.0 / sqrt(sin_pitch_angle);
             double one_over_cbrt_sin = 1.0 / cbrt(sin_pitch_angle);
 
-            Arguments.X_emission /= sin_pitch_angle;
-            Arguments.X_1_2_emission *= one_over_sqrt_sin;
-            Arguments.X_1_3_emission *= one_over_cbrt_sin;
+            Emission_functions_arguments Arguments_angle_corrected{};
 
-            if (Arguments.X_emission != Arguments.X_emission) {
+            Arguments_angle_corrected.X_emission     = Arguments_angle_uncorrected.X_emission / sin_pitch_angle;
+            Arguments_angle_corrected.X_1_2_emission = Arguments_angle_uncorrected.X_1_2_emission * one_over_sqrt_sin;
+            Arguments_angle_corrected.X_1_3_emission = Arguments_angle_uncorrected.X_1_3_emission * one_over_cbrt_sin;
 
-                int test{};
+            Arguments_angle_corrected.X_faradey                = Arguments_angle_uncorrected.X_faradey / one_over_sqrt_sin;
+            Arguments_angle_corrected.X_to_1_point_035_faradey = Arguments_angle_uncorrected.X_to_1_point_035_faradey * pow(sin_pitch_angle, 1.035);
+            Arguments_angle_corrected.X_to_1_point_2_faradey   = Arguments_angle_uncorrected.X_to_1_point_2_faradey * pow(sin_pitch_angle, 1.2);
 
-            }
-
-            Arguments.X_faradey /= one_over_sqrt_sin;
-            Arguments.X_to_1_point_035_faradey /= 1.0 / pow(sin_pitch_angle, 1.035);
-            Arguments.X_to_1_point_2_faradey   /= 1.0 / pow(sin_pitch_angle, 1.2);
-
-            this->get_transfer_fit_functions(Emission_fucntions, Faradey_functions, &Arguments);
-
-            if (Emission_fucntions[I] != Emission_fucntions[I]) {
-
-                int test{};
-
-            }
+            this->get_transfer_fit_functions(Emission_fucntions, Faradey_functions, &Arguments_angle_corrected);
 
             /* ================================================ The emission functions ================================================ */
 
@@ -958,15 +960,8 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
             Faradey_functions[V] *= omega_plasma_squared * (2 * M_PI * f_cyclo) * cos_pitch_angle * (K0_Bessel) / K2_Bessel;
             Faradey_functions[V] /= C_LIGHT_CGS * (2 * M_PI * OBS_FREQUENCY_CGS / redshift) * (2 * M_PI * OBS_FREQUENCY_CGS / redshift);
 
-            if (Emission_fucntions[I] != Emission_fucntions[I]) {
-
-                int test{};
-
-            }
-
 
         }
-
 
     }
 

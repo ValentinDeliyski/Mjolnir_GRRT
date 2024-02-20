@@ -79,6 +79,8 @@ Initialize the file manager
 
 File_manager_class File_manager(input_file_path, Truncate_files);
 
+Initial_conditions_type s_Initial_Conditions{};
+
 int main() {
 
     /*
@@ -91,7 +93,7 @@ int main() {
 
     OTT_Model.precompute_electron_pitch_angles();
 
-    Disk_model_parameters Disk_params{ { HOTSPOT_R_COORD, 0.0, 0.0 },
+    Disk_model_parameters Disk_params{ { HOTSPOT_R_COORD, M_PI_2, 0.0 },
                                          HOTSPOT_SCALE,
                                          HOTSPOT_REL_SCALE,
                                          N_ELECTRON_EXACT_CGS,
@@ -119,7 +121,6 @@ int main() {
 
     Novikov_Thorne_Model NT_Model(r_in, r_out, Spacetimes);
 
-
     if (ERROR != result) {
 
         Console_Printer_class Console_Printer;
@@ -132,7 +133,6 @@ int main() {
 
         */
 
-        Initial_conditions_type s_Initial_Conditions{};
         s_Initial_Conditions.init_Pos[e_r]     = r_obs;
         s_Initial_Conditions.init_Pos[e_theta] = theta_obs;
         s_Initial_Conditions.init_Pos[e_phi]   = phi_obs;

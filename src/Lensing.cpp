@@ -15,7 +15,7 @@
 #include "Lensing.h"
 #include <iostream>
 
-void log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Step_controller Controller){
+void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Step_controller Controller){
 
     int &log_offset = s_Ray_Results->Ray_log_struct.Log_offset;
 
@@ -43,7 +43,7 @@ void log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Step_contr
 
 }
 
-void log_ray_emission(double Stokes_Vector[STOKES_PARAM_NUM], double Optical_depth, Results_type* s_Ray_Results, int log_index) {
+void static log_ray_emission(double Stokes_Vector[STOKES_PARAM_NUM], double Optical_depth, Results_type* s_Ray_Results, int log_index) {
     
     for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
 
@@ -53,7 +53,7 @@ void log_ray_emission(double Stokes_Vector[STOKES_PARAM_NUM], double Optical_dep
 
 }
 
-void Evaluate_Novikov_Thorne_disk(Initial_conditions_type* const s_Initial_Conditions,
+void static Evaluate_Novikov_Thorne_disk(Initial_conditions_type* const s_Initial_Conditions,
                                   Results_type* const s_Ray_results,
                                   double State_vector[],
                                   double Old_state[], 
@@ -89,7 +89,7 @@ void Evaluate_Novikov_Thorne_disk(Initial_conditions_type* const s_Initial_Condi
 
 }
 
-void Seperate_Image_into_orders(int const Max_theta_turning_points, 
+void static Seperate_Image_into_orders(int const Max_theta_turning_points, 
                                 int const N_theta_turning_points,
                                 Initial_conditions_type* const s_Initial_Conditions, 
                                 Results_type* const p_Ray_results,
@@ -111,10 +111,10 @@ void Seperate_Image_into_orders(int const Max_theta_turning_points,
 
 }
 
-void Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
-                             double const emission_functions[STOKES_PARAM_NUM], 
-                             double const absorbtion_functions[STOKES_PARAM_NUM],
-                             double const faradey_functions[STOKES_PARAM_NUM], 
+void static Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
+                             double const emission_functions[2][STOKES_PARAM_NUM], 
+                             double const absorbtion_functions[2][STOKES_PARAM_NUM],
+                             double const faradey_functions[2][STOKES_PARAM_NUM], 
                              double const step, 
                              double Intensity[STOKES_PARAM_NUM]) {
 
@@ -122,13 +122,19 @@ void Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
 
     case Analytic:
 
-        Analytic_Radiative_Transfer(emission_functions, absorbtion_functions, faradey_functions, step, Intensity);
+        Analytic_Radiative_Transfer(emission_functions[Current], absorbtion_functions[Current], faradey_functions[Current], step, Intensity);
 
         break;
 
     case Implicit_Trapezoid:
 
-        Implicit_Trapezoid_Radiative_Transfer(emission_functions, absorbtion_functions, faradey_functions, step, Intensity);
+        Implicit_Trapezoid_Radiative_Transfer(emission_functions[Current], absorbtion_functions[Current], faradey_functions[Current], step, Intensity);
+
+        break;
+
+    case RK4:
+
+        RK4_Radiative_Transfer(emission_functions, absorbtion_functions, faradey_functions, step, Intensity);
 
         break;
 
@@ -142,7 +148,7 @@ void Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
 
 }
 
-void Parallel_Transport_Polarization_Vector(double State_Vector[], Initial_conditions_type* const s_Initial_Conditions, double Polarization_Vector[]) {
+void static Parallel_Transport_Polarization_Vector(double State_Vector[], Initial_conditions_type* const s_Initial_Conditions, double Polarization_Vector[]) {
 
     Metric_type s_Metric        = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_Vector);
     Metric_type s_dr_Metric     = s_Initial_Conditions->Spacetimes[e_metric]->get_dr_metric(State_Vector);
@@ -188,7 +194,7 @@ void Parallel_Transport_Polarization_Vector(double State_Vector[], Initial_condi
 
 }
 
-void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditions, Results_type* const s_Ray_results, int* const N_theta_turning_points) {
+void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditions, Results_type* const s_Ray_results, int* const N_theta_turning_points) {
 
     int const Max_theta_turning_points = *N_theta_turning_points;
     *N_theta_turning_points = 0;
@@ -201,7 +207,7 @@ void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditi
     // TODO: Propagate this aswell
     double Optical_Depth{};
 
-    for (int log_index = s_Ray_results->Ray_log_struct.Log_length; log_index >= 0; log_index--) {
+    for (int log_index = s_Ray_results->Ray_log_struct.Log_length; log_index > 0; log_index--) {
 
 
       /* ================== Pick out the ray position / momenta from the Log, at the given log index ================== */
@@ -223,23 +229,14 @@ void Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditi
         double* U_source_coord = s_Initial_Conditions->OTT_model->get_disk_velocity(Logged_ray_path[Current], s_Initial_Conditions);
         double redshift = Redshift(Logged_ray_path[Current], U_source_coord);
 
-        double emission_functions[STOKES_PARAM_NUM]{}, faradey_functions[STOKES_PARAM_NUM]{}, absorbtion_functions[STOKES_PARAM_NUM]{};
-        s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Current], s_Initial_Conditions, emission_functions, faradey_functions, absorbtion_functions);
-
-      /* ========== Doppler correct the transfer functions ========== */
-
-        for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
-
-            absorbtion_functions[index] /= redshift;
-            faradey_functions[index]    /= redshift;
-            emission_functions[index]   *= redshift * redshift;
-
-        }
+        double emission_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{}, faradey_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{}, absorbtion_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
+        s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Current], s_Initial_Conditions, emission_functions[Current], faradey_functions[Current], absorbtion_functions[Current]);
+        s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Next], s_Initial_Conditions, emission_functions[Next], faradey_functions[Next], absorbtion_functions[Next]);
 
       /* ======================================== Propagate the radiative transfer equations ======================================== */
 
-        Propagate_Stokes_vector(Implicit_Trapezoid, emission_functions, absorbtion_functions, faradey_functions, step, Stokes_Vector);
-
+        Propagate_Stokes_vector(RK4, emission_functions, absorbtion_functions, faradey_functions, step, Stokes_Vector);
+     
       /* ============================================================================================================================ */
 
         if (Stokes_Vector[I] != Stokes_Vector[I]) {
