@@ -8,7 +8,7 @@
 
 	double vector_norm(double Vector[], int Vector_size);
 
-	double my_max(double vector[], int element_number);
+	double my_max(double const vector[], int const element_number);
 
 	class Novikov_Thorne_Model;
 

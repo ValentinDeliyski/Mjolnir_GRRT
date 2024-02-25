@@ -25,7 +25,7 @@ void invert_metric(double inv_metric[4][4], double metric[4][4]) {
 
 double get_metric_det(double metric[4][4]) {
 
-    return metric[1][1] * (metric[0][3] * metric[0][3] - metric[0][0] * metric[3][3]);
+    return -metric[1][1] * (metric[0][3] * metric[0][3] - metric[0][0] * metric[3][3]);
 
 }
 

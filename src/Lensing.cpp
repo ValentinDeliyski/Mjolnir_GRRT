@@ -14,6 +14,7 @@
 
 #include "Lensing.h"
 #include <iostream>
+#include <complex>
 
 void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Step_controller Controller){
 
@@ -148,7 +149,136 @@ void static Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
 
 }
 
-void static Parallel_Transport_Polarization_Vector(double State_Vector[], Initial_conditions_type* const s_Initial_Conditions, double Polarization_Vector[]) {
+Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
+                                             Initial_conditions_type* s_Initial_Conditions, 
+                                             double State_vector[e_State_Number]) {
+
+    /* The reference of this implementation is the second RAPTOR paper: https://arxiv.org/pdf/2007.03045.pdf 
+       Expressions 10 - 11 */
+
+     /* --------------------- Get the three 4-vectors from which we will construct the tetrad --------------------- */
+
+     double* Plasma_velocity_contravariant = s_Initial_Conditions->OTT_model->get_disk_velocity(State_vector, s_Initial_Conditions);
+
+     double B_field_contravariant[4]{};
+     s_Initial_Conditions->OTT_model->get_magnetic_field(B_field_contravariant, State_vector, s_Initial_Conditions);
+
+     double Wave_Vector_covariant[4] = { 1, State_vector[e_p_r], State_vector[e_p_theta], State_vector[e_p_phi] };
+
+     /* --------------------- Evaluate the inner products (expressions 9a - 9d), and compute the contravariant Wave-Vector --------------------- */
+
+     double Wave_vec_dot_Plasma_vel{}, Plasma_vel_dot_B_field{}, B_field_norm_squared{}, Wave_vec_dot_B_field{};
+
+     Metric_type s_Metric = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_vector);
+
+     for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+         Wave_vec_dot_Plasma_vel += Wave_Vector_covariant[left_idx] * Plasma_velocity_contravariant[left_idx];
+         Wave_vec_dot_B_field += Wave_Vector_covariant[left_idx] * B_field_contravariant[left_idx];
+
+         for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+             Plasma_vel_dot_B_field += s_Metric.Metric[left_idx][right_idx] * Plasma_velocity_contravariant[left_idx] * B_field_contravariant[right_idx];
+             B_field_norm_squared   += s_Metric.Metric[left_idx][right_idx] * B_field_contravariant[left_idx] * B_field_contravariant[right_idx];
+
+         }
+         
+     }
+
+     double metric_determinant = get_metric_det(s_Metric.Metric);
+     double sqrt_determinant = sqrt(-metric_determinant);
+
+     double C_coeff = Wave_vec_dot_B_field / metric_determinant - Plasma_vel_dot_B_field;
+     double N_coeff = sqrt(B_field_norm_squared + Plasma_vel_dot_B_field * Plasma_vel_dot_B_field - C_coeff * C_coeff);
+
+     /* --- Raise / Lower indicies on the three main 4-vectors - this is needed for computing the final tetrad vector --- */
+
+     double inv_Metric[4][4]{};
+     invert_metric(inv_Metric, s_Metric.Metric);
+
+     double Wave_vector_contravariant[4]{};
+     double B_field_covariant[4]{};
+     double Plasma_velocity_covavriant[4]{};
+
+     for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+         for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+             Wave_vector_contravariant[left_idx]  +=      inv_Metric[left_idx][right_idx] * Wave_Vector_covariant[right_idx];
+             B_field_covariant[left_idx]          += s_Metric.Metric[left_idx][right_idx] * B_field_contravariant[right_idx];
+             Plasma_velocity_covavriant[left_idx] += s_Metric.Metric[left_idx][right_idx] * Plasma_velocity_contravariant[right_idx];
+         }
+
+     }
+
+     /* --------------------- Compute the first two tetrad basis vectors --------------------- */
+
+     for (int index = 0; index <= 3; index++) {
+
+         Tetrad[e_t_coord][index]   = Plasma_velocity_contravariant[index];
+         Tetrad[e_phi_coord][index] = -Wave_vector_contravariant[index] / Wave_vec_dot_Plasma_vel - Plasma_velocity_contravariant[index];
+
+     }
+
+     /* -------- Compute the contravariant 4D permutation symbol (this I lifted straight from the RAPTOR code...) -------- */
+
+     double Levi_Cevita_tensor[4][4][4][4]{};
+
+     for (int i = 0; i <= 3; i++) {
+
+         for (int j = 0; j <= 3; j++) {
+
+             for (int k = 0; k <= 3; k++) {
+
+                 for (int l = 0; l <= 3; l++) {
+
+                     Levi_Cevita_tensor[i][j][k][l] = -((i - j) * (i - k) * (i - l) * (j - k) * (j - l) * (k - l) / 12.) / sqrt_determinant;
+                                                    
+                 }
+             }
+         }
+     }
+
+     /* --------------------- Compute the last two tetrad basis vectors --------------------- */
+
+     if (!isinf(1.0 / N_coeff) && !isinf(1.0 / Wave_vec_dot_Plasma_vel)) {
+
+         for (int index = 0; index <= 3; index++) {
+
+             Tetrad[e_r_coord][index] = (B_field_contravariant[index] + Plasma_vel_dot_B_field * Plasma_velocity_contravariant[index] - C_coeff * Tetrad[e_phi_coord][index]) / N_coeff;
+
+             for (int i = 0; i <= 3; i++) {
+
+                 for (int j = 0; j <= 3; j++) {
+
+                     for (int k = 0; k <= 3; k++) {
+
+                         Tetrad[e_theta_coord][index] += -Levi_Cevita_tensor[index][i][j][k] *
+                                                          Plasma_velocity_covavriant[i] *
+                                                          Wave_Vector_covariant[j] *
+                                                          B_field_covariant[k] / Wave_vec_dot_Plasma_vel / N_coeff;
+
+
+
+                     }
+
+                 }
+
+             }
+
+         }
+
+         return OK;
+
+     }
+
+     return ERROR;
+
+}
+
+void static Parallel_Transport_Polarization_Vector(double State_Vector[], 
+                                                   Initial_conditions_type* const s_Initial_Conditions, 
+                                                   std::complex<double> Polarization_Vector[]) {
 
     Metric_type s_Metric        = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_Vector);
     Metric_type s_dr_Metric     = s_Initial_Conditions->Spacetimes[e_metric]->get_dr_metric(State_Vector);
@@ -161,7 +291,7 @@ void static Parallel_Transport_Polarization_Vector(double State_Vector[], Initia
 
     get_connection_coefficients(s_Metric, s_dr_Metric, s_dtheta_Metric, Connection_Coefficients);
 
-    double Polarization_Vector_Derivative[4]{};
+    std::complex<double> Polarization_Vector_Derivative[4]{};
 
   /* ========================== Construct the full CONTRVARIANT photon wave vector ========================== */
 
@@ -189,8 +319,6 @@ void static Parallel_Transport_Polarization_Vector(double State_Vector[], Initia
         }
 
     }
-
-
 
 }
 
@@ -248,6 +376,12 @@ void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_
         log_ray_emission(Stokes_Vector, Optical_Depth, s_Ray_results, log_index);
 
         Seperate_Image_into_orders(Max_theta_turning_points, *N_theta_turning_points, s_Initial_Conditions, s_Ray_results, Stokes_Vector);
+
+        double Tetrad[4][4]{};
+
+        Construct_Stokes_Tetrad(Tetrad, s_Initial_Conditions, Logged_ray_path[Current]);
+
+        int test{};
 
     }
 

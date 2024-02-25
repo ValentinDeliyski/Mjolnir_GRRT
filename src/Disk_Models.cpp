@@ -154,8 +154,6 @@ double Novikov_Thorne_Model::Flux_integrand(double r, Spacetime_Base_Class* Spac
     double Kepler = this->Keplerian_angular_velocity(r, Spacetimes);
     double dr_Kepler = this->dr_Keplerian_angular_velocity(r, Spacetimes);
 
-    double metric_det = get_metric_det(s_Metric.Metric);
-
     double root = sqrt(-s_Metric.Metric[0][0] - 2 * s_Metric.Metric[0][3] * Kepler - s_Metric.Metric[3][3] * Kepler * Kepler);
     double dr_root = (-s_dr_Metric.Metric[0][0] - 2 * (s_dr_Metric.Metric[0][3] * Kepler + s_Metric.Metric[0][3] * dr_Kepler)
         - s_dr_Metric.Metric[3][3] * Kepler * Kepler - 2 * s_Metric.Metric[3][3] * Kepler * dr_Kepler);
@@ -242,7 +240,7 @@ double Novikov_Thorne_Model::get_flux(double r, Spacetime_Base_Class* Spacetimes
     double Kepler = Keplerian_angular_velocity(r, Spacetimes);
     double dr_Kepler = dr_Keplerian_angular_velocity(r, Spacetimes);
 
-    double Flux_coeff = -dr_Kepler / ((E_disk - Kepler * L_disk) * (E_disk - Kepler * L_disk)) / (4 * M_PI * sqrt(metric_det));
+    double Flux_coeff = -dr_Kepler / ((E_disk - Kepler * L_disk) * (E_disk - Kepler * L_disk)) / (4 * M_PI * sqrt(-metric_det));
 
     if (e_metric == Wormhole) {
 
@@ -377,12 +375,6 @@ int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[], I
 
     double rho = r_source * sin(theta_source);
 
-    //if (rho < 0.0) {
-
-    //    rho *= -1.0;
-
-    //}
-
     double sqrt_rho = sqrt(rho);
     double ell = sqrt_rho * sqrt_rho * sqrt_rho / (1 + rho);
 
@@ -402,7 +394,7 @@ int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[], I
     u_phi = -u_t * ell;
 
     /*
-    * 
+    
     Convert U_source to contravariant components
 
     */
@@ -585,90 +577,125 @@ double Optically_Thin_Toroidal_Model::get_disk_density_profile(double State_Vect
 
 /* Disk Magnetic Field Functions */
 
-double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[3], double State_vector[]) {
+double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[4], 
+                                                         double State_vector[], 
+                                                         Initial_conditions_type* s_Initial_Conditions) {
 
     /*
+    
+    Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity), called B_field,
+    in the basis of a static observer (with 4-velocity n^mu = {1, 0, 0, 0} ). 
+    Returns the magnitude of the magnetic field in the plasma frame.
 
-    Everything is in GCS!
+    NOTE: The magnitude of the magnetic field in these frames is different, because its not concerved under Lorentz boosts.
+    In the static frame I only set the geometry of the field, then finally scale B_field (the plasma frame one) by B_Plasma_norm_CGS.
+    
+    NOTE: B_field is measured by a static observer, so:
+    1) This really does not work for emission inside the ergo-sphere.
+    2) B_field is effectively in the coordinate basis (not any ZAMO!) - this means one cannot directly apply Lorentz boosts to it.
 
     */
 
     double electron_density = this->s_Disk_Parameters.Density_scale * this->get_disk_density_profile(State_vector);
 
-    double B_CGS = sqrt(this->s_Disk_Parameters.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * electron_density * M_PROTON_CGS * 4 * M_PI);
+    double B_Plasma_norm_CGS = sqrt(this->s_Disk_Parameters.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * electron_density * M_PROTON_CGS * 4 * M_PI);
+    double B_Static[4] = {          0, 
+                           MAG_FIELD_GEOMETRY[0],
+                           MAG_FIELD_GEOMETRY[1],
+                           MAG_FIELD_GEOMETRY[2] };
 
-    B_field[x] = B_CGS * MAG_FIELD_GEOMETRY[x];
-    B_field[y] = B_CGS * MAG_FIELD_GEOMETRY[y];
-    B_field[z] = B_CGS * MAG_FIELD_GEOMETRY[z];
+    double* Plasma_velocity = this->get_disk_velocity(State_vector, s_Initial_Conditions);
 
-    return B_CGS;
+    /* 
+
+    The only reference I could find for this is https://iopscience.iop.org/article/10.3847/1538-4357/ab718e/pdf 8e) and 8f).
+    One arrives at the expression by projecting F^mu^nu (written in terms of B_Plasma and Plasma_veclocity),
+    onto the 4-velocity of the static observer - this gives B_Static, then inverting the expression 
+    to obtain B_Plasma = f(B_Static, Plasma_Velocity)
+    
+    */
+
+    Metric_type s_Metric = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_vector);
+
+    for (int left_idx = 0; left_idx <= 4 - 1; left_idx++) {
+
+        for (int right_idx = 0; right_idx <= 4 - 1; right_idx++) {
+
+            B_field[e_t_coord] += B_Plasma_norm_CGS * s_Metric.Metric[left_idx][right_idx] * Plasma_velocity[left_idx] * B_Static[right_idx];
+
+        }
+
+    }
+
+    for (int index = 1; index <= 4 - 1; index++) {
+
+        B_field[index] = B_Plasma_norm_CGS * (B_Static[index] + B_field[e_t_coord] * Plasma_velocity[index]) / Plasma_velocity[e_t_coord];
+            
+    }
+    
+    return B_Plasma_norm_CGS;
 
 }
 
-double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vector[], double B_field_local[], Initial_conditions_type* s_Initial_Conditions) {
-
-    double* U_source_coord = get_disk_velocity(State_Vector, s_Initial_Conditions);
-
-    Metric_type s_Metric = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_Vector);
-
-    double inv_metric[4][4]{};
-    invert_metric(inv_metric, s_Metric.Metric);
+double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vector[], double B_field_local[4], Initial_conditions_type* s_Initial_Conditions) {
 
     /*
-
-    Transform the wave vector and plasma velocity (both contravariant vectors) to the ZAMO frame
-
+    
+    Computes the angle between the photon wave-3-vector and the magnetic field, measured by a comoving (with the plasma) observer.
+    There is a neat invariant way to compute this directly from the coordinate basis 4-vectors.
+    
     */
 
-    double U_source_ZAMO[4]{};
-    Contravariant_coord_to_ZAMO(s_Metric.Metric, U_source_coord, U_source_ZAMO);
+    double* Plasma_velocity = this->get_disk_velocity(State_Vector, s_Initial_Conditions);
+    double Wave_vec_dot_Plasma_vec =             1           * Plasma_velocity[e_t_coord] + 
+                                     State_Vector[e_p_r]     * Plasma_velocity[e_r_coord] +
+                                     State_Vector[e_p_theta] * Plasma_velocity[e_theta_coord] +
+                                     State_Vector[e_p_phi]   * Plasma_velocity[e_phi_coord];
 
-    double Wave_Vec_ZAMO[4]{};
-    double Wave_Vec_Coord[4]{};
-    Wave_Vec_Coord[e_t_coord]     = inv_metric[e_t_coord][e_t_coord] * 1.0 + inv_metric[e_t_coord][e_phi_coord] * State_Vector[e_p_phi];
-    Wave_Vec_Coord[e_r_coord]     = inv_metric[e_r_coord][e_r_coord] * State_Vector[e_p_r];
-    Wave_Vec_Coord[e_theta_coord] = inv_metric[e_theta_coord][e_theta_coord] * State_Vector[e_p_theta];
-    Wave_Vec_Coord[e_phi_coord]   = inv_metric[e_phi_coord][e_phi_coord] * State_Vector[e_p_phi] + inv_metric[e_phi_coord][e_t_coord] * 1.0;
-
-    Contravariant_coord_to_ZAMO(s_Metric.Metric, Wave_Vec_Coord, Wave_Vec_ZAMO);
+    Metric_type s_Metric  = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_Vector);
+    double B_field_norm_squared{};
+    double B_field_dot_Plasma_vel{};
 
     /*
-
-    Boost the Wave Vector To The Fluid Frame
-
+    
+    TODO: Maybe make functions that do this, or functions that raise and lower indicies
+    
     */
 
-    double Boost_matrix[4][4]{};
+    for (int left_idx = 0; left_idx <= 4 - 1; left_idx++) {
 
-    Lorentz_boost_matrix(Boost_matrix, U_source_ZAMO);
+        for (int right_idx = 0; right_idx <= 4 - 1; right_idx++) {
 
-    double Wave_Vector_Boosted[4]{};
+            B_field_norm_squared   += s_Metric.Metric[left_idx][right_idx] * B_field_local[left_idx] * B_field_local[right_idx];
+            B_field_dot_Plasma_vel += s_Metric.Metric[left_idx][right_idx] * B_field_local[left_idx] * Plasma_velocity[right_idx];
 
-    mat_vec_multiply_4D(Boost_matrix, Wave_Vec_ZAMO, Wave_Vector_Boosted);
+        }
 
-    double Wave_Vector_Local[3] = { Wave_Vector_Boosted[1] / Wave_Vector_Boosted[0], Wave_Vector_Boosted[2] / Wave_Vector_Boosted[0], Wave_Vector_Boosted[3] / Wave_Vector_Boosted[0] };
+    }
 
-    /*
-
-    Get Sin Of The Angle Between The Local Fluid Velocity And Magnetic Field In The ZAMO Frame
-
-    */
+    double Wave_vec_dot_B_field =          1             * B_field_local[e_t_coord] +
+                                 State_Vector[e_p_r]     * B_field_local[e_r_coord] +
+                                 State_Vector[e_p_theta] * B_field_local[e_theta_coord] +
+                                 State_Vector[e_p_phi]   * B_field_local[e_phi_coord];
 
     double cos_angle = 1;
 
-    if (!isinf(1.0 / dot_product(B_field_local, B_field_local)) && !isinf(1.0 / dot_product(Wave_Vector_Local, Wave_Vector_Local))) {
+    if (!isinf(1.0 / Wave_vec_dot_Plasma_vec) && !isinf(1.0 / B_field_norm_squared)) {
 
-        cos_angle = dot_product(B_field_local, Wave_Vector_Local) / sqrt(dot_product(B_field_local, B_field_local) * dot_product(Wave_Vector_Local, Wave_Vector_Local));
-
-    }
-
-    if (fabs(cos_angle) > 1) {
-
-        int test{};
+        cos_angle = (Wave_vec_dot_B_field + B_field_dot_Plasma_vel * Wave_vec_dot_Plasma_vec) / Wave_vec_dot_Plasma_vec / sqrt(B_field_norm_squared + B_field_dot_Plasma_vel * B_field_dot_Plasma_vel);
 
     }
 
-    return cos_angle;
+    if (fabs(cos_angle) < 1.0) {
+
+        return cos_angle;
+
+    }
+    else {
+
+        return cos_angle / fabs(cos_angle);
+
+    }
 
 }
 
@@ -804,8 +831,8 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
     double K2_Bessel = std::cyl_bessel_k(2.0, 1.0 / T_electron_dim);
 
     /* Magnetic Field */
-    double B_field_local[3]{};
-    double B_CGS = this->get_magnetic_field(B_field_local, State_vector);
+    double B_field_local[4]{};
+    double B_CGS = this->get_magnetic_field(B_field_local, State_vector, s_Initial_conditions);
 
     /* Disk Coordinate Velocity */
     double* U_source_coord = this->get_disk_velocity(State_vector, s_Initial_conditions);

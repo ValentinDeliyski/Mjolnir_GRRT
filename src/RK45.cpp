@@ -74,18 +74,12 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
        
     }
 
-    if (State_Vector[e_r] < 10) {
-
-        int test{};
-
-    }
-
     controller->previous_step = controller->step;
 
     controller->sec_prev_err = controller->prev_err;
     controller->prev_err = controller->current_err;
     controller->current_err = my_max(state_error, e_State_Number);
-    controller->update_step(State_Vector);
+    controller->update_step(std::as_const(State_Vector));
 
     if (controller->continue_integration) {
 
@@ -131,7 +125,7 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
     }
 }
 
-Step_controller::Step_controller(double init_stepsize) {
+Step_controller::Step_controller(double const init_stepsize) {
 
     Gain_I =  0.58 / 5;
     Gain_P = -0.21 / 5;
@@ -149,7 +143,7 @@ Step_controller::Step_controller(double init_stepsize) {
 
 }
 
-void Step_controller::update_step(double State_Vector[]) {
+void Step_controller::update_step(double const State_Vector[]) {
 
     double const Error_threshold = RK45_ACCURACY + RK45_ACCURACY * my_max(State_Vector, e_State_Number);
 

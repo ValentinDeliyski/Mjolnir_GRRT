@@ -64,7 +64,7 @@ int mat_vec_multiply_4D(double const Matrix[4][4], double const Vector[4], doubl
 
 };
 
-double my_max(double vector[], int element_number) {
+double my_max(double const vector[], int const element_number) {
 
 	/*****************************************************************************
 	|                                                                            |
@@ -85,7 +85,7 @@ double my_max(double vector[], int element_number) {
 	if (NULL == temp_vec) {
 
 		// Putting this check here (which should never pass), so I don't get
-		// compiler warning about dereferencing a null pointer
+		// compiler warnings about dereferencing a null pointer
 
 		exit(ERROR);
 

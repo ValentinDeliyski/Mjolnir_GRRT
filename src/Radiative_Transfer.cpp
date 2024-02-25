@@ -321,17 +321,15 @@ void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][S
                             double const step,
                             double Stokes_Vector[STOKES_PARAM_NUM]){
 
-
-
     double emission_functions_middle[STOKES_PARAM_NUM]{};
     double faradey_functions_middle[STOKES_PARAM_NUM]{};
     double absorbtion_functions_middle[STOKES_PARAM_NUM]{};
 
     for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
 
-        emission_functions_middle[index]   = (emission_functions[Current][index] + emission_functions[Next][index]) / 2;
+        emission_functions_middle[index]   = (emission_functions[Current][index]   + emission_functions[Next][index]) / 2;
         absorbtion_functions_middle[index] = (absorbtion_functions[Current][index] + absorbtion_functions[Next][index]) / 2;
-        faradey_functions_middle[index]    = (faradey_functions[Current][index] + faradey_functions[Next][index]) / 2;
+        faradey_functions_middle[index]    = (faradey_functions[Current][index]    + faradey_functions[Next][index]) / 2;
 
     }
 

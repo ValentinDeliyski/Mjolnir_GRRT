@@ -82,7 +82,9 @@
 
             void update_hotspot_position(int simulation_frame);
 
-            double get_magnetic_field(double B_field[3], double State_vector[]);
+            double get_magnetic_field(double B_field[4], 
+                                      double State_vector[], 
+                                      Initial_conditions_type* s_Initial_Conditions);
 
             void get_synchotron_transfer_functions(double State_vector[],
                                                    Initial_conditions_type* s_Initial_Conditions,
@@ -94,7 +96,7 @@
 
             double get_absorbtion_function_phenomenological(double Emission_Functions, double State_vector[], double redshift);
 
-            double get_electron_pitch_angle(double State_vector[], double B_field_local[], Initial_conditions_type* s_Initial_Conditions);
+            double get_electron_pitch_angle(double State_vector[], double B_field_local[4], Initial_conditions_type* s_Initial_Conditions);
 
             void precompute_electron_pitch_angles();
 

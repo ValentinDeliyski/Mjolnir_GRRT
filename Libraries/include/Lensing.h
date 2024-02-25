@@ -8,9 +8,9 @@
 
     public:
 
-        Step_controller(double init_stepsize);
+        Step_controller(double const init_stepsize);
 
-        void update_step(double State_Vector[]);
+        void update_step(double const State_Vector[]);
 
         double Gain_I;
         double Gain_P;
