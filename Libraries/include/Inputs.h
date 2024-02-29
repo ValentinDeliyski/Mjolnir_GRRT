@@ -13,14 +13,14 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
+    const Spacetime_enums e_metric = Kerr; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.99f;
+    Real SPIN = 0.94f;
 
     // Wormhole spacetime parameters //
 
-    Real WH_REDSHIFT = 2.0f;
+    Real WH_REDSHIFT = 0.0f;
     Real WH_R_THROAT = MASS;
 
     const bool STOP_AT_THROAT = false;
@@ -46,10 +46,10 @@
 
     // ======================== Observer Inputs ======================== //
 
-    Real r_obs	   = 1e4;			    // Radial potision of the observer [ M ]
-    Real theta_obs = 20.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
-    Real phi_obs   = 0.0f;			    // Azimuthal angle of the observer ( not used ) [ Rad ]
-    Real obs_cam_rotation_angle = 0.0;  /*-70.0f / 180 * M_PI - M_PI_4;*/
+    Real r_obs	   = 1e4;			     // Radial potision of the observer [ M ]
+    Real theta_obs = 160.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real phi_obs   = 0.0f;			     // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
+    Real obs_cam_rotation_angle = -70.0f / 180 * M_PI - M_PI_4;  /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
@@ -72,8 +72,8 @@
 
     Real DISK_OPENING_ANGLE = 1.0f / 10;  // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
     Real DISK_CUTOFF_SCALE  = 0.4f;       // disk density ~ exp( - (r - R_Cutoff)^2 / DISK_CUTOFF_SCALE^2) if r < R_Cutoff
-    Real R_Cutoff           = 5.0f;       // = r_isco[Inner] if = NULL or = r_isco[Outer] if < 0
-    Real R_0                = 5.0f;
+    Real R_Cutoff           = 0.5f;       // = r_isco[Inner] if = NULL or = r_isco[Outer] if < 0
+    Real R_0                = 1 + sqrt(1- SPIN*SPIN);
 
     // Phenomenological Synchotron emission parameters //
     
@@ -88,11 +88,11 @@
     Real DISK_MAGNETIZATION    = 0.01;
     Real MAG_FIELD_GEOMETRY[3] = { 0.87, 0.1, 0.5 };
     
-    Real N_ELECTRON_EXACT_CGS = 5e+05;
-    Real T_ELECTRON_EXACT_CGS = 7.2e+10;
+    Real N_ELECTRON_EXACT_CGS = 5e+06;
+    Real T_ELECTRON_EXACT_CGS = 1e+11;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
-    const bool AVERAGE_EMISSION_PITCH_ANGLE = false;
+    const bool AVERAGE_EMISSION_PITCH_ANGLE = true;
 
     // Hotspot paramteres //
 
@@ -114,7 +114,7 @@
     Real H_angle_min = -atan(15 / r_obs);
     Real H_angle_max =  atan(15 / r_obs);
 
-    const int RESOLUTION = 1024;                  // Linear size of the square pixel grid that makes up the image
+    const int RESOLUTION = 256;                  // Linear size of the square pixel grid that makes up the image
     const int NUM_RAYS = RESOLUTION * RESOLUTION; // The size of the buffer to store the texture
 
     Real Scan_Step = (H_angle_max - H_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons
@@ -132,8 +132,11 @@
 
     Real INIT_STEPSIZE     = 1e-5;  // > 0 otherwise not really important (unless you put the observer at r_obs > 1e6)
     Real INTEGRAL_ACCURACY = 1e-6;  // Used to compute the Flux integral for the Novikov-Thorne model - this value seems to be good
-    Real RK45_ACCURACY     = 1e-12; // 1e-12 Seems to be an opitimal tradeoff between accuracy and performace 
+
+    // 1e-12 Seems to be an opitimal tradeoff between accuracy and performace for low inclinations <60 deg. For higher inclinations, 
+    // things could break using RK4 for the radiative transfer - for such cases use at most 1e-13.
+    Real RK45_ACCURACY     = 1e-13; 
     Real SAFETY_1          = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
-    Real SAFETY_2          = 1e-20; // Near zero positive number used to avoid division by 0 when calculating the integration step
+    Real SAFETY_2          = 1e-25; // Near zero positive number used to avoid division by 0 when calculating the integration step
 
 #endif

@@ -27,20 +27,18 @@ void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Ste
 
         s_Ray_Results->Ray_log_struct.Ray_path_log[index + log_offset * e_path_log_number] = State_Vector[index];
 
+        // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
+        // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead. 
+
+        if (e_metric == Wormhole && index == e_r) {
+
+            s_Ray_Results->Ray_log_struct.Ray_path_log[e_r + log_offset * e_path_log_number] = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+
+        }
+
     }
 
     s_Ray_Results->Ray_log_struct.Ray_path_log[e_path_log_step + log_offset * e_path_log_number] = Controller.previous_step;
-
-    // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
-    // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead.
-
-    if (e_metric == Wormhole) {
-
-        double& WH_radial_coord = s_Ray_Results->Ray_log_struct.Ray_path_log[e_r + log_offset * e_path_log_number];
-
-        WH_radial_coord = sqrt(WH_R_THROAT * WH_R_THROAT + WH_radial_coord * WH_radial_coord);
-
-    }
 
 }
 
@@ -123,13 +121,15 @@ void static Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
 
     case Analytic:
 
-        Analytic_Radiative_Transfer(emission_functions[Current], absorbtion_functions[Current], faradey_functions[Current], step, Intensity);
+        Analytic_Radiative_Transfer(emission_functions[Current], absorbtion_functions[Current], faradey_functions[Current], step / 2, Intensity);
+        Analytic_Radiative_Transfer(emission_functions[Next], absorbtion_functions[Next], faradey_functions[Next], step / 2, Intensity);
 
         break;
 
     case Implicit_Trapezoid:
 
-        Implicit_Trapezoid_Radiative_Transfer(emission_functions[Current], absorbtion_functions[Current], faradey_functions[Current], step, Intensity);
+        Implicit_Trapezoid_Radiative_Transfer(emission_functions[Current], absorbtion_functions[Current], faradey_functions[Current], step / 2, Intensity);
+        Implicit_Trapezoid_Radiative_Transfer(emission_functions[Next], absorbtion_functions[Next], faradey_functions[Next], step / 2, Intensity);
 
         break;
 
@@ -150,11 +150,13 @@ void static Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
 }
 
 Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
+                                             double inv_Tetrad[4][4],
                                              Initial_conditions_type* s_Initial_Conditions, 
                                              double State_vector[e_State_Number]) {
 
     /* The reference of this implementation is the second RAPTOR paper: https://arxiv.org/pdf/2007.03045.pdf 
-       Expressions 10 - 11 */
+       Expressions 10 - 11. Note that their definition of 9d is wrong... the "g" in the denominator should 
+       be omega, as defined in 9c. */
 
      /* --------------------- Get the three 4-vectors from which we will construct the tetrad --------------------- */
 
@@ -163,7 +165,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
      double B_field_contravariant[4]{};
      s_Initial_Conditions->OTT_model->get_magnetic_field(B_field_contravariant, State_vector, s_Initial_Conditions);
 
-     double Wave_Vector_covariant[4] = { 1, State_vector[e_p_r], State_vector[e_p_theta], State_vector[e_p_phi] };
+     double Wave_Vector_covariant[4] = { -1, State_vector[e_p_r], State_vector[e_p_theta], State_vector[e_p_phi] };
 
      /* --------------------- Evaluate the inner products (expressions 9a - 9d), and compute the contravariant Wave-Vector --------------------- */
 
@@ -174,7 +176,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
      for (int left_idx = 0; left_idx <= 3; left_idx++) {
 
          Wave_vec_dot_Plasma_vel += Wave_Vector_covariant[left_idx] * Plasma_velocity_contravariant[left_idx];
-         Wave_vec_dot_B_field += Wave_Vector_covariant[left_idx] * B_field_contravariant[left_idx];
+         Wave_vec_dot_B_field    += Wave_Vector_covariant[left_idx] * B_field_contravariant[left_idx];
 
          for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
@@ -188,8 +190,16 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
      double metric_determinant = get_metric_det(s_Metric.Metric);
      double sqrt_determinant = sqrt(-metric_determinant);
 
-     double C_coeff = Wave_vec_dot_B_field / metric_determinant - Plasma_vel_dot_B_field;
+     double C_coeff = -Wave_vec_dot_B_field / Wave_vec_dot_Plasma_vel - Plasma_vel_dot_B_field;
      double N_coeff = sqrt(B_field_norm_squared + Plasma_vel_dot_B_field * Plasma_vel_dot_B_field - C_coeff * C_coeff);
+
+     /* --- Perform checks on these coefficients, because for very low plasma densities they blow up --- */
+
+     if (isnan(N_coeff) || isinf(1.0 / N_coeff) || isnan(C_coeff) || isinf(1.0 / C_coeff)) {
+
+         return ERROR;
+
+     }
 
      /* --- Raise / Lower indicies on the three main 4-vectors - this is needed for computing the final tetrad vector --- */
 
@@ -212,6 +222,8 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
      }
 
      /* --------------------- Compute the first two tetrad basis vectors --------------------- */
+
+     // Wave_vec_dot_Plasma_vel is safe to divide by as it can never go to zero - Plasma_vel is never null.
 
      for (int index = 0; index <= 3; index++) {
 
@@ -240,27 +252,21 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
      }
 
      /* --------------------- Compute the last two tetrad basis vectors --------------------- */
+ 
+     for (int index = 0; index <= 3; index++) {
 
-     if (!isinf(1.0 / N_coeff) && !isinf(1.0 / Wave_vec_dot_Plasma_vel)) {
+         Tetrad[e_theta_coord][index] = (B_field_contravariant[index] + Plasma_vel_dot_B_field * Plasma_velocity_contravariant[index] - C_coeff * Tetrad[e_phi_coord][index]) / N_coeff;
 
-         for (int index = 0; index <= 3; index++) {
+         for (int i = 0; i <= 3; i++) {
 
-             Tetrad[e_r_coord][index] = (B_field_contravariant[index] + Plasma_vel_dot_B_field * Plasma_velocity_contravariant[index] - C_coeff * Tetrad[e_phi_coord][index]) / N_coeff;
+             for (int j = 0; j <= 3; j++) {
 
-             for (int i = 0; i <= 3; i++) {
+                 for (int k = 0; k <= 3; k++) {
 
-                 for (int j = 0; j <= 3; j++) {
-
-                     for (int k = 0; k <= 3; k++) {
-
-                         Tetrad[e_theta_coord][index] += -Levi_Cevita_tensor[index][i][j][k] *
-                                                          Plasma_velocity_covavriant[i] *
-                                                          Wave_Vector_covariant[j] *
-                                                          B_field_covariant[k] / Wave_vec_dot_Plasma_vel / N_coeff;
-
-
-
-                     }
+                     Tetrad[e_r_coord][index] += -Levi_Cevita_tensor[index][i][j][k] *
+                                                      Plasma_velocity_covavriant[i] *
+                                                      Wave_Vector_covariant[j] *
+                                                      B_field_covariant[k] / Wave_vec_dot_Plasma_vel / N_coeff;
 
                  }
 
@@ -268,11 +274,47 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
          }
 
-         return OK;
-
      }
 
-     return ERROR;
+
+     /* --------------------- Compute the inverse tetrad --------------------- */
+
+     double Minkowski_Metric[4][4] = { {-1., 0., 0., 0.},
+                                       { 0., 1., 0., 0.},
+                                       { 0., 0., 1., 0.},
+                                       { 0., 0., 0., 1.} };
+
+     for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+         for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+             for (int m = 0; m <= 3; m++) {
+
+                 for (int g = 0; g <= 3; g++) {
+
+                     inv_Tetrad[left_idx][right_idx] += Minkowski_Metric[left_idx][m] * s_Metric.Metric[right_idx][g] * Tetrad[m][g];
+
+                 }
+             }
+         }
+     }
+
+     double test[4][4]{};
+
+     for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+         for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+                 for (int g = 0; g <= 3; g++) {
+
+                     test[left_idx][right_idx] += inv_Tetrad[left_idx][g] * Tetrad[right_idx][g];
+
+                 }
+             
+         }
+     }
+
+     return OK;
 
 }
 
@@ -297,10 +339,10 @@ void static Parallel_Transport_Polarization_Vector(double State_Vector[],
 
     double& J = State_Vector[e_path_log_p_phi];
 
-    double p_t_contravariant     = inv_Metric[e_t_coord][e_t_coord] * 1 + inv_Metric[e_t_coord][e_phi_coord] * J;
+    double p_t_contravariant     = inv_Metric[e_t_coord][e_t_coord] * (-1) + inv_Metric[e_t_coord][e_phi_coord] * J;
     double p_r_contravariant     = inv_Metric[e_r_coord][e_r_coord] * State_Vector[e_path_log_p_r];
     double p_theta_contravariant = inv_Metric[e_theta_coord][e_theta_coord] * State_Vector[e_path_log_p_theta];
-    double p_phi_contravariant   = inv_Metric[e_phi_coord][e_phi_coord] * J + inv_Metric[e_phi_coord][e_t_coord] * 1;
+    double p_phi_contravariant   = inv_Metric[e_phi_coord][e_phi_coord] * J + inv_Metric[e_phi_coord][e_t_coord] * (-1);
 
     double photon_wave_vector[4] = {p_t_contravariant, p_r_contravariant, p_theta_contravariant, p_phi_contravariant};
 
@@ -320,6 +362,115 @@ void static Parallel_Transport_Polarization_Vector(double State_Vector[],
 
     }
 
+    for (int index = 0; index <= 3; index++) {
+
+
+        Polarization_Vector[index] += Polarization_Vector_Derivative[index] * State_Vector[e_path_log_step];
+
+
+    }
+
+}
+
+void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][4],
+                                              std::complex<double> Coord_Basis_Pol_vec[STOKES_PARAM_NUM],
+                                              double Stokes_Vector[STOKES_PARAM_NUM]) {
+
+            std::complex<double> Stokes_Basis_Pol_vec[4]{};
+
+            for (int stokes_idx = 0; stokes_idx <= 3; stokes_idx++) {
+
+                Stokes_Basis_Pol_vec[stokes_idx] = (0.0, 0.0);
+
+                for (int coord_idx = 0; coord_idx <= 3; coord_idx++) {
+
+                    Stokes_Basis_Pol_vec[stokes_idx] += inv_Stokes_Tetrad[stokes_idx][coord_idx] * Coord_Basis_Pol_vec[coord_idx];
+
+
+                }
+
+            }
+
+            double Polarized_Intensity_before = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
+                                              Stokes_Vector[U] * Stokes_Vector[U] +
+                                              Stokes_Vector[V] * Stokes_Vector[V]);
+
+           
+            Stokes_Vector[Q] = Polarized_Intensity_before * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[1]) -
+                                                      Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[2])).real();
+
+            Stokes_Vector[U] = Polarized_Intensity_before * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]) +
+                                                      Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[1])).real();
+
+            Stokes_Vector[V] =-Polarized_Intensity_before * (complex_i * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]) -
+                                                                          Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[1]))).real();
+            
+            /* The numerics seem to introduce a surprisingly large error in the norm of this vector, which results in a polarization fraction > 1.
+               Normalizing here the Polarization vector in the Stokes basis seems to resolve the issue. 
+
+               TODO: Check if this is really numerics or an analytical error! */
+
+            double Polarized_Intensity_after = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
+                                                    Stokes_Vector[U] * Stokes_Vector[U] +
+                                                    Stokes_Vector[V] * Stokes_Vector[V]);
+
+
+            if (!isinf(1.0 / Polarized_Intensity_after)) {
+
+                Stokes_Vector[Q] *= Polarized_Intensity_before / Polarized_Intensity_after;
+                Stokes_Vector[U] *= Polarized_Intensity_before / Polarized_Intensity_after;
+                Stokes_Vector[V] *= Polarized_Intensity_before / Polarized_Intensity_after;
+
+            }
+
+            if (isnan(Stokes_Vector[Q])) {
+
+                int test{};
+
+            }
+
+}
+
+void static Map_Stokes_to_Polarization_Vector(const double Stokes_Vector[STOKES_PARAM_NUM],
+                                              const double Stokes_Tetrad[4][4],
+                                              std::complex<double> Coord_Basis_Pol_vec[STOKES_PARAM_NUM]) {
+
+    for (int index = 0; index <= 3; index++) {
+
+        Coord_Basis_Pol_vec[index]  = (0, 0);
+
+    }
+
+    std::complex<double> Stokes_Basis_Pol_vec[4];
+
+    double Polarized_Intensity = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
+                                      Stokes_Vector[U] * Stokes_Vector[U] +
+                                      Stokes_Vector[V] * Stokes_Vector[V]);
+
+    if (!isinf(Stokes_Vector[Q] / Polarized_Intensity) && fabs(Stokes_Vector[Q] / Polarized_Intensity) < 1) {
+
+        Stokes_Basis_Pol_vec[1] = sqrt((1 + Stokes_Vector[Q] / Polarized_Intensity) / 2);
+
+    }
+
+    Stokes_Basis_Pol_vec[2] = 1.0;
+
+    if (!isinf(1.0 / Stokes_Basis_Pol_vec[1].real())) {
+
+        Stokes_Basis_Pol_vec[2] = (Stokes_Vector[U] - complex_i * Stokes_Vector[V]) / (2.0 * Stokes_Basis_Pol_vec[1] * Polarized_Intensity);
+
+    }
+
+    for (int coord_idx = 0; coord_idx <= 3; coord_idx++) {
+
+        for (int stokes_idx = 0; stokes_idx <= 3; stokes_idx++) {
+
+            Coord_Basis_Pol_vec[coord_idx] += Stokes_Tetrad[stokes_idx][coord_idx] * Stokes_Basis_Pol_vec[stokes_idx];
+
+        }
+
+    }
+
 }
 
 void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_Conditions, Results_type* const s_Ray_results, int* const N_theta_turning_points) {
@@ -330,15 +481,20 @@ void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_
     int Image_Order = compute_image_order(Max_theta_turning_points, s_Initial_Conditions);
 
     double Stokes_Vector[STOKES_PARAM_NUM]{};
-    double* Logged_ray_path[INTERPOLATION_NUM];
+
+    std::complex<double> Coord_Basis_Pol_vec[4] = { std::complex<double>(0,0),
+                                                    std::complex<double>(1,0), 
+                                                    std::complex<double>(0,0), 
+                                                    std::complex<double>(0,0) };
+
+    double* Logged_ray_path[INTERPOLATION_NUM]{};
 
     // TODO: Propagate this aswell
     double Optical_Depth{};
 
     for (int log_index = s_Ray_results->Ray_log_struct.Log_length; log_index > 0; log_index--) {
 
-
-      /* ================== Pick out the ray position / momenta from the Log, at the given log index ================== */
+        /* ================== Pick out the ray position / momenta from the Log, at the given log index ================== */
 
         Logged_ray_path[Current] = &(s_Ray_results->Ray_log_struct.Ray_path_log[log_index * e_path_log_number]);
 
@@ -354,35 +510,79 @@ void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_
         /* Reset the bitmask that checks weather the metric was calculated this step */
         s_Initial_Conditions->Spacetimes[e_metric]->set_ignore_flag(true);
 
-        double* U_source_coord = s_Initial_Conditions->OTT_model->get_disk_velocity(Logged_ray_path[Current], s_Initial_Conditions);
-        double redshift = Redshift(Logged_ray_path[Current], U_source_coord);
+        /* ======================================== Parallel transport the polarization vector ======================================== */
 
-        double emission_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{}, faradey_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{}, absorbtion_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
-        s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Current], s_Initial_Conditions, emission_functions[Current], faradey_functions[Current], absorbtion_functions[Current]);
-        s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Next], s_Initial_Conditions, emission_functions[Next], faradey_functions[Next], absorbtion_functions[Next]);
+        //Parallel_Transport_Polarization_Vector(Logged_ray_path[Current], s_Initial_Conditions, Coord_Basis_Pol_vec);
 
-      /* ======================================== Propagate the radiative transfer equations ======================================== */
+        /* =========================================================================================================================== */
 
-        Propagate_Stokes_vector(RK4, emission_functions, absorbtion_functions, faradey_functions, step, Stokes_Vector);
-     
-      /* ============================================================================================================================ */
 
-        if (Stokes_Vector[I] != Stokes_Vector[I]) {
+        double Normalized_plasma_density = s_Initial_Conditions->OTT_model->get_disk_density_profile(Logged_ray_path[Current]);
 
-            int test{};
+        if (Normalized_plasma_density > 1e-15){
+
+            double Tetrad[4][4]{};
+            double inv_Tetrad[4][4]{};
+
+            //Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, s_Initial_Conditions, Logged_ray_path[Current]);
+            
+            //Map_Polarization_Vector_to_Stokes(std::as_const(inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
+
+            /* ======================================== Propagate thhe radiative transfer equations ======================================== */
+
+            double* U_source_coord = s_Initial_Conditions->OTT_model->get_disk_velocity(Logged_ray_path[Current], s_Initial_Conditions);
+            double* U_source_coord_next = s_Initial_Conditions->OTT_model->get_disk_velocity(Logged_ray_path[Next], s_Initial_Conditions);
+            double redshift[2];
+               redshift[Current] = Redshift(Logged_ray_path[Current], U_source_coord);
+               redshift[Next] = Redshift(Logged_ray_path[Next], U_source_coord_next);
+
+            double emission_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{}, faradey_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{}, absorbtion_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
+            s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Current], s_Initial_Conditions, emission_functions[Current], faradey_functions[Current], absorbtion_functions[Current]);
+            s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Next], s_Initial_Conditions, emission_functions[Next], faradey_functions[Next], absorbtion_functions[Next]);
+   
+            for (int index = 0; index <= 1; index++) {
+
+                for (int stokes_idx = 0; stokes_idx <= 3; stokes_idx++) {
+
+                    emission_functions[index][stokes_idx]   *= redshift[index] * redshift[index];
+                    faradey_functions[index][stokes_idx]    /= redshift[index];
+                    absorbtion_functions[index][stokes_idx] /= redshift[index];
+
+                }
+
+            }
+
+            Propagate_Stokes_vector(RK4, emission_functions, absorbtion_functions, faradey_functions, step, Stokes_Vector);
+
+            /* =================================== Convert the stokes vector into a polarization vector =================================== */
+
+
+            if (Stokes_Vector[I] < 1e-159 && Stokes_Vector[I] > 0) {
+
+                int test{};
+
+            }
+
+            //Map_Stokes_to_Polarization_Vector(std::as_const(Stokes_Vector), std::as_const(Tetrad), Coord_Basis_Pol_vec);
+
+            double Polarized_Intensity = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
+                                              Stokes_Vector[U] * Stokes_Vector[U] +
+                                              Stokes_Vector[V] * Stokes_Vector[V]);
+
+            double fractional_polarization = Polarized_Intensity / Stokes_Vector[I];
+
+            if (fractional_polarization > 1.001 && Polarized_Intensity > 1e-10) {
+
+                exit(ERROR);
+
+            }
 
         }
 
         log_ray_emission(Stokes_Vector, Optical_Depth, s_Ray_results, log_index);
 
         Seperate_Image_into_orders(Max_theta_turning_points, *N_theta_turning_points, s_Initial_Conditions, s_Ray_results, Stokes_Vector);
-
-        double Tetrad[4][4]{};
-
-        Construct_Stokes_Tetrad(Tetrad, s_Initial_Conditions, Logged_ray_path[Current]);
-
-        int test{};
-
+         
     }
 
 }

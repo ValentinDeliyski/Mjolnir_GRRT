@@ -364,20 +364,20 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
     for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
         Image_Output_files[Image_order] << s_Ray_results->Image_Coords[x]
-            << " "
-            << s_Ray_results->Image_Coords[y]
-            << " "
-            << s_Ray_results->Redshift_NT[Image_order]
-            << " "
-            << s_Ray_results->Flux_NT[Image_order]
-            << " "
-            << s_Ray_results->Intensity[Image_order][I] * CGS_TO_JANSKY
-            << " "
-            << s_Ray_results->Intensity[Image_order][Q] * CGS_TO_JANSKY
-            << " "
-            << s_Ray_results->Intensity[Image_order][U] * CGS_TO_JANSKY
-            << " "
-            << s_Ray_results->Intensity[Image_order][V] * CGS_TO_JANSKY;
+                                        << " "
+                                        << s_Ray_results->Image_Coords[y]
+                                        << " "
+                                        << s_Ray_results->Redshift_NT[Image_order]
+                                        << " "
+                                        << s_Ray_results->Flux_NT[Image_order]
+                                        << " "
+                                        << s_Ray_results->Intensity[Image_order][I] * CGS_TO_JANSKY
+                                        << " "
+                                        << s_Ray_results->Intensity[Image_order][Q] * CGS_TO_JANSKY
+                                        << " "
+                                        << s_Ray_results->Intensity[Image_order][U] * CGS_TO_JANSKY
+                                        << " "
+                                        << s_Ray_results->Intensity[Image_order][V] * CGS_TO_JANSKY;
 
         if (Active_Sim_Mode == 2) {
 

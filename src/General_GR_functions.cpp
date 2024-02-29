@@ -25,7 +25,7 @@ void invert_metric(double inv_metric[4][4], double metric[4][4]) {
 
 double get_metric_det(double metric[4][4]) {
 
-    return -metric[1][1] * (metric[0][3] * metric[0][3] - metric[0][0] * metric[3][3]);
+    return metric[0][0] * metric[1][1] * metric[2][2] * metric[3][3] * (1 - metric[0][3] * metric[0][3] / (metric[0][0] * metric[3][3]));
 
 }
 
@@ -366,4 +366,7 @@ void get_connection_coefficients(Metric_type s_Metric, Metric_type s_dr_metric, 
     Connectrion_Coeffs[e_phi_coord][e_t_coord][e_theta_coord] = inv_metric[e_phi_coord][e_phi_coord] * s_dtheta_metric.Metric[e_phi_coord][e_t_coord] / 2 +
                                                                 inv_metric[e_phi_coord][e_t_coord] * s_dtheta_metric.Metric[e_t_coord][e_t_coord] / 2;
     Connectrion_Coeffs[e_phi_coord][e_theta_coord][e_t_coord] = Connectrion_Coeffs[e_r_coord][e_t_coord][e_theta_coord];
+
+
+
 }

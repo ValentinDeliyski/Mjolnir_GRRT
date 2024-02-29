@@ -355,6 +355,13 @@ void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][S
         Stokes_vector_internal[index] = Stokes_Vector[index] + Derivative_1[index] * step / 2;
     }
 
+
+    if (isnan(Stokes_vector_internal[V])) {
+
+        int test{};
+
+    }
+
     /* ================================ Stage 2 ================================ */
 
     mat_vec_multiply_4D(M_matrix_middle, Stokes_vector_internal, M_dot_Stokes_Vector);
@@ -365,6 +372,13 @@ void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][S
 
         Derivative_2[index] = emission_functions_middle[index] - M_dot_Stokes_Vector[index];
         Stokes_vector_internal[index] = Stokes_Vector[index] + Derivative_2[index] * step / 2;
+    }
+
+
+    if (isnan(Stokes_vector_internal[V])) {
+
+        int test{};
+
     }
     
     /* ================================ Stage 3 ================================ */
@@ -380,6 +394,13 @@ void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][S
 
     }
 
+
+    if (isnan(Stokes_vector_internal[I])) {
+
+        int test{};
+
+    }
+
     /* ================================ Stage 4 ================================ */
 
     mat_vec_multiply_4D(M_matrix_next, Stokes_vector_internal, M_dot_Stokes_Vector);
@@ -390,6 +411,13 @@ void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][S
 
         Derivative_4[index] = emission_functions[Next][index] - M_dot_Stokes_Vector[index];
         Stokes_Vector[index] += step * (Derivative_1[index] + 2 * Derivative_2[index] + 2 * Derivative_3[index] + Derivative_4[index]) / 6;
+    }
+
+
+    if (isnan(Stokes_vector_internal[I])) {
+
+        int test{};
+
     }
 
 }

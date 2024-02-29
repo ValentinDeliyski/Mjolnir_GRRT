@@ -368,7 +368,7 @@ double Optically_Thin_Toroidal_Model::get_disk_temperature(double State_vector[]
 
 int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[], Initial_conditions_type* s_Initial_Conditions) {
 
-    double& r_source = State_Vector[e_r];
+    double& r_source     = State_Vector[e_r];
     double& theta_source = State_Vector[e_theta];
 
     Metric_type s_Metric = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_Vector);
@@ -381,6 +381,12 @@ int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[], I
     if (e_metric == Naked_Singularity) {
 
         ell *= pow(1 - JNW_R_SINGULARITY / r_source, JNW_GAMMA);
+
+    }
+    else if (e_metric == Wormhole) {
+
+
+        ell *= (1 - WH_R_THROAT / r_source);
 
     }
 
@@ -591,15 +597,14 @@ double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[4],
     In the static frame I only set the geometry of the field, then finally scale B_field (the plasma frame one) by B_Plasma_norm_CGS.
     
     NOTE: B_field is measured by a static observer, so:
-    1) This really does not work for emission inside the ergo-sphere.
-    2) B_field is effectively in the coordinate basis (not any ZAMO!) - this means one cannot directly apply Lorentz boosts to it.
+    1) B_field is effectively in the coordinate basis (not any ZAMO!) - this means one cannot directly apply Lorentz boosts to it.
 
     */
 
     double electron_density = this->s_Disk_Parameters.Density_scale * this->get_disk_density_profile(State_vector);
 
     double B_Plasma_norm_CGS = sqrt(this->s_Disk_Parameters.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * electron_density * M_PROTON_CGS * 4 * M_PI);
-    double B_Static[4] = {          0, 
+    double B_Static[4] = {         0.0, 
                            MAG_FIELD_GEOMETRY[0],
                            MAG_FIELD_GEOMETRY[1],
                            MAG_FIELD_GEOMETRY[2] };
@@ -617,19 +622,19 @@ double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[4],
 
     Metric_type s_Metric = s_Initial_Conditions->Spacetimes[e_metric]->get_metric(State_vector);
 
-    for (int left_idx = 0; left_idx <= 4 - 1; left_idx++) {
+    for (int left_idx = 0; left_idx <= 3; left_idx++) {
 
-        for (int right_idx = 0; right_idx <= 4 - 1; right_idx++) {
+        for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
-            B_field[e_t_coord] += B_Plasma_norm_CGS * s_Metric.Metric[left_idx][right_idx] * Plasma_velocity[left_idx] * B_Static[right_idx];
+            B_field[e_t_coord] += s_Metric.Metric[left_idx][right_idx] * Plasma_velocity[left_idx] * B_Static[right_idx];
 
         }
 
     }
 
-    for (int index = 1; index <= 4 - 1; index++) {
+    for (int index = 1; index <= 3; index++) {
 
-        B_field[index] = B_Plasma_norm_CGS * (B_Static[index] + B_field[e_t_coord] * Plasma_velocity[index]) / Plasma_velocity[e_t_coord];
+        B_field[index] = (B_Static[index] + B_field[e_t_coord] * Plasma_velocity[index]) / Plasma_velocity[e_t_coord];
             
     }
     
@@ -647,7 +652,7 @@ double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vect
     */
 
     double* Plasma_velocity = this->get_disk_velocity(State_Vector, s_Initial_Conditions);
-    double Wave_vec_dot_Plasma_vec =             1           * Plasma_velocity[e_t_coord] + 
+    double Wave_vec_dot_Plasma_vec =            -1           * Plasma_velocity[e_t_coord] + 
                                      State_Vector[e_p_r]     * Plasma_velocity[e_r_coord] +
                                      State_Vector[e_p_theta] * Plasma_velocity[e_theta_coord] +
                                      State_Vector[e_p_phi]   * Plasma_velocity[e_phi_coord];
@@ -662,9 +667,9 @@ double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vect
     
     */
 
-    for (int left_idx = 0; left_idx <= 4 - 1; left_idx++) {
+    for (int left_idx = 0; left_idx <= 3; left_idx++) {
 
-        for (int right_idx = 0; right_idx <= 4 - 1; right_idx++) {
+        for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
             B_field_norm_squared   += s_Metric.Metric[left_idx][right_idx] * B_field_local[left_idx] * B_field_local[right_idx];
             B_field_dot_Plasma_vel += s_Metric.Metric[left_idx][right_idx] * B_field_local[left_idx] * Plasma_velocity[right_idx];
@@ -673,7 +678,7 @@ double Optically_Thin_Toroidal_Model::get_electron_pitch_angle(double State_Vect
 
     }
 
-    double Wave_vec_dot_B_field =          1             * B_field_local[e_t_coord] +
+    double Wave_vec_dot_B_field =           -1           * B_field_local[e_t_coord] +
                                  State_Vector[e_p_r]     * B_field_local[e_r_coord] +
                                  State_Vector[e_p_theta] * B_field_local[e_theta_coord] +
                                  State_Vector[e_p_phi]   * B_field_local[e_phi_coord];
@@ -888,9 +893,9 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
                 Arguments_angle_corrected.X_1_2_emission = Arguments_angle_uncorrected.X_1_2_emission * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
                 Arguments_angle_corrected.X_1_3_emission = Arguments_angle_uncorrected.X_1_3_emission * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
 
-                Arguments_angle_corrected.X_faradey                = Arguments_angle_corrected.X_faradey / this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
-                Arguments_angle_corrected.X_to_1_point_035_faradey = Arguments_angle_corrected.X_to_1_point_035_faradey / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[averaging_idx];
-                Arguments_angle_corrected.X_to_1_point_2_faradey   = Arguments_angle_corrected.X_to_1_point_2_faradey /  this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[averaging_idx];
+                Arguments_angle_corrected.X_faradey                = Arguments_angle_uncorrected.X_faradey / this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
+                Arguments_angle_corrected.X_to_1_point_035_faradey = Arguments_angle_uncorrected.X_to_1_point_035_faradey / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[averaging_idx];
+                Arguments_angle_corrected.X_to_1_point_2_faradey   = Arguments_angle_uncorrected.X_to_1_point_2_faradey /  this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[averaging_idx];
 
                 this->get_transfer_fit_functions(temp_emission_functions, temp_faradey_functions, &Arguments_angle_corrected);
 
@@ -911,9 +916,9 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
                 }
 
                 Emission_fucntions[I] += temp_emission_functions[I];
-                Emission_fucntions[Q] += temp_emission_functions[Q];
+                Emission_fucntions[Q] += temp_emission_functions[Q] * 0;
                 Emission_fucntions[U]  = 0.0;
-                Emission_fucntions[V] += temp_emission_functions[V];
+                Emission_fucntions[V] += temp_emission_functions[V] * 0;
 
                 /* ================================================ The faradey functions ================================================ */
                 /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33 */
@@ -991,7 +996,6 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
         }
 
     }
-
 
     /* ================================================ The absorbtion functions ================================================ */
 
