@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\Spacetimes">
+      <UniqueIdentifier>{4564c214-3a42-4303-b31e-028406791bed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Propagation">
+      <UniqueIdentifier>{7a0ff74a-5616-45e5-a8b3-cd826ccc8f89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Math Library">
+      <UniqueIdentifier>{2b1ca493-cd45-40a8-a420-ab0329c41ae8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\Constants.h">
@@ -39,9 +48,6 @@
     <ClInclude Include="Libraries\include\Rendering_Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\Spacetimes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Libraries\include\Inputs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -51,11 +57,17 @@
     <ClInclude Include="Libraries\include\Structs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\include\Console_printing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Radiative_Transfer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Spacetimes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\General_math_functions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\IO_files.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -68,16 +80,7 @@
     <ClCompile Include="src\Rendering_Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\RK45.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Spacetimes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Disk_Models.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\General_GR_functions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\glad.c">
@@ -85,6 +88,42 @@
     </ClCompile>
     <ClCompile Include="src\Sim_Modes.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Console_printing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Spacetimes\Observer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Spacetimes\Black_Hole_With_Dark_Matter.cpp">
+      <Filter>Source Files\Spacetimes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Spacetimes\Kerr.cpp">
+      <Filter>Source Files\Spacetimes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Spacetimes\Gauss_Bonnet.cpp">
+      <Filter>Source Files\Spacetimes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Spacetimes\Janis_Newman_Winicour.cpp">
+      <Filter>Source Files\Spacetimes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Spacetimes\Wormhole.cpp">
+      <Filter>Source Files\Spacetimes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Spacetimes\Regular_Black_Hole.cpp">
+      <Filter>Source Files\Spacetimes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Radiative_Transfer.cpp">
+      <Filter>Source Files\Propagation</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RK45.cpp">
+      <Filter>Source Files\Propagation</Filter>
+    </ClCompile>
+    <ClCompile Include="src\General_GR_functions.cpp">
+      <Filter>Source Files\Math Library</Filter>
+    </ClCompile>
+    <ClCompile Include="src\General_math_functions.cpp">
+      <Filter>Source Files\Math Library</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -35,8 +35,9 @@
 #include "Lensing.h"
 
 #include "Rendering_Engine.h"
-#include"Structs.h"
+#include "Structs.h"
 #include "Sim_Modes.h"
+#include "Console_printing.h"
 
 /* 
 
@@ -72,49 +73,27 @@ Observer_class Observer(r_obs, theta_obs, phi_obs);
 
 /*
 
-Define the Optically Thin Disk Class
-
-*/
-
-Optically_Thin_Toroidal_Model OTT_Model({}, {});
-
-/*
-
-Define the Novikov-Thorne Disk Class
-
-*/
-
-Novikov_Thorne_Model NT_Model(r_in, r_out);
-
-/*
-
 Initialize the file manager
 
 */
 
 File_manager_class File_manager(input_file_path, Truncate_files);
 
-void print_ASCII_art() {
-
-    std::cout <<
-
-        " ######   ########     ###    ##     ## #### ########    ###    ######## ####  #######  ##    ##    ###    ##          ########     ###    ##    ##    ######## ########     ###     ######  ######## ########  \n"
-        "##    ##  ##     ##   ## ##   ##     ##  ##     ##      ## ##      ##     ##  ##     ## ###   ##   ## ##   ##          ##     ##   ## ##    ##  ##        ##    ##     ##   ## ##   ##    ## ##       ##     ## \n"
-        "##        ##     ##  ##   ##  ##     ##  ##     ##     ##   ##     ##     ##  ##     ## ####  ##  ##   ##  ##          ##     ##  ##   ##    ####         ##    ##     ##  ##   ##  ##       ##       ##     ## \n"
-        "##   #### ########  ##     ## ##     ##  ##     ##    ##     ##    ##     ##  ##     ## ## ## ## ##     ## ##          ########  ##     ##    ##          ##    ########  ##     ## ##       ######   ########  \n"
-        "##    ##  ##   ##   #########  ##   ##   ##     ##    #########    ##     ##  ##     ## ##  #### ######### ##          ##   ##   #########    ##          ##    ##   ##   ######### ##       ##       ##   ##   \n"
-        "##    ##  ##    ##  ##     ##   ## ##    ##     ##    ##     ##    ##     ##  ##     ## ##   ### ##     ## ##          ##    ##  ##     ##    ##          ##    ##    ##  ##     ## ##    ## ##       ##    ##  \n"
-        " ######   ##     ## ##     ##    ###    ####    ##    ##     ##    ##    ####  #######  ##    ## ##     ## ########    ##     ## ##     ##    ##          ##    ##     ## ##     ##  ######  ######## ##     ## \n";
-
-    std::cout << '\n' << '\n';
-
-}
+Initial_conditions_type s_Initial_Conditions{};
 
 int main() {
 
+    /*
+
+    Define the Optically Thin Disk Class
+
+    */
+
+    Optically_Thin_Toroidal_Model OTT_Model({}, {});
+
     OTT_Model.precompute_electron_pitch_angles();
 
-    Disk_model_parameters Disk_params{ { HOTSPOT_R_COORD, 0.0, 0.0 },
+    Disk_model_parameters Disk_params{ { HOTSPOT_R_COORD, M_PI_2, 0.0 },
                                          HOTSPOT_SCALE,
                                          HOTSPOT_REL_SCALE,
                                          N_ELECTRON_EXACT_CGS,
@@ -127,14 +106,26 @@ int main() {
                                          T_ELECTRON_EXACT_CGS,
                                          DISK_MAGNETIZATION };
 
-    Emission_law_parameters Emission_params{ EMISSION_SCALE_PHENOMENOLOGICAL, 
-                                             DISK_ABSORBTION_COEFF, 
-                                             EMISSION_POWER_LAW, 
+    Emission_law_parameters Emission_params{ EMISSION_SCALE_PHENOMENOLOGICAL,
+                                             DISK_ABSORBTION_COEFF,
+                                             EMISSION_POWER_LAW,
                                              SOURCE_F_POWER_LAW };
 
     int result = OTT_Model.load_parameters(&Disk_params, &Emission_params);
 
+    /*
+
+    Define the Novikov-Thorne Disk Class
+
+    */
+
+    Novikov_Thorne_Model NT_Model(r_in, r_out, Spacetimes);
+
     if (ERROR != result) {
+
+        Console_Printer_class Console_Printer;
+        Console_Printer.print_ASCII_art();
+        Console_Printer.print_sim_parameters();
 
         /*
 
@@ -142,7 +133,6 @@ int main() {
 
         */
 
-        Initial_conditions_type s_Initial_Conditions{};
         s_Initial_Conditions.init_Pos[e_r]     = r_obs;
         s_Initial_Conditions.init_Pos[e_theta] = theta_obs;
         s_Initial_Conditions.init_Pos[e_phi]   = phi_obs;
@@ -153,12 +143,12 @@ int main() {
         s_Initial_Conditions.init_metric_Redshift_func = s_Metric.Lapse_function;
         s_Initial_Conditions.init_metric_Shitft_func   = s_Metric.Shift_function;
 
-        print_ASCII_art();
+        memcpy(s_Initial_Conditions.Spacetimes, Spacetimes, sizeof(Spacetimes));
 
-        std::cout << "Observer Radial Position [GM/c^2] = " << r_obs << '\n';
-        std::cout << "Observer Inclination [deg]        = " << int(theta_obs / M_PI * 180) << '\n';
+        s_Initial_Conditions.OTT_model = &OTT_Model;
+        s_Initial_Conditions.NT_model  = &NT_Model;
 
-        switch (Active_Sim_Mode) {
+       switch (Active_Sim_Mode) {
 
         case 1:
 

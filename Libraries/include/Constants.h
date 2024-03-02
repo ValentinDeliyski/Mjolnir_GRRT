@@ -6,9 +6,10 @@
     
     #include "Inputs.h"
     #include <string>
+    #include <complex>
 
-    const int RK45_size			    = 7;   // Number of integration sub-steps
-    const int MAX_INTEGRATION_COUNT = 1e9; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
+    const int RK45_size			    = 7;       // Number of integration sub-steps
+    const int MAX_INTEGRATION_COUNT = 1e7; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
     Real Coeff_deriv[RK45_size][RK45_size - 1] =
     {
@@ -24,6 +25,8 @@
     Real Coeff_sol[RK45_size] = { 35. / 384, 0, 500. / 1113, 125. / 192, -2187. / 6784, 11. / 84, 0 };
 
     Real Coeff_test_sol[RK45_size] = { 5179. / 57600, 0, 7571. / 16695, 393. / 640, -92097. / 339200, 187. / 2100, 1. / 40 };
+
+    const  std::complex<double> complex_i(0.0, 1.0);
 
     /*
 
@@ -75,7 +78,7 @@
     
     */
 
-    const auto vert_shader_path = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Libraries\\shaders\\default.vert";
-    const auto frag_shader_path = "C:\\Users\\Valentin\\Documents\\Repos\\Gravitational_Lenser\\Libraries\\shaders\\default.frag";
+    const auto vert_shader_path = ".\\Libraries\\shaders\\default.vert";
+    const auto frag_shader_path = ".\\Libraries\\shaders\\default.frag";
 
 #endif

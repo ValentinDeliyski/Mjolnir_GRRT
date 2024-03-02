@@ -5,19 +5,9 @@
     #define SPACETIMES
 
     #include <iostream>
-    #include <vector>
-    #include "Enumerations.h"
     #include "Structs.h"
 
     class Spacetime_Base_Class {
-
-        private:
-
-            Metric_type s_Metric;
-            Metric_type s_dr_Metric;
-            Metric_type s_d2r_Metric;
-            bool eval_bitmask[3]{};
-            bool ignore_flag{};
 
         public:
 
@@ -48,6 +38,15 @@
             };
 
             virtual Metric_type get_dr_metric(double State_vector[]) {
+
+                std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+
+                return {};
+
+            };
+
+
+            virtual Metric_type get_dtheta_metric(double State_vector[]) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -93,10 +92,6 @@
             
             };
 
-            virtual void set_ignore_flag(bool flag);
-
-            virtual void reset_eval_bitmask();
-
     };
 
     class Kerr_class : public Spacetime_Base_Class {
@@ -105,9 +100,8 @@
 
             Metric_type s_Metric;
             Metric_type s_dr_Metric;
+            Metric_type s_dtheta_Metric{};
             Metric_type s_d2r_Metric;
-            bool eval_bitmask[3]{};
-            bool ignore_flag{};
 
         public:
 
@@ -117,27 +111,28 @@
             /* Metric and its derivatives */
 
             int update_metric(double State_vector[]);
-            Metric_type get_metric(double State_vector[]);
+            Metric_type get_metric(double State_vector[]) override;
 
             int update_dr_metric(double State_vector[]);
-            Metric_type get_dr_metric(double State_vector[]);
+            Metric_type get_dr_metric(double State_vector[]) override;
+
+            int update_dtheta_metric(double State_vector[]);
+            Metric_type get_dtheta_metric(double State_vector[]) override;
 
             int update_d2r_metric(double State_vector[]);
-            Metric_type get_d2r_metric(double State_vector[]);
+            Metric_type get_d2r_metric(double State_vector[]) override;
 
             /* Initial conditions derived from images */
 
-            int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
+            int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
             /* Equations of motion */
 
-            int get_EOM(double inter_State_vector[], double Derivatives[]);
+            int get_EOM(double inter_State_vector[], double Derivatives[]) override;
 
             /* Integration Termination Conditions */
 
-            bool terminate_integration(double State_vector[], double Derivatives[]);
-            void set_ignore_flag(bool flag);
-            void reset_eval_bitmask();
+            bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
     };
 
@@ -147,9 +142,8 @@
 
         Metric_type s_Metric{};
         Metric_type s_dr_Metric{};
+        Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[3]{};
-        bool ignore_flag{};
 
     public:
 
@@ -160,27 +154,28 @@
         /* Metric and its derivatives */
 
         int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]) override;
 
         int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]) override;
+
+        int update_dtheta_metric(double State_vector[]);
+        Metric_type get_dtheta_metric(double State_vector[]) override;
 
         int update_d2r_metric(double State_vector[]);
-        Metric_type get_d2r_metric(double State_vector[]);
+        Metric_type get_d2r_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
 
-        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[]);
+        int get_EOM(double inter_State_vector[], double Derivatives[]) override;
 
         /* Integration Termination Conditions */
 
-        bool terminate_integration(double State_vector[], double Derivatives[]);
-        void set_ignore_flag(bool flag);
-        void reset_eval_bitmask();
+        bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
     };
 
@@ -190,9 +185,8 @@
 
         Metric_type s_Metric{};
         Metric_type s_dr_Metric{};
+        Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[3]{};
-        bool ignore_flag{};
 
     public:
 
@@ -202,27 +196,28 @@
         /* Metric and its derivatives */
 
         int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]) override;
 
         int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]) override;
+
+        int update_dtheta_metric(double State_vector[]);
+        Metric_type get_dtheta_metric(double State_vector[]) override;
 
         int update_d2r_metric(double State_vector[]);
-        Metric_type get_d2r_metric(double State_vector[]);
+        Metric_type get_d2r_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
 
-        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[]);
+        int get_EOM(double inter_State_vector[], double Derivatives[]) override;
 
         /* Integration Termination Conditions */
 
-        bool terminate_integration(double State_vector[], double Derivatives[]);
-        void set_ignore_flag(bool flag);
-        void reset_eval_bitmask();
+        bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
     };
 
@@ -232,9 +227,8 @@
 
         Metric_type s_Metric{};
         Metric_type s_dr_Metric{};
+        Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[3] = {false, false, false};
-        bool ignore_flag{};
 
     public:
 
@@ -244,28 +238,28 @@
         /* Metric and its derivatives */
 
         int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]) override;
 
         int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]) override;
+
+        int update_dtheta_metric(double State_vector[]);
+        Metric_type get_dtheta_metric(double State_vector[]) override;
 
         int update_d2r_metric(double State_vector[]);
-        Metric_type get_d2r_metric(double State_vector[]);
+        Metric_type get_d2r_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
 
-        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[]);
+        int get_EOM(double inter_State_vector[], double Derivatives[]) override;
 
         /* Integration Termination Conditions */
 
-        bool terminate_integration(double State_vector[], double Derivatives[]);
-
-        void set_ignore_flag(bool flag);
-        void reset_eval_bitmask();
+        bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
     };
 
@@ -275,9 +269,8 @@
 
         Metric_type s_Metric{};
         Metric_type s_dr_Metric{};
+        Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[3]{};
-        bool ignore_flag{};
 
     public:
 
@@ -287,27 +280,29 @@
         /* Metric and its derivatives */
 
         int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]) override;
 
         int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]) override;
+
+        int update_dtheta_metric(double State_vector[]);
+        Metric_type get_dtheta_metric(double State_vector[]) override;
 
         int update_d2r_metric(double State_vector[]);
-        Metric_type get_d2r_metric(double State_vector[]);
+        Metric_type get_d2r_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
 
-        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[]);
+        int get_EOM(double inter_State_vector[], double Derivatives[]) override;
 
         /* Integration Termination Conditions */
 
-        bool terminate_integration(double State_vector[], double Derivatives[]);
-        void set_ignore_flag(bool flag);
-        void reset_eval_bitmask();
+        bool terminate_integration(double State_vector[], double Derivatives[]) override;
+
     };
 
     class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
@@ -316,9 +311,8 @@
 
         Metric_type s_Metric{};
         Metric_type s_dr_Metric{};
+        Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[3]{};
-        bool ignore_flag{};
 
     public:
 
@@ -327,24 +321,25 @@
         /* Metric and its derivatives */
 
         int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]);
+        Metric_type get_metric(double State_vector[]) override;
 
         int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]);
+        Metric_type get_dr_metric(double State_vector[]) override;
+
+        int update_dtheta_metric(double State_vector[]);
+        Metric_type get_dtheta_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
 
-        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon);
+        int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
  
         /* Equations of motion */
 
-        int get_EOM(double inter_State_vector[], double Derivatives[]);
+        int get_EOM(double inter_State_vector[], double Derivatives[]) override;
 
         /* Integration Termination Conditions */
 
-        bool terminate_integration(double State_vector[], double Derivatives[]);
-        void set_ignore_flag(bool flag);
-        void reset_eval_bitmask();
+        bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
     };
 

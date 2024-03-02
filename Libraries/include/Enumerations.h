@@ -4,8 +4,6 @@
 
     #define ENUMS
 
-    #include <vector>
-
     enum Spacetime_enums {
 
         Kerr			  = 0,
@@ -34,15 +32,26 @@
 
     enum State_enums {
 
-        e_r             = 0,
-        e_theta         = 1,
-        e_phi           = 2,
-        e_p_phi         = 3,
-        e_p_theta       = 4,
-        e_p_r           = 5,
-        e_Intensity     = 6,
-        e_Optical_Depth = 7,
-        e_State_Number  = 8
+        e_r = 0,
+        e_theta = 1,
+        e_phi = 2,
+        e_p_phi = 3,
+        e_p_theta = 4,
+        e_p_r = 5,
+        e_State_Number = 6
+
+    };
+
+    enum Ray_path_log_enums {
+
+        e_path_log_r = 0,
+        e_path_log_theta = 1,
+        e_path_log_phi = 2,
+        e_path_log_p_phi = 3,
+        e_path_log_p_theta = 4,
+        e_path_log_p_r = 5,
+        e_path_log_step = 6,
+        e_path_log_number = 7
 
     };
 
@@ -75,8 +84,8 @@
 
     enum Return_Values {
 
-        OK    = 0,
-        ERROR = 255
+        OK    =  0,
+        ERROR = -1
 
     };
 
@@ -95,45 +104,45 @@
 
     };
 
-    struct Initial_conditions_type {
+    enum Emission_Interpolation_points {
 
-        double init_metric[4][4];
-        double init_metric_Redshift_func;
-        double init_metric_Shitft_func;
-
-        double init_Pos[3];
-        double init_Three_Momentum[3];
+        Current  = 0,
+        Next     = 1,
+        INTERPOLATION_NUM = 2,
 
     };
 
-    struct Results_type {
+    enum Sync_emission_fit_functions {
 
-        double Flux_NT[ORDER_NUM]{};
-        double Redshift_NT[ORDER_NUM]{};
-
-        double Intensity[ORDER_NUM]{};
-        double Optical_Depth{};
-
-        double Source_Coords[3][ORDER_NUM]{};
-        double Three_Momentum[3][ORDER_NUM]{};
-
-        double Image_Coords[2]{};
-
-        std::vector<std::vector<double>> Ray_log;
-
-        double Parameters[SPACETIME_NUMBER]{};
+        Leung_2011  = 0,
+        Dexter_2016 = 1
 
     };
 
-    struct Trace_Results_type {
+    enum Stokes_parameters {
 
-        double Intensity;
-        double Optical_Depth;
+        I = 0,
+        Q = 1,
+        U = 2,
+        V = 3,
+        STOKES_PARAM_NUM = 4
 
-        double Coordinates[3];
-        double Three_Momentum[3];
+    };
 
-        double Image_Coords[2];
+    enum Radiative_Transfer_Integrator {
+
+        Analytic = 0,
+        Implicit_Trapezoid = 1,
+        RK4 = 2
+
+    };
+
+    enum Metric_Evaluation_Bitmask {
+
+        Metric = 0,
+        dr_Metric = 1,
+        dtheta_Metric = 2,
+        d2r_Metric = 3,
 
     };
 

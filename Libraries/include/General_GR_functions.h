@@ -4,14 +4,10 @@
 
     #define _USE_MATH_DEFINES
 
-    #include "Enumerations.h"
-    #include "Spacetimes.h"
-
-    #include <iostream>
-    #include <cmath>
-    #include <vector>
-
     #define GENERAL_FUNCTIONS
+
+    struct Initial_conditions_type;
+    struct Metric_type;
 
     double get_planck_function_CGS(double Frequency, double Temperature);
 
@@ -31,10 +27,10 @@
 
     void Lorentz_boost_matrix(double Boost_matrix[4][4], double U_source[4]);
 
-    int compute_order_no_spin(double State_Vector[]);
-
     int Increment_theta_turning_points(double State_Vector[], double Old_State[]);
 
     int compute_image_order(int N_theta_turning_points, Initial_conditions_type* p_Initial_Conditions);
+
+    void get_connection_coefficients(Metric_type s_Metric, Metric_type s_dr_metric, Metric_type s_dtheta_metric, double Connectrion_Coeffs[4][4][4]);
 
 #endif 

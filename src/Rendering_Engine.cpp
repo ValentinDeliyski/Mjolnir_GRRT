@@ -3,7 +3,6 @@
 #include "Rendering_Engine.h"
 #include "lensing.h"
 #include "General_GR_functions.h"
-#include "General_math_functions.h"
 #include "Sim_Modes.h"
 #include <iostream>
 
@@ -69,15 +68,15 @@ void Rendering_engine::OpenGL_init() {
 
 void Rendering_engine::update_rendering_window() {
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, RESOLUTION, RESOLUTION * aspect_ratio, 0, GL_RGB, GL_FLOAT, texture_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, RESOLUTION, RESOLUTION * aspect_ratio, 0, GL_RGB, GL_FLOAT, this->texture_buffer);
     // Specify the color of the background
     glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
     // Clean the back buffer and assign the new color to it
     glClear(GL_COLOR_BUFFER_BIT);
     // Draw primitives, number of indices, datatype of indices, index of indices
-    glDrawElements(GL_TRIANGLES, sizeof(Vertex_order) / sizeof(float), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, sizeof(this->Vertex_order) / sizeof(float), GL_UNSIGNED_INT, 0);
     // Swap the back buffer with the front buffer
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(this->window);
     // Take care of all GLFW events
     glfwPollEvents();
 
@@ -137,7 +136,7 @@ void Rendering_engine::set_background_pattern_color(double State_vector[], doubl
 
     }
 
-    double grayscale_value = pow((1 + sin(10 * phi) * sin(10 * theta)) / 2, 1.0 / 5);
+    float grayscale_value = pow((1 + sin(10 * phi) * sin(10 * theta)) / 2, 1.0 / 5);
 
 
 
@@ -147,63 +146,40 @@ void Rendering_engine::set_background_pattern_color(double State_vector[], doubl
 
 }
 
-void Rendering_engine::normalize_colormap(Initial_conditions_type* s_Initial_Conditions) {
+void Rendering_engine::renormalize_colormap() {
 
-    /*
+    float current_max{};
 
-    Do one scan line in the middle of the image to find the maximum intensity for use in the colormap
+    for (int index = 0; index <= this->texture_indexer; index += 3) {
 
-    */
+        this->renormalize_colormap_flag = false;
 
-    std::cout << "Initial y = 0 scan to normalize the colormap..." << '\n';
+        if (this->Intensity_buffer[int(index / 3)] > current_max) {
 
-    Results_type Colormap_normalization_results{}; 
+            current_max = this->Intensity_buffer[int(index / 3)];
 
-    for (int pixel_num = 0; pixel_num <= RESOLUTION - 1; pixel_num++) {
-
-        get_intitial_conditions_from_angles(s_Initial_Conditions, 0, H_angle_max - pixel_num * Scan_Step);
-
-        Colormap_normalization_results = Propagate_ray(s_Initial_Conditions);
-
-        double Intensity_current = Colormap_normalization_results.Intensity[direct] +
-                                   Colormap_normalization_results.Intensity[first]  +
-                                   Colormap_normalization_results.Intensity[second] +
-                                   Colormap_normalization_results.Intensity[third];
-
-        if (Intensity_current > Max_Intensity) {
-
-            Max_Intensity = Intensity_current;
+            this->renormalize_colormap_flag = false;
 
         }
-
-        print_progress(pixel_num, RESOLUTION - 1, false, true);
 
     }
 
-}
+    this->Max_Intensity = current_max;
 
-void Rendering_engine::renormalize_colormap() {
+    if (this->renormalize_colormap_flag) {
 
-    if (renormalize_colormap_flag == true) {
-
-        for (int index = 0; index <= texture_indexer - 1; index += 3) {
-
-
-            set_pixel_color(Intensity_buffer[int(index / 3)], index);
-
-
-        }
-
-        renormalize_colormap_flag = false;
-
+        int lower_index = 0;
+    
     }
     else {
 
-        for (int index = texture_indexer - (RESOLUTION) * 3; index <= texture_indexer - 1; index += 3) {
+        int lower_index = this->texture_indexer - RESOLUTION * 3 >= 0 ? this->texture_indexer - RESOLUTION * 3 : 0;
 
-            set_pixel_color(Intensity_buffer[int(index / 3)], index);
+    }
 
-        }
+    for (int index = 0; index <= this->texture_indexer - 1; index += 3) {
+
+        set_pixel_color(Intensity_buffer[int(index / 3)], index);
 
     }
 

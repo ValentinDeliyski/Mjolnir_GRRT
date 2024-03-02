@@ -5,8 +5,6 @@
 #include "inputs.h"
 #include <cmath>
 
-extern Novikov_Thorne_Model NT_Model;
-
 double vector_norm(double Vector[], int Vector_size) {
 
 	/**********************************************************************
@@ -35,7 +33,7 @@ double vector_norm(double Vector[], int Vector_size) {
 
 };
 
-int mat_vec_multiply_4D(double Matrix[4][4], double Vector[4], double result[4]) {
+int mat_vec_multiply_4D(double const Matrix[4][4], double const Vector[4], double result[4]) {
 
 	/******************************************************************************
 	|                                                                             |
@@ -47,12 +45,13 @@ int mat_vec_multiply_4D(double Matrix[4][4], double Vector[4], double result[4])
 	|	  * Result: Pointer to the vector, which stores the result of the		  |
 	|	  multiplication														  |
 	|																			  |
-	|   @ Ouput: Pointer to the result from the multiplication					  |
+	|   @ Ouput: None															  |
 	|                                                                             |
 	******************************************************************************/
 
-
 	for (int row = 0; row <= 3; row += 1) {
+
+		result[row] = 0.0;
 
 		for (int column = 0; column <= 3; column += 1) {
 
@@ -65,7 +64,7 @@ int mat_vec_multiply_4D(double Matrix[4][4], double Vector[4], double result[4])
 
 };
 
-double my_max(double vector[], int element_number) {
+double my_max(double const vector[], int const element_number) {
 
 	/*****************************************************************************
 	|                                                                            |
@@ -80,30 +79,49 @@ double my_max(double vector[], int element_number) {
 
 	int index_max = element_number - 1;
 
-	for (int index = 0; index <= index_max; index += 1) {
+	double* temp_vec = (double*) calloc(element_number, sizeof(double));
+	double max{};
 
-		if (vector[index] < 0) {
+	if (NULL == temp_vec) {
 
-			vector[index] = -1.0 * vector[index];
-		}
+		// Putting this check here (which should never pass), so I don't get
+		// compiler warnings about dereferencing a null pointer
+
+		exit(ERROR);
+
+	}
+	else {
+
+		max = temp_vec[0];
 
 	}
 
-	double max = vector[0];
+	for (int index = 0; index <= index_max; index += 1) {
+
+		temp_vec[index] = vector[index];
+
+		if (temp_vec[index] < 0) {
+
+			temp_vec[index] = -1.0 * temp_vec[index];
+		}
+
+	}
 
 	for (int index = 1; index <= index_max; index += 1) {
 
-		if (vector[index] > max) {
+		if (temp_vec[index] > max) {
 
-			max = vector[index];
+			max = temp_vec[index];
 
 		}
 	}
+
+	free(temp_vec);
 
 	return max;
 }
 
-bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[], double crossing_momenta[]) {
+bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[], double crossing_momenta[], Novikov_Thorne_Model* NT_Model) {
 
 	/***********************************************************************************************
 	|                                                                                              |
@@ -172,12 +190,12 @@ bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], doub
 		crossing_momenta[index] = momentum_param[index] * State_Vector[5 - index] + (1 - momentum_param[index]) * Old_State_Vector[5 - index];
 	}
 
-	double r_out = NT_Model.get_r_out();
-	double r_in  = NT_Model.get_r_in();
+	double r_out = NT_Model->get_r_out();
+	double r_in  = NT_Model->get_r_in();
 
 	if (e_metric == Wormhole) {
 
-		return r_crossing_squared < r_out* r_out - WH_R_THROAT * WH_R_THROAT && r_crossing_squared > r_in * r_in - WH_R_THROAT * WH_R_THROAT;
+		return r_crossing_squared < r_out * r_out - WH_R_THROAT * WH_R_THROAT && r_crossing_squared > r_in * r_in - WH_R_THROAT * WH_R_THROAT;
 
 	}
 	
@@ -199,5 +217,32 @@ double dot_product(double vector_1[3], double vector_2[3]) {
 	************************************************************************************/
 
 	return vector_1[0] * vector_2[0] + vector_1[1] * vector_2[1] + vector_1[2] * vector_2[2];
+
+}
+
+void convert_spherical_to_cartesian(double* Spherical_Coords, double* Cartesian_Coords) {
+
+	double sin_theta = sin(Spherical_Coords[e_theta]);
+	double cos_theta = cos(Spherical_Coords[e_theta]);
+
+	double sin_phi = sin(Spherical_Coords[e_phi]);
+	double cos_phi = cos(Spherical_Coords[e_phi]);
+
+	Cartesian_Coords[x] = Spherical_Coords[e_r] * sin_theta * cos_phi;
+	Cartesian_Coords[y] = Spherical_Coords[e_r] * sin_theta * sin_phi;
+	Cartesian_Coords[z] = Spherical_Coords[e_r] * cos_theta;
+
+}
+
+void convert_cartesian_to_spherical(double* Cartesian_Coords, double* Spherical_Coords) {
+
+	Spherical_Coords[e_r]  = Cartesian_Coords[x] * Cartesian_Coords[x];
+	Spherical_Coords[e_r] += Cartesian_Coords[y] * Cartesian_Coords[y];
+	Spherical_Coords[e_r] += Cartesian_Coords[z] * Cartesian_Coords[z];
+	Spherical_Coords[e_r]  = sqrt(Spherical_Coords[e_r]);
+
+	Spherical_Coords[e_theta] = acos(Cartesian_Coords[z] / Spherical_Coords[e_r]);
+
+	Spherical_Coords[e_phi] = atan2(Cartesian_Coords[y], Cartesian_Coords[x]);
 
 }

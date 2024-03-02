@@ -70,7 +70,10 @@ class Simulation_Parser():
             self.X_coords        = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
             self.Y_coords        = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
             self.NT_Flux         = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.Intensity       = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.I_Intensity     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.Q_Intensity     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.U_Intensity     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.V_Intensity     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
             self.NT_Redshift     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
             self.NT_Flux_Shifted = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
 
@@ -85,7 +88,10 @@ class Simulation_Parser():
 
                     self.NT_Redshift[index]  = row[2]
                     self.NT_Flux[index]      = row[3]
-                    self.Intensity[index]    = row[4]
+                    self.I_Intensity[index]  = row[4]
+                    self.Q_Intensity[index]  = row[5]
+                    self.U_Intensity[index]  = row[6]
+                    self.V_Intensity[index]  = row[7]
 
                     self.NT_Flux_Shifted[index] = self.NT_Redshift[index]**4*self.NT_Flux[index]
 
@@ -100,15 +106,24 @@ class Simulation_Parser():
         dx = np.abs(self.X_coords[0] - self.X_coords[1])
         dy = np.abs(self.Y_coords[0] - self.Y_coords[self.X_PIXEL_COUNT + 1])
 
-        return np.sum(self.Intensity) * dx * dy / obs_pos**2
+        return np.sum(self.I_Intensity) * dx * dy / obs_pos**2
 
     def get_plottable_sim_data(self) -> tuple:
 
         # Arrays need to be flipped, because mpl treats y = 0 as the top, 
         # and the simulator (aka openGL) treats it as the bottom
 
-        Intensity = self.Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
-        Intensity = np.flip(Intensity, 0)
+        I_Intensity = self.I_Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
+        I_Intensity = np.flip(I_Intensity, 0)
+
+        Q_Intensity = self.Q_Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
+        Q_Intensity = np.flip(Q_Intensity, 0)
+
+        U_Intensity = self.U_Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
+        U_Intensity = np.flip(U_Intensity, 0)
+
+        V_Intensity = self.V_Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
+        V_Intensity = np.flip(V_Intensity, 0)
 
         NT_Flux         = self.NT_Flux.reshape(self.X_PIXEL_COUNT,self.Y_PIXEL_COUNT)
         NT_Flux         = np.flip(NT_Flux, 0)
@@ -119,7 +134,7 @@ class Simulation_Parser():
         NT_Flux_Shifted = self.NT_Flux_Shifted.reshape(self.X_PIXEL_COUNT,self.Y_PIXEL_COUNT)
         NT_Flux_Shifted = np.flip(NT_Flux_Shifted, 0)
 
-        return Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted
+        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted
     
     def export_ehtim_data(self, Spacetime: str, data: np.array, path: str):
 
@@ -298,6 +313,6 @@ class Units_class():
     
     def Spectral_density_to_T(self, I_nu, f):
 
-        I_nu += 1e-15 # To avoid division by 0 errors
+        I_nu += 1e-10 # To avoid division by 0 errors
 
         return self.PLANCK_SI * f / self.BOLTZMANN_SI / np.log(1 + 2 * self.PLANCK_SI * f**3 / self.C_LIGHT_SI**2 / I_nu)

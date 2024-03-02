@@ -2,13 +2,13 @@
 
 #define _USE_MATH_DEFINES
 
-#include <iostream>
-
 #include "IO_files.h"
 #include "Constants.h"
+#include "Disk_models.h"
+#include "Spacetimes.h"
+#include <iostream>
 
-extern Spacetime_Base_Class* Spacetimes[];
-extern Optically_Thin_Toroidal_Model OTT_Model;
+extern Initial_conditions_type s_Initial_Conditions;
 
 File_manager_class::File_manager_class(std::string input_file_path, bool truncate) {
 
@@ -77,12 +77,12 @@ void File_manager_class::write_simulation_metadata() {
 
             if (R_Cutoff < 0) {
 
-                Image_Output_files[Image_order] << Spacetimes[e_metric]->get_ISCO()[Outer] << "\n";
+                Image_Output_files[Image_order] << s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Outer] << "\n";
 
             }
             else if (R_Cutoff == NULL) {
 
-                Image_Output_files[Image_order] << Spacetimes[e_metric]->get_ISCO()[Inner] << "\n";
+                Image_Output_files[Image_order] << s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Inner] << "\n";
 
             }
             else {
@@ -172,7 +172,7 @@ void File_manager_class::write_simulation_metadata() {
         Image_Output_files[Image_order] << "------------------------------------------------------- Novikov-Thorne Disk Metadata -------------------------------------------------------"
                                         << "\n"
                                         << "Inner Disk Radius [M]: "
-                                        << r_in * (r_in != NULL) + Spacetimes[e_metric]->get_ISCO()[Inner] * (r_in == NULL)
+                                        << r_in * (r_in != NULL) + s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Inner] * (r_in == NULL)
                                         << "\n"
                                         << "Outer Disk Radius [M]: "
                                         << r_out
@@ -270,7 +270,13 @@ void File_manager_class::write_simulation_metadata() {
                                             << " "
                                             << "Novikov-Thorne Flux [M^-2],"
                                             << " "
-                                            << "Optically Thin Disk Intensity [Jy/sRad]"
+                                            << "Synchotron Intensity I [Jy/sRad]"
+                                            << " "
+                                            << "Synchotron Intensity Q [Jy/sRad]"
+                                            << " "
+                                            << "Synchotron Intensity U [Jy/sRad]"
+                                            << " "
+                                            << "Synchotron Intensity V [Jy/sRad]"
                                             << '\n';
 
         }
@@ -306,10 +312,10 @@ void File_manager_class::open_image_output_files() {
         if (Active_Sim_Mode == 3) {
 
             Image_file_names[File_Index] = Image_File_Names[e_metric]
-                + "_n"
-                + std::to_string(File_Index)
-                + "_"
-                + std::to_string(0.0 * 10);
+                                         + "_frame_"
+                                         + std::to_string(int(s_Initial_Conditions.OTT_model->get_disk_params().Hotspot_position[e_phi] * HOTSPOT_ANIMATION_NUMBER / (2 * M_PI)))
+                                         + "_n"
+                                         + std::to_string(File_Index);
 
             Image_file_names[File_Index].replace_extension(file_extention);
             Image_full_path[File_Index] = dir / "Hotspot_animation_frames" / Image_file_names[File_Index];
@@ -353,34 +359,40 @@ void File_manager_class::open_log_output_file() {
 
 }
 
-void File_manager_class::write_image_data_to_file(Results_type s_Ray_results) {
+void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
     for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
-        Image_Output_files[Image_order] << s_Ray_results.Image_Coords[x]
-                                  << " "
-                                  << s_Ray_results.Image_Coords[y]
-                                  << " "
-                                  << s_Ray_results.Redshift_NT[Image_order]
-                                  << " "
-                                  << s_Ray_results.Flux_NT[Image_order]
-                                  << " "
-                                  << s_Ray_results.Intensity[Image_order] * CGS_TO_JANSKY;
+        Image_Output_files[Image_order] << s_Ray_results->Image_Coords[x]
+                                        << " "
+                                        << s_Ray_results->Image_Coords[y]
+                                        << " "
+                                        << s_Ray_results->Redshift_NT[Image_order]
+                                        << " "
+                                        << s_Ray_results->Flux_NT[Image_order]
+                                        << " "
+                                        << s_Ray_results->Intensity[Image_order][I] * CGS_TO_JANSKY
+                                        << " "
+                                        << s_Ray_results->Intensity[Image_order][Q] * CGS_TO_JANSKY
+                                        << " "
+                                        << s_Ray_results->Intensity[Image_order][U] * CGS_TO_JANSKY
+                                        << " "
+                                        << s_Ray_results->Intensity[Image_order][V] * CGS_TO_JANSKY;
 
         if (Active_Sim_Mode == 2) {
 
             Image_Output_files[Image_order] << " "
-                                            << s_Ray_results.Source_Coords[e_r][Image_order]
+                                            << s_Ray_results->Source_Coords[e_r][Image_order]
                                             << " "
-                                            << s_Ray_results.Source_Coords[e_phi][Image_order]
+                                            << s_Ray_results->Source_Coords[e_phi][Image_order]
                                             << " "
-                                            << s_Ray_results.Three_Momentum[e_r][Image_order]
+                                            << s_Ray_results->Three_Momentum[e_r][Image_order]
                                             << " "
-                                            << s_Ray_results.Three_Momentum[e_theta][Image_order]
+                                            << s_Ray_results->Three_Momentum[e_theta][Image_order]
                                             << " "
-                                            << s_Ray_results.Three_Momentum[e_phi][Image_order]
+                                            << s_Ray_results->Three_Momentum[e_phi][Image_order]
                                             << " "
-                                            << s_Ray_results.Parameters[e_metric];
+                                            << s_Ray_results->Parameters[e_metric];
 
         }
 
@@ -389,18 +401,18 @@ void File_manager_class::write_image_data_to_file(Results_type s_Ray_results) {
 
 };
 
-void File_manager_class::log_photon_path(Results_type s_Ray_results) {
+void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
-    for (int log_index = 0; log_index <= s_Ray_results.Ray_log.size() - 1; log_index++) {
+    //for (int log_index = 0; log_index <= s_Ray_results->Ray_log.size() - 1; log_index++) {
 
-        for (int state_index = e_r; state_index <= e_State_Number - 1; state_index++) {
+    //    for (int state_index = e_r; state_index <= e_State_Number - 1; state_index++) {
 
-            Log_Output_File << s_Ray_results.Ray_log[log_index][state_index] << " ";
-          
-        }
+    //        Log_Output_File << s_Ray_results->Ray_log[log_index][state_index] << " ";
+    //      
+    //    }
 
-        Log_Output_File << '\n';
-    }
+    //    Log_Output_File << '\n';
+    //}
    
 };
 

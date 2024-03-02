@@ -11,73 +11,7 @@
 #include <vector>
 #include "Lensing.h"
 
-extern Spacetime_Base_Class* Spacetimes[];
-extern Optically_Thin_Toroidal_Model OTT_Model;
-
-void get_Radiative_Transfer(double State_Vector[], double Derivatives[]) {
-
-    /************************************************************************************************
-    |                                                                                               |
-    |   @ Description: Evaluate the radiative transfer equations, set up as two first order ODEs.   |
-    |     Intensity as a function of optical depth, and optical depth as a function of the          |
-    |     affine parameter.                                                                         |
-    |                                                                                               |
-    |   @ Inputs:                                                                                   |
-    |     * State_Vector: Pointer to an array that holds the ray / photon State Vector              |
-    |     * Derivatives: Pointer to an array that holds the evaluation of the E.O.M                 |
-    |                                                                                               |
-    |   @ Ouput: None                                                                               |
-    |                                                                                               |
-    ************************************************************************************************/
-
-    double* temp_State_Vector = State_Vector;
-
-    if (e_metric == Wormhole) {
-
-        temp_State_Vector[e_r] = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
-
-    }
-
-    /* Get Disk Cooridinate Velocity */
-
-    double* U_source_coord = OTT_Model.get_disk_velocity(temp_State_Vector);
-
-    /* Get The Redshift */
-
-    double redshift = Redshift(temp_State_Vector, U_source_coord);
-
-    double Emission_function{}, Absorbtion_function{};
-
-    switch (e_emission) {
-
-    case Synchotron_exact:
-
-        Emission_function   = OTT_Model.get_emission_function_synchotron_exact(temp_State_Vector);
-        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
-
-        break;
-
-    case Synchotron_phenomenological:
-
-        Emission_function   = OTT_Model.get_emission_function_synchotron_phenomenological(temp_State_Vector);
-        Absorbtion_function = OTT_Model.get_absorbtion_function(Emission_function, temp_State_Vector, redshift, OBS_FREQUENCY_CGS / redshift);
-    
-        break;
-
-    default:
-
-        std::cout << "Unsupported emission model!" << "\n";
-
-    }
-
-    /* Fill in radiative transfer derivatives */
-
-    *(Derivatives + e_Intensity    ) = -redshift * redshift * Emission_function * exp(-State_Vector[e_Optical_Depth]) * MASS_TO_CM;
-    *(Derivatives + e_Optical_Depth) = -Absorbtion_function / redshift * MASS_TO_CM;
-
-}
-
-void RK45(double State_Vector[], double Derivatives[], Step_controller* controller) {
+void RK45(double State_Vector[], Step_controller* controller, Initial_conditions_type* s_Initial_Conditions) {
 
     /*************************************************************************************************
     |                                                                                                |
@@ -99,6 +33,7 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
     double state_rel_err[e_State_Number]{};
     double New_State_vector_O5[e_State_Number]{};
     double New_State_vector_O4[e_State_Number]{};
+    double Derivatives[RK45_size * e_State_Number]{};
     double inter_State_vector[RK45_size * e_State_Number]{};
 
     while (iteration <= RK45_size - 1) { //runs trough the EOM evaluations in-between t and t + step
@@ -115,12 +50,9 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
 
         }
 
-        Spacetimes[e_metric]->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
-        get_Radiative_Transfer(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
+        s_Initial_Conditions->Spacetimes[e_metric]->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
 
         iteration += 1;
-
-        Spacetimes[e_metric]->reset_eval_bitmask();
 
     }
 
@@ -140,26 +72,12 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
        
     }
 
+    controller->previous_step = controller->step;
 
     controller->sec_prev_err = controller->prev_err;
-    controller->prev_err     = controller->current_err;
-    controller->current_err  = my_max(state_error, e_State_Number);
-    controller->update_step();
-
-    //bool near_NT_disk = State_Vector[e_r] * State_Vector[e_r] * cos(State_Vector[e_theta]) * cos(State_Vector[e_theta]) < 0.5 * 0.5 &&
-    //                    State_Vector[e_r] * State_Vector[e_r] < NT_Model.get_r_out() * NT_Model.get_r_out();
-
-    //if (near_NT_disk) {
-
-    //    controller->step /= 2;
-
-    //}
-
-    if (e_metric == Gauss_Bonnet && State_Vector[e_r] < 2.2) {
-
-        controller->step /= 3;
-
-    }
+    controller->prev_err = controller->current_err;
+    controller->current_err = my_max(state_error, e_State_Number);
+    controller->update_step(std::as_const(State_Vector));
 
     if (controller->continue_integration) {
 
@@ -169,35 +87,71 @@ void RK45(double State_Vector[], double Derivatives[], Step_controller* controll
 
         }
 
+        controller->integration_complete = s_Initial_Conditions->Spacetimes[e_metric]->terminate_integration(New_State_vector_O5, Derivatives);
+
+        // For the Novikov-Thorne disk, depenging on where the equatorial crossing happens, the linear interpolation
+        // of the crossing point might not be accurate enough, so halving the step is required.
+        if (Evaluate_NT_disk) {
+
+            double z = State_Vector[e_r] * cos(State_Vector[e_theta]);
+            bool near_NT_disk = z * z < 0.5 * 0.5 &&
+                State_Vector[e_r] * State_Vector[e_r] < s_Initial_Conditions->NT_model->get_r_out() * s_Initial_Conditions->NT_model->get_r_out() &&
+                State_Vector[e_r] * State_Vector[e_r] > s_Initial_Conditions->NT_model->get_r_in()  * s_Initial_Conditions->NT_model->get_r_in();
+
+            if (near_NT_disk) {
+
+                controller->step /= 2;
+
+            }
+
+        }
+
+        // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
+        // Close enough that it requires "manual" scattering, by flipping the p_r sign.
+        // Otherwise the photons never reach the turning point and the integration grinds to a halt.
+
+        if (e_metric == Naked_Singularity) {
+
+            if (State_Vector[e_r] - JNW_R_SINGULARITY < 1e-8) {
+
+                State_Vector[e_p_r] *= -1;
+
+            }
+
+        }
+
     }
-    
-
-
 }
 
-Step_controller::Step_controller(double init_stepsize) {
+Step_controller::Step_controller(double const init_stepsize) {
 
     Gain_I =  0.58 / 5;
     Gain_P = -0.21 / 5;
     Gain_D =  0.10 / 5;
 
     step = init_stepsize;
+    previous_step = init_stepsize;
 
     current_err     = RK45_ACCURACY;
     prev_err        = RK45_ACCURACY;
     sec_prev_err    = RK45_ACCURACY;
 
     continue_integration = false;
+    integration_complete = false;
 
 }
 
-void Step_controller::update_step() {
+void Step_controller::update_step(double const State_Vector[]) {
 
-    if (current_err < RK45_ACCURACY )
+    double const Error_threshold = RK45_ACCURACY + RK45_ACCURACY * my_max(State_Vector, e_State_Number);
+
+    if (current_err < Error_threshold)
     {
-        step = pow(RK45_ACCURACY / (current_err  + SAFETY_2), Gain_I) *
-               pow(RK45_ACCURACY / (prev_err     + SAFETY_2), Gain_P) *
-               pow(RK45_ACCURACY / (sec_prev_err + SAFETY_2), Gain_D) * step;
+        step = pow(Error_threshold / (current_err  + SAFETY_2), Gain_I) *
+               pow(Error_threshold / (prev_err     + SAFETY_2), Gain_P) *
+               pow(Error_threshold / (sec_prev_err + SAFETY_2), Gain_D) * step;
+
+        //step = SAFETY_1 * step * pow((RK45_ACCURACY + 1e-10 * State_Vector[e_r]) / (current_err + SAFETY_2), 0.2);
 
         continue_integration = true;
 
@@ -205,7 +159,7 @@ void Step_controller::update_step() {
     else
     {
 
-        step = SAFETY_1 * step * pow(RK45_ACCURACY / (current_err + SAFETY_2), 0.25);
+        step = SAFETY_1 * step * pow(Error_threshold / (current_err + SAFETY_2), 0.25);
 
         continue_integration = false;
 
