@@ -34,11 +34,7 @@ double Novikov_Thorne_Model::Keplerian_angular_velocity(double r, Spacetime_Base
 
     double State_Vector[2] = { r, M_PI_2 };
 
-    Spacetimes[e_metric]->set_ignore_flag(true);
-
     Metric_type s_dr_Metric = Spacetimes[e_metric]->get_dr_metric(State_Vector);
-
-    Spacetimes[e_metric]->set_ignore_flag(false);
 
     return (-s_dr_Metric.Metric[0][3] + sqrt(s_dr_Metric.Metric[0][3] * s_dr_Metric.Metric[0][3] - s_dr_Metric.Metric[0][0] * s_dr_Metric.Metric[3][3])) / s_dr_Metric.Metric[3][3];
 
@@ -48,16 +44,12 @@ double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, Spacetime_B
 
     double State_Vector[2] = { r, M_PI_2 };
 
-    Spacetimes[e_metric]->set_ignore_flag(true);
-
     Metric_type s_dr_Metric = Spacetimes[e_metric]->get_dr_metric(State_Vector);
     Metric_type s_d2r_Metric = Spacetimes[e_metric]->get_d2r_metric(State_Vector);
 
     double root = sqrt(s_dr_Metric.Metric[0][3] * s_dr_Metric.Metric[0][3] - s_dr_Metric.Metric[0][0] * s_dr_Metric.Metric[3][3]);
 
     double Kepler = this->Keplerian_angular_velocity(r, Spacetimes);
-
-    Spacetimes[e_metric]->set_ignore_flag(false);
 
     return  -Kepler / s_dr_Metric.Metric[3][3] * s_d2r_Metric.Metric[3][3] + (-s_d2r_Metric.Metric[0][3]
         + 1.0 / root / 2 * (2 * s_dr_Metric.Metric[0][3] * s_d2r_Metric.Metric[0][3] - s_dr_Metric.Metric[0][0] * s_d2r_Metric.Metric[3][3]
@@ -70,8 +62,6 @@ double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_
 
     double& r_source = State_Vector[e_r];
     double& theta_source = State_Vector[e_theta];
-
-    Spacetimes[e_metric]->set_ignore_flag(true);
 
     /*
     Get the observer 4-velocity
@@ -93,14 +83,12 @@ double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_
 
     double gamma = 1 / sqrt(-s_Metric_source.Metric[0][0] - 2 * s_Metric_source.Metric[0][3] * Kepler - s_Metric_source.Metric[3][3] * Kepler * Kepler);
 
-    if (gamma != gamma) {
+    if (isnan(gamma) || isinf(gamma)) {
 
-        return 0;
+        exit(ERROR);
     }
 
     double U_source[4] = { gamma, 0, 0, gamma * Kepler };
-
-    Spacetimes[e_metric]->set_ignore_flag(false);
 
     return  (-U_obs[0] + U_obs[3] * J) / (-U_source[0] + U_source[3] * J);
 
@@ -110,15 +98,11 @@ double Novikov_Thorne_Model::disk_Energy(double r, Spacetime_Base_Class* Spaceti
 
     double State_Vector[2] = { r, M_PI_2 };
 
-    Spacetimes[e_metric]->set_ignore_flag(true);
-
     Metric_type s_Metric_source = Spacetimes[e_metric]->get_metric(State_Vector);
 
     double Kepler = this->Keplerian_angular_velocity(r, Spacetimes);
 
     double root = sqrt(-s_Metric_source.Metric[0][0] - 2 * s_Metric_source.Metric[0][3] * Kepler - s_Metric_source.Metric[3][3] * Kepler * Kepler);
-
-    Spacetimes[e_metric]->set_ignore_flag(false);
 
     return  -(s_Metric_source.Metric[0][0] + s_Metric_source.Metric[0][3] * Kepler) / root;
 
@@ -128,15 +112,11 @@ double Novikov_Thorne_Model::disk_Angular_Momentum(double r, Spacetime_Base_Clas
 
     double State_Vector[2] = { r, M_PI_2 };
 
-    Spacetimes[e_metric]->set_ignore_flag(true);
-
     Metric_type s_Metric_source = Spacetimes[e_metric]->get_metric(State_Vector);
 
     double Kepler = this->Keplerian_angular_velocity(r, Spacetimes);
 
     double root = sqrt(-s_Metric_source.Metric[0][0] - 2 * s_Metric_source.Metric[0][3] * Kepler - s_Metric_source.Metric[3][3] * Kepler * Kepler);
-
-    Spacetimes[e_metric]->set_ignore_flag(false);
 
     return  (s_Metric_source.Metric[3][3] * Kepler + s_Metric_source.Metric[0][3]) / root;
 
@@ -145,8 +125,6 @@ double Novikov_Thorne_Model::disk_Angular_Momentum(double r, Spacetime_Base_Clas
 double Novikov_Thorne_Model::Flux_integrand(double r, Spacetime_Base_Class* Spacetimes[]) {
 
     double State_Vector[2] = { r, M_PI_2 };
-
-    Spacetimes[e_metric]->set_ignore_flag(true);
 
     Metric_type s_Metric = Spacetimes[e_metric]->get_metric(State_Vector);
     Metric_type s_dr_Metric = Spacetimes[e_metric]->get_dr_metric(State_Vector);
@@ -163,15 +141,11 @@ double Novikov_Thorne_Model::Flux_integrand(double r, Spacetime_Base_Class* Spac
 
     double dr_L = (s_dr_Metric.Metric[3][3] * Kepler + s_Metric.Metric[3][3] * dr_Kepler + s_dr_Metric.Metric[0][3]) / root - L / root / root / 2 * dr_root;
 
-    Spacetimes[e_metric]->set_ignore_flag(false);
-
     return (E - Kepler * L) * dr_L;
 
 }
 
 double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double upper_bound, double tolerance, Spacetime_Base_Class* Spacetimes[]) {
-
-    Spacetimes[e_metric]->set_ignore_flag(true);
 
     double mid_point = (lower_bound + upper_bound) / 2;
     double left_mid_point = (lower_bound + mid_point) / 2;
@@ -220,16 +194,12 @@ double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double uppe
 
     }
 
-    Spacetimes[e_metric]->set_ignore_flag(false);
-
     return integral;
 }
 
 double Novikov_Thorne_Model::get_flux(double r, Spacetime_Base_Class* Spacetimes[]) {
 
     double State_Vector[2] = { r, M_PI_2 };
-
-    Spacetimes[e_metric]->set_ignore_flag(true);
 
     Metric_type s_Metric = Spacetimes[e_metric]->get_metric(State_Vector);
 
@@ -249,8 +219,6 @@ double Novikov_Thorne_Model::get_flux(double r, Spacetime_Base_Class* Spacetimes
     }
 
     double Flux_integral = solve_Flux_integral(r_in, r, INTEGRAL_ACCURACY, Spacetimes);
-
-    Spacetimes[e_metric]->set_ignore_flag(false);
 
     return Flux_coeff * Flux_integral;
 
@@ -804,10 +772,18 @@ void Optically_Thin_Toroidal_Model::get_transfer_fit_functions(double Emission_f
                                                                double Faradey_functions[STOKES_PARAM_NUM],
                                                                Emission_functions_arguments* Arguments) {
 
-    this->get_synchotron_emission_fit_function(Dexter_2016, Emission_fucntions, Arguments->X_emission, Arguments->X_1_2_emission, Arguments->X_1_3_emission);
+    if (INCLUDE_POLARIZATION){
 
-    this->get_faradey_fit_functions(Arguments->X_faradey, Arguments->X_to_1_point_2_faradey, Arguments->X_to_1_point_035_faradey, Faradey_functions);
+        this->get_synchotron_emission_fit_function(Dexter_2016, Emission_fucntions, Arguments->X_emission, Arguments->X_1_2_emission, Arguments->X_1_3_emission);
 
+        this->get_faradey_fit_functions(Arguments->X_faradey, Arguments->X_to_1_point_2_faradey, Arguments->X_to_1_point_035_faradey, Faradey_functions);
+
+    }
+    else {
+
+        this->get_synchotron_emission_fit_function(Leung_2011, Emission_fucntions, Arguments->X_emission, Arguments->X_1_2_emission, Arguments->X_1_3_emission);
+
+    }
 
 }
 
@@ -893,9 +869,9 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
                 Arguments_angle_corrected.X_1_2_emission = Arguments_angle_uncorrected.X_1_2_emission * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
                 Arguments_angle_corrected.X_1_3_emission = Arguments_angle_uncorrected.X_1_3_emission * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
 
-                Arguments_angle_corrected.X_faradey                = Arguments_angle_uncorrected.X_faradey / this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
-                Arguments_angle_corrected.X_to_1_point_035_faradey = Arguments_angle_uncorrected.X_to_1_point_035_faradey / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[averaging_idx];
-                Arguments_angle_corrected.X_to_1_point_2_faradey   = Arguments_angle_uncorrected.X_to_1_point_2_faradey /  this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[averaging_idx];
+                Arguments_angle_corrected.X_faradey                = Arguments_angle_corrected.X_faradey / this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
+                Arguments_angle_corrected.X_to_1_point_035_faradey = Arguments_angle_corrected.X_to_1_point_035_faradey / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[averaging_idx];
+                Arguments_angle_corrected.X_to_1_point_2_faradey   = Arguments_angle_corrected.X_to_1_point_2_faradey /  this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[averaging_idx];
 
                 this->get_transfer_fit_functions(temp_emission_functions, temp_faradey_functions, &Arguments_angle_corrected);
 
@@ -916,9 +892,9 @@ void Optically_Thin_Toroidal_Model::get_synchotron_transfer_functions(double Sta
                 }
 
                 Emission_fucntions[I] += temp_emission_functions[I];
-                Emission_fucntions[Q] += temp_emission_functions[Q] * 0;
+                Emission_fucntions[Q] += temp_emission_functions[Q];
                 Emission_fucntions[U]  = 0.0;
-                Emission_fucntions[V] += temp_emission_functions[V] * 0;
+                Emission_fucntions[V] += temp_emission_functions[V];
 
                 /* ================================================ The faradey functions ================================================ */
                 /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33 */

@@ -54,8 +54,6 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
 
         iteration += 1;
 
-        s_Initial_Conditions->Spacetimes[e_metric]->reset_eval_bitmask();
-
     }
 
     for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) {
@@ -114,7 +112,7 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
 
         if (e_metric == Naked_Singularity) {
 
-            if (State_Vector[e_r] - JNW_R_SINGULARITY < 5e-8) {
+            if (State_Vector[e_r] - JNW_R_SINGULARITY < 1e-8) {
 
                 State_Vector[e_p_r] *= -1;
 

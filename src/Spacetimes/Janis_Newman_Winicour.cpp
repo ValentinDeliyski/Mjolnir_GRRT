@@ -73,16 +73,7 @@ int JNW_class::update_metric(double State_Vector[]) {
 
 Metric_type JNW_class::get_metric(double State_Vector[]) {
 
-    if (false == this->eval_bitmask[Metric] || true == this->ignore_flag) {
-
-        this->update_metric(State_Vector);
-
-        if (false == this->ignore_flag) {
-
-            this->eval_bitmask[Metric] = true;
-
-        }
-    }
+    this->update_metric(State_Vector);
 
     return this->s_Metric;
 
@@ -114,17 +105,7 @@ int JNW_class::update_dr_metric(double State_Vector[]) {
 
 Metric_type JNW_class::get_dr_metric(double State_Vector[]) {
 
-    if (false == this->eval_bitmask[dr_Metric] || true == this->ignore_flag) {
-
-        this->update_dr_metric(State_Vector);
-
-        if (false == this->ignore_flag) {
-
-            this->eval_bitmask[dr_Metric] = true;
-
-        }
-
-    }
+    this->update_dr_metric(State_Vector);
 
     return this->s_dr_Metric;
 
@@ -154,17 +135,7 @@ int JNW_class::update_dtheta_metric(double State_Vector[]) {
 
 Metric_type JNW_class::get_dtheta_metric(double State_Vector[]) {
 
-    if (false == this->eval_bitmask[dtheta_Metric] || true == this->ignore_flag) {
-
-        this->update_dtheta_metric(State_Vector);
-
-        if (false == this->ignore_flag) {
-
-            this->eval_bitmask[dtheta_Metric] = true;
-
-        }
-
-    }
+    this->update_dtheta_metric(State_Vector);
 
     return this->s_dtheta_Metric;
 }
@@ -203,17 +174,7 @@ int JNW_class::update_d2r_metric(double State_Vector[]) {
 
 Metric_type JNW_class::get_d2r_metric(double State_Vector[]) {
 
-    if (false == this->eval_bitmask[d2r_Metric] || true == this->ignore_flag) {
-
-        this->update_d2r_metric(State_Vector);
-
-        if (false == this->ignore_flag) {
-
-            this->eval_bitmask[d2r_Metric] = true;
-
-        }
-
-    }
+    this->update_d2r_metric(State_Vector);
 
     return this->s_d2r_Metric;
 
@@ -278,21 +239,5 @@ bool JNW_class::terminate_integration(double State_vector[], double Derivatives[
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
     return scatter;
-
-};
-
-void JNW_class::reset_eval_bitmask() {
-
-    for (int index = 0; index <= 2; index++) {
-
-        this->eval_bitmask[index] = false;
-
-    }
-
-}
-
-void JNW_class::set_ignore_flag(bool flag) {
-
-    this->ignore_flag = flag;
 
 };

@@ -68,17 +68,7 @@ int Wormhole_class::update_metric(double State_Vector[]) {
 
 Metric_type Wormhole_class::get_metric(double State_vector[]) {
 
-    if (false == this->eval_bitmask[Metric] || true == this->ignore_flag) {
-
-        this->update_metric(State_vector);
-
-        if (false == this->ignore_flag) {
-
-            this->eval_bitmask[Metric] = true;
-
-        }
-
-    }
+    this->update_metric(State_vector);
 
     return this->s_Metric;
 }
@@ -113,17 +103,7 @@ int Wormhole_class::update_dr_metric(double State_Vector[]) {
 
 Metric_type Wormhole_class::get_dr_metric(double State_vector[]) {
 
-    if (false == this->eval_bitmask[dr_Metric] || true == this->ignore_flag) {
-
-        this->update_dr_metric(State_vector);
-
-        if (false == this->ignore_flag) {
-
-            this->eval_bitmask[dr_Metric] = true;
-
-        }
-
-    }
+    this->update_dr_metric(State_vector);
 
     return this->s_dr_Metric;
 }
@@ -154,17 +134,7 @@ int Wormhole_class::update_dtheta_metric(double State_Vector[]) {
 
 Metric_type Wormhole_class::get_dtheta_metric(double State_vector[]) {
 
-    if (false == this->eval_bitmask[dtheta_Metric] || true == this->ignore_flag) {
-
-        this->update_metric(State_vector);
-
-        if (false == this->ignore_flag) {
-
-            this->eval_bitmask[dtheta_Metric] = true;
-
-        }
-
-    }
+    this->update_metric(State_vector);
 
     return this->s_Metric;
 }
@@ -201,17 +171,7 @@ int Wormhole_class::update_d2r_metric(double State_Vector[]) {
 
 Metric_type Wormhole_class::get_d2r_metric(double State_vector[]) {
 
-    if (false == this->eval_bitmask[d2r_Metric] || true == this->ignore_flag) {
-
-        this->update_d2r_metric(State_vector);
-
-        if (false == this->ignore_flag) {
-
-            this->eval_bitmask[d2r_Metric] = true;
-
-        }
-
-    }
+    this->update_d2r_metric(State_vector);
 
     return this->s_d2r_Metric;
 }
@@ -271,15 +231,6 @@ int Wormhole_class::get_EOM(double State_Vector[], double Derivatives[]) {
 
     *(Derivatives + e_p_r) = term_1 + term_2 + term_3;
 
-    for (int index = 0; index <= e_State_Number - 1; index++) {
-
-        if (isinf(*(Derivatives + index)) || isnan(*(Derivatives + index))) {
-
-            int test{};
-
-        }
-    }
-
     return OK;
 }
 
@@ -298,20 +249,4 @@ bool Wormhole_class::terminate_integration(double State_vector[], double Derivat
         return scatter || scatter_other_side;
 
     }
-};
-
-void Wormhole_class::reset_eval_bitmask() {
-
-    for (int index = 0; index <= 2; index++) {
-
-        this->eval_bitmask[index] = false;
-
-    }
-
-}
-
-void Wormhole_class::set_ignore_flag(bool flag) {
-
-    this->ignore_flag = flag;
-
 };

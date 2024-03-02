@@ -9,7 +9,7 @@
     #include <complex>
 
     const int RK45_size			    = 7;       // Number of integration sub-steps
-    const int MAX_INTEGRATION_COUNT = 5000000; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
+    const int MAX_INTEGRATION_COUNT = 1e7; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
 
     Real Coeff_deriv[RK45_size][RK45_size - 1] =
     {

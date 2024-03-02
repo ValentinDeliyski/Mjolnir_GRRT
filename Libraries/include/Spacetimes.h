@@ -9,11 +9,6 @@
 
     class Spacetime_Base_Class {
 
-        private:
-
-            bool eval_bitmask[4]{};
-            bool ignore_flag{};
-
         public:
 
             virtual double* get_ISCO() {
@@ -97,22 +92,6 @@
             
             };
 
-            virtual void set_ignore_flag(bool flag) {
-
-                std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-                return;
-
-            };
-
-            virtual void reset_eval_bitmask() {
-            
-                std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-                return;
-
-            };
-
     };
 
     class Kerr_class : public Spacetime_Base_Class {
@@ -123,8 +102,6 @@
             Metric_type s_dr_Metric;
             Metric_type s_dtheta_Metric{};
             Metric_type s_d2r_Metric;
-            bool eval_bitmask[4]{};
-            bool ignore_flag{};
 
         public:
 
@@ -157,9 +134,6 @@
 
             bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-            void set_ignore_flag(bool flag);
-
-            void reset_eval_bitmask();
     };
 
     class Wormhole_class : public Spacetime_Base_Class {
@@ -170,8 +144,6 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[4]{};
-        bool ignore_flag{};
 
     public:
 
@@ -204,10 +176,6 @@
         /* Integration Termination Conditions */
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
-
-        void set_ignore_flag(bool flag) override;
-
-        void reset_eval_bitmask() override;
 
     };
 
@@ -219,8 +187,6 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[4]{};
-        bool ignore_flag{};
 
     public:
 
@@ -253,9 +219,6 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-        void set_ignore_flag(bool flag) override;
-
-        void reset_eval_bitmask() override;
     };
 
     class JNW_class : public Spacetime_Base_Class {
@@ -266,8 +229,6 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[4]{};
-        bool ignore_flag{};
 
     public:
 
@@ -299,10 +260,6 @@
         /* Integration Termination Conditions */
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
-
-        void set_ignore_flag(bool flag) override;
-
-        void reset_eval_bitmask() override;
 
     };
 
@@ -314,8 +271,6 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[4]{};
-        bool ignore_flag{};
 
     public:
 
@@ -348,10 +303,6 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-        void set_ignore_flag(bool flag) override;
-
-        void reset_eval_bitmask() override;
-
     };
 
     class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
@@ -362,8 +313,6 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
-        bool eval_bitmask[4]{};
-        bool ignore_flag{};
 
     public:
 
@@ -392,9 +341,6 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-        void set_ignore_flag(bool flag) override;
-
-        void reset_eval_bitmask() override;
     };
 
     class Observer_class {
