@@ -92,6 +92,30 @@
             
             };
 
+            virtual bool load_parameters(Metric_Parameters_type Metric_Parameters) {
+            
+                std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+
+                return true;
+            
+            };
+
+            virtual Metric_Parameters_type get_parameters() {
+            
+                std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+
+                Metric_Parameters_type Error{};
+
+                return Error;
+            
+            };
+
+            virtual void update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
+            
+                std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+            
+            };
+
     };
 
     class Kerr_class : public Spacetime_Base_Class {
@@ -102,6 +126,9 @@
             Metric_type s_dr_Metric;
             Metric_type s_dtheta_Metric{};
             Metric_type s_d2r_Metric;
+            
+            double Mass = 1.0f;
+            double Spin_Param{};
 
         public:
 
@@ -134,6 +161,12 @@
 
             bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
+            bool load_parameters(Metric_Parameters_type Metric_Parameters);
+
+            Metric_Parameters_type get_parameters();
+
+            void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
+
     };
 
     class Wormhole_class : public Spacetime_Base_Class {
@@ -144,6 +177,13 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
+
+        double Mass = 1.0f;
+        double R_Throat = this->Mass;
+
+        double Spin_Param{};
+        double Redshift_Param{};
+        bool Stop_at_Throat;
 
     public:
 
@@ -176,6 +216,12 @@
         /* Integration Termination Conditions */
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
+
+        bool load_parameters(Metric_Parameters_type Metric_Parameters);
+
+        Metric_Parameters_type get_parameters();
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
 
     };
 
@@ -188,6 +234,8 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
+        double Parameter;
+
     public:
 
         double* get_ISCO();
@@ -218,6 +266,12 @@
         /* Integration Termination Conditions */
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
+
+        bool load_parameters(Metric_Parameters_type Metric_Parameters);
+
+        Metric_Parameters_type get_parameters();
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
 
     };
 
@@ -230,6 +284,8 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
+        double Gamma;
+
     public:
 
         double* get_ISCO();
@@ -261,6 +317,12 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
+        bool load_parameters(Metric_Parameters_type Metric_Parameters);
+
+        Metric_Parameters_type get_parameters();
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
+
     };
 
     class Gauss_Bonnet_class : public Spacetime_Base_Class {
@@ -271,6 +333,8 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
+
+        double Gamma;
 
     public:
 
@@ -303,6 +367,12 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
+        bool load_parameters(Metric_Parameters_type Metric_Parameters);
+
+        Metric_Parameters_type get_parameters();
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
+
     };
 
     class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
@@ -313,6 +383,9 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
+
+        double Compactness;
+        double Halo_Mass;
 
     public:
 
@@ -340,6 +413,12 @@
         /* Integration Termination Conditions */
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
+
+        bool load_parameters(Metric_Parameters_type Metric_Parameters);
+
+        Metric_Parameters_type get_parameters();
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
 
     };
 

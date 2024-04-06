@@ -269,3 +269,40 @@ bool Gauss_Bonnet_class::terminate_integration(double State_vector[], double Der
     return scatter || too_high_order || hit_horizon;
 
 };
+
+Metric_Parameters_type Gauss_Bonnet_class::get_parameters() {
+
+    Metric_Parameters_type Parameters{};
+
+    Parameters.GB_Gamma_Parameter = this->Gamma;
+
+    return Parameters;
+
+}
+
+bool Gauss_Bonnet_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
+
+    if (!isnan(Metric_Parameters.GB_Gamma_Parameter)) {
+
+        this->Gamma = Metric_Parameters.GB_Gamma_Parameter;
+
+        return true;
+
+    }
+
+    return false;
+
+}
+
+void Gauss_Bonnet_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
+
+
+    if (GB_Gamma != Parameter) {
+
+        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'GB_Gamma'! Defaulting to it..." << "\n";
+
+    }
+
+    this->Gamma = Param_value;
+
+}

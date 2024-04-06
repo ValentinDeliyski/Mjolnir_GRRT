@@ -13,14 +13,14 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Naked_Singularity; // Spacetime to be used
+    const Spacetime_enums e_metric = Kerr; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.98f;
+    Real SPIN = 0.001;
 
     // Wormhole spacetime parameters //
 
-    Real WH_REDSHIFT = 0.0f;
+    Real WH_REDSHIFT = 2.0f;
     Real WH_R_THROAT = MASS;
 
     const bool STOP_AT_THROAT = false;
@@ -47,7 +47,7 @@
     // ======================== Observer Inputs ======================== //
 
     Real r_obs	   = 1e4;			    // Radial potision of the observer [ M ]
-    Real theta_obs = 60.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real theta_obs = 70.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			    // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
     Real obs_cam_rotation_angle = 0.0f; // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
 
@@ -60,7 +60,7 @@
 
     const bool Evaluate_NT_disk = false;
 
-    Real r_in  = 4.5f;	// Inner accretion idsk radius [ M ]
+    Real r_in  = 3.0f;	// Inner accretion idsk radius [ M ]
     Real r_out = 34.0f; // Outer accretion disk radius [ M ]
 
     // Exponential disk profile parameters //
@@ -92,19 +92,19 @@
     Real T_ELECTRON_EXACT_CGS = 6.5e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
-    const bool AVERAGE_EMISSION_PITCH_ANGLE = false;
+    const bool AVERAGE_EMISSION_PITCH_ANGLE = true;
     const bool INCLUDE_POLARIZATION = true;
 
     // Hotspot paramteres //
 
     Real HOTSPOT_REL_SCALE  = 0.0f; // Hotspot density ~ HOTSPOT_REL_SCALE
     Real HOTSPOT_SCALE      = 1.0f; // Hotspot density ~ exp(-|r - r_c|^2 / HOTSPOT_SCALE&^2)
-    Real HOTSPOT_R_COORD    = 6.0f;
+    Real HOTSPOT_R_COORD    = 8.0f;
     const int HOTSPOT_ANIMATION_NUMBER = 4;
 
     // ======================== Simulation Modes Inputs ======================== //
 
-    const int Active_Sim_Mode = 1;
+    const int Active_Sim_Mode = 2;
     const bool Truncate_files = true;
 
     // Simulation Mode 1 and 3 viewing window //
@@ -115,14 +115,19 @@
     Real H_angle_min = -atan(15 / r_obs);
     Real H_angle_max =  atan(15 / r_obs);
 
-    const int RESOLUTION = 4000;                  // Linear size of the square pixel grid that makes up the image
+    const int RESOLUTION = 1024;                  // Linear size of the square pixel grid that makes up the image
     const int NUM_RAYS = RESOLUTION * RESOLUTION; // The size of the buffer to store the texture
 
     Real Scan_Step = (H_angle_max - H_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons
 
-    // Sim Mode 2 Input File Path //
+    // Sim Mode 2 Configuration //
 
-    const std::string input_file_path = "";
+    const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\geodesic_data_70_deg_Sch_r4.5_500_photons.txt";
+    const int PARAM_SPEEP_NUMBER = 10;
+    Real INIT_PARAM_VALUE        = 0.001f;
+    Real FINAL_PARAM_VALUE       = 0.94f;
+
+    const Metric_Parameter_Selector PARAM_TYPE = Spin;
 
     // Sim Mode 4 Initial Conditions //
 

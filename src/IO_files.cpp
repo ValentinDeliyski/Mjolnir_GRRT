@@ -41,7 +41,7 @@ void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[
 
 }
 
-void File_manager_class::write_simulation_metadata() {
+void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
     for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
 
@@ -55,9 +55,22 @@ void File_manager_class::write_simulation_metadata() {
                                         << "\n"
                                         << "Observer Radial Position [M]: " << r_obs << '\n'
                                         << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI << '\n'
-                                        << "Observation Frequency [Hz]: " << OBS_FREQUENCY_CGS
-                                        << '\n'
-                                        << "------------------------------------------------------- Optically Thin Disk Metadata -------------------------------------------------------"
+                                        << "Observation Frequency [Hz]: " << OBS_FREQUENCY_CGS << '\n'
+                                        << "Active Simulation Mode: " << Active_Sim_Mode
+                                        << '\n';
+
+        if (Active_Sim_Mode == 2) {
+
+
+            Image_Output_files[Image_order] << "Number Of Photons Per Param Value: " << Sim_mode_2_number
+                                            << '\n'
+                                            << "Number Of Param Values: " << PARAM_SPEEP_NUMBER
+                                            << '\n';
+
+        }
+
+
+        Image_Output_files[Image_order] << "------------------------------------------------------- Optically Thin Disk Metadata -------------------------------------------------------"
                                         << "\n"
                                         << "Active disk profile: ";
 
@@ -179,36 +192,7 @@ void File_manager_class::write_simulation_metadata() {
                                         << "\n";
 
 
-        switch (Active_Sim_Mode) {
-
-        case 2:
-
-            Image_Output_files[Image_order] << "Image X Coord [M],"
-                                            << " "
-                                            << "Image Y Coord [M],"
-                                            << " "
-                                            << "Novikov-Thorne Disk Redshift [-],"
-                                            << " "
-                                            << "Novikov-Thorne Flux [M^-2],"
-                                            << " "
-                                            << "Optically Thin Disk Intensity [Jy/sRad],"
-                                            << " "
-                                            << "Novikov-Thorne Source r Coord [M],"
-                                            << " "
-                                            << "Novikov-Thorne Source phi Coord [Rad],"
-                                            << " "
-                                            << "Radial Momentum (covariant),"
-                                            << " "
-                                            << "Theta Momentum (covariant),"
-                                            << " "
-                                            << "Phi Momentum (covariant),"
-                                            << " "
-                                            << "Metric Parameter"
-                                            << '\n';
-
-            break;
-
-        default:
+        if (Active_Sim_Mode != 2) {
 
             Image_Output_files[Image_order] << "Observation Window Dimentions (-X,+X,-Y,+Y) [Rad]: "
                                             << H_angle_min << ","
@@ -222,45 +206,49 @@ void File_manager_class::write_simulation_metadata() {
                                             << RESOLUTION
                                             << '\n';
 
+            Metric_Parameters_type Parameters = s_Initial_Conditions.Spacetimes[e_metric]->get_parameters();
+
             switch (e_metric) {
 
             case Kerr:
 
-                Image_Output_files[Image_order] << "Spin Parameter: " << SPIN
+                Image_Output_files[Image_order] << "Spin Parameter: " << Parameters.Spin
                     << '\n';
                 break;
 
             case Wormhole:
 
-                Image_Output_files[Image_order] << "Spin Parameter: " << SPIN << ", Redshift Parameter: " << WH_REDSHIFT
+                Image_Output_files[Image_order] << "Spin Parameter: " << Parameters.Spin << ", Redshift Parameter: " << Parameters.Redshift_Parameter
                     << '\n';
                 break;
 
             case Reg_Black_Hole:
 
-                Image_Output_files[Image_order] << "Parameter: " << RBH_PARAM
+                Image_Output_files[Image_order] << "Parameter: " << Parameters.RBH_Parameter
                     << '\n';
                 break;
 
             case Naked_Singularity:
 
-                Image_Output_files[Image_order] << "Gamma: " << JNW_GAMMA
+                Image_Output_files[Image_order] << "Gamma: " << Parameters.JNW_Gamma_Parameter
                     << '\n';
                 break;
 
             case Gauss_Bonnet:
 
-                Image_Output_files[Image_order] << "Gamma: " << GAUSS_BONNET_GAMMA
+                Image_Output_files[Image_order] << "Gamma: " << Parameters.GB_Gamma_Parameter
                     << '\n';
                 break;
 
             case BH_w_Dark_Matter:
 
-                Image_Output_files[Image_order] << "Mass_Halo: " << M_HALO << ", Halo Length Scale: " << A_0
+                Image_Output_files[Image_order] << "Mass_Halo: " << Parameters.Halo_Mass << ", Halo Compactness: " << Parameters.Compactness
                     << '\n';
                 break;
 
             }
+
+        }
 
             Image_Output_files[Image_order] << "Image X Coord [M],"
                                             << " "
@@ -277,15 +265,68 @@ void File_manager_class::write_simulation_metadata() {
                                             << "Synchotron Intensity U [Jy/sRad]"
                                             << " "
                                             << "Synchotron Intensity V [Jy/sRad]"
-                                            << '\n';
+                                            << " ";
+            if (Active_Sim_Mode == 2) {
 
-        }
+                Image_Output_files[Image_order] << "Source r Coord [M],"
+                                                << " "
+                                                << "Source phi Coord [Rad],"
+                                                << " " 
+                                                << "Radial Momentum (covariant),"
+                                                << " "
+                                                << "Theta Momentum (covariant),"
+                                                << " "
+                                                << "Phi Momentum (covariant),"
+                                                << " ";
+
+                switch (e_metric) {
+
+                case Kerr:
+
+                    Image_Output_files[Image_order] << "Spin Parameter";
+                    break;
+
+                case Wormhole:
+
+                    Image_Output_files[Image_order] << "Spin Parameter"
+                        << " "
+                        << "Redshift Parameter";
+                    break;
+
+                case Reg_Black_Hole:
+
+                    Image_Output_files[Image_order] << "Parameter";
+                    break;
+
+                case Naked_Singularity:
+
+                    Image_Output_files[Image_order] << "Gamma";
+                    break;
+
+                case Gauss_Bonnet:
+
+                    Image_Output_files[Image_order] << "Gamma";
+                    break;
+
+                case BH_w_Dark_Matter:
+
+                    Image_Output_files[Image_order] << "Halo Mass"
+                                                    << " " 
+                                                    << "Halo Compactness";
+                    break;
+
+                }
+
+            }
+
+            Image_Output_files[Image_order] << '\n';
 
     }
+
 }
 
 
-void File_manager_class::open_image_output_files() {
+void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
 
     const int File_number = SPACETIME_NUMBER;
 
@@ -335,7 +376,7 @@ void File_manager_class::open_image_output_files() {
 
     }
 
-    File_manager_class::write_simulation_metadata();
+    File_manager_class::write_simulation_metadata(Sim_mode_2_number);
 
 }
 
@@ -355,7 +396,7 @@ void File_manager_class::open_log_output_file() {
      
     Log_Output_File.open(Log_File_full_path, open_type);
 
-    File_manager_class::write_simulation_metadata();
+    File_manager_class::write_simulation_metadata(int(0));
 
 }
 
@@ -391,8 +432,43 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
                                             << s_Ray_results->Three_Momentum[e_theta][Image_order]
                                             << " "
                                             << s_Ray_results->Three_Momentum[e_phi][Image_order]
-                                            << " "
-                                            << s_Ray_results->Parameters[e_metric];
+                                            << " ";
+                switch (e_metric) {
+
+                case Kerr:
+
+                    Image_Output_files[Image_order] << s_Ray_results->Parameters.Spin;
+                    break;
+
+                case Wormhole:
+
+                    Image_Output_files[Image_order] << s_Ray_results->Parameters.Spin
+                                                    << " " 
+                                                    << s_Ray_results->Parameters.Redshift_Parameter;
+                    break;
+
+                case Reg_Black_Hole:
+
+                    Image_Output_files[Image_order] << s_Ray_results->Parameters.RBH_Parameter;
+         
+                    break;
+
+                case Naked_Singularity:
+
+                    Image_Output_files[Image_order] << s_Ray_results->Parameters.JNW_Gamma_Parameter;
+                    break;
+
+                case Gauss_Bonnet:
+
+                    Image_Output_files[Image_order] << s_Ray_results->Parameters.GB_Gamma_Parameter;
+                    break;
+
+                case BH_w_Dark_Matter:
+
+                    Image_Output_files[Image_order] << s_Ray_results->Parameters.Halo_Mass << " " << s_Ray_results->Parameters.Compactness;
+                    break;
+
+                }
 
         }
 

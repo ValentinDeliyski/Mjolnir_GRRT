@@ -137,12 +137,15 @@
 
     };
 
-    enum Metric_Evaluation_Bitmask {
+    enum Metric_Parameter_Selector {
 
-        Metric = 0,
-        dr_Metric = 1,
-        dtheta_Metric = 2,
-        d2r_Metric = 3,
+        Spin = 0,
+        WH_Redshift = 1,
+        JNW_Gamma = 2,
+        GB_Gamma = 3,
+        RBH_Param = 4,
+        BH_w_DM_Halo_Compactness = 5,
+        BH_w_DM_Halo_M_Halo = 6
 
     };
 

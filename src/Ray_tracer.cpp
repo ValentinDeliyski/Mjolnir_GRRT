@@ -111,6 +111,17 @@ int main() {
                                              EMISSION_POWER_LAW,
                                              SOURCE_F_POWER_LAW };
 
+    Metric_Parameters_type Metric_Parameter{ WH_REDSHIFT,
+                                             STOP_AT_THROAT,
+                                             JNW_GAMMA,
+                                             GAUSS_BONNET_GAMMA,
+                                             RBH_PARAM,
+                                             COMPACTNESS,
+                                             M_HALO,
+                                             SPIN };
+
+    Spacetimes[e_metric]->load_parameters(Metric_Parameter);
+
     int result = OTT_Model.load_parameters(&Disk_params, &Emission_params);
 
     /*

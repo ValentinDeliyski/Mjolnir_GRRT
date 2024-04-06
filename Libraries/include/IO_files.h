@@ -36,13 +36,13 @@
 
 			File_manager_class(std::string input_file_path, bool truncate);
 
-			void open_image_output_files();
+			void open_image_output_files(int Sim_mode_2_number);
 
 			void open_log_output_file();
 
 			void write_image_data_to_file(Results_type* Ray_results);
 
-			void write_simulation_metadata();
+			void write_simulation_metadata(int Sim_mode_2_number);
 
 			void log_photon_path(Results_type* s_Ray_results);
 

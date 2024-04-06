@@ -1,73 +1,71 @@
-import numpy as np
-from scipy.optimize import root_scalar
-
 import matplotlib.pyplot as plt
+import numpy as np
 
-r_ISCO = np.zeros((5000,5000))
-M_index = 0
-fig1 = plt.figure()
-fig1 = fig1.add_subplot(111)
-# fig2 = plt.figure()
-# fig2 = fig2.add_subplot(111)
+from matplotlib.ticker import LinearLocator
 
-COLORS = ["b", "k"]
+def get_intensity(beta: float, Resolution: int = 30):
 
-for M in [1e2, 1e4]:
+    theta = np.linspace(0,     np.pi, Resolution)
+    phi   = np.linspace(0, 2 * np.pi, Resolution)
 
-    compactness_list = np.linspace(1e-4, 1e-0, 5000)
+    phi, theta = np.meshgrid(phi,theta)
 
-    i = 0
+    Intensity = 1 / (1 - beta * np.cos(theta))**3 * (1 - np.sin(theta)**2 * np.cos(phi)**2 * (1 - beta**2) / (1 - beta * np.cos(theta))**2)
 
-    for compactness in compactness_list:
+    Intensity = Intensity / np.max(Intensity)
 
-        a_0 = M / compactness
+    return Intensity, theta, phi
 
-        def f(r):
+# Make data.
 
-            ksi = 2 * a_0 - M + 4
-            Y = np.sqrt(M / ksi) * (2 * np.arctan((r + a_0 + M) / np.sqrt(M * ksi)) - np.pi)
+fig = plt.figure()
 
-            return (1 - 2 / r) * np.exp(Y)
+for index, beta in enumerate([0.4]):
 
-        def dr_f(r):
+    Intensity, theta, phi = get_intensity(beta = beta, Resolution = 100)
 
-            ksi = 2 * a_0 - M + 4
-            Y = np.sqrt(M / ksi) * (2 * np.arctan((r + a_0 + M) / np.sqrt(M * ksi)) - np.pi)
-            dr_Y = 2 / ksi / (1 + (r + a_0 + M)**2 / M / ksi) 
+    X = Intensity * np.sin(theta) * np.cos(phi)
+    Y = Intensity * np.sin(theta) * np.sin(phi)
+    Z = Intensity * np.cos(theta)
 
-            return 2 / r**2 * np.exp(Y) + f(r) * dr_Y
+    ax  = fig.add_subplot(1, 1 , index + 1, projection='3d') 
 
-        def d2r_f(r):
+    colors = plt.cm.jet( Intensity / np.max(Intensity) )
+    surf = ax.plot_surface(X, Y, Z, 
+                        rstride = 1, 
+                        cstride = 1, 
+                        facecolors = colors,
+                        linewidth = 0, 
+                        antialiased = True, 
+                        alpha = 0.5, 
+                        zorder = 0.5)
 
-            ksi = 2 * a_0 - M + 4
-            Y = np.sqrt(M / ksi) * (2 * np.arctan((r + a_0 + M) / np.sqrt(M * ksi)) - np.pi)
-            dr_Y = 2 / ksi / (1 + (r + a_0 + M)**2 / M / ksi) 
-            d2r_Y = - 2 / ksi / (1 + (r + a_0 + M)**2 / M / ksi)**2 * 2 * (r + a_0 + M) / M / ksi
+    Acceleration_Vector = np.array([0, 0, 0, 1.5, 0, 0])
+    Velocity_Vector     = np.array([0, 0, 0, 0, 0, 1.5])
 
-            return 2 / r**2 * np.exp(Y) * dr_Y - 4 / r**3 * np.exp(Y) + dr_f(r) * dr_Y + f(r) * d2r_Y
-        
-        def Isco_condition(r):
+    ax.quiver(*Acceleration_Vector, arrow_length_ratio = 0.1, colors = "k")
+    ax.quiver(*Velocity_Vector, arrow_length_ratio = 0.1, colors = "k")
 
-            return d2r_f(r) + 3 * dr_f(r) / r - 2 * dr_f(r)**2 / f(r)
+    ax.text(0, 0, 1.5,  r"$\,\,{\vec{\beta}}$", size=15, zorder=1, color='k') 
+    ax.text(1.5, 0, 0,  r"$\,\dot{\vec{\beta}}$", size=15, zorder=1, color='k') 
 
-        r_ISCO[M_index][i] = root_scalar(Isco_condition, x0 = 6, x1 = 5).root
+    ax.set_box_aspect((1,1,1))
+    ax.grid(False)
+    ax.axis('on')
 
-        i = i + 1
+    ax.set_title(r'$\beta = $ {}'.format(beta))
 
-    fit = np.polyfit(compactness_list, r_ISCO[M_index], 10)
-    poly = np.poly1d(fit)
+    ax.set_xlabel(r'$X$')
+    ax.set_ylabel(r'$Y$')
+    ax.set_zlabel(r'$Z$')
 
-    fit_plot = []
+    ax.set_xlim([-1.2,1.2])
+    ax.set_ylim([-1.2,1.2])
+    ax.set_zlim([-1.2,1.2])
 
-    for x in compactness_list:
-        fit_plot.append(poly(x))
+plt.rcParams['text.usetex'] = True
+plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
+plt.show()
 
-    fig1.plot(compactness_list, fit_plot, COLORS[M_index])
-    fig1.plot(compactness_list, r_ISCO[M_index],'r')
-    print(fit)
-
-    M_index = M_index + 1
-
-print(poly(0.5))
 
 plt.show()

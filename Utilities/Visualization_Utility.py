@@ -67,19 +67,22 @@ class Sim_Visualizer():
                             ", R_0 [M] = {}".format(self.Sim_Parsers[Sim_number][0].R_0) + 
                             ", Cutoff [M] = {}".format(self.Sim_Parsers[Sim_number][0].R_Cutoff))
                 
-                                
-            Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL) +
-                          self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+ 
-                          self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+
-                          self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL))
-            
-            self.Total_flux_str.append("Total flux at {}GHz = {} [Jy]\n".format(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9, np.round(Total_flux, 4)))
+            if Sim_Parser_0.Active_Sim_Mode != 2:
 
-        self.Total_flux_str[-1] = self.Total_flux_str[-1][:len(self.Total_flux_str[-1]) - 1]
-        self.Total_flux_str = "".join(self.Total_flux_str)
-        print("=" * len(self.Fig_title))
-        print(self.Fig_title)
-        print(self.Total_flux_str)
+                Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL) +
+                            self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+ 
+                            self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+
+                            self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL))
+                
+                self.Total_flux_str.append("Total flux at {}GHz = {} [Jy]\n".format(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9, np.round(Total_flux, 4)))
+
+        if Sim_Parser_0.Active_Sim_Mode != 2:
+
+            self.Total_flux_str[-1] = self.Total_flux_str[-1][:len(self.Total_flux_str[-1]) - 1]
+            self.Total_flux_str = "".join(self.Total_flux_str)
+            print("=" * len(self.Fig_title))
+            print(self.Fig_title)
+            print(self.Total_flux_str)
 
         for Array_num, _ in enumerate(self.Ehtim_paths):
             try:
@@ -178,6 +181,7 @@ class Sim_Visualizer():
                 Data_to_plot = I_Intensity_0 + I_Intensity_1 + I_Intensity_2 + I_Intensity_3
                 Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, 
                                                                 self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
+                                                                
                 Cbar_label = r"Brightness Temperature [$10^9$K]"
                 Colormap = "hot"
 
@@ -185,20 +189,20 @@ class Sim_Visualizer():
                 Cmap_min = 0
 
             elif Stokes_component == "Q":
-                Data_to_plot = Q_Intensity_0 + Q_Intensity_1 + Q_Intensity_2 + Q_Intensity_3
-                Cbar_label = r"Q Intensity [Jy / sRad]"
+                Data_to_plot = (Q_Intensity_0 + Q_Intensity_1 + Q_Intensity_2 + Q_Intensity_3)/1e20
+                Cbar_label = r"Q Intensity [$10^{20}$Jy / sRad]"
                 Cmap_max = max(np.abs(Data_to_plot.flatten())) 
                 Cmap_min = -Cmap_max
 
             elif Stokes_component == "U":
-                Data_to_plot = U_Intensity_0 + U_Intensity_1 + U_Intensity_2 + U_Intensity_3
-                Cbar_label = r"U Intensity [Jy / sRad]"
+                Data_to_plot = (U_Intensity_0 + U_Intensity_1 + U_Intensity_2 + U_Intensity_3)/1e20
+                Cbar_label = r"U Intensity [$10^{20}$Jy / sRad]"
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
                 Cmap_min = -Cmap_max
 
             else:
-                Data_to_plot = V_Intensity_0 + V_Intensity_1 + V_Intensity_2 + V_Intensity_3
-                Cbar_label = r"V Intensity [Jy / sRad]"
+                Data_to_plot = (V_Intensity_0 + V_Intensity_1 + V_Intensity_2 + V_Intensity_3)/1e20
+                Cbar_label = r"V Intensity [$10^{20}$Jy / sRad]"
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
                 Cmap_min = -Cmap_max
 
@@ -905,7 +909,7 @@ if __name__ == "__main__":
     plt.rcParams['axes.titlepad'] = 20
 
     EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Gauss_Bonnet"
+    Sim_path            = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Kerr"
     Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
     Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
@@ -916,10 +920,10 @@ if __name__ == "__main__":
                                 Label_Pad = 8,
                                 Respect_folder_structure = False)
 
-    Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
-                                       Save_Figures = False, 
-                                       Stokes_component = "Q",
-                                       Custom_fig_title = r"Kerr ($\text{a} = 0.9$)")    
+    # Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
+    #                                    Save_Figures = True, 
+    #                                    Stokes_component = "I",
+    #                                    Custom_fig_title = r"Wormhole ($\gamma = 2,\,\,\, a = 0.5$)")    
     
     # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
     #                               Contour_specs      = [([0.02, 0.1], ["r", "w"])], 
@@ -957,6 +961,8 @@ if __name__ == "__main__":
     #                                         Custom_fig_title = r"Kerr ($\text{a} = 0.9$)")
 
     # Visualizer.save_console_log_to_file()
+
+    print(Visualizer.Sim_Parsers[0][0].Source_R_Coord)
 
     plt.rcParams['text.usetex'] = True
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'

@@ -19,6 +19,11 @@ class Simulation_Parser():
             self.OBS_DISTANCE    = float(csvreader.__next__()[1])
             self.OBS_INCLICATION = float(csvreader.__next__()[1])
             self.OBS_FREQUENCY   = float(csvreader.__next__()[1])
+            self.Active_Sim_Mode = int(csvreader.__next__()[1])
+
+            if(self.Active_Sim_Mode == 2):
+                self.Photon_Number = int(csvreader.__next__()[1])
+                self.Param_Sweep_Number = int(csvreader.__next__()[1])
 
             for i in range(1):
                 _ = csvreader.__next__()
@@ -54,28 +59,42 @@ class Simulation_Parser():
                 for i in range(11):
                     _ = csvreader.__next__()
 
-            self.WINDOW_LIMITS = [float(limit) for limit in csvreader.__next__()[1].split(',')]
-            
-            Resolution_list = csvreader.__next__()[1].split(' ')
+            if (self.Active_Sim_Mode != 2):
 
-            self.X_PIXEL_COUNT   = int(Resolution_list[1])
-            self.Y_PIXEL_COUNT   = int(Resolution_list[3])
+                self.WINDOW_LIMITS = [float(limit) for limit in csvreader.__next__()[1].split(',')]
+                
+                Resolution_list = csvreader.__next__()[1].split(' ')
 
-            self.params = csvreader.__next__()
+                self.X_PIXEL_COUNT   = int(Resolution_list[1])
+                self.Y_PIXEL_COUNT   = int(Resolution_list[3])
+
+                self.params = csvreader.__next__()
 
             self.Legend = csvreader.__next__()
 
             csvreader = csv.reader(file, delimiter = " ")
 
-            self.X_coords        = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.Y_coords        = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.NT_Flux         = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.I_Intensity     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.Q_Intensity     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.U_Intensity     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.V_Intensity     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.NT_Redshift     = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.NT_Flux_Shifted = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            if (self.Active_Sim_Mode != 2):
+                Array_size = self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT
+            else:
+                Array_size = self.Photon_Number * self.Param_Sweep_Number
+
+
+            self.X_coords        = np.zeros(Array_size)
+            self.Y_coords        = np.zeros(Array_size)
+            self.NT_Flux         = np.zeros(Array_size)
+            self.I_Intensity     = np.zeros(Array_size)
+            self.Q_Intensity     = np.zeros(Array_size)
+            self.U_Intensity     = np.zeros(Array_size)
+            self.V_Intensity     = np.zeros(Array_size)
+            self.NT_Redshift     = np.zeros(Array_size)
+            self.NT_Flux_Shifted = np.zeros(Array_size)
+
+            self.Source_R_Coord   = np.zeros(Array_size)
+            self.Source_Phi_Coord = np.zeros(Array_size)
+            self.Radial_Momentum  = np.zeros(Array_size)
+            self.Theta_Momentum   = np.zeros(Array_size)
+            self.Phi_Momentum     = np.zeros(Array_size)
 
             index = 0
 
@@ -92,6 +111,14 @@ class Simulation_Parser():
                     self.Q_Intensity[index]  = row[5]
                     self.U_Intensity[index]  = row[6]
                     self.V_Intensity[index]  = row[7]
+
+                    if self.Active_Sim_Mode == 2:
+
+                        self.Source_R_Coord[index]   = row[8]
+                        self.Source_Phi_Coord[index] = row[9]
+                        self.Radial_Momentum[index]  = row[10]
+                        self.Theta_Momentum[index]   = row[11]
+                        self.Phi_Momentum[index]     = row[12]
 
                     self.NT_Flux_Shifted[index] = self.NT_Redshift[index]**4*self.NT_Flux[index]
 

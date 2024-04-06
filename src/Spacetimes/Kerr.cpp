@@ -8,13 +8,13 @@
 
 double* Kerr_class::get_ISCO() {
 
-    double Z_1 = 1 + pow(1 - SPIN * SPIN, 1. / 3) * (pow(1 + SPIN, 1. / 3) + pow(1 - SPIN, 1. / 3));
-    double Z_2 = sqrt(3 * SPIN * SPIN + Z_1 * Z_1);
+    double Z_1 = 1 + pow(1 - this->Spin_Param * this->Spin_Param, 1. / 3) * (pow(1 + this->Spin_Param, 1. / 3) + pow(1 - this->Spin_Param, 1. / 3));
+    double Z_2 = sqrt(3 * this->Spin_Param * this->Spin_Param + Z_1 * Z_1);
 
     static double r_ISCO[2]{};
 
-    r_ISCO[Inner] = MASS * (3 + Z_2 - sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
-    r_ISCO[Outer] = MASS * (3 + Z_2 + sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
+    r_ISCO[Inner] = this->Mass * (3 + Z_2 - sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
+    r_ISCO[Outer] = this->Mass * (3 + Z_2 + sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
 
     return r_ISCO;
 
@@ -24,8 +24,8 @@ double* Kerr_class::get_Photon_Sphere() {
 
     static double photon_orbit[2]{};
 
-    photon_orbit[Inner] = 2 * MASS * (1 + cos(2.0 / 3 * acos(SPIN)));
-    photon_orbit[Outer] = 2 * MASS * (1 + cos(2.0 / 3 * acos(-SPIN)));
+    photon_orbit[Inner] = 2 * this->Mass * (1 + cos(2.0 / 3 * acos(this->Spin_Param)));
+    photon_orbit[Outer] = 2 * this->Mass * (1 + cos(2.0 / 3 * acos(-this->Spin_Param)));
 
     return photon_orbit;
 
@@ -33,8 +33,8 @@ double* Kerr_class::get_Photon_Sphere() {
 
 int Kerr_class::update_metric(double State_Vector[]) {
 
-    double M = MASS;
-    double a = SPIN;
+    double M = this->Mass;
+    double a = this->Spin_Param;
 
     double& r     = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
@@ -70,8 +70,8 @@ Metric_type Kerr_class::get_metric(double State_vector[]) {
 
 int Kerr_class::update_dr_metric(double State_Vector[]) {
 
-    double M = MASS;
-    double a = SPIN;
+    double M = this->Mass;
+    double a = this->Spin_Param;
 
     double& r     = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
@@ -108,8 +108,8 @@ Metric_type Kerr_class::get_dr_metric(double State_Vector[]) {
 
 int Kerr_class::update_dtheta_metric(double State_Vector[]) {
 
-    double M = MASS;
-    double a = SPIN;
+    double M = this->Mass;
+    double a = this->Spin_Param;
 
     double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
@@ -147,8 +147,8 @@ Metric_type Kerr_class::get_dtheta_metric(double State_Vector[]) {
 
 int Kerr_class::update_d2r_metric(double State_Vector[]) {
 
-    double M = MASS;
-    double a = SPIN;
+    double M = this->Mass;
+    double a = this->Spin_Param;
 
     double& r     = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
@@ -192,8 +192,8 @@ Metric_type Kerr_class::get_d2r_metric(double State_Vector[]) {
 
 int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
-    double M = MASS;
-    double a = SPIN;
+    double M = this->Mass;
+    double a = this->Spin_Param;
 
     double& r_obs = p_Initial_Conditions->init_Pos[e_r];
     double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
@@ -227,28 +227,28 @@ int Kerr_class::get_EOM(double State_vector[], double Derivatives[]) {
     double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
-    double rho2 = r2 + SPIN * SPIN * cos2;
+    double rho2 = r2 + this->Spin_Param * this->Spin_Param * cos2;
 
-    double P = r2 + SPIN * SPIN - SPIN * J;
-    double delta = r2 - 2 * MASS * r + SPIN * SPIN;
-    double F = P * P - delta * ((J - SPIN) * (J - SPIN) + cos2 * (J * J / sin2 - SPIN * SPIN));
+    double P = r2 + this->Spin_Param * this->Spin_Param - this->Spin_Param * J;
+    double delta = r2 - 2 * this->Mass * r + this->Spin_Param * this->Spin_Param;
+    double F = P * P - delta * ((J - this->Spin_Param) * (J - this->Spin_Param) + cos2 * (J * J / sin2 - this->Spin_Param * this->Spin_Param));
 
     double& p_r     = State_vector[e_p_r    ];
     double& p_theta = State_vector[e_p_theta];
 
     *(Derivatives + e_r    ) = delta / rho2 * p_r;
     *(Derivatives + e_theta) = 1.0 / rho2 * p_theta;
-    *(Derivatives + e_phi  ) = 1.0 / (delta * rho2) * (P * SPIN + delta * (J / sin2 - SPIN));
+    *(Derivatives + e_phi  ) = 1.0 / (delta * rho2) * (P * this->Spin_Param + delta * (J / sin2 - this->Spin_Param));
     *(Derivatives + e_p_phi) = 0.0;
 
-    double theta_term_1 = -(delta * p_r * p_r + p_theta * p_theta) * SPIN * SPIN * cos1 * sin1 / (rho2 * rho2);
-    double theta_term_2 = F * SPIN * SPIN * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - SPIN * SPIN * cos1 * sin1) / rho2;
+    double theta_term_1 = -(delta * p_r * p_r + p_theta * p_theta) * this->Spin_Param * this->Spin_Param * cos1 * sin1 / (rho2 * rho2);
+    double theta_term_2 = F * this->Spin_Param * this->Spin_Param * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - this->Spin_Param * this->Spin_Param * cos1 * sin1) / rho2;
 
     *(Derivatives + e_p_theta) = theta_term_1 + theta_term_2;
 
-    double r_term_1 = p_r * p_r / (rho2) * (MASS - r * (1 - delta / rho2)) + p_theta * p_theta * r / (rho2 * rho2);
-    double r_term_2 = (2 * P * r - (r - MASS) * ((J - SPIN) * (J - SPIN) + cos2 * (J * J / (sin2) - SPIN * SPIN))) / (delta * rho2)
-                    - F * (rho2 * (r - MASS) + r * delta) / (delta * delta * rho2 * rho2);
+    double r_term_1 = p_r * p_r / (rho2) * (this->Mass - r * (1 - delta / rho2)) + p_theta * p_theta * r / (rho2 * rho2);
+    double r_term_2 = (2 * P * r - (r - this->Mass) * ((J - this->Spin_Param) * (J - this->Spin_Param) + cos2 * (J * J / (sin2) - this->Spin_Param * this->Spin_Param))) / (delta * rho2)
+                    - F * (rho2 * (r - this->Mass) + r * delta) / (delta * delta * rho2 * rho2);
 
     *(Derivatives + e_p_r) = r_term_1 + r_term_2;
 
@@ -260,10 +260,49 @@ bool Kerr_class::terminate_integration(double State_vector[], double Derivatives
 
     bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
 
-    double r_horizon = MASS * (1 + sqrt(1 - SPIN * SPIN));
+    double r_horizon = this->Mass * (1 + sqrt(1 - this->Spin_Param * this->Spin_Param));
 
     bool hit_horizon = State_vector[e_r] - r_horizon < 1e-5;
 
     return scatter || hit_horizon;
 
 };
+
+bool Kerr_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
+
+    if (!isnan(Metric_Parameters.Spin)) {
+
+        this->Spin_Param = Metric_Parameters.Spin;
+
+        return true;
+
+    }
+
+    return false;
+
+}
+
+Metric_Parameters_type Kerr_class::get_parameters() {
+
+    Metric_Parameters_type Parameters{};
+
+    Parameters.Spin = this->Spin_Param;
+
+    return Parameters;
+
+}
+
+void Kerr_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
+
+
+    if (Spin!= Parameter) {
+
+        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'this->Spin_Param'! Defaulting to it..." << "\n";
+
+    }
+
+    this->Spin_Param = Param_value;
+
+}
+
+

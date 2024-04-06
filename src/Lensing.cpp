@@ -52,7 +52,7 @@ void static log_ray_emission(double Stokes_Vector[STOKES_PARAM_NUM], double Opti
 
 }
 
-void static Evaluate_Novikov_Thorne_disk(Initial_conditions_type* const s_Initial_Conditions,
+void static Evaluate_Equatorial_Disk(Initial_conditions_type* const s_Initial_Conditions,
                                   Results_type* const s_Ray_results,
                                   double State_vector[],
                                   double Old_state[], 
@@ -62,20 +62,25 @@ void static Evaluate_Novikov_Thorne_disk(Initial_conditions_type* const s_Initia
 
     if (interpolate_crossing(State_vector, Old_state, crossing_coords, crossing_momenta, s_Initial_Conditions->NT_model)) {
 
+
         int Image_Order = compute_image_order(N_theta_turning_points, s_Initial_Conditions);
 
         double r_crossing = std::sqrt(crossing_coords[x] * crossing_coords[x] + crossing_coords[y] * crossing_coords[y]);
         double state_crossing[2] = { r_crossing, M_PI_2 };
 
-        s_Ray_results->Redshift_NT[Image_Order] = s_Initial_Conditions->NT_model->Redshift(State_vector[e_p_phi], 
-                                                                                           state_crossing, 
-                                                                                           r_obs, 
-                                                                                           theta_obs, 
-                                                                                           s_Initial_Conditions->Spacetimes);
+        if (Evaluate_NT_disk){
 
-        if (s_Ray_results->Redshift_NT[Image_Order] > std::numeric_limits<double>::min()) {
+            s_Ray_results->Redshift_NT[Image_Order] = s_Initial_Conditions->NT_model->Redshift(State_vector[e_p_phi], 
+                                                                                               state_crossing, 
+                                                                                               r_obs, 
+                                                                                               theta_obs, 
+                                                                                               s_Initial_Conditions->Spacetimes);
 
-            s_Ray_results->Flux_NT[Image_Order] = s_Initial_Conditions->NT_model->get_flux(r_crossing, s_Initial_Conditions->Spacetimes);
+            if (s_Ray_results->Redshift_NT[Image_Order] > std::numeric_limits<double>::min()) {
+
+                s_Ray_results->Flux_NT[Image_Order] = s_Initial_Conditions->NT_model->get_flux(r_crossing, s_Initial_Conditions->Spacetimes);
+
+            }
 
         }
 
@@ -533,6 +538,8 @@ void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_
                 s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Current], s_Initial_Conditions, emission_functions[Current], faradey_functions[Current], absorbtion_functions[Current]);
                 s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Next], s_Initial_Conditions, emission_functions[Next], faradey_functions[Next], absorbtion_functions[Next]);
 
+                /* ------ Account for the relativistic doppler effet via the redshift ------ */
+
                 for (int index = 0; index <= 1; index++) {
 
                     for (int stokes_idx = 0; stokes_idx <= 3; stokes_idx++) {
@@ -565,7 +572,7 @@ void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_
 
         double fractional_polarization = Polarized_Intensity / Stokes_Vector[I];
 
-        if (fractional_polarization > 1 && Stokes_Vector[I] > 1e-10) {
+        if (fractional_polarization > 1.001 && Stokes_Vector[I] > 1e-10) {
 
             exit(ERROR);
 
@@ -617,12 +624,7 @@ Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
     }
 
-    s_Ray_results.Parameters[Kerr]              = SPIN;
-    s_Ray_results.Parameters[Wormhole]          = WH_REDSHIFT;
-    s_Ray_results.Parameters[Reg_Black_Hole]    = RBH_PARAM;
-    s_Ray_results.Parameters[Naked_Singularity] = JNW_GAMMA;
-    s_Ray_results.Parameters[Gauss_Bonnet]      = GAUSS_BONNET_GAMMA;
-    s_Ray_results.Parameters[BH_w_Dark_Matter]  = M_HALO / A_0;
+    s_Ray_results.Parameters = s_Initial_Conditions->Spacetimes[e_metric]->get_parameters();
 
     // Initialize the State Vector
     double State_vector[] = {r_obs, theta_obs, phi_obs, J, p_theta_0, p_r_0};
@@ -662,11 +664,7 @@ Results_type* Propagate_ray(Initial_conditions_type* s_Initial_Conditions) {
 
             N_theta_turning_points += Increment_theta_turning_points(State_vector, Old_state);
 
-            if (Evaluate_NT_disk){
-
-                Evaluate_Novikov_Thorne_disk(s_Initial_Conditions, &s_Ray_results, State_vector, Old_state, N_theta_turning_points);
-                
-            }
+            Evaluate_Equatorial_Disk(s_Initial_Conditions, &s_Ray_results, State_vector, Old_state, N_theta_turning_points);
 
            /* ============= Evaluate logical flags for terminating the integration ============= */
 

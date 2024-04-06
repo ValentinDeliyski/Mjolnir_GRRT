@@ -85,7 +85,7 @@
 
         */
 
-        File_manager.open_image_output_files();
+        File_manager.open_image_output_files(int(0));
 
         /*
 
@@ -177,14 +177,6 @@
     }
 
     void run_simulation_mode_2(Initial_conditions_type* s_Initial_Conditions) {
-        
-        /*
-
-        Create/Open the logging files
-
-        */
-
-        File_manager.open_image_output_files();
 
         /*
 
@@ -197,30 +189,46 @@
 
         File_manager.get_geodesic_data(J_data, p_theta_data, &Data_number);
 
-        for (int photon = 0; photon <= Data_number; photon += 1) {
 
-            /*
+        /*
 
-            This function polulates the initial momentum inside the s_Initial_Conditions struct
+        Create/Open the logging files
 
-            */
+        */
 
-            s_Initial_Conditions->Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, J_data, p_theta_data, photon);
+        File_manager.open_image_output_files(Data_number + 1) ;
 
-            /*
-            
-            Ray propagation happens here
-            
-            */
+        for (int Param_Sweep = 0; Param_Sweep <= PARAM_SPEEP_NUMBER - 1; Param_Sweep++) {
 
-            Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
+            double Current_Param_Value = INIT_PARAM_VALUE * (1.0f - double(Param_Sweep) / (PARAM_SPEEP_NUMBER - 1)) + FINAL_PARAM_VALUE * Param_Sweep / (PARAM_SPEEP_NUMBER - 1);
 
-            File_manager.write_image_data_to_file(s_Ray_results);
+            s_Initial_Conditions->Spacetimes[e_metric]->update_parameters(Current_Param_Value, PARAM_TYPE);
 
-            print_progress(photon, Data_number, true);
+            for (int photon = 0; photon <= Data_number; photon += 1) {
+
+                /*
+
+                This function polulates the initial momentum inside the s_Initial_Conditions struct
+
+                */
+
+                s_Initial_Conditions->Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, J_data, p_theta_data, photon);
+
+                /*
+
+                Ray propagation happens here
+
+                */
+
+                Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
+
+                File_manager.write_image_data_to_file(s_Ray_results);
+
+                print_progress(photon, Data_number, true);
+            }
+
+            std::cout << '\n';
         }
-
-        std::cout << '\n';
 
         File_manager.close_image_output_files();
     }

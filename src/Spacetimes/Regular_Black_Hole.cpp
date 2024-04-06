@@ -214,3 +214,40 @@ bool RBH_class::terminate_integration(double State_vector[], double Derivatives[
     return scatter || hit_horizon_RBH;
 
 }
+
+Metric_Parameters_type RBH_class::get_parameters() {
+
+    Metric_Parameters_type Parameters{};
+
+    Parameters.RBH_Parameter = this->Parameter;
+
+    return Parameters;
+
+}
+
+bool RBH_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
+
+    if (!isnan(Metric_Parameters.RBH_Parameter)) {
+
+        this->Parameter = Metric_Parameters.RBH_Parameter;
+
+        return true;
+
+    }
+
+    return false;
+
+}
+
+void RBH_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
+
+
+    if (RBH_Param != Parameter) {
+
+        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'RBH_Param'! Defaulting to it..." << "\n";
+
+    }
+
+    this->Parameter = Param_value;
+
+}

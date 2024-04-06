@@ -260,3 +260,56 @@ bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(double State_vec
     return scatter || hit_horizon;
 
 };
+
+Metric_Parameters_type Black_Hole_w_Dark_Matter_Halo_class::get_parameters() {
+
+    Metric_Parameters_type Parameters{};
+
+    Parameters.Compactness = this->Compactness;
+    Parameters.Halo_Mass = this->Halo_Mass;
+
+    return Parameters;
+
+}
+
+bool Black_Hole_w_Dark_Matter_Halo_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
+
+    if (!isnan(Metric_Parameters.Compactness) &&
+        !isnan(Metric_Parameters.Halo_Mass)) {
+
+        this->Compactness = Metric_Parameters.Compactness;
+        this->Halo_Mass = Metric_Parameters.Halo_Mass;
+
+        return true;
+
+    }
+
+    return false;
+
+}
+
+void Black_Hole_w_Dark_Matter_Halo_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
+
+
+    if (BH_w_DM_Halo_Compactness != Parameter && BH_w_DM_Halo_M_Halo != Parameter) {
+
+        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'BH_w_DM_Halo_Compactness' or 'BH_w_DM_Halo_M_Halo'! Defaulting to 'BH_w_DM_Halo_M_Halo'..." << "\n";
+
+        this->Halo_Mass = Param_value;
+
+        return;
+
+    }
+
+    if (BH_w_DM_Halo_M_Halo == Parameter) {
+
+        this->Halo_Mass = Param_value;
+
+    }
+    else {
+
+        this->Compactness = Param_value;
+
+    }
+
+}

@@ -198,7 +198,7 @@ def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float, fi
     tan_0 = np.tan(obs_inclanation)
 
     #--- Metric at the Observer ---#
-    g_phph = (obs_distance**2 + spin**2 + 2*obs_distance*spin**2*sin_0**2/(obs_distance**2 + spin**2*cos_0**2))*sin_0**2
+    g_phph = (obs_distance**2 + spin**2 + 2*spin**2*sin_0**2/obs_distance)*sin_0**2
     g_tph  = -2*spin*obs_distance*sin_0**2/(obs_distance**2 + spin**2*cos_0**2)
     g_tt   = -(1 - 2*obs_distance/(obs_distance**2 + spin**2*cos_0**2))
 

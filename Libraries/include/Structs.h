@@ -40,6 +40,36 @@
 
     };
 
+    struct Metric_Parameters_type {
+
+        /* ============ Wormhole Specific Parameters ============ = */
+
+        double Redshift_Parameter;
+        bool Stop_At_Throat;
+
+        /* ============ Janis-Newman-Winicour Specific Parameters ============ = */
+
+        double JNW_Gamma_Parameter;
+        
+        /* ============ Gauss-Bonnet Specific Parameters ============ = */
+
+        double GB_Gamma_Parameter;
+
+        /* ============ Regular Black Hole Specific Parameters ============ = */
+
+        double RBH_Parameter;
+
+        /* ============ Black Hole w Dark Matter Halo Specific Parameters ============ = */
+
+        double Compactness;
+        double Halo_Mass;
+
+        /* ============ Generic Parameters ============ = */
+
+        double Spin; // Only affects Kerr and the Wormhole
+
+    };
+
     struct Emission_law_parameters {
 
         /* Phenomenological emission model parameters */
@@ -123,7 +153,7 @@
 
         s_Ray_log_type Ray_log_struct;
 
-        double Parameters[SPACETIME_NUMBER]{};
+        Metric_Parameters_type Parameters{};
 
     };
 

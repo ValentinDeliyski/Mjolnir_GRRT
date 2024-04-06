@@ -241,3 +241,40 @@ bool JNW_class::terminate_integration(double State_vector[], double Derivatives[
     return scatter;
 
 };
+
+Metric_Parameters_type JNW_class::get_parameters() {
+
+    Metric_Parameters_type Parameters{};
+
+    Parameters.JNW_Gamma_Parameter = this->Gamma;
+
+    return Parameters;
+
+}
+
+bool JNW_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
+
+    if (!isnan(Metric_Parameters.JNW_Gamma_Parameter)) {
+
+        this->Gamma = Metric_Parameters.JNW_Gamma_Parameter;
+
+        return true;
+
+    }
+
+    return false;
+
+}
+
+void JNW_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
+
+
+    if (JNW_Gamma != Parameter) {
+
+        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'JNW_Gamma'! Defaulting to it..." << "\n";
+
+    }
+
+    this->Gamma = Param_value;
+
+}
