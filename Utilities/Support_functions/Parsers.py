@@ -95,6 +95,8 @@ class Simulation_Parser():
             self.Radial_Momentum  = np.zeros(Array_size)
             self.Theta_Momentum   = np.zeros(Array_size)
             self.Phi_Momentum     = np.zeros(Array_size)
+            self.Param_1          = np.zeros(Array_size)
+            self.Param_2          = np.zeros(Array_size)
 
             index = 0
 
@@ -119,6 +121,12 @@ class Simulation_Parser():
                         self.Radial_Momentum[index]  = row[10]
                         self.Theta_Momentum[index]   = row[11]
                         self.Phi_Momentum[index]     = row[12]
+                        self.Param_1[index]          = row[13]
+
+                        try:
+                            self.Param_2[index] = row[14]
+                        except:
+                            self.Param_2[index] = 0
 
                     self.NT_Flux_Shifted[index] = self.NT_Redshift[index]**4*self.NT_Flux[index]
 

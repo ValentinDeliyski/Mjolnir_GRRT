@@ -16,7 +16,10 @@ class Schwarzschild:
         g_thth   = r ** 2
         g_phiphi = g_thth * np.sin(theta)**2
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
 
     def photon_sphere(self):
 
@@ -43,8 +46,10 @@ class Regular_Black_Hole:
         g_thth   = r_eff ** 2
         g_phiphi = g_thth * np.sin(theta)**2
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
-
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
     def photon_sphere(self):
 
         return np.sqrt( (3 * self.MASS)**2 - self.PARAMETER**2 )
@@ -62,7 +67,7 @@ class Wormhole:
         self.HAS_PHOTON_SPHERE = True
         self.HAS_R_OF_B = False
 
-    def metric(self, r_global, theta) -> np.array:
+    def metric(self, r, theta) -> np.array:
 
         #------------------------------------------------------------------------#
         #                                                                        #
@@ -70,14 +75,17 @@ class Wormhole:
         #                                                                        #
         #------------------------------------------------------------------------#
 
-        r = np.sqrt(r_global**2 + self.R_THROAT**2)
+        r = np.sqrt(r**2 + self.R_THROAT**2)
 
         g_tt = -np.exp(-2 * self.MASS/ r - 2 * self.PARAMETER * (self.MASS / r)**2)
         g_rr = 1 + self.R_THROAT / r
-        g_thth   = r_global**2 + self.R_THROAT**2
+        g_thth   = r**2 + self.R_THROAT**2
         g_phiphi = g_thth * np.sin(theta)**2
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
 
     def photon_sphere(self):
 
@@ -117,7 +125,10 @@ class JNW_Naked_Singularity:
         g_thth   = r**2 * pow(1 - r_singularity / r, 1 - self.PARAMETER) 
         g_phiphi = g_thth * np.sin(theta)**2
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
 
     def photon_sphere(self):
 
@@ -235,7 +246,10 @@ class Gaus_Bonnet_Naked_Singularity:
         g_thth = r**2
         g_phiphi = g_thth * np.sin(theta)**2
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
     
     def photon_sphere(self):
 

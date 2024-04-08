@@ -64,7 +64,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
             Image_Output_files[Image_order] << "Number Of Photons Per Param Value: " << Sim_mode_2_number
                                             << '\n'
-                                            << "Number Of Param Values: " << PARAM_SPEEP_NUMBER
+                                            << "Number Of Param Values: " << PARAM_SWEEP_NUMBER
                                             << '\n';
 
         }
@@ -288,7 +288,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
                 case Wormhole:
 
-                    Image_Output_files[Image_order] << "Spin Parameter"
+                    Image_Output_files[Image_order] << "Spin Parameter,"
                         << " "
                         << "Redshift Parameter";
                     break;
@@ -310,7 +310,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
                 case BH_w_Dark_Matter:
 
-                    Image_Output_files[Image_order] << "Halo Mass"
+                    Image_Output_files[Image_order] << "Halo Mass,"
                                                     << " " 
                                                     << "Halo Compactness";
                     break;

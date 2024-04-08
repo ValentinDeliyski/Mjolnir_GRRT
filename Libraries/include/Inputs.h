@@ -122,12 +122,12 @@
 
     // Sim Mode 2 Configuration //
 
-    const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\geodesic_data_70_deg_Sch_r4.5_500_photons.txt";
-    const int PARAM_SPEEP_NUMBER = 10;
-    Real INIT_PARAM_VALUE        = 0.001f;
-    Real FINAL_PARAM_VALUE       = 0.94f;
+    const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\geodesic_data_70_deg_Sch_r6_499_photons.txt";
+    const int PARAM_SWEEP_NUMBER = 1;
+    Real INIT_PARAM_VALUE        = 0.001;
+    Real FINAL_PARAM_VALUE       = 3.0;
 
-    const Metric_Parameter_Selector PARAM_TYPE = Spin;
+    const Metric_Parameter_Selector PARAM_TYPE = WH_Redshift;
 
     // Sim Mode 4 Initial Conditions //
 
@@ -141,7 +141,7 @@
 
     // 1e-12 Seems to be an opitimal tradeoff between accuracy and performace for low inclinations <60 deg. For higher inclinations, 
     // things could break using RK4 for the radiative transfer - for such cases use at most 1e-13.
-    Real RK45_ACCURACY     = 1e-10; 
+    Real RK45_ACCURACY     = 0.4e-15; 
     Real SAFETY_1          = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Real SAFETY_2          = 1e-25; // Near zero positive number used to avoid division by 0 when calculating the integration step
 

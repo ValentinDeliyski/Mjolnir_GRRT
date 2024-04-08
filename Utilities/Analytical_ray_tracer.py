@@ -108,12 +108,16 @@ class Analytical_ray_tracer():
 
                 # NOTE: In the presence of a photon sphere, the turning points will be between it and the source
 
+                higher_order_impact_params = np.zeros(self.Granularity)
+
                 higher_order_turning_points = self.r_source + (beta.cdf(distribution_range, density_parameter, density_parameter)) * (self.Spacetime.photon_sphere() - self.r_source)
                 metrics_at_turning_points   = self.Spacetime.metric(higher_order_turning_points, np.pi / 2)
 
                 #-------- Calculate the impact parameters for the correspoinding turning points --------#
 
-                higher_order_impact_params  = np.sqrt(-metrics_at_turning_points[3] / metrics_at_turning_points[0])
+                for index, metric  in enumerate(metrics_at_turning_points):
+
+                    higher_order_impact_params[index] = np.sqrt(-metric[3] / metric[0])
 
             #-------- Solve the integrals that involve turning points --------#
 
@@ -278,7 +282,7 @@ def plot_splined_data(figure_num, Splines):
 
         color_index = (color_index + 1) % len(COLOR_CYCLE)
 
-    subfigure_spline.set_title(r'Images of the r = 6M orbit')
+    subfigure_spline.set_title(r'Splined Results')
     subfigure_spline.set_xlabel(r'x [M]')
     subfigure_spline.set_ylabel(r'y [M]')
     subfigure_spline.set_aspect(1)
@@ -428,7 +432,7 @@ if __name__ == "__main__":
                      "Naked Singularity":  JNW,
                      "Gauss - Bonnet"    : GBNS}
 
-    Active_spacetime = "Naked Singularity"
+    Active_spacetime = "Schwarzshild"
 
     #----- Observer / Source  -------#
 

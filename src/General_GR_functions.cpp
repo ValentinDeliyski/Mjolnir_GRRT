@@ -82,7 +82,7 @@ void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Cond
     /*
     
      n_cam is the direction vector of the light ray in the camera frame ( {r, theta, phi} components)
-     n_FIDO is the "non-rotated" observer (a.e. his camera "y" axis is aligned with the spin axis of the central object)
+     n_FIDO is the "rotated" observer (a.e. his camera "y" axis is NOT aligned with the spin axis of the central object)
     
     */
 

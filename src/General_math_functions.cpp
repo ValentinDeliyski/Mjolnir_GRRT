@@ -187,7 +187,7 @@ bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], doub
 	for (int index = e_r; index <= e_theta; index++) {
 
 		momentum_param[index]   = (crossing_coords_spherical[index] - Old_State_Vector[index]) / (State_Vector[index] - Old_State_Vector[index]);
-		crossing_momenta[index] = momentum_param[index] * State_Vector[5 - index] + (1 - momentum_param[index]) * Old_State_Vector[5 - index];
+		crossing_momenta[index] = momentum_param[index] * State_Vector[e_p_r - index] + (1 - momentum_param[index]) * Old_State_Vector[e_p_r - index];
 	}
 
 	double r_out = NT_Model->get_r_out();

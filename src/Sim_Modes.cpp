@@ -198,9 +198,14 @@
 
         File_manager.open_image_output_files(Data_number + 1) ;
 
-        for (int Param_Sweep = 0; Param_Sweep <= PARAM_SPEEP_NUMBER - 1; Param_Sweep++) {
+        for (int Param_Sweep = 0; Param_Sweep <= PARAM_SWEEP_NUMBER - 1; Param_Sweep++) {
 
-            double Current_Param_Value = INIT_PARAM_VALUE * (1.0f - double(Param_Sweep) / (PARAM_SPEEP_NUMBER - 1)) + FINAL_PARAM_VALUE * Param_Sweep / (PARAM_SPEEP_NUMBER - 1);
+            double Current_Param_Value = INIT_PARAM_VALUE;
+
+            if (PARAM_SWEEP_NUMBER > 1) {
+
+                Current_Param_Value = INIT_PARAM_VALUE * (1.0f - double(Param_Sweep) / (PARAM_SWEEP_NUMBER - 1)) + FINAL_PARAM_VALUE * Param_Sweep / (PARAM_SWEEP_NUMBER - 1);
+            }
 
             s_Initial_Conditions->Spacetimes[e_metric]->update_parameters(Current_Param_Value, PARAM_TYPE);
 
