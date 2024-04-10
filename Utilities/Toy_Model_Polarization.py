@@ -1,7 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 
-from numpy import zeros, array, dot, cross, column_stack, append
+from numpy import zeros, array, dot, cross, column_stack, append, argmax
 from numpy import sqrt, cos, sin, arctan2, arctan
 from numpy import ndarray
 from numpy import pi
@@ -10,6 +10,38 @@ from numpy.linalg import norm, inv
 
 from Support_functions import Spacetimes
 from Support_functions.Parsers import Simulation_Parser
+
+def split_Deltas(Delta):
+
+    branch_index = []
+    branch_index.append(0)
+
+    for index, _ in enumerate(Delta):
+
+        if index > 1 and Delta[index] * Delta[index - 1] < 0:
+
+            branch_index.append(index)
+
+    branch_index.append(len(Delta) - 1)
+
+    return branch_index
+
+def split_EVPA(EVPA):
+
+    DISCONTINUITY_TRESHOLD = pi / 2
+
+    branch_index = []
+    branch_index.append(0)
+
+    for index, _ in enumerate(EVPA):
+
+        if index > 1 and abs(EVPA[index] - EVPA[index - 1]) > DISCONTINUITY_TRESHOLD:
+
+            branch_index.append(index)
+
+    branch_index.append(len(EVPA) - 1)
+
+    return branch_index
 
 def get_polarization_vector(Photon_Momentum: ndarray, 
                             Fluid_Velocity: ndarray, 
@@ -115,23 +147,6 @@ def get_polarization_vector(Photon_Momentum: ndarray,
 
 def get_observational_quantities(Polarization_Vectors, Image_Coordinates):
 
-    def split_EVPA(EVPA):
-
-        DISCONTINUITY_TRESHOLD = pi / 2
-
-        branch_index = []
-        branch_index.append(0)
-
-        for index, _ in enumerate(EVPA):
-
-            if index > 1 and abs(EVPA[index] - EVPA[index - 1]) > DISCONTINUITY_TRESHOLD:
-
-                branch_index.append(index)
-
-        branch_index.append(len(EVPA) - 1)
-
-        return branch_index
-
     EVPA = []
 
     Polarization_I = []
@@ -160,13 +175,23 @@ def get_observational_quantities(Polarization_Vectors, Image_Coordinates):
 
 if __name__ == '__main__':
  
-    Active_spacetime = "Schwarzshild"
+    params = {"ytick.color" : "black",
+              "xtick.color" : "black",
+              "axes.labelcolor" : "black",
+              "axes.edgecolor" : "black",
+              "text.usetex" : True,
+              "font.family" : "serif",
+              "font.serif" : ["Computer Modern Serif"]}
+    plt.rcParams.update(params)
 
     Schw_Sim_Path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Kerr_n0"
     Schw_Parser   = Simulation_Parser(Schw_Sim_Path)
 
-    Other_Metric_Sim_Path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Wormhole_n0"
+    Other_Metric_Sim_Path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Wormhole_n0_accurate"
     Other_Metric_Parser   = Simulation_Parser(Other_Metric_Sim_Path)
+
+    QUIVER_SAMPLE_SKIP = 10
+    PARAWM_SWEEP_FIGURE_SKIP = 20
 
     """  
     For metrics with more than one parameter these go as:
@@ -176,13 +201,17 @@ if __name__ == '__main__':
 
     Other_Metric_Param_Number = 2
     Param_Sweep_Number = int(len(Other_Metric_Parser.X_coords) / Other_Metric_Parser.Photon_Number)
+    Param_Sweep_Color_Cycle = ["r", "b", "k"]
 
     # ======================================= Initial Conditions ======================================= #
 
-    B_Field = array([0.5, 0, 0.87]) # This vector has components [r, theta, phi]
+    B_Fields = [array([0.5, 0, 0.87]), 
+                array([0.71, 0, 0.71]), 
+                array([0.87, 0, 0.5])] # This vector has components [r, theta, phi]
 
-    beta_angle     = -120 / 180 * pi
-    Fluid_Velocity = 0.3 * array([cos(beta_angle), sin(beta_angle), 0]) # This vector has components [x, y, z]
+    beta_angles = [-120 / 180 * pi, 
+                   -135 / 180 * pi, 
+                   -150 / 180 * pi]
 
     # ====================================== Ray-Tracer Log Parser ====================================== #
 
@@ -199,115 +228,202 @@ if __name__ == '__main__':
     Schwarzschild_class  = Spacetimes.Schwarzschild()
     Schwarzschild_metric = Schwarzschild_class.metric(r = Schw_Parser.Source_R_Coord, theta = pi / 2)
 
-    Figure = plt.figure()
-    Tick_plot       = Figure.add_subplot(151)
-    Intensity_Plot  = Figure.add_subplot(152)
-    Delta_I_Plot    = Figure.add_subplot(153)
-    EVPA_Plot       = Figure.add_subplot(154)
-    Delta_EVPA_Plot = Figure.add_subplot(155)
+    Figure_Param_Sweep, (Delta_I_Plot_Sweep, Delta_EVPA_Plot_Sweep) = plt.subplots(1, 2, gridspec_kw = {'width_ratios': [1, 1]}, constrained_layout = True)
+    Figure_Param_Sweep.set_figwidth(12)
 
-    Schw_Polarization_Vectors, Schw_Scaled_Polzarization_Vectors = get_polarization_vector(Photon_Momentum = Schw_Photon_Momentum,
-                                                                                           Fluid_Velocity = Fluid_Velocity,
-                                                                                           B_Field = B_Field,
-                                                                                           Image_Coords = Schw_Image_Coordiantes,
-                                                                                           Metric = Schwarzschild_metric)
+    for B_Field_Idx, (B_Field, beta_angle) in enumerate(zip(B_Fields, beta_angles)):
 
-    Schw_EVPA, Schw_EVPA_Branches, Schw_Polarization_I, Schw_Polarization_Q, Schw_Polarization_U, Schw_Image_phi_coord = get_observational_quantities(Polarization_Vectors = Schw_Polarization_Vectors,
-                                                                                                                                                      Image_Coordinates    = Schw_Image_Coordiantes)
-    
-    """ Plot the reference values for Schwarzschild """
+        Fluid_Velocity = 0.3 * array([cos(beta_angle), sin(beta_angle), 0]) # This vector has components [x, y, z]
 
-    Tick_plot.quiver(Schw_Parser.X_coords[0::10] - Schw_Scaled_Polzarization_Vectors.T[0][0::10] / 2,
-                     Schw_Parser.Y_coords[0::10] - Schw_Scaled_Polzarization_Vectors.T[1][0::10] / 2,
-                     Schw_Scaled_Polzarization_Vectors.T[0][0::10],
-                     Schw_Scaled_Polzarization_Vectors.T[1][0::10],
-                     headwidth = 0,
-                     headlength = 0,
-                     headaxislength = 0,
-                     angles = 'xy', 
-                     scale_units = 'xy', 
-                     scale = 1,
-                     color = 'k')
+        Figure_Pattern, (Tick_plot, Intensity_Plot, Delta_I_Plot, EVPA_Plot, Delta_EVPA_Plot) = plt.subplots(1, 5, gridspec_kw = {'width_ratios': [2.4, 1, 1, 1, 1]}, constrained_layout = True)
+        Figure_Pattern.set_figwidth(15)
+        Figure_Pattern.set_figheight(3.2)
 
-    Intensity_Plot.plot(Schw_Image_phi_coord, Schw_Polarization_I, color = "k")
+        Tick_plot.set_aspect(1)
+        Tick_plot.set_ylabel(r"$y\,[M]$", fontsize = 16)
+        Tick_plot.set_xlabel(r"$x\,[M]$", fontsize = 16)
+        Tick_plot.set_xlim([-8, 8])
 
-    for index in range(len(Schw_EVPA_Branches) - 1):
+        Intensity_Plot.set_ylabel(r"$I$", fontsize = 16)
+        Intensity_Plot.set_xlabel(r"$\phi$", fontsize = 16)
+        Intensity_Plot.set_xlim([0, 2 * pi])
 
-        EVPA_Plot.plot(Schw_Image_phi_coord[Schw_EVPA_Branches[index] : Schw_EVPA_Branches[index + 1] - 1], Schw_EVPA[Schw_EVPA_Branches[index] : Schw_EVPA_Branches[index + 1] - 1], color = 'k')
+        Delta_I_Plot.set_ylabel(r"$\Delta I$", fontsize = 16)
+        Delta_I_Plot.set_xlabel(r"$\phi$", fontsize = 16)
+        Delta_I_Plot.set_xlim([0, 2 * pi])
         
+        EVPA_Plot.set_ylabel(r"$EVPA$", fontsize = 16)
+        EVPA_Plot.set_xlabel(r"$\phi$", fontsize = 16)
+        EVPA_Plot.set_ylim([-pi / 2, pi / 2])
+        EVPA_Plot.set_xlim([0, 2 * pi])
 
-    """ Big fat loop over the parameter sweep of the other metric """
+        Delta_EVPA_Plot.set_ylabel(r"$\Delta EVPA$", fontsize = 16)
+        Delta_EVPA_Plot.set_xlabel(r"$\phi$", fontsize = 16)
+        Delta_EVPA_Plot.set_xlim([0, 2 * pi])
 
-    for index in range(Param_Sweep_Number):
 
-        """ Read the parameter value from the ray-tracer log """
+        Schw_Polarization_Vectors, Schw_Scaled_Polzarization_Vectors = get_polarization_vector(Photon_Momentum = Schw_Photon_Momentum,
+                                                                                            Fluid_Velocity = Fluid_Velocity,
+                                                                                            B_Field = B_Field,
+                                                                                            Image_Coords = Schw_Image_Coordiantes,
+                                                                                            Metric = Schwarzschild_metric)
 
-        Param_Sweep_Value = Other_Metric_Parser.Param_1[index * Other_Metric_Parser.Photon_Number]
-        Param_Sweep_Min_Value = Other_Metric_Parser.Param_1[0]
-        Param_Sweep_Max_Value = Other_Metric_Parser.Param_1[-1]
-
-        if Other_Metric_Param_Number == 2:
-            Param_Sweep_Value = Other_Metric_Parser.Param_2[index * Other_Metric_Parser.Photon_Number]
-            Param_Sweep_Min_Value = Other_Metric_Parser.Param_2[0]
-            Param_Sweep_Max_Value = Other_Metric_Parser.Param_2[-1]
-
-        cmap = matplotlib.colormaps['plasma']
-        Color_range = cmap((Param_Sweep_Value - Param_Sweep_Min_Value) / (Param_Sweep_Max_Value - Param_Sweep_Min_Value))
-
-        """ The classes need to be in here because they get init with thir parameter values """
-
-        WH   = Spacetimes.Wormhole(r_throat = 1, parameter = Param_Sweep_Value)
-        RBH  = Spacetimes.Regular_Black_Hole(parameter = Param_Sweep_Value)
-        JNW  = Spacetimes.JNW_Naked_Singularity(parameter = Param_Sweep_Value)
-        GBNS = Spacetimes.Gaus_Bonnet_Naked_Singularity(parameter = Param_Sweep_Value)
-
-        Spacetime_dict ={"Wormhole":     WH,
-                         "RBH":          RBH,
-                         "JNW":          JNW,
-                         "Gauss_Bonnet": GBNS}
+        Schw_EVPA, Schw_EVPA_Branches, Schw_Polarization_I, Schw_Polarization_Q, Schw_Polarization_U, Schw_Image_phi_coord = get_observational_quantities(Polarization_Vectors = Schw_Polarization_Vectors,
+                                                                                                                                                        Image_Coordinates    = Schw_Image_Coordiantes)
         
-        Other_Metric = Spacetime_dict[Other_Metric_Parser.metric].metric(r = Other_Metric_Parser.Source_R_Coord, theta = pi / 2)
+        """ Plot the reference values for Schwarzschild """
 
-        Polarization_Vectors, Scaled_Polzarization_Vectors = get_polarization_vector(Photon_Momentum = Other_Metric_Photon_Momentum[index * Other_Metric_Parser.Photon_Number : (index + 1) * Other_Metric_Parser.Photon_Number],
-                                                                                     Fluid_Velocity = Fluid_Velocity,
-                                                                                     B_Field = B_Field,
-                                                                                     Image_Coords = Other_Metric_Image_Coordiantes[index * Other_Metric_Parser.Photon_Number : (index + 1) * Other_Metric_Parser.Photon_Number],
-                                                                                     Metric = Other_Metric[index * Other_Metric_Parser.Photon_Number : (index + 1) * Other_Metric_Parser.Photon_Number])
-       
+        Tick_plot.quiver(Schw_Parser.X_coords[0::QUIVER_SAMPLE_SKIP] - Schw_Scaled_Polzarization_Vectors.T[0][0::QUIVER_SAMPLE_SKIP] / 2,
+                        Schw_Parser.Y_coords[0::QUIVER_SAMPLE_SKIP] - Schw_Scaled_Polzarization_Vectors.T[1][0::QUIVER_SAMPLE_SKIP] / 2,
+                        Schw_Scaled_Polzarization_Vectors.T[0][0::QUIVER_SAMPLE_SKIP],
+                        Schw_Scaled_Polzarization_Vectors.T[1][0::QUIVER_SAMPLE_SKIP],
+                        headwidth = 0,
+                        headlength = 0,
+                        headaxislength = 0,
+                        angles = 'xy', 
+                        scale_units = 'xy', 
+                        scale = 1,
+                        color = 'k')
 
-        EVPA, EVPA_Branches, Polarization_I, Polarization_Q, Polarization_U, Image_phi_coord = get_observational_quantities(Polarization_Vectors = Polarization_Vectors,
-                                                                                                                            Image_Coordinates = Other_Metric_Image_Coordiantes[index * Other_Metric_Parser.Photon_Number : (index + 1) * Other_Metric_Parser.Photon_Number])
+        Intensity_Plot.plot(Schw_Image_phi_coord, Schw_Polarization_I, "--", color = "k")
 
-        Tick_plot.quiver(Other_Metric_Parser.X_coords[index * Other_Metric_Parser.Photon_Number : (index + 1) * Other_Metric_Parser.Photon_Number: 10] - Scaled_Polzarization_Vectors.T[0][0::10] / 2,
-                         Other_Metric_Parser.Y_coords[index * Other_Metric_Parser.Photon_Number : (index + 1) * Other_Metric_Parser.Photon_Number: 10] - Scaled_Polzarization_Vectors.T[1][0::10] / 2,
-                         Scaled_Polzarization_Vectors.T[0][0::10],
-                         Scaled_Polzarization_Vectors.T[1][0::10],
-                         headwidth = 0,
-                         headlength = 0,
-                         headaxislength = 0,
-                         angles = 'xy', 
-                         scale_units = 'xy', 
-                         scale = 1,
-                         color = Color_range)
+        for index in range(len(Schw_EVPA_Branches) - 1):
+
+            EVPA_Plot.plot(Schw_Image_phi_coord[Schw_EVPA_Branches[index] : Schw_EVPA_Branches[index + 1] - 1], Schw_EVPA[Schw_EVPA_Branches[index] : Schw_EVPA_Branches[index + 1] - 1], "--", color = 'k')
+            
+        """ Big fat loop over the parameter sweep of the other metric """
+
+        Max_Delta_I    = []
+        Max_Delta_EVPA = []
+        Param_Sweep_Values = []
+
+        for Param_sweep_index in range(Param_Sweep_Number):
+
+            """ Read the parameter value from the ray-tracer log """
+
+            Param_Sweep_Value = Other_Metric_Parser.Param_1[Param_sweep_index * Other_Metric_Parser.Photon_Number]
+            Param_Sweep_Min_Value = Other_Metric_Parser.Param_1[0]
+            Param_Sweep_Max_Value = Other_Metric_Parser.Param_1[-1]
+
+            if Other_Metric_Param_Number == 2:
+                Param_Sweep_Value = Other_Metric_Parser.Param_2[Param_sweep_index * Other_Metric_Parser.Photon_Number]
+                Param_Sweep_Min_Value = Other_Metric_Parser.Param_2[0]
+                Param_Sweep_Max_Value = Other_Metric_Parser.Param_2[-1]
+
+            cmap = matplotlib.colormaps['plasma']
+            Color_range = cmap((Param_Sweep_Value - Param_Sweep_Min_Value) / (Param_Sweep_Max_Value - Param_Sweep_Min_Value))
+
+            """ The classes need to be in here because they get init with thir parameter values """
+
+            WH   = Spacetimes.Wormhole(r_throat = 1, parameter = Param_Sweep_Value)
+            RBH  = Spacetimes.Regular_Black_Hole(parameter = Param_Sweep_Value)
+            JNW  = Spacetimes.JNW_Naked_Singularity(parameter = Param_Sweep_Value)
+            GBNS = Spacetimes.Gaus_Bonnet_Naked_Singularity(parameter = Param_Sweep_Value)
+
+            Spacetime_dict ={"Wormhole":     WH,
+                            "RBH":          RBH,
+                            "JNW":          JNW,
+                            "Gauss_Bonnet": GBNS}
+            
+            Other_Metric = Spacetime_dict[Other_Metric_Parser.metric].metric(r = Other_Metric_Parser.Source_R_Coord, theta = pi / 2)
+
+            Polarization_Vectors, Scaled_Polzarization_Vectors = get_polarization_vector(Photon_Momentum = Other_Metric_Photon_Momentum[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number],
+                                                                                        Fluid_Velocity = Fluid_Velocity,
+                                                                                        B_Field = B_Field,
+                                                                                        Image_Coords = Other_Metric_Image_Coordiantes[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number],
+                                                                                        Metric = Other_Metric[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number])
         
-        Intensity_Plot.plot(Image_phi_coord, Polarization_I, color = Color_range)
+            EVPA, EVPA_Branches, Polarization_I, Polarization_Q, Polarization_U, Image_phi_coord = get_observational_quantities(Polarization_Vectors = Polarization_Vectors,
+                                                                                                                                Image_Coordinates = Other_Metric_Image_Coordiantes[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number])
 
-        for index in range(len(EVPA_Branches) - 1):
+            Delta_I = Polarization_I - Schw_Polarization_I
+            Delta_EVPA = EVPA - Schw_EVPA
 
-            EVPA_Plot.plot(Image_phi_coord[EVPA_Branches[index] : EVPA_Branches[index + 1] - 1], EVPA[EVPA_Branches[index] : EVPA_Branches[index + 1] - 1], color = Color_range)
+            for index, _ in enumerate(Delta_EVPA):
 
-        Delta_I_Plot.plot(Image_phi_coord, Polarization_I - Schw_Polarization_I, color = Color_range)
+                if Delta_EVPA[index] > pi / 2:
+                    Delta_EVPA[index] = Delta_EVPA[index] - pi
 
-        Delta_EVPA = EVPA - Schw_EVPA
+                elif Delta_EVPA[index] < -pi / 2:
+                    Delta_EVPA[index] = Delta_EVPA[index] + pi
 
-        for index, _ in enumerate(Delta_EVPA):
+            if Param_sweep_index % PARAWM_SWEEP_FIGURE_SKIP == 0:
 
-            if Delta_EVPA[index] > pi / 2:
-                Delta_EVPA[index] = Delta_EVPA[index] - pi
+                Tick_plot.quiver(Other_Metric_Parser.X_coords[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number : QUIVER_SAMPLE_SKIP] - Scaled_Polzarization_Vectors.T[0][0::QUIVER_SAMPLE_SKIP] / 2,
+                                Other_Metric_Parser.Y_coords[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number : QUIVER_SAMPLE_SKIP] - Scaled_Polzarization_Vectors.T[1][0::QUIVER_SAMPLE_SKIP] / 2,
+                                Scaled_Polzarization_Vectors.T[0][0::QUIVER_SAMPLE_SKIP],
+                                Scaled_Polzarization_Vectors.T[1][0::QUIVER_SAMPLE_SKIP],
+                                headwidth = 0,
+                                headlength = 0,
+                                headaxislength = 0,
+                                angles = 'xy', 
+                                scale_units = 'xy', 
+                                scale = 1,
+                                color = Color_range)
+                
+                Intensity_Plot.plot(Image_phi_coord, Polarization_I, color = Color_range)
 
-            elif Delta_EVPA[index] < -pi / 2:
-                Delta_EVPA[index] = Delta_EVPA[index] + pi
+                for index in range(len(EVPA_Branches) - 1):
 
-        Delta_EVPA_Plot.plot(Image_phi_coord, Delta_EVPA, color = Color_range)
+                    EVPA_Plot.plot(Image_phi_coord[EVPA_Branches[index] : EVPA_Branches[index + 1] - 1], EVPA[EVPA_Branches[index] : EVPA_Branches[index + 1] - 1], color = Color_range)
+
+                Delta_I_Plot.plot(Image_phi_coord, Delta_I, color = Color_range)
+
+                Delta_EVPA_Plot.plot(Image_phi_coord, Delta_EVPA, color = Color_range)
+
+            Max_Delta_I_idx    = argmax(abs(Delta_I))  
+            Max_Delta_EVPA_idx = argmax(abs(Delta_EVPA))      
+
+            Max_Delta_I.append(Delta_I[Max_Delta_I_idx])
+            Max_Delta_EVPA.append(Delta_EVPA[Max_Delta_EVPA_idx])
+            Param_Sweep_Values.append(Param_Sweep_Value)
+
+        Max_Delta_EVPA_Branches = split_Deltas(Delta = Max_Delta_EVPA)
+        Max_Delta_I_Branches    = split_Deltas(Delta = Max_Delta_I) 
+
+        for index in range(len(Max_Delta_EVPA_Branches) - 1):
+            Delta_EVPA_Plot_Sweep.plot(Param_Sweep_Values[Max_Delta_EVPA_Branches[index] : Max_Delta_EVPA_Branches[index + 1] - 1], Max_Delta_EVPA[Max_Delta_EVPA_Branches[index] : Max_Delta_EVPA_Branches[index + 1] - 1], color = Param_Sweep_Color_Cycle[B_Field_Idx])
+
+        for index in range(len(Max_Delta_I_Branches) - 1):
+            Delta_I_Plot_Sweep.plot(Param_Sweep_Values[Max_Delta_I_Branches[index] : Max_Delta_I_Branches[index + 1] - 1], Max_Delta_I[Max_Delta_I_Branches[index] : Max_Delta_I_Branches[index + 1] - 1], color = Param_Sweep_Color_Cycle[B_Field_Idx])
+            
+        Delta_EVPA_Plot_Sweep.set_xlim([Param_Sweep_Min_Value, Param_Sweep_Max_Value])
+        Delta_I_Plot_Sweep.set_xlim([Param_Sweep_Min_Value, Param_Sweep_Max_Value])
+
+    Delta_I_Plot_Sweep.plot([min(Param_Sweep_Values), max(Param_Sweep_Values)], [0, 0], "--", color = "k")
+    Delta_EVPA_Plot_Sweep.plot([min(Param_Sweep_Values), max(Param_Sweep_Values)], [0, 0], "--", color = "k")
+
+    ratio = 1.5
+
+    xleft, xright = Intensity_Plot.get_xlim()
+    ybottom, ytop = Intensity_Plot.get_ylim()
+    Intensity_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+
+    xleft, xright = Delta_I_Plot.get_xlim()
+    ybottom, ytop = Delta_I_Plot.get_ylim()
+    Delta_I_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+
+    xleft, xright = Intensity_Plot.get_xlim()
+    ybottom, ytop = Intensity_Plot.get_ylim()
+    Intensity_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+
+    xleft, xright = EVPA_Plot.get_xlim()
+    ybottom, ytop = EVPA_Plot.get_ylim()
+    EVPA_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+
+    xleft, xright = Intensity_Plot.get_xlim()
+    ybottom, ytop = Intensity_Plot.get_ylim()
+    Intensity_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+
+    xleft, xright = Delta_EVPA_Plot.get_xlim()
+    ybottom, ytop = Delta_EVPA_Plot.get_ylim()
+    Delta_EVPA_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+
+    Delta_I_Plot_Sweep.set_ylabel(r"$\Delta I$", fontsize = 16)
+    Delta_I_Plot_Sweep.set_xlabel(r"$\alpha$", fontsize = 16)
+    Delta_I_Plot_Sweep.set_xlim([0, 3])
+
+    Delta_EVPA_Plot_Sweep.set_ylabel(r"$\Delta EVPA$", fontsize = 16)
+    Delta_EVPA_Plot_Sweep.set_xlabel(r"$\alpha$", fontsize = 16)
 
     plt.show()

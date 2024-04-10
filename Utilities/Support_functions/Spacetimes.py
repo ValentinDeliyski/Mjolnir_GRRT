@@ -79,7 +79,7 @@ class Wormhole:
 
         g_tt = -np.exp(-2 * self.MASS/ r - 2 * self.PARAMETER * (self.MASS / r)**2)
         g_rr = 1 + self.R_THROAT / r
-        g_thth   = r**2 + self.R_THROAT**2
+        g_thth   = r**2
         g_phiphi = g_thth * np.sin(theta)**2
 
         if type(r) != np.ndarray:
