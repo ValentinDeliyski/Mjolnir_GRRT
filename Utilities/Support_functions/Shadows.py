@@ -1,183 +1,223 @@
 import numpy as np
+import Spacetimes
 import matplotlib.pyplot as plt
+from scipy.optimize import fsolve
+from scipy.stats import beta
 
-def add_Wormhole_Shadow(spin: float, alpha: float, obs_distance: float, obs_inclanation: float, figure: plt) -> None:
+class Wormhole_Shadow:
 
-    from scipy.optimize import fsolve
+    def __init__(self, spin: float, gamma: float, obs_distance: float, obs_inclanation: float, Granularity: int) -> None:
 
-    def get_integrals_of_motion(r_ph: np.ndarray):
+        if spin == 0:
+            print("Zero spin parameter breaks some of the expressions - setting it to 1e-10...")
+            spin = 1e-10
 
-        omega = 2*spin/r_ph**3
-        dr_omega = -3*omega/r_ph
-
-        N    = np.exp(-1/r_ph - alpha/r_ph**2)
-        dr_N = (1/r_ph**2 + 2*alpha/r_ph**3)*N
+        self.SPIN = spin
+        self.GAMMA = gamma
+        self.R_OBS = obs_distance
         
-        Sigma = dr_N/N - 1/r_ph
+        if obs_inclanation == 0:
+            print("Zero observer inclination breaks some of the expressions - setting it to 0.01...")
+            obs_inclanation = 0.01
 
-        ksi = Sigma/(Sigma*omega - dr_omega)
-        eta = r_ph**2/N**2*(1 - omega*ksi)**2 
+        self.THETA_OBS = obs_inclanation
+        self.GRANULARITY = Granularity
+        self.R_THROAT = 1
 
-        return ksi.flatten(), eta.flatten()
+    def get_integrals_of_motion(self, r_ph: np.ndarray) -> tuple:
 
-    def get_retrograde_photon_orbit() -> float:
+        omega   = 2 * self.SPIN / r_ph**3
+        dr_omega = -3 * omega / r_ph
 
-        def func(r_ph: float):
-
-            #--- Shadow Rim Parametric Equations ---#
-
-            ksi, eta = get_integrals_of_motion(r_ph)
-
-            #--- Square of the y coordinate of the shadow, viewed from the equator    ---#
-            #--- The root of this functions gives the outter photon orbit radius r_ph ---#
-
-            return eta - ksi**2
+        N    = np.exp(-1 / r_ph - self.GAMMA / r_ph**2)
+        dr_N = (1 / r_ph**2 + 2 * self.GAMMA / r_ph**3) * N
         
-        return fsolve(func, 10)
+        Sigma = dr_N / N - 1 / r_ph
 
-    def get_shadow_branches_intersection() -> tuple:
+        ksi = Sigma / (Sigma * omega - dr_omega)
+        eta = r_ph**2 / N**2 * (1 - omega * ksi)**2 
 
-        def func(r_ph: float):
-
-            #--- Shadow Rim Parametric Equations ---#
-
-            ksi, eta = get_integrals_of_motion(r_ph)
-
-            N_th = np.exp(-1/r_throat - alpha/r_throat**2)
-            omega_th = 2*spin/r_throat**3
-
-            #--- The above calculates the integrals of motion, using the parametric equations for photon orbits outside the throat,
-            #--- then imposes the condition they must satisfy ON the throat. This finds the intersection points (parametrized via r_ph) ---#
-
-            return eta*N_th**2/r_throat**2 - (1-omega_th*ksi)**2
-        
-        return fsolve(func, 10)    
-
-    def generate_shadow_rim(ksi: np.ndarray, eta: np.ndarray) -> tuple:
-
-        #--- Metric Functions at the Observer ---#
-
-        N_obs = np.exp(-1/obs_distance - alpha/obs_distance**2)
-        omega_obs = 2*spin/obs_distance**3
-
-        sin_0 = np.sin(obs_inclanation)
-
-        g_tt   = -N_obs**2 + omega_obs**2*obs_distance**2*sin_0**2
-        g_thth = obs_distance**2
-        g_phph = obs_distance**2*sin_0**2
-        g_tph  = omega_obs*obs_distance**2*sin_0**2
-
-        g2    = g_tph**2 - g_tt*g_phph
-        gamma = -g_tph/g_phph*np.sqrt(g_phph/g2)
-        ksi_metric   = np.sqrt(g_phph/g2)
-
-        Rad_potential   = (-eta*N_obs**2/obs_distance**2 + (1 - omega_obs * ksi)**2)
-        Rad_potential = Rad_potential + (Rad_potential < 0)*1e10
-
-        Theta_potential = (eta - ksi**2/sin_0**2)
-        Theta_potential = Theta_potential * (Theta_potential > 0)
-
-        #--- Local Contravariant Momenta ---#
-
-        p_r = np.sqrt(Rad_potential)/N_obs
-        p_theta = np.sqrt(Theta_potential)/np.sqrt(g_thth)
-        p_phi = ksi/np.sqrt(g_phph)
-        p_t = ksi_metric - gamma*ksi
-
-        #--- Celestial Angular Coordinates ---#
-
-        alpha_args = p_phi[(p_theta/p_t)**2 < 1] / p_r[(p_theta/p_t)**2 < 1]
-        beta_args  = p_theta[(p_theta/p_t)**2 < 1] / p_t[(p_theta/p_t)**2 < 1]
-
-        alpha_coord = np.arctan(alpha_args)
-        beta_coord  = np.arcsin(beta_args)
-
-        return alpha_coord.flatten(), beta_coord.flatten()
-
-    def generate_shadow_due_to_photons_outside_throat(r_ph: np.ndarray) -> tuple:
-
-        #--- Shadow Rim Parametric Equations due to Photons Orbiting Outside the Throat ---#
-
-        ksi, eta = get_integrals_of_motion(r_ph)
-
-        alpha_coord, beta_coord = generate_shadow_rim(ksi,eta)
-
-        #--- Get rid of the weird arc that goes "backwards" and doesnt contribute to the shadow ---#
+        return eta, ksi
     
-        if spin > 0:
-            index = np.argmax(alpha_coord)
-        else:
-            index = np.argmin(alpha_coord)
+    def get_branch_intersection_condition(self, r: float) -> float:
 
-        alpha_coord = alpha_coord[index:]
-        beta_coord  = beta_coord[index:]
-        ksi = ksi[index:]
+        eta, ksi = self.get_integrals_of_motion(r)
 
-        return alpha_coord, beta_coord, ksi
+        _, _, _, _, N_throat, omega_throat = self.get_metric(self.R_THROAT, self.THETA_OBS)
 
-    def generate_shadow_due_to_photons_on_throat() -> tuple:
+        #--- The above calculates the integrals of motion, using the parametric equations for photon orbits outside the throat, then imposes 
+        #--- the condition they must satisfy ON the throat. This finds the intersection points between the two shadow branches (parametrized via r_ph)
 
-        ksi_max = ksi_out[np.argmax(beta_out)]
+        return eta * N_throat**2 / self.R_THROAT**2 - (1 - omega_throat * ksi)**2
     
-        N_th = np.exp(-1/r_throat - alpha/r_throat**2)
-        omega_th = 2*spin/r_throat**3
+    def get_branch_intersection_point(self):
 
-        A = N_th**2/r_throat**2/np.sin(obs_inclanation)**2-omega_th**2
-        B = 2*omega_th
-        C = -1
+        return fsolve(self.get_branch_intersection_condition, x0 = 10, xtol = 1e-6)
 
-        roots = np.roots([A,B,C])
+    def get_orbital_condition(self, r_ph) -> float:
 
-        if (roots[0]*roots[0] > roots[1]*roots[1]):
-            ksi_0 = roots[0]
+        eta, ksi = self.get_integrals_of_motion(r_ph)
+    
+        return eta - ksi**2
+
+    def get_retrograde_photon_orbit(self) -> float:
+
+        return fsolve(self.get_orbital_condition, x0 = 10, xtol = 1e-3)
+    
+    def get_metric(self, r: float, theta: float):
+
+        N = np.exp(-1 / r - self.GAMMA / r**2)
+        omega = 2 * self.SPIN / r**3
+        sin_theta = np.sin(theta)
+
+        g_tt = -N**2 + omega**2 * r**2 * sin_theta**2
+        g_th_th = r**2
+        g_ph_ph = r**2 * sin_theta**2
+        g_t_ph  = -omega * r**2 * sin_theta**2
+
+        return g_tt, g_th_th, g_ph_ph, g_t_ph, N, omega
+    
+    def generate_shadow_rim(self, Eta, Ksi):
+
+        # ========================== Metric at the observer ========================== #
+
+        g_tt, g_th_th, g_ph_ph, g_t_ph, N, omega = self.get_metric(self.R_OBS, self.THETA_OBS)
+
+        g2 = g_t_ph**2 - g_tt*g_ph_ph
+
+        inv_lapse  = np.sqrt(g_ph_ph / g2)
+        gamma_coef = -g_t_ph / g_ph_ph * inv_lapse
+
+        Theta_potential =  Eta - Ksi**2 / np.sin(self.THETA_OBS)**2
+        Rad_potential   = -Eta * N**2 / self.R_OBS**2 + (1 - omega * Ksi)**2
+
+        #-- Pick out only the array components that have a non-negative Theta potential.
+        #-- The radial potential should never be able to go negative
+
+        Rad_potential   = Rad_potential[Theta_potential >= 0]
+        Ksi             = Ksi[Theta_potential >= 0]   
+        Eta             = Eta[Theta_potential >= 0]    
+        Theta_potential = Theta_potential[Theta_potential >= 0]    
+
+        # ================ Local Contravariant Momenta at the observer ================ #
+
+        p_t     = inv_lapse - gamma_coef * Ksi
+        p_r     = np.sqrt(Rad_potential) / N
+        p_theta = np.sqrt(Theta_potential) / np.sqrt(g_th_th)
+        p_phi   = Ksi / np.sqrt(g_ph_ph)
+
+        # =========================== Celestial coordinates =========================== #
+
+        alpha_coords = np.arctan( p_phi / p_r )
+        beta_coords  = np.arcsin( p_theta / p_t )
+        
+        #-- Get rid of that weird arc that goes "backwards" and does not contribute to the shadow...
+
+        if alpha_coords.size != 0:
+
+            if self.SPIN > 0:
+                index = np.argmax(alpha_coords)
+            else:
+                index = np.argmin(alpha_coords)
+
+            alpha_coords = alpha_coords[index:]
+            beta_coords = beta_coords[index:]
+
+        return alpha_coords, beta_coords
+
+    def generate_shadow(self) -> tuple:
+
+        # =========================================================================================================== #
+        # ============================== Branch due to photon orbits outside the throat ============================= #
+        # =========================================================================================================== #
+
+        r_ph_retrograde = self.get_retrograde_photon_orbit()
+
+        #-- The beta CDF maps more points in the uniform interval [0, 1] towards 1. Scaling this by the range of possible photon orbits
+        #-- results in a distribution that is more "dense" towards higher radii - this "closes" the shadow on the "fat" side a lot better
+
+        r_ph_scan = beta.cdf(x = np.linspace(0, 1, self.GRANULARITY), a = 1, b = 10) * (r_ph_retrograde - self.R_THROAT) + self.R_THROAT
+
+        Eta, Ksi = self.get_integrals_of_motion(r_ph = r_ph_scan)
+
+        alpha_first_coords, beta_first_coords = self.generate_shadow_rim(Eta, Ksi)
+
+        # =========================================================================================================== #
+        # ================================ Branch due to photon orbits on the throat ================================ #
+        # =========================================================================================================== #
+
+        #-- Pick out the value for the azimuthal impact parameter at which the two shadow branches meet (a.e the first part of allowed range for Ksi)
+
+        _, Ksi_meet = self.get_integrals_of_motion(self.R_THROAT)
+
+        # ============================== Metric at the throat ============================== #
+
+        _, _, _, _, N_throat, omega_throat = self.get_metric(self.R_THROAT, self.THETA_OBS)
+
+        # ================================================================================== #
+
+        Ksi_intersect = 1 / (N_throat / self.R_THROAT / np.sin(self.THETA_OBS) + omega_throat)
+
+        Ksi = np.linspace(Ksi_intersect, Ksi_meet, self.GRANULARITY)
+        Eta = self.R_THROAT**2 / N_throat**2 * (1 - omega_throat * Ksi)**2
+
+        alpha_second_coords, beta_second_coords = self.generate_shadow_rim(Eta, Ksi)
+
+        # =========================================================================================================== #
+        # ======================================== Proper branch intersecting ======================================= #
+        # =========================================================================================================== #
+
+        eta_int, ksi_int = self.get_integrals_of_motion(self.get_branch_intersection_point())
+
+        alpha_int, beta_int = self.generate_shadow_rim(eta_int, ksi_int)
+    
+        if beta_int.size > 0:
+
+            if self.SPIN > 0:
+
+                throat_bitmask  = beta_second_coords**2  < beta_int**2
+                outside_bitmask = alpha_first_coords < alpha_int
+
+            else:
+
+                throat_bitmask  = beta_second_coords**2  < beta_int**2
+                outside_bitmask = alpha_first_coords > alpha_int
+
+            alpha_first_coords  = alpha_first_coords[outside_bitmask]
+            beta_first_coords   = beta_first_coords[outside_bitmask]
+            alpha_second_coords = alpha_second_coords[throat_bitmask]
+            beta_second_coords  = beta_second_coords[throat_bitmask]
+
+        Subplot.plot([-100, 100], [0, 0], color = "k", linestyle = "--", linewidth = 1)
+        Subplot.plot([0, 0], [-100, 100], color = "k", linestyle = "--", linewidth = 1)
+
+        if len(beta_second_coords) > 50:
+
+            X_plot_first  = np.concatenate([[min(alpha_second_coords)], alpha_first_coords, np.flip(alpha_first_coords), [min(alpha_second_coords)]]) * self.R_OBS
+            X_plot_second = np.concatenate([np.flip(alpha_second_coords), alpha_second_coords]) * self.R_OBS
+            
+            Y_plot_first  = np.concatenate([[-max(beta_second_coords)], -beta_first_coords, np.flip(beta_first_coords), [max(beta_second_coords)]]) * self.R_OBS
+            Y_plot_second = np.concatenate([-np.flip(beta_second_coords), beta_second_coords]) * self.R_OBS
+
+            Subplot.plot(X_plot_first, Y_plot_first, color = "black")
+            Subplot.plot(X_plot_second, Y_plot_second, color = "red")
+
         else:
-            ksi_0 = roots[1]
+            
+            X_plot_first  = np.concatenate([alpha_first_coords, np.flip(alpha_first_coords), [alpha_first_coords[0]]]) * self.R_OBS
+            Y_plot_first  = np.concatenate([-beta_first_coords, np.flip(beta_first_coords), [-beta_first_coords[0]]]) * self.R_OBS
 
-        ksi = np.linspace(ksi_0, ksi_max, 10000)
+            Subplot.plot(X_plot_first, Y_plot_first, color = "black")
 
-        eta = r_throat**2/N_th**2*(1-omega_th*ksi)**2
+        Subplot.set_xlabel(r"$r_{\text{obs}}\alpha$,  [M]", fontsize = 15)
+        Subplot.set_ylabel(r"$r_{\text{obs}}\beta$,  [M]", fontsize = 15)
 
-        alpha_th, beta_th = generate_shadow_rim(ksi = ksi, eta = eta)
+        Subplot.set_title(r"$\gamma = {},\,\, a = {}$".format(self.GAMMA, round(self.SPIN,1)), fontsize = 15)
 
-        return alpha_th, beta_th
+        Subplot.set_xlim([-8, 8])
+        Subplot.set_ylim([-8, 8])
+        # return alpha_coords, beta_coords
 
-    r_throat = 1
-    r_ph_max = get_retrograde_photon_orbit()
-    r_ph = np.linspace(r_throat, r_ph_max, 10000)
-
-    alpha_out, beta_out, ksi_out = generate_shadow_due_to_photons_outside_throat(r_ph)
-
-    alpha_th, beta_th = generate_shadow_due_to_photons_on_throat()
-
-    #--- Get the itnersection points between the two shadow branches ---#
-
-    alpha_int, beta_int, ksi_int = generate_shadow_due_to_photons_outside_throat(get_shadow_branches_intersection())
-
-    #--- Delete the branches of the curves that do not contribute to the shadow ---#
-
-    if spin > 0:
-
-        throat_bitmask  = beta_th**2  < beta_int**2
-        outside_bitmask = alpha_out < alpha_int
-
-    else:
-
-        throat_bitmask  = beta_th**2  < beta_int**2
-        outside_bitmask = alpha_out > alpha_int
-
-    alpha_out = alpha_out[outside_bitmask]
-    beta_out = beta_out[outside_bitmask]
-
-    alpha_th = alpha_th[throat_bitmask]
-    beta_th = beta_th[throat_bitmask]
-
-    alpha_shadow = np.concatenate([alpha_th, alpha_out,  np.flip(alpha_out), np.flip(alpha_th)])
-    beta_shadow  = np.concatenate([beta_th , beta_out , -np.flip(beta_out), -np.flip(beta_th) ])
-
-    alpha_shadow = alpha_shadow[beta_shadow != 0]
-    beta_shadow  = beta_shadow[beta_shadow != 0]
-
-    figure.plot(alpha_shadow, beta_shadow, "b")
 
 def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float, figure: plt) -> None:
 
@@ -226,3 +266,61 @@ def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float, fi
     beta  = np.concatenate([beta ,-np.flip(beta),  [beta[0]] ])
 
     figure.plot(alpha,beta,"k")
+
+if __name__ == "__main__":
+
+    Fig = plt.figure(figsize = (18, 18))
+
+    obs_inclination = np.pi / 2
+    Granularity = 100000
+
+    Subplot = Fig.add_subplot(331)
+    Subplot.set_aspect(1)
+    Shadow_1 = Wormhole_Shadow(0, 0.0, 1e5, obs_inclination, Granularity)
+    Shadow_1.generate_shadow()
+
+    Subplot = Fig.add_subplot(332)
+    Subplot.set_aspect(1)
+    Shadow_2 = Wormhole_Shadow(0, 1.0, 1e5, obs_inclination, Granularity)
+    Shadow_2.generate_shadow()
+
+    Subplot = Fig.add_subplot(333)
+    Subplot.set_aspect(1)
+    Shadow_3 = Wormhole_Shadow(0, 2.0, 1e5, obs_inclination, Granularity)
+    Shadow_3.generate_shadow()
+
+    Subplot = Fig.add_subplot(334)
+    Subplot.set_aspect(1)
+    Shadow_4 = Wormhole_Shadow(0.5, 0.0, 1e5, obs_inclination, Granularity)
+    Shadow_4.generate_shadow()
+
+    Subplot = Fig.add_subplot(335)
+    Subplot.set_aspect(1)
+    Shadow_5 = Wormhole_Shadow(0.5, 1.0, 1e5, obs_inclination, Granularity)
+    Shadow_5.generate_shadow()
+
+    Subplot = Fig.add_subplot(336)
+    Subplot.set_aspect(1)
+    Shadow_6 = Wormhole_Shadow(0.5, 2.0, 1e5, obs_inclination, Granularity)
+    Shadow_6.generate_shadow()
+
+    Subplot = Fig.add_subplot(337)
+    Subplot.set_aspect(1)
+    Shadow_7 = Wormhole_Shadow(1, 0.0, 1e5, obs_inclination, Granularity)
+    Shadow_7.generate_shadow()
+
+    Subplot = Fig.add_subplot(338)
+    Subplot.set_aspect(1)
+    Shadow_8 = Wormhole_Shadow(1, 1.0, 1e5, obs_inclination, Granularity)
+    Shadow_8.generate_shadow()
+
+    Subplot = Fig.add_subplot(339)
+    Subplot.set_aspect(1)
+    Shadow_9 = Wormhole_Shadow(1, 2.0, 1e5, obs_inclination, Granularity)
+    Shadow_9.generate_shadow()
+
+    Fig.savefig("WH_Shadows", bbox_inches = 'tight')
+
+    # plt.xlim([-10 / test_class.R_OBS, 10 / test_class.R_OBS])
+    # plt.ylim([-10 / test_class.R_OBS, 10 / test_class.R_OBS])
+    plt.show()

@@ -179,8 +179,8 @@ class Sim_Visualizer():
 
             if Stokes_component == "I":
                 Data_to_plot = I_Intensity_0 + I_Intensity_1 + I_Intensity_2 + I_Intensity_3
-                Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, 
-                                                                self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
+                # Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, 
+                #                                                 self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
                                                                 
                 Cbar_label = r"Brightness Temperature [$10^9$K]"
                 Colormap = "hot"
@@ -209,7 +209,7 @@ class Sim_Visualizer():
             if Export_data_for_Ehtim:
                 self.Sim_Parsers[Sim_number][0].export_ehtim_data(Spacetime = self.Sim_Parsers[Sim_number][0].metric, 
                                                                   data = Data_to_plot, 
-                                                                  path = self.Sim_path + Freq_str + "GHz\\Sim_Results\\")
+                                                                  path = self.Sim_path)
 
             # Create the plot of the Simulated Image
             Sim_subplot = Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = Colormap, extent = axes_limits, vmin = Cmap_min, vmax = Cmap_max)

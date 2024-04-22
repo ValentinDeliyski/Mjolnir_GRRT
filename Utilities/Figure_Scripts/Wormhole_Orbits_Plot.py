@@ -73,9 +73,9 @@ class Wormhole_Orbits:
     
     def get_massive_orbit_condition(self, r: float, direction: int):
 
-        g_tt,     g_rr,     g_th_th,     g_ph_ph,     g_t_ph,      _, _ = self.get_metric(r, theta = np.pi / 2)
-        dr_g_tt,  dr_g_rr,  dr_g_th_th,  dr_g_ph_ph,  dr_g_t_phi,  _, _ = self.get_dr_metric(r, theta = np.pi / 2)
-        d2r_g_tt, d2r_g_rr, d2r_g_th_th, d2r_g_ph_ph, d2r_g_t_phi, _, _ = self.get_d2r_metric(r, theta = np.pi / 2)
+        g_tt,     _, _, g_ph_ph,     g_t_ph,      _, _ = self.get_metric(r, theta = np.pi / 2)
+        dr_g_tt,  _, _, dr_g_ph_ph,  dr_g_t_phi,  _, _ = self.get_dr_metric(r, theta = np.pi / 2)
+        d2r_g_tt, _, _, d2r_g_ph_ph, d2r_g_t_phi, _, _ = self.get_d2r_metric(r, theta = np.pi / 2)
 
         Kepler_vel = -dr_g_t_phi / dr_g_ph_ph + direction * np.sqrt(dr_g_t_phi**2 - dr_g_tt * dr_g_ph_ph) / dr_g_ph_ph
 
@@ -83,15 +83,12 @@ class Wormhole_Orbits:
 
         if E_norm > 0:
 
-            E          = -(g_tt + g_t_ph * Kepler_vel) / np.sqrt(E_norm)
-            L_z        =  (g_t_ph + g_ph_ph * Kepler_vel) / np.sqrt(E_norm)
-            ell        = L_z / E
+            E   = -(g_tt + g_t_ph * Kepler_vel) / np.sqrt(E_norm)
+            L_z =  (g_t_ph + g_ph_ph * Kepler_vel) / np.sqrt(E_norm)
+            ell = L_z / E
 
-            g2 = g_t_ph**2 - g_tt * g_ph_ph
-            dr_g2 = 2 * g_t_ph * dr_g_t_phi - g_tt * dr_g_ph_ph - dr_g_tt * g_ph_ph
             d2r_g2 = 2 * dr_g_t_phi**2 + 2 * g_t_ph * d2r_g_t_phi - d2r_g_ph_ph * g_tt - 2 * dr_g_ph_ph * dr_g_tt - g_ph_ph * d2r_g_tt; 
 
-            V_eff = E**2 * (g_ph_ph / g2 + 2 * ell * g_t_ph / g2 + ell**2 * g_tt / g2) - 1
             d2r_V_eff = -d2r_g2 + E**2 * (d2r_g_ph_ph + 2 * ell * d2r_g_t_phi + ell**2 * d2r_g_tt)
 
             return d2r_V_eff

@@ -67,7 +67,7 @@ class Wormhole:
         self.HAS_PHOTON_SPHERE = True
         self.HAS_R_OF_B = False
 
-    def metric(self, r, theta) -> np.array:
+    def metric(self, r, theta, use_global_coords: bool = True) -> np.array:
 
         #------------------------------------------------------------------------#
         #                                                                        #
@@ -75,23 +75,36 @@ class Wormhole:
         #                                                                        #
         #------------------------------------------------------------------------#
 
-        r = np.sqrt(r**2 + self.R_THROAT**2)
+        if use_global_coords:
 
-        g_tt = -np.exp(-2 * self.MASS/ r - 2 * self.PARAMETER * (self.MASS / r)**2)
-        g_rr = 1 + self.R_THROAT / r
-        g_thth   = r**2
-        g_phiphi = g_thth * np.sin(theta)**2
+            r = np.sqrt(r**2 + self.R_THROAT**2)
+
+            g_tt = -np.exp(-2 * self.MASS/ r - 2 * self.PARAMETER * (self.MASS / r)**2)
+            g_rr = 1 + self.R_THROAT / r
+            g_thth   = r**2
+            g_phiphi = g_thth * np.sin(theta)**2
+
+        else:
+
+            g_tt = -np.exp(-2 * self.MASS/ r - 2 * self.PARAMETER * (self.MASS / r)**2)
+            g_rr = 1 / (1 - self.R_THROAT / r)
+            g_thth   = r**2
+            g_phiphi = g_thth * np.sin(theta)**2
 
         if type(r) != np.ndarray:
             return np.array([g_tt, g_rr, g_thth, g_phiphi])
         else:
             return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
 
-    def photon_sphere(self):
+    def photon_sphere(self, use_global_coords: bool = True):
 
         r_ph = self.MASS / 2 * (1 + np.sqrt(1 + 8 * self.PARAMETER))
 
-        return np.sqrt(r_ph**2 - self.R_THROAT**2)
+        if use_global_coords:
+            return np.sqrt(r_ph**2 - self.R_THROAT**2)
+        
+        else:
+            return r_ph
 
     def ISCO(self):
 

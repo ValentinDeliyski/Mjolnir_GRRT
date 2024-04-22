@@ -432,7 +432,7 @@ if __name__ == "__main__":
                      "Naked Singularity":  JNW,
                      "Gauss - Bonnet"    : GBNS}
 
-    Active_spacetime = "Schwarzshild"
+    Active_spacetime = "Wormhole"
 
     #----- Observer / Source  -------#
 
@@ -450,7 +450,6 @@ if __name__ == "__main__":
     ray_tracer.create_spline()
     ray_tracer.construct_images()
  
-    
     plot_splined_data(figure_num = 1, 
                           Splines = ray_tracer.Image_Spline)
         
