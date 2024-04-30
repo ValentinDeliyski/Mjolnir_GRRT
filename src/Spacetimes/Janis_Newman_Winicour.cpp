@@ -10,7 +10,13 @@ double* JNW_class::get_ISCO() {
 
     static double r_ISCO[2]{};
 
-    if (JNW_GAMMA > 1.0 / sqrt(5)) {
+    if (JNW_GAMMA > 1.0 / 2) {
+
+        r_ISCO[Inner] = 1.0 / JNW_GAMMA * (3.0 * JNW_GAMMA + 1.0 + sqrt(5 * JNW_GAMMA * JNW_GAMMA - 1));
+        r_ISCO[Outer] = r_ISCO[Inner];
+
+
+    }else if (JNW_GAMMA > 1.0 / sqrt(5) && JNW_GAMMA < 1.0 / 2) {
 
             r_ISCO[Inner] = 1.0 / JNW_GAMMA * (3.0 * JNW_GAMMA + 1.0 - sqrt(5 * JNW_GAMMA * JNW_GAMMA - 1));
             r_ISCO[Outer] = 1.0 / JNW_GAMMA * (3.0 * JNW_GAMMA + 1.0 + sqrt(5 * JNW_GAMMA * JNW_GAMMA - 1));
@@ -234,12 +240,20 @@ int JNW_class::get_EOM(double State_vector[], double Derivatives[])
 
 bool JNW_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool hit_singularity = State_vector[e_r] - JNW_R_SINGULARITY < 1e-9;
+    bool hit_singularity = State_vector[e_r] - JNW_R_SINGULARITY < 1e-4;
 
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
-    return scatter;
+    if (JNW_GAMMA > 0.5) {
 
+        return scatter || hit_singularity;
+
+    }
+    else {
+
+        return scatter;
+
+    }
 };
 
 Metric_Parameters_type JNW_class::get_parameters() {

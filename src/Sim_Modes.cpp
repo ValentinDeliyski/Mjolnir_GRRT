@@ -75,6 +75,8 @@
 
         }
 
+        Renderer->Free_memory();
+
     }
 
     void static Generate_Image(Initial_conditions_type* s_Initial_Conditions, Rendering_engine* Renderer) {
@@ -104,7 +106,7 @@
 
             progress += 1;
 
-            for (int H_pixel_num = 0; H_pixel_num <= RESOLUTION - 1; H_pixel_num++) {
+            for (int H_pixel_num = 0; H_pixel_num <= RESOLUTION * H_angle_max / V_angle_max - 1; H_pixel_num++) {
 
                 /*
 

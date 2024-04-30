@@ -18,8 +18,7 @@ void Rendering_engine::OpenGL_init() {
     // Tell GLFW we are using the CORE profile -> we only have the modern functions
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(1200, 1200, "Gravitational Ray Tracer", NULL, NULL);
-
+    window = glfwCreateWindow(aspect_ratio * 1200, 1200, "Gravitational Ray Tracer", NULL, NULL);
     // Introduce the window into the current context
     glfwMakeContextCurrent(window);
 
@@ -68,7 +67,7 @@ void Rendering_engine::OpenGL_init() {
 
 void Rendering_engine::update_rendering_window() {
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, RESOLUTION, RESOLUTION * aspect_ratio, 0, GL_RGB, GL_FLOAT, this->texture_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, NUM_RAYS_X, NUM_RAYS_Y, 0, GL_RGB, GL_FLOAT, this->texture_buffer);
     // Specify the color of the background
     glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
     // Clean the back buffer and assign the new color to it
@@ -404,5 +403,12 @@ void Rendering_engine::Window_Callbacks::define_button_callbacks(GLFWwindow* win
 
     }
 
+
+}
+
+void Rendering_engine::Free_memory() {
+
+    free(this->Intensity_buffer);
+    free(this->texture_buffer);
 
 }

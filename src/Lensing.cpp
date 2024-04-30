@@ -70,6 +70,12 @@ void static Evaluate_Equatorial_Disk(Initial_conditions_type* const s_Initial_Co
 
         if (Evaluate_NT_disk){
 
+            if (e_metric == Wormhole) {
+
+                state_crossing[0] = sqrt(state_crossing[0] * state_crossing[0] + WH_R_THROAT * WH_R_THROAT);
+
+            }
+
             s_Ray_results->Redshift_NT[Image_Order] = s_Initial_Conditions->NT_model->Redshift(State_vector[e_p_phi], 
                                                                                                state_crossing, 
                                                                                                r_obs, 
@@ -552,7 +558,7 @@ void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_
 
                 }
 
-                Propagate_Stokes_vector(Implicit_Trapezoid, emission_functions, absorbtion_functions, faradey_functions, step, Stokes_Vector);
+                Propagate_Stokes_vector(RK4, emission_functions, absorbtion_functions, faradey_functions, step, Stokes_Vector);
 
             }
 
@@ -574,7 +580,7 @@ void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_
 
         if (fractional_polarization > 1.001 && Stokes_Vector[I] > 1e-10) {
 
-            exit(ERROR);
+            //exit(ERROR);
 
         }
 

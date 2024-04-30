@@ -139,7 +139,7 @@ class Sim_Visualizer():
         
     def plot_ray_tracer_results(self, 
                                 Export_data_for_Ehtim: bool, 
-                                Stokes_component: str,
+                                Radiation_Component: str,
                                 Save_Figures: bool,
                                 Custom_fig_title: str):
 
@@ -153,16 +153,20 @@ class Sim_Visualizer():
         else:
             Main_Figure = plt.figure(figsize = (20, 16))
 
-        Main_Figure.suptitle(Custom_fig_title, fontsize = self.Font_size)
+        # Main_Figure.suptitle(Custom_fig_title, fontsize = self.Font_size)
 
         for Sim_number, Freq_str in enumerate(self.Frequency_Bins):
 
-            I_Intensity_0, Q_Intensity_0, U_Intensity_0, V_Intensity_0, _, _, _ = self.Sim_Parsers[Sim_number][0].get_plottable_sim_data()
-            I_Intensity_1, Q_Intensity_1, U_Intensity_1, V_Intensity_1, _, _, _ = self.Sim_Parsers[Sim_number][1].get_plottable_sim_data()
-            I_Intensity_2, Q_Intensity_2, U_Intensity_2, V_Intensity_2, _, _, _ = self.Sim_Parsers[Sim_number][2].get_plottable_sim_data()
-            I_Intensity_3, Q_Intensity_3, U_Intensity_3, V_Intensity_3, _, _, _ = self.Sim_Parsers[Sim_number][3].get_plottable_sim_data()
+            I_Intensity_0, Q_Intensity_0, U_Intensity_0, V_Intensity_0, NT_Redshift_n0, NT_Flux_n0, NT_Flux_Shifted_n0 = self.Sim_Parsers[Sim_number][0].get_plottable_sim_data()
+            I_Intensity_1, Q_Intensity_1, U_Intensity_1, V_Intensity_1, NT_Redshift_n1, NT_Flux_n1, NT_Flux_Shifted_n1 = self.Sim_Parsers[Sim_number][1].get_plottable_sim_data()
+            I_Intensity_2, Q_Intensity_2, U_Intensity_2, V_Intensity_2, NT_Redshift_n2, NT_Flux_n2, NT_Flux_Shifted_n2 = self.Sim_Parsers[Sim_number][2].get_plottable_sim_data()
+            I_Intensity_3, Q_Intensity_3, U_Intensity_3, V_Intensity_3, NT_Redshift_n3, NT_Flux_n3, NT_Flux_Shifted_n3 = self.Sim_Parsers[Sim_number][3].get_plottable_sim_data()
 
             #=============== PLot the Simulated Image ===============#
+
+            # Fig_title = "Simulated Image at {}GHz".format(int(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9))
+            X_Slice_tile = "Brightness temperature at " + r'$\delta_{\text{rel}} = 0$'
+            X_Slice_y_label = r'$T_b\,\,[10^9\, K]$'
 
             # Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation OBS_DISTANCE, and conver to to micro AS 
             axes_limits = np.array([(limit) for limit in self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS]) * self.Sim_Parsers[Sim_number][0].OBS_DISTANCE / Obs_effective_distance * self.Units.RAD_TO_MICRO_AS
@@ -177,10 +181,10 @@ class Sim_Visualizer():
             Subplot  = Main_Figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 1))
             Colormap = "seismic"
 
-            if Stokes_component == "I":
+            if Radiation_Component == "Stokes I":
                 Data_to_plot = I_Intensity_0 + I_Intensity_1 + I_Intensity_2 + I_Intensity_3
-                # Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, 
-                #                                                 self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
+                Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot / self.Units.W_M2_TO_JY, 
+                                                                self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
                                                                 
                 Cbar_label = r"Brightness Temperature [$10^9$K]"
                 Colormap = "hot"
@@ -188,23 +192,49 @@ class Sim_Visualizer():
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
                 Cmap_min = 0
 
-            elif Stokes_component == "Q":
+            elif Radiation_Component == "Stokes Q":
                 Data_to_plot = (Q_Intensity_0 + Q_Intensity_1 + Q_Intensity_2 + Q_Intensity_3)/1e20
                 Cbar_label = r"Q Intensity [$10^{20}$Jy / sRad]"
                 Cmap_max = max(np.abs(Data_to_plot.flatten())) 
                 Cmap_min = -Cmap_max
 
-            elif Stokes_component == "U":
+            elif Radiation_Component == "Stokes U":
                 Data_to_plot = (U_Intensity_0 + U_Intensity_1 + U_Intensity_2 + U_Intensity_3)/1e20
                 Cbar_label = r"U Intensity [$10^{20}$Jy / sRad]"
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
                 Cmap_min = -Cmap_max
 
-            else:
+            elif Radiation_Component == "Stokes V":
                 Data_to_plot = (V_Intensity_0 + V_Intensity_1 + V_Intensity_2 + V_Intensity_3)/1e20
                 Cbar_label = r"V Intensity [$10^{20}$Jy / sRad]"
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
                 Cmap_min = -Cmap_max
+
+            elif Radiation_Component == "NT":
+            
+                Data_to_plot = NT_Flux_Shifted_n0
+                Data_to_plot = Data_to_plot + NT_Flux_Shifted_n1 * (Data_to_plot == 0)
+                Data_to_plot = Data_to_plot + NT_Flux_Shifted_n2 * (Data_to_plot == 0)
+                Data_to_plot = Data_to_plot + NT_Flux_Shifted_n3 * (Data_to_plot == 0)
+                Data_to_plot = Data_to_plot / 1e-6
+
+                Cmap_max = max(np.abs(Data_to_plot.flatten()))
+                Cmap_min = 0
+
+                Colormap = "hot"
+
+                Subplot.set_aspect(self.Sim_Parsers[Sim_number][0].X_PIXEL_COUNT / self.Sim_Parsers[Sim_number][0].Y_PIXEL_COUNT)
+
+                Cbar_label = r"Intensity [$10^{-6}\dot{M}M^{-2}$]"
+                X_Slice_tile = r"Intensity at $\delta_{\text{rel}} = 0$"
+
+                Fig_title = "Simulated Image"
+                X_Slice_y_label = r"Intensity at $\delta_{\text{rel}} = 0$ $[10^{-6}\dot{M}M^{-2}]$"
+
+            else:
+
+                print("Incorrect Radiation Component!")
+                return
 
             if Export_data_for_Ehtim:
                 self.Sim_Parsers[Sim_number][0].export_ehtim_data(Spacetime = self.Sim_Parsers[Sim_number][0].metric, 
@@ -218,7 +248,7 @@ class Sim_Visualizer():
             colorbar.set_label(Cbar_label, fontsize = self.Font_size, labelpad = self.Label_Pad)
             colorbar.ax.tick_params(labelsize = self.Font_size)
 
-            Subplot.set_title("Simulated Image at {}GHz".format(int(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9)), fontsize = self.Font_size)
+            # Subplot.set_title(Fig_title, fontsize = self.Font_size)
             Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
             Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
 
@@ -244,9 +274,9 @@ class Sim_Visualizer():
             Subplot.plot(-x_coords, T_Brightness)
             Subplot.invert_xaxis()
             Subplot.set_ylim([1.1 * T_Brightness_min_norm, 1.1 * T_Brightness_norm])
-            Subplot.set_title("Brightness temperature at " + r'$\delta_{rel} = 0$', fontsize = self.Font_size)
+            # Subplot.set_title(X_Slice_tile, fontsize = self.Font_size)
             Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
-            Subplot.set_ylabel(r'$T_b\,\,[10^9\, K]$', fontsize = self.Font_size, labelpad = self.Label_Pad)
+            Subplot.set_ylabel(X_Slice_y_label, fontsize = self.Font_size, labelpad = self.Label_Pad)
 
             Frequency_str_addon += Freq_str + "_"
 
@@ -270,7 +300,7 @@ class Sim_Visualizer():
             Main_Figure.savefig(Figures_folder_path + 
                                 "Ray_tracer_plot_" + 
                                 Frequency_str_addon +
-                                "_" + Stokes_component +
+                                "_" + Radiation_Component +
                                 ".png", bbox_inches = 'tight')
 
     def plot_EHTIM_results(self, Make_contour_plots: bool, Contour_specs: list, Save_Figures: bool, Plot_no_blur: bool, Custom_fig_title: str):

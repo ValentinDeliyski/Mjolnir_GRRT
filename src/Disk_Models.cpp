@@ -22,7 +22,7 @@ Novikov_Thorne_Model::Novikov_Thorne_Model(double x, double y, Spacetime_Base_Cl
 
     if (x == NULL) {
 
-        r_in = Spacetimes[e_metric]->get_ISCO()[Inner];
+        r_in = Spacetimes[e_metric]->get_ISCO()[Outer];
 
     }
 
@@ -201,6 +201,12 @@ double Novikov_Thorne_Model::get_flux(double r, Spacetime_Base_Class* Spacetimes
 
     double State_Vector[2] = { r, M_PI_2 };
 
+    if (e_metric == Wormhole) {
+
+        r = sqrt(r * r + WH_R_THROAT * WH_R_THROAT);
+
+    }
+
     Metric_type s_Metric = Spacetimes[e_metric]->get_metric(State_Vector);
 
     double metric_det = get_metric_det(s_Metric.Metric);
@@ -212,13 +218,8 @@ double Novikov_Thorne_Model::get_flux(double r, Spacetime_Base_Class* Spacetimes
 
     double Flux_coeff = -dr_Kepler / ((E_disk - Kepler * L_disk) * (E_disk - Kepler * L_disk)) / (4 * M_PI * sqrt(-metric_det));
 
-    if (e_metric == Wormhole) {
-
-        r = sqrt(r * r + WH_R_THROAT * WH_R_THROAT);
-
-    }
-
     double Flux_integral = solve_Flux_integral(r_in, r, INTEGRAL_ACCURACY, Spacetimes);
+
 
     return Flux_coeff * Flux_integral;
 

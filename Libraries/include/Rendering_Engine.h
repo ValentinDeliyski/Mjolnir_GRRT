@@ -22,10 +22,10 @@
             int texture_indexer{};
             
             float Max_Intensity{};
-            float Intensity_buffer[NUM_RAYS]{};
-            float texture_buffer[NUM_RAYS * 3]{};
+            float *Intensity_buffer = (float*)calloc(NUM_RAYS, sizeof(float));
+            float *texture_buffer = (float*)calloc(NUM_RAYS * 3, sizeof(float));;
 
-            float aspect_ratio = H_angle_max / V_angle_max;
+            float aspect_ratio = (H_angle_max - H_angle_min) / (V_angle_max - V_angle_min);
             
 
             const GLuint Vertex_order[6] = { 0, 2, 1, 0, 3, 2 };
@@ -118,6 +118,8 @@
             };
 
             GLuint init_texture();
+
+            void Free_memory();
 
     };
 

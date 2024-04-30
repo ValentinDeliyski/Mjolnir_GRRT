@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Kerr; // Spacetime to be used
+    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.001;
+    Real SPIN = 0.0001;
 
     // Wormhole spacetime parameters //
 
@@ -47,9 +47,9 @@
     // ======================== Observer Inputs ======================== //
 
     Real r_obs	   = 1e4;			    // Radial potision of the observer [ M ]
-    Real theta_obs = 70.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real theta_obs = 20.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			    // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
-    Real obs_cam_rotation_angle = 0.0f; // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
+    Real obs_cam_rotation_angle = 0; // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
@@ -58,10 +58,10 @@
 
     // Novikov - Thorne accretion disk parameters
 
-    const bool Evaluate_NT_disk = false;
+    const bool Evaluate_NT_disk = true;
 
-    Real r_in  = 3.0f;	// Inner accretion idsk radius [ M ]
-    Real r_out = 34.0f; // Outer accretion disk radius [ M ]
+    Real r_in  = NULL;	// Inner accretion idsk radius [ M ]
+    Real r_out = 25.0f; // Outer accretion disk radius [ M ]
 
     // Exponential disk profile parameters //
 
@@ -86,14 +86,14 @@
     // Exact Synchotron emission parameters //
     
     Real DISK_MAGNETIZATION    = 0.01;
-    Real MAG_FIELD_GEOMETRY[3] = { 0.87, 0.1, 0.5 };
+    Real MAG_FIELD_GEOMETRY[3] = { 0.87, 0.0, 0.5 };
     
     Real N_ELECTRON_EXACT_CGS = 5e+05;
     Real T_ELECTRON_EXACT_CGS = 6.5e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
-    const bool AVERAGE_EMISSION_PITCH_ANGLE = true;
-    const bool INCLUDE_POLARIZATION = true;
+    const bool AVERAGE_EMISSION_PITCH_ANGLE = false;
+    const bool INCLUDE_POLARIZATION = false;
 
     // Hotspot paramteres //
 
@@ -104,28 +104,32 @@
 
     // ======================== Simulation Modes Inputs ======================== //
 
-    const int Active_Sim_Mode = 2;
+    const int Active_Sim_Mode = 1;
     const bool Truncate_files = true;
 
     // Simulation Mode 1 and 3 viewing window //
 
-    Real V_angle_min = -atan(15 / r_obs);
-    Real V_angle_max =  atan(15 / r_obs);
+    Real V_angle_min = -atan(30 / r_obs);
+    Real V_angle_max =  atan(30 / r_obs);
 
-    Real H_angle_min = -atan(15 / r_obs);
-    Real H_angle_max =  atan(15 / r_obs);
+    Real H_angle_min = -atan(30 / r_obs);
+    Real H_angle_max =  atan(30 / r_obs);
 
-    const int RESOLUTION = 1024;                  // Linear size of the square pixel grid that makes up the image
-    const int NUM_RAYS = RESOLUTION * RESOLUTION; // The size of the buffer to store the texture
+    const int RESOLUTION = 2048;                  // Linear size of the square pixel grid that makes up the image
 
-    Real Scan_Step = (H_angle_max - H_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons
+    Real Scan_Step = (V_angle_max - V_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons
+
+    const int NUM_RAYS_Y = RESOLUTION;
+    const int NUM_RAYS_X = RESOLUTION * (H_angle_max - H_angle_min) / (V_angle_max - V_angle_min);
+
+    const int NUM_RAYS = NUM_RAYS_X * NUM_RAYS_Y;  // The size of the buffer to store the texture
 
     // Sim Mode 2 Configuration //
 
     const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\geodesic_data_70_deg_Sch_r6_499_photons.txt";
-    const int PARAM_SWEEP_NUMBER = 1;
-    Real INIT_PARAM_VALUE        = 0.001;
-    Real FINAL_PARAM_VALUE       = 3.0;
+    const int PARAM_SWEEP_NUMBER = 500;
+    Real INIT_PARAM_VALUE        = 2.6;
+    Real FINAL_PARAM_VALUE       = 2.9;
 
     const Metric_Parameter_Selector PARAM_TYPE = WH_Redshift;
 
@@ -141,7 +145,7 @@
 
     // 1e-12 Seems to be an opitimal tradeoff between accuracy and performace for low inclinations <60 deg. For higher inclinations, 
     // things could break using RK4 for the radiative transfer - for such cases use at most 1e-13.
-    Real RK45_ACCURACY     = 0.4e-15; 
+    Real RK45_ACCURACY     = 1e-11; 
     Real SAFETY_1          = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Real SAFETY_2          = 1e-25; // Near zero positive number used to avoid division by 0 when calculating the integration step
 

@@ -1,5 +1,9 @@
 import numpy as np
-import Spacetimes
+try:
+    import Spacetimes
+except:
+    from Support_functions import Spacetimes
+
 import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
 from scipy.stats import beta
@@ -43,7 +47,7 @@ class Wormhole_Shadow:
 
         eta, ksi = self.get_integrals_of_motion(r)
 
-        _, _, _, _, N_throat, omega_throat = self.get_metric(self.R_THROAT, self.THETA_OBS)
+        _, _, _, _, N_throat, omega_throat, _ = self.get_metric(self.R_THROAT, self.THETA_OBS)
 
         #--- The above calculates the integrals of motion, using the parametric equations for photon orbits outside the throat, then imposes 
         #--- the condition they must satisfy ON the throat. This finds the intersection points between the two shadow branches (parametrized via r_ph)
@@ -71,17 +75,24 @@ class Wormhole_Shadow:
         sin_theta = np.sin(theta)
 
         g_tt = -N**2 + omega**2 * r**2 * sin_theta**2
+
+        try:
+            g_rr = 1 / (1 - self.R_THROAT / r)
+
+        except:
+            g_rr = 0
+
         g_th_th = r**2
         g_ph_ph = r**2 * sin_theta**2
         g_t_ph  = -omega * r**2 * sin_theta**2
 
-        return g_tt, g_th_th, g_ph_ph, g_t_ph, N, omega
+        return g_tt, g_th_th, g_ph_ph, g_t_ph, N, omega, g_rr
     
     def generate_shadow_rim(self, Eta, Ksi):
 
         # ========================== Metric at the observer ========================== #
 
-        g_tt, g_th_th, g_ph_ph, g_t_ph, N, omega = self.get_metric(self.R_OBS, self.THETA_OBS)
+        g_tt, g_th_th, g_ph_ph, g_t_ph, N, omega, g_rr = self.get_metric(self.R_OBS, self.THETA_OBS)
 
         g2 = g_t_ph**2 - g_tt*g_ph_ph
 
@@ -102,7 +113,7 @@ class Wormhole_Shadow:
         # ================ Local Contravariant Momenta at the observer ================ #
 
         p_t     = inv_lapse - gamma_coef * Ksi
-        p_r     = np.sqrt(Rad_potential) / N
+        p_r     = np.sqrt(Rad_potential) / N / np.sqrt(g_rr)
         p_theta = np.sqrt(Theta_potential) / np.sqrt(g_th_th)
         p_phi   = Ksi / np.sqrt(g_ph_ph)
 
@@ -125,7 +136,7 @@ class Wormhole_Shadow:
 
         return alpha_coords, beta_coords
 
-    def generate_shadow(self) -> tuple:
+    def generate_shadow(self, Subplot, plot_center_cross: bool = False, linestyle: str = "-", Plot_title: bool = False) -> tuple:
 
         # =========================================================================================================== #
         # ============================== Branch due to photon orbits outside the throat ============================= #
@@ -152,7 +163,7 @@ class Wormhole_Shadow:
 
         # ============================== Metric at the throat ============================== #
 
-        _, _, _, _, N_throat, omega_throat = self.get_metric(self.R_THROAT, self.THETA_OBS)
+        _, _, _, _, N_throat, omega_throat, _ = self.get_metric(self.R_THROAT, self.THETA_OBS)
 
         # ================================================================================== #
 
@@ -188,8 +199,10 @@ class Wormhole_Shadow:
             alpha_second_coords = alpha_second_coords[throat_bitmask]
             beta_second_coords  = beta_second_coords[throat_bitmask]
 
-        Subplot.plot([-100, 100], [0, 0], color = "k", linestyle = "--", linewidth = 1)
-        Subplot.plot([0, 0], [-100, 100], color = "k", linestyle = "--", linewidth = 1)
+        if plot_center_cross:
+
+            Subplot.plot([-100, 100], [0, 0], color = "k", linestyle = "--", linewidth = 1)
+            Subplot.plot([0, 0], [-100, 100], color = "k", linestyle = "--", linewidth = 1)
 
         if len(beta_second_coords) > 50:
 
@@ -199,23 +212,24 @@ class Wormhole_Shadow:
             Y_plot_first  = np.concatenate([[-max(beta_second_coords)], -beta_first_coords, np.flip(beta_first_coords), [max(beta_second_coords)]]) * self.R_OBS
             Y_plot_second = np.concatenate([-np.flip(beta_second_coords), beta_second_coords]) * self.R_OBS
 
-            Subplot.plot(X_plot_first, Y_plot_first, color = "black")
-            Subplot.plot(X_plot_second, Y_plot_second, color = "red")
+            Subplot.plot(X_plot_first, Y_plot_first, color = "black", linestyle = linestyle)
+            Subplot.plot(X_plot_second, Y_plot_second, color = "red", linestyle = linestyle)
 
         else:
             
             X_plot_first  = np.concatenate([alpha_first_coords, np.flip(alpha_first_coords), [alpha_first_coords[0]]]) * self.R_OBS
             Y_plot_first  = np.concatenate([-beta_first_coords, np.flip(beta_first_coords), [-beta_first_coords[0]]]) * self.R_OBS
 
-            Subplot.plot(X_plot_first, Y_plot_first, color = "black")
+            Subplot.plot(X_plot_first, Y_plot_first, color = "black", linestyle = linestyle)
 
         Subplot.set_xlabel(r"$r_{\text{obs}}\alpha$,  [M]", fontsize = 15)
         Subplot.set_ylabel(r"$r_{\text{obs}}\beta$,  [M]", fontsize = 15)
 
-        Subplot.set_title(r"$\gamma = {},\,\, a = {}$".format(self.GAMMA, round(self.SPIN,1)), fontsize = 15)
+        if Plot_title:
+            Subplot.set_title(r"$\gamma = {},\,\, a = {}$".format(self.GAMMA, round(self.SPIN,1)), fontsize = 15)
 
-        Subplot.set_xlim([-8, 8])
-        Subplot.set_ylim([-8, 8])
+        # Subplot.set_xlim([-8, 8])
+        # Subplot.set_ylim([-8, 8])
         # return alpha_coords, beta_coords
 
 
@@ -277,47 +291,47 @@ if __name__ == "__main__":
     Subplot = Fig.add_subplot(331)
     Subplot.set_aspect(1)
     Shadow_1 = Wormhole_Shadow(0, 0.0, 1e5, obs_inclination, Granularity)
-    Shadow_1.generate_shadow()
+    Shadow_1.generate_shadow(Subplot)
 
     Subplot = Fig.add_subplot(332)
     Subplot.set_aspect(1)
     Shadow_2 = Wormhole_Shadow(0, 1.0, 1e5, obs_inclination, Granularity)
-    Shadow_2.generate_shadow()
+    Shadow_2.generate_shadow(Subplot)
 
     Subplot = Fig.add_subplot(333)
     Subplot.set_aspect(1)
     Shadow_3 = Wormhole_Shadow(0, 2.0, 1e5, obs_inclination, Granularity)
-    Shadow_3.generate_shadow()
+    Shadow_3.generate_shadow(Subplot)
 
     Subplot = Fig.add_subplot(334)
     Subplot.set_aspect(1)
     Shadow_4 = Wormhole_Shadow(0.5, 0.0, 1e5, obs_inclination, Granularity)
-    Shadow_4.generate_shadow()
+    Shadow_4.generate_shadow(Subplot)
 
     Subplot = Fig.add_subplot(335)
     Subplot.set_aspect(1)
     Shadow_5 = Wormhole_Shadow(0.5, 1.0, 1e5, obs_inclination, Granularity)
-    Shadow_5.generate_shadow()
+    Shadow_5.generate_shadow(Subplot)
 
     Subplot = Fig.add_subplot(336)
     Subplot.set_aspect(1)
     Shadow_6 = Wormhole_Shadow(0.5, 2.0, 1e5, obs_inclination, Granularity)
-    Shadow_6.generate_shadow()
+    Shadow_6.generate_shadow(Subplot)
 
     Subplot = Fig.add_subplot(337)
     Subplot.set_aspect(1)
     Shadow_7 = Wormhole_Shadow(1, 0.0, 1e5, obs_inclination, Granularity)
-    Shadow_7.generate_shadow()
+    Shadow_7.generate_shadow(Subplot)
 
     Subplot = Fig.add_subplot(338)
     Subplot.set_aspect(1)
     Shadow_8 = Wormhole_Shadow(1, 1.0, 1e5, obs_inclination, Granularity)
-    Shadow_8.generate_shadow()
+    Shadow_8.generate_shadow(Subplot)
 
     Subplot = Fig.add_subplot(339)
     Subplot.set_aspect(1)
     Shadow_9 = Wormhole_Shadow(1, 2.0, 1e5, obs_inclination, Granularity)
-    Shadow_9.generate_shadow()
+    Shadow_9.generate_shadow(Subplot)
 
     Fig.savefig("WH_Shadows", bbox_inches = 'tight')
 

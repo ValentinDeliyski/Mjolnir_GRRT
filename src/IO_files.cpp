@@ -198,12 +198,12 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << H_angle_min << ","
                                             << H_angle_max << ","
                                             << V_angle_min << ","
-                                            << H_angle_max
+                                            << V_angle_max
                                             << '\n'
                                             << "Simulation Resolutoin: "
-                                            << RESOLUTION
+                                            << NUM_RAYS_X
                                             << " x "
-                                            << RESOLUTION
+                                            << NUM_RAYS_Y
                                             << '\n';
 
             Metric_Parameters_type Parameters = s_Initial_Conditions.Spacetimes[e_metric]->get_parameters();

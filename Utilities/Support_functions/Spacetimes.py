@@ -69,15 +69,17 @@ class Wormhole:
 
     def metric(self, r, theta, use_global_coords: bool = True) -> np.array:
 
-        #------------------------------------------------------------------------#
-        #                                                                        #
-        #   Metric uses global coordinates - the range of ell is [-inf, + inf]   #
-        #                                                                        #
-        #------------------------------------------------------------------------#
 
         if use_global_coords:
+                
+            """
+            The metric uses global coordinates - the range of ell is [-inf, + inf] 
+            
+            """
 
-            r = np.sqrt(r**2 + self.R_THROAT**2)
+            ell = r
+
+            r = np.sqrt(ell**2 + self.R_THROAT**2)
 
             g_tt = -np.exp(-2 * self.MASS/ r - 2 * self.PARAMETER * (self.MASS / r)**2)
             g_rr = 1 + self.R_THROAT / r
@@ -134,7 +136,7 @@ class JNW_Naked_Singularity:
             g_rr = - 1 / g_tt
         else:
             g_rr = np.inf
-
+     
         g_thth   = r**2 * pow(1 - r_singularity / r, 1 - self.PARAMETER) 
         g_phiphi = g_thth * np.sin(theta)**2
 
@@ -189,7 +191,9 @@ class JNW_Naked_Singularity:
 
             # Calculate the impact parameters for the correspoinding turning points
 
-            higher_order_impact_params  = np.sqrt(-metrics_at_turning_points[3] / metrics_at_turning_points[0])
+            test = -metrics_at_turning_points.T[3] / metrics_at_turning_points.T[0]
+
+            higher_order_impact_params  = np.sqrt(-metrics_at_turning_points.T[3] / metrics_at_turning_points.T[0])
 
         else:
 
@@ -299,8 +303,9 @@ class Gaus_Bonnet_Naked_Singularity:
         #-------- Calculate the impact parameters for the correspoinding turning points --------#
         
         higher_order_turning_points = []
+        higher_order_impact_params_to_return = []
 
-        for impact_param in higher_order_impact_params:
+        for index, impact_param in enumerate(higher_order_impact_params):
 
             a = (impact_param**2 / 2 / self.PARAMETER - 1)**2 - impact_param**4 / 4 / self.PARAMETER**2
             b = 0
@@ -314,6 +319,10 @@ class Gaus_Bonnet_Naked_Singularity:
             roots = roots[np.abs(np.imag(roots)) < 1e-14]
             roots = np.real(roots)
             roots = roots[roots > 0]
+            # roots = roots[roots < self.photon_sphere()]
+
+            if self.PARAMETER <= 1 and max(roots) < self.photon_sphere():
+                continue
 
             if len(roots) == 0:
                 higher_order_turning_points.append(1e-10)      
@@ -322,4 +331,6 @@ class Gaus_Bonnet_Naked_Singularity:
             else:
                 higher_order_turning_points.append(np.min(roots))
 
-        return higher_order_impact_params, higher_order_turning_points
+            higher_order_impact_params_to_return.append(impact_param)
+
+        return higher_order_impact_params_to_return, higher_order_turning_points

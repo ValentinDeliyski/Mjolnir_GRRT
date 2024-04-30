@@ -89,28 +89,11 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
 
         controller->integration_complete = s_Initial_Conditions->Spacetimes[e_metric]->terminate_integration(New_State_vector_O5, Derivatives);
 
-        // For the Novikov-Thorne disk, depenging on where the equatorial crossing happens, the linear interpolation
-        // of the crossing point might not be accurate enough, so halving the step is required.
-        if (Evaluate_NT_disk) {
-
-            double z = State_Vector[e_r] * cos(State_Vector[e_theta]);
-            bool near_NT_disk = z * z < 0.5 * 0.5 &&
-                State_Vector[e_r] * State_Vector[e_r] < s_Initial_Conditions->NT_model->get_r_out() * s_Initial_Conditions->NT_model->get_r_out() &&
-                State_Vector[e_r] * State_Vector[e_r] > s_Initial_Conditions->NT_model->get_r_in()  * s_Initial_Conditions->NT_model->get_r_in();
-
-            if (near_NT_disk) {
-
-                controller->step /= 2;
-
-            }
-
-        }
-
         // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
         // Close enough that it requires "manual" scattering, by flipping the p_r sign.
         // Otherwise the photons never reach the turning point and the integration grinds to a halt.
 
-        if (e_metric == Naked_Singularity) {
+        if (e_metric == Naked_Singularity && JNW_GAMMA < 0.5) {
 
             if (State_Vector[e_r] - JNW_R_SINGULARITY < 1e-8) {
 

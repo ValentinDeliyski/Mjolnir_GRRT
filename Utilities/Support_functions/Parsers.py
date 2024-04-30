@@ -148,25 +148,25 @@ class Simulation_Parser():
         # Arrays need to be flipped, because mpl treats y = 0 as the top, 
         # and the simulator (aka openGL) treats it as the bottom
 
-        I_Intensity = self.I_Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
+        I_Intensity = self.I_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
         I_Intensity = np.flip(I_Intensity, 0)
 
-        Q_Intensity = self.Q_Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
+        Q_Intensity = self.Q_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
         Q_Intensity = np.flip(Q_Intensity, 0)
 
-        U_Intensity = self.U_Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
+        U_Intensity = self.U_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
         U_Intensity = np.flip(U_Intensity, 0)
 
-        V_Intensity = self.V_Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
+        V_Intensity = self.V_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
         V_Intensity = np.flip(V_Intensity, 0)
 
-        NT_Flux         = self.NT_Flux.reshape(self.X_PIXEL_COUNT,self.Y_PIXEL_COUNT)
+        NT_Flux         = self.NT_Flux.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
         NT_Flux         = np.flip(NT_Flux, 0)
 
-        NT_Redshift     = self.NT_Redshift.reshape(self.X_PIXEL_COUNT,self.Y_PIXEL_COUNT)
+        NT_Redshift     = self.NT_Redshift.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
         NT_Redshift     = np.flip(NT_Redshift, 0)
 
-        NT_Flux_Shifted = self.NT_Flux_Shifted.reshape(self.X_PIXEL_COUNT,self.Y_PIXEL_COUNT)
+        NT_Flux_Shifted = self.NT_Flux_Shifted.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
         NT_Flux_Shifted = np.flip(NT_Flux_Shifted, 0)
 
         return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted

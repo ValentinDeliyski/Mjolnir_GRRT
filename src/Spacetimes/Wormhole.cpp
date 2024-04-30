@@ -59,7 +59,7 @@ int Wormhole_class::update_metric(double State_Vector[]) {
                                    r2 * this->s_Metric.Shift_function * this->s_Metric.Shift_function * sin_theta * sin_theta;
     this->s_Metric.Metric[0][3] = -r2 * sin_theta * sin_theta * this->s_Metric.Shift_function;
     this->s_Metric.Metric[3][0] = this->s_Metric.Metric[0][3];
-    this->s_Metric.Metric[1][1] = 1 + this->R_Throat / r;
+    this->s_Metric.Metric[1][1] = 1 / (1 - this->R_Throat / r);
     this->s_Metric.Metric[2][2] = r2;
     this->s_Metric.Metric[3][3] = r2 * sin_theta * sin_theta;
 

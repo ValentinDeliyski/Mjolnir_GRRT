@@ -183,7 +183,7 @@ void Console_Printer_class::print_sim_parameters() {
 
     std::cout << '\n';
 
-    std::cout << "Simulation Resolution: " << RESOLUTION << "X" << RESOLUTION << '\n';
+    std::cout << "Simulation Resolution: " << NUM_RAYS_X << "X" << NUM_RAYS_Y << '\n';
 
 }
 
