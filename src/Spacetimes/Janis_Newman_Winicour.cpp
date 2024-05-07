@@ -10,22 +10,24 @@ double* JNW_class::get_ISCO() {
 
     static double r_ISCO[2]{};
 
-    if (JNW_GAMMA > 1.0 / 2) {
+    double r_singularity = 2 / this->Gamma;
 
-        r_ISCO[Inner] = 1.0 / JNW_GAMMA * (3.0 * JNW_GAMMA + 1.0 + sqrt(5 * JNW_GAMMA * JNW_GAMMA - 1));
+    if (this->Gamma > 1.0 / 2) {
+
+        r_ISCO[Inner] = 1.0 / this->Gamma * (3.0 * this->Gamma + 1.0 + sqrt(5 * this->Gamma * this->Gamma - 1));
         r_ISCO[Outer] = r_ISCO[Inner];
 
 
-    }else if (JNW_GAMMA > 1.0 / sqrt(5) && JNW_GAMMA < 1.0 / 2) {
+    }else if (this->Gamma > 1.0 / sqrt(5) && this->Gamma < 1.0 / 2) {
 
-            r_ISCO[Inner] = 1.0 / JNW_GAMMA * (3.0 * JNW_GAMMA + 1.0 - sqrt(5 * JNW_GAMMA * JNW_GAMMA - 1));
-            r_ISCO[Outer] = 1.0 / JNW_GAMMA * (3.0 * JNW_GAMMA + 1.0 + sqrt(5 * JNW_GAMMA * JNW_GAMMA - 1));
+            r_ISCO[Inner] = 1.0 / this->Gamma * (3.0 * this->Gamma + 1.0 - sqrt(5 * this->Gamma * this->Gamma - 1));
+            r_ISCO[Outer] = 1.0 / this->Gamma * (3.0 * this->Gamma + 1.0 + sqrt(5 * this->Gamma * this->Gamma - 1));
 
     }
     else {
 
-        r_ISCO[Inner] = JNW_R_SINGULARITY;
-        r_ISCO[Outer] = JNW_R_SINGULARITY;
+        r_ISCO[Inner] = r_singularity;
+        r_ISCO[Outer] = r_singularity;
 
     }
 
@@ -37,15 +39,17 @@ double* JNW_class::get_Photon_Sphere() {
 
     static double photon_orbit[2]{};
 
-    if (JNW_GAMMA > 0.5) { // Weak naked singularity
+    double r_singularity = 2 / this->Gamma;
 
-        photon_orbit[Inner] = (2 * JNW_GAMMA + 1) * JNW_R_SINGULARITY / 2;
+    if (this->Gamma > 0.5) { // Weak naked singularity
+
+        photon_orbit[Inner] = (2 * this->Gamma + 1) * r_singularity / 2;
        
 
     }
     else {
 
-        photon_orbit[Inner] = JNW_R_SINGULARITY;
+        photon_orbit[Inner] = r_singularity;
 
     }
 
@@ -63,9 +67,11 @@ int JNW_class::update_metric(double State_Vector[]) {
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    this->s_Metric.Metric[0][0] = -pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA);
+    double r_singularity = 2 / this->Gamma;
+
+    this->s_Metric.Metric[0][0] = -pow(1 - r_singularity / r, this->Gamma);
     this->s_Metric.Metric[1][1] = -1.0 / this->s_Metric.Metric[0][0];
-    this->s_Metric.Metric[2][2] = pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) * r2;
+    this->s_Metric.Metric[2][2] = pow(1 - r_singularity / r, 1 - this->Gamma) * r2;
     this->s_Metric.Metric[3][3] = this->s_Metric.Metric[2][2] * sin_theta * sin_theta;
     this->s_Metric.Metric[0][3] = 0.;
     this->s_Metric.Metric[3][0] = this->s_Metric.Metric[0][3];
@@ -95,9 +101,11 @@ int JNW_class::update_dr_metric(double State_Vector[]) {
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    this->s_dr_Metric.Metric[0][0] = -JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1) * JNW_R_SINGULARITY / r2;
+    double r_singularity = 2 / this->Gamma;
+
+    this->s_dr_Metric.Metric[0][0] = -this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2;
     this->s_dr_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0];;
-    this->s_dr_Metric.Metric[2][2] = 2 * r * pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) + (1 - JNW_GAMMA) * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA) * JNW_R_SINGULARITY;
+    this->s_dr_Metric.Metric[2][2] = 2 * r * pow(1 - r_singularity / r, 1 - this->Gamma) + (1 - this->Gamma) * pow(1 - r_singularity / r, -this->Gamma) * r_singularity;
     this->s_dr_Metric.Metric[3][3] = this->s_dr_Metric.Metric[2][2] * sin_theta * sin_theta;
     this->s_dr_Metric.Metric[0][3] = 0;
     this->s_dr_Metric.Metric[3][0] = this->s_dr_Metric.Metric[0][3];
@@ -158,16 +166,18 @@ int JNW_class::update_d2r_metric(double State_Vector[]) {
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    this->s_d2r_Metric.Metric[0][0] = -JNW_GAMMA * (JNW_GAMMA - 1) * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 2) * JNW_R_SINGULARITY * JNW_R_SINGULARITY / r2 / r2
-                                    + 2 * JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1) * JNW_R_SINGULARITY / r2 / r;
+    double r_singularity = 2 / this->Gamma;
+
+    this->s_d2r_Metric.Metric[0][0] = -this->Gamma * (this->Gamma - 1) * pow(1 - r_singularity / r, this->Gamma - 2) * r_singularity * r_singularity / r2 / r2
+                                    + 2 * this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2 / r;
 
     this->s_d2r_Metric.Metric[0][3] = 0.0;
 
     this->s_d2r_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_d2r_Metric.Metric[0][0]
                      - 2.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0] * this->s_dr_Metric.Metric[0][0];
 
-    this->s_d2r_Metric.Metric[2][2] = 2 * pow(1 - JNW_R_SINGULARITY / r, 1 - JNW_GAMMA) + 2 * (1 - JNW_GAMMA) * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA) * JNW_R_SINGULARITY / r
-                     - (1 - JNW_GAMMA) * JNW_GAMMA * pow(1 - JNW_R_SINGULARITY / r, -JNW_GAMMA - 1) * JNW_R_SINGULARITY * JNW_R_SINGULARITY / r2;
+    this->s_d2r_Metric.Metric[2][2] = 2 * pow(1 - r_singularity / r, 1 - this->Gamma) + 2 * (1 - this->Gamma) * pow(1 - r_singularity / r, -this->Gamma) * r_singularity / r
+                     - (1 - this->Gamma) * this->Gamma * pow(1 - r_singularity / r, -this->Gamma - 1) * r_singularity * r_singularity / r2;
 
     this->s_d2r_Metric.Metric[3][3] = this->s_d2r_Metric.Metric[2][2] * sin_theta * sin_theta;
 
@@ -191,12 +201,14 @@ int JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initi
     double& r_obs = p_Initial_Conditions->init_Pos[e_r];
     double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
 
+    double r_singularity = 2 / this->Gamma;
+
     p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
     p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
 
     double& J = p_Initial_Conditions->init_Three_Momentum[e_phi];
 
-    double rad_potential = 1 - pow(1 - JNW_R_SINGULARITY / r_obs, 2 * JNW_GAMMA - 1) * J * J / (r_obs * r_obs);
+    double rad_potential = 1 - pow(1 - r_singularity / r_obs, 2 * this->Gamma - 1) * J * J / (r_obs * r_obs);
 
     double(*metric)[4] = p_Initial_Conditions->init_metric;
 
@@ -218,8 +230,10 @@ int JNW_class::get_EOM(double State_vector[], double Derivatives[])
     double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
-    double pow_gamma = pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA);
-    double pow_gamma_minus_1 = pow(1 - JNW_R_SINGULARITY / r, JNW_GAMMA - 1);
+    double r_singularity = 2 / this->Gamma;
+
+    double pow_gamma = pow(1 - r_singularity / r, this->Gamma);
+    double pow_gamma_minus_1 = pow(1 - r_singularity / r, this->Gamma - 1);
 
     *(Derivatives + e_r      ) = pow_gamma * State_vector[e_p_r];
     *(Derivatives + e_theta  ) = pow_gamma_minus_1 / (r * r) * State_vector[e_p_theta];
@@ -227,9 +241,9 @@ int JNW_class::get_EOM(double State_vector[], double Derivatives[])
     *(Derivatives + e_p_phi  ) = 0.0;
     *(Derivatives + e_p_theta) = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
 
-    double r_term_1 = -JNW_GAMMA * JNW_R_SINGULARITY / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma
+    double r_term_1 = -this->Gamma * r_singularity / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma
                     + State_vector[e_p_r] * State_vector[e_p_r]);
-    double r_term_2 = 1.0 / r / r / r * pow_gamma_minus_1 * (1 - JNW_R_SINGULARITY / 2 / r * (JNW_GAMMA - 1) / (1 - JNW_R_SINGULARITY / r))
+    double r_term_2 = 1.0 / r / r / r * pow_gamma_minus_1 * (1 - r_singularity / 2 / r * (this->Gamma - 1) / (1 - r_singularity / r))
                     * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
     *(Derivatives + e_p_r) = r_term_1 + r_term_2;
@@ -240,11 +254,13 @@ int JNW_class::get_EOM(double State_vector[], double Derivatives[])
 
 bool JNW_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool hit_singularity = State_vector[e_r] - JNW_R_SINGULARITY < 1e-4;
+    double r_singularity = 2 / this->Gamma;
+
+    bool hit_singularity = State_vector[e_r] - r_singularity < 1e-4;
 
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 
-    if (JNW_GAMMA > 0.5) {
+    if (this->Gamma > 0.5) {
 
         return scatter || hit_singularity;
 
@@ -290,5 +306,5 @@ void JNW_class::update_parameters(double Param_value, Metric_Parameter_Selector 
     }
 
     this->Gamma = Param_value;
-
+    
 }

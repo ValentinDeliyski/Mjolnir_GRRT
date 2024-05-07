@@ -72,7 +72,7 @@ void static Evaluate_Equatorial_Disk(Initial_conditions_type* const s_Initial_Co
 
             if (e_metric == Wormhole) {
 
-                state_crossing[0] = sqrt(state_crossing[0] * state_crossing[0] + WH_R_THROAT * WH_R_THROAT);
+                state_crossing[e_r] = sqrt(state_crossing[e_r] * state_crossing[e_r] + WH_R_THROAT * WH_R_THROAT);
 
             }
 
@@ -84,7 +84,7 @@ void static Evaluate_Equatorial_Disk(Initial_conditions_type* const s_Initial_Co
 
             if (s_Ray_results->Redshift_NT[Image_Order] > std::numeric_limits<double>::min()) {
 
-                s_Ray_results->Flux_NT[Image_Order] = s_Initial_Conditions->NT_model->get_flux(r_crossing, s_Initial_Conditions->Spacetimes);
+                s_Ray_results->Flux_NT[Image_Order] = s_Initial_Conditions->NT_model->get_flux(state_crossing[e_r], s_Initial_Conditions->Spacetimes);
 
             }
 

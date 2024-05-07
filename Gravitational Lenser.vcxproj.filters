@@ -95,9 +95,6 @@
     <ClCompile Include="src\Spacetimes\Observer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Spacetimes\Black_Hole_With_Dark_Matter.cpp">
-      <Filter>Source Files\Spacetimes</Filter>
-    </ClCompile>
     <ClCompile Include="src\Spacetimes\Kerr.cpp">
       <Filter>Source Files\Spacetimes</Filter>
     </ClCompile>
@@ -124,6 +121,9 @@
     </ClCompile>
     <ClCompile Include="src\General_math_functions.cpp">
       <Filter>Source Files\Math Library</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Spacetimes\Black_Hole_With_Dark_Matter.cpp">
+      <Filter>Source Files\Spacetimes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

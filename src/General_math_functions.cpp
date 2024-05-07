@@ -171,23 +171,17 @@ bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], doub
 
 	double r_crossing_squared = Crossing_coords[0] * Crossing_coords[0] + Crossing_coords[1] * Crossing_coords[1];
 
-	double crossing_coords_spherical[2]{};
-
-		crossing_coords_spherical[e_r]     = sqrt(r_crossing_squared);
-		crossing_coords_spherical[e_theta] = M_PI_2;
-
 	/*
 	
 	Interpolate the covariant momenta at those coorinates
 	
 	*/
 
-	double momentum_param[3]{};
+	double momentum_param = (M_PI_2 - Old_State_Vector[e_theta]) / (State_Vector[e_theta] - Old_State_Vector[e_theta]);
 
 	for (int index = e_r; index <= e_theta; index++) {
 
-		momentum_param[index]   = (crossing_coords_spherical[index] - Old_State_Vector[index]) / (State_Vector[index] - Old_State_Vector[index]);
-		crossing_momenta[index] = momentum_param[index] * State_Vector[e_p_r - index] + (1 - momentum_param[index]) * Old_State_Vector[e_p_r - index];
+		crossing_momenta[index] = momentum_param * State_Vector[e_p_r - index] + (1 - momentum_param) * Old_State_Vector[e_p_r - index];
 	}
 
 	double r_out = NT_Model->get_r_out();

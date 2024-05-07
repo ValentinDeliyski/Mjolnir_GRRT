@@ -190,15 +190,13 @@
         int Data_number{};
 
         File_manager.get_geodesic_data(J_data, p_theta_data, &Data_number);
-
-
         /*
 
         Create/Open the logging files
 
         */
 
-        File_manager.open_image_output_files(Data_number + 1) ;
+        File_manager.open_image_output_files(Data_number);
 
         for (int Param_Sweep = 0; Param_Sweep <= PARAM_SWEEP_NUMBER - 1; Param_Sweep++) {
 
@@ -211,7 +209,7 @@
 
             s_Initial_Conditions->Spacetimes[e_metric]->update_parameters(Current_Param_Value, PARAM_TYPE);
 
-            for (int photon = 0; photon <= Data_number; photon += 1) {
+            for (int photon = 0; photon <= Data_number - 1; photon += 1) {
 
                 /*
 
@@ -231,7 +229,7 @@
 
                 File_manager.write_image_data_to_file(s_Ray_results);
 
-                print_progress(photon, Data_number, true);
+                print_progress(photon, Data_number - 1, true);
             }
 
             std::cout << '\n';

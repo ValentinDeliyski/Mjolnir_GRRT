@@ -77,10 +77,10 @@ class Analytical_ray_tracer():
         distribution_range = np.linspace(0, 1, self.Granularity)
 
         if self.r_source < 0:
-            direct_impact_params = (beta.cdf(distribution_range, density_parameter, density_parameter) * impact_param_photon_sphere).tolist()
+            direct_impact_params = (beta.df(distribution_range, density_parameter, density_parameter) * impact_param_photon_sphere).tolist()
 
         else:
-            direct_impact_params = (beta.cdf(distribution_range, density_parameter, density_parameter) * impact_param_source).tolist()
+            direct_impact_params = (beta.cdf(distribution_range, density_parameter, density_parameter / 2) * impact_param_source).tolist()
 
         for impact_param in direct_impact_params:
 
@@ -254,11 +254,11 @@ class Analytical_ray_tracer():
 
         print("Number of images constructed: ", Image_count)
 
-    def plot_splined_data(subfigure_spline, Splines):
+    def plot_splined_data(self, subfigure_spline, Splines):
 
         color_index = 0
 
-        for Spline in np.flip(Splines):  
+        for Spline_number, Spline in enumerate(Splines):  
 
             Angular_coords_spline = np.linspace(-np.pi / 2, np.pi / 2, 200)
 
@@ -276,10 +276,43 @@ class Analytical_ray_tracer():
 
             color_index = (color_index + 1) % len(COLOR_CYCLE)
 
+            if Spline_number == 0:
+
+                Angular_coords_spline = np.linspace(-np.pi / 2, np.pi / 2, 250)
+
+                Angular_coords_spline = Angular_coords_spline + abs(Angular_coords_spline[0] - Angular_coords_spline[1]) / 2
+
+                #---------- Plot the Splined results ----------#
+
+                Radial_coords_spline = Spline(Angular_coords_spline)
+
+                x_coords_spline =  Radial_coords_spline * np.cos(Angular_coords_spline)
+                y_coords_spline = -Radial_coords_spline * np.sin(Angular_coords_spline)
+
+                x_coords_spline = np.append(-x_coords_spline, np.flip(x_coords_spline))
+                y_coords_spline = np.append( y_coords_spline, np.flip(y_coords_spline))
+
+                Coord_angle = np.arctan2(y_coords_spline, x_coords_spline)
+                Coord_angle[Coord_angle < 0] = Coord_angle[Coord_angle < 0] + 2 * np.pi
+                                            
+                sort_idx = Coord_angle.argsort()
+
+                x_coords_spline = x_coords_spline[sort_idx]
+                y_coords_spline = y_coords_spline[sort_idx]
+
+                with open("Schwarzschild_r{}_{}deg_500_photons_direct.csv".format(r_s, round(inclination_obs * 180 / np.pi)), 'w') as my_file:
+                          np.savetxt(my_file,  np.array([x_coords_spline, y_coords_spline]).T, fmt = '%0.4e')
+
+                subfigure_spline.plot(x_coords_spline, y_coords_spline, "ro")
+
+                return x_coords_spline, y_coords_spline
+            
         subfigure_spline.set_title(r'Splined Results')
         subfigure_spline.set_xlabel(r'x [M]')
         subfigure_spline.set_ylabel(r'y [M]')
         subfigure_spline.set_aspect(1)
+
+        
 
     def plot_raw_data(self, subfigure_raw, Radial_coords_raw, Angular_coords_raw):
 
@@ -318,8 +351,6 @@ class Analytical_ray_tracer():
         subfigure_raw.set_ylabel(r'y [M]')
         subfigure_raw.set_aspect(1)
 
-        # subfigure_raw.set_xlim([-8, 8])
-        # subfigure_raw.set_ylim([-8, 8])
 
 def plot_angle_impact_param_grapth(subfig, Splined_Impact_params, Splined_Azimuths, Inclination, MAX_IAMGE_ORDER, shade_orders: bool = True):
 
@@ -409,73 +440,87 @@ if __name__ == "__main__":
 
     #------ Metric Parameters -------#
 
-    WH_THROAT = 1    # [ M ]
-    WH_ALPHA  = 2  # [ - ]
+    WH_THROAT = 1  # [ M ]
+    WH_ALPHA  = 0.1  # [ - ]
+
+    r_min = []
+    r_max = []
         
-    RBH_PARAM = 1    # [ - ]
+    for JNW_PARAM in np.linspace(1, 1, 16):
 
-    JNW_PARAM = 0.48  # [ - ]
+        WH_ALPHA = 0.01
 
-    GAUSS_BONET_PARAM = 1.5 # [ - ]
+        RBH_PARAM = 1    # [ - ]
 
-    #------      Metrics      -------#
+        # JNW_PARAM = 0.48  # [ - ]
 
-    SCH = Schwarzschild()
-    WH  = Wormhole(r_throat = WH_THROAT, parameter = WH_ALPHA)
-    RBH = Regular_Black_Hole(parameter = RBH_PARAM)
-    JNW = JNW_Naked_Singularity(parameter = JNW_PARAM)
-    GBNS = Gaus_Bonnet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
+        GAUSS_BONET_PARAM = 1.5 # [ - ]
 
-    Spacetime_dict ={"Schwarzshild":       SCH, 
-                     "Wormhole":            WH,
-                     "Regular Black Hole": RBH,
-                     "Naked Singularity":  JNW,
-                     "Gauss - Bonnet"    : GBNS}
+        #------      Metrics      -------#
 
-    Active_spacetime = "Naked Singularity"
+        SCH = Schwarzschild()
+        WH  = Wormhole(r_throat = WH_THROAT, parameter = WH_ALPHA)
+        RBH = Regular_Black_Hole(parameter = RBH_PARAM)
+        JNW = JNW_Naked_Singularity(parameter = JNW_PARAM)
+        GBNS = Gaus_Bonnet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
 
-  
-    Figure = plt.figure(1)
-    Plot_1 = Figure.add_subplot(111)
-    # Plot_2 = Figure.add_subplot(122)
+        Spacetime_dict ={"Schwarzshild":       SCH, 
+                        "Wormhole":            WH,
+                        "Regular Black Hole": RBH,
+                        "Naked Singularity":  JNW,
+                        "Gauss - Bonnet"    : GBNS}
 
-    Plot_2 = plt.figure(2).add_subplot(111)
+        Active_spacetime = "Schwarzshild"
 
-    orbit_radii = [25]
-
-    for r_s in orbit_radii:
-
-        #----- Observer / Source  -------#
-
-        r_obs = 1e3                        # [ M ]
-        inclination_obs = 80 * DEG_TO_RAD   # [ rad ]
-
-        ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
-                                        Granularity = 1000, 
-                                        r_source = r_s, 
-                                        r_obs = r_obs, 
-                                        inclination = inclination_obs, 
-                                        MAX_IAMGE_ORDER = 4)
-
-        ray_tracer.propagate_rays()
-        ray_tracer.create_spline()
-        ray_tracer.construct_images()
     
-        # plot_splined_data(figure_num = 1, 
-        #                   Splines = ray_tracer.Image_Spline)
-            
-        ray_tracer.plot_raw_data(subfigure_raw = Plot_2, 
-                      Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
-                      Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
+        Figure = plt.figure(1)
+        Plot_1 = Figure.add_subplot(111)
+        Figure_test = plt.figure(3)
+        Plot_3 = Figure_test.add_subplot(111)
 
-        plot_angle_impact_param_grapth(subfig                = Plot_1,
-                                       Splined_Impact_params = ray_tracer.Interpolated_Impact_params, 
-                                       Splined_Azimuths      = ray_tracer.Interpolated_Azimuths,
-                                       Inclination           = inclination_obs,
-                                       MAX_IAMGE_ORDER       = 4,
-                                       shade_orders          = r_s == max(orbit_radii))
+        Plot_2 = plt.figure(2).add_subplot(111)
 
-    # Shadow_1 = Wormhole_Shadow(0, WH_ALPHA, r_obs, inclination_obs, 1000000)
-    # Shadow_1.generate_shadow(Plot_2, linestyle = "--")
+        orbit_radii = [4.5, 6]
 
-    plt.show()
+        for r_s in orbit_radii:
+
+            #----- Observer / Source  -------#
+
+            r_obs = 1e3                        # [ M ]
+            inclination_obs = 20 * DEG_TO_RAD   # [ rad ]
+
+            ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
+                                            Granularity = 1000, 
+                                            r_source = r_s, 
+                                            r_obs = r_obs, 
+                                            inclination = inclination_obs, 
+                                            MAX_IAMGE_ORDER = 4)
+
+            ray_tracer.propagate_rays()
+            ray_tracer.create_spline()
+            ray_tracer.construct_images()
+        
+            x_coords_spline, y_coords_spline = ray_tracer.plot_splined_data(subfigure_spline = Plot_3, 
+                                                                            Splines = ray_tracer.Image_Spline)
+                
+            # ray_tracer.plot_raw_data(subfigure_raw = Plot_2, 
+            #                                             Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
+            #                                             Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
+
+            # plot_angle_impact_param_grapth(subfig                = Plot_1,
+            #                             Splined_Impact_params = ray_tracer.Interpolated_Impact_params, 
+            #                             Splined_Azimuths      = ray_tracer.Interpolated_Azimuths,
+            #                             Inclination           = inclination_obs,
+            #                             MAX_IAMGE_ORDER       = 4,
+            #                             shade_orders          = r_s == max(orbit_radii))
+
+
+            # r_image = np.sqrt(x_coords_spline**2 + y_coords_spline**2)
+
+            # with open("JNW_r_{}_gamma_{}_{}_deg_indirect.csv".format(r_s, round(JNW_PARAM,2), (inclination_obs * 180 / np.pi)),  'w') as my_file:
+            #            np.savetxt(my_file,  r_image.T, fmt = '%0.4e')
+
+            # plt.show()
+
+        # Shadow_1 = Wormhole_Shadow(0, WH_ALPHA, r_obs, inclination_obs, 1000000)
+        # Shadow_1.generate_shadow(Plot_2, linestyle = "--")

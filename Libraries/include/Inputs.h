@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
+    const Spacetime_enums e_metric = Kerr; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.0001;
+    Real SPIN = 0.000001;
 
     // Wormhole spacetime parameters //
 
@@ -58,10 +58,10 @@
 
     // Novikov - Thorne accretion disk parameters
 
-    const bool Evaluate_NT_disk = true;
+    const bool Evaluate_NT_disk = false;
 
-    Real r_in  = NULL;	// Inner accretion idsk radius [ M ]
-    Real r_out = 25.0f; // Outer accretion disk radius [ M ]
+    Real r_in  = 1;	// Inner accretion idsk radius [ M ]
+    Real r_out = 2500.0f; // Outer accretion disk radius [ M ]
 
     // Exponential disk profile parameters //
 
@@ -104,7 +104,7 @@
 
     // ======================== Simulation Modes Inputs ======================== //
 
-    const int Active_Sim_Mode = 1;
+    const int Active_Sim_Mode = 2;
     const bool Truncate_files = true;
 
     // Simulation Mode 1 and 3 viewing window //
@@ -126,12 +126,12 @@
 
     // Sim Mode 2 Configuration //
 
-    const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\geodesic_data_70_deg_Sch_r6_499_photons.txt";
-    const int PARAM_SWEEP_NUMBER = 500;
-    Real INIT_PARAM_VALUE        = 2.6;
-    Real FINAL_PARAM_VALUE       = 2.9;
+    const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\Schwarzschild_r6_20deg_500_photons_direct.csv";
+    const int PARAM_SWEEP_NUMBER = 1;
+    Real INIT_PARAM_VALUE        = 0.0001;
+    Real FINAL_PARAM_VALUE       = 1.0;
 
-    const Metric_Parameter_Selector PARAM_TYPE = WH_Redshift;
+    const Metric_Parameter_Selector PARAM_TYPE = JNW_Gamma;
 
     // Sim Mode 4 Initial Conditions //
 
@@ -145,7 +145,7 @@
 
     // 1e-12 Seems to be an opitimal tradeoff between accuracy and performace for low inclinations <60 deg. For higher inclinations, 
     // things could break using RK4 for the radiative transfer - for such cases use at most 1e-13.
-    Real RK45_ACCURACY     = 1e-11; 
+    Real RK45_ACCURACY     = 1e-14; 
     Real SAFETY_1          = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Real SAFETY_2          = 1e-25; // Near zero positive number used to avoid division by 0 when calculating the integration step
 

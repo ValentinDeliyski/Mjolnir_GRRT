@@ -20,12 +20,23 @@ File_manager_class::File_manager_class(std::string input_file_path, bool truncat
 void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) {
 
     std::ifstream geodesic_data;
+    std::string line;
+
+    double J_input{};
+    double P_input{};
 
     geodesic_data.open(Input_file_path_sim_mode_2, std::ios::in);
 
     while (true) {
 
-        geodesic_data >> J_data[*Data_number] >> p_theta_data[*Data_number];
+        if (geodesic_data >> J_input >> P_input) {
+
+            J_data[*Data_number] = J_input;
+            p_theta_data[*Data_number] = P_input;
+            
+            *Data_number += 1;
+
+        }
 
         if (geodesic_data.eof()) {
 
@@ -33,7 +44,6 @@ void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[
 
         }
 
-        *Data_number += 1;
 
     }
 
@@ -376,7 +386,11 @@ void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
 
     }
 
-    File_manager_class::write_simulation_metadata(Sim_mode_2_number);
+    if (Truncate_files) {
+
+        File_manager_class::write_simulation_metadata(Sim_mode_2_number);
+
+    }
 
 }
 
