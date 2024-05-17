@@ -7,8 +7,8 @@ if __name__ == "__main__":
     plt.rcParams['axes.titlepad'] = 20
 
     EHT_Array           = []
-    Sim_path            = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Gauss_Bonnet"
-    Sim_Frequency_Bins  = ["345"] # In units of [GHz]
+    Sim_path            = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Kerr"
+    Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
     Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
                                 Sim_Frequency_Bins = Sim_Frequency_Bins,
@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
                                        Save_Figures = False, 
-                                       Radiation_Component = "NT",
+                                       Radiation_Component = "Stokes I",
                                        Custom_fig_title = r"Wormhole ($\gamma = 2,\,\,\, a = 0.9$)")    
     
     # I_Intensity, Q_Intensity, U_Intensity, V_Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted = Simulation_Parser(Sim_path).get_plottable_sim_data()

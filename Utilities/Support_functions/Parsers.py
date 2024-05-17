@@ -79,7 +79,6 @@ class Simulation_Parser():
             else:
                 Array_size = self.Photon_Number * self.Param_Sweep_Number
 
-
             self.X_coords        = np.zeros(Array_size)
             self.Y_coords        = np.zeros(Array_size)
             self.NT_Flux         = np.zeros(Array_size)
@@ -134,14 +133,13 @@ class Simulation_Parser():
 
                 except:
                     break
-
+                
 
     def get_total_flux(self, obs_pos):
 
-        dx = np.abs(self.X_coords[0] - self.X_coords[1])
-        dy = np.abs(self.Y_coords[0] - self.Y_coords[self.X_PIXEL_COUNT + 1])
+        Pixel_area = (self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT
 
-        return np.sum(self.I_Intensity) * dx * dy / obs_pos**2
+        return np.sum(self.I_Intensity) * Pixel_area * self.OBS_DISTANCE**2 / obs_pos**2
 
     def get_plottable_sim_data(self) -> tuple:
 
@@ -178,18 +176,13 @@ class Simulation_Parser():
 
         Units = Units_class()
         
-        dx = np.abs(self.X_coords[0] - self.X_coords[1])
-        dy = np.abs(self.Y_coords[0] - self.Y_coords[self.X_PIXEL_COUNT + 1])
-
-        stupid_eht_scaling = 1
+        Pixel_area = (self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT
 
         formatted_sim_data = data.reshape(1, self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT).flatten()
 
-        formatted_sim_data = formatted_sim_data
-
         array_to_export = np.array([self.X_coords / max(self.X_coords) * ehtim_x_fov / 2, 
                                     self.Y_coords / max(self.Y_coords) * ehtim_y_fov / 2, 
-                                    formatted_sim_data * dx * dy / Units.M87_DISTANCE_GEOMETRICAL**2 * stupid_eht_scaling]).T
+                                    formatted_sim_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2]).T
 
         header = ("SRC: M87 \n"                   + 
                   "RA: 12 h 30 m 49.3920 s \n"    +

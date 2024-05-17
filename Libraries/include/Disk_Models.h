@@ -94,13 +94,21 @@
 
             void get_emission_function_synchotron_phenomenological(double State_vector[], Initial_conditions_type* s_Initial_Conditions, double Emission_functions[4]);
 
-            double get_absorbtion_function_phenomenological(double Emission_Functions, double State_vector[], double redshift);
+            void get_absorbtion_function_phenomenological(double State_vector[],
+                                                            Initial_conditions_type* s_Initial_conditions,
+                                                            double Absorbtion_functions[STOKES_PARAM_NUM]);
 
             double get_electron_pitch_angle(double State_vector[], double B_field_local[4], Initial_conditions_type* s_Initial_Conditions);
 
             void precompute_electron_pitch_angles();
 
             int load_parameters(Disk_model_parameters* p_Disk_Parameters, Emission_law_parameters* p_Emission_Parameters);
+
+            void get_radiative_transfer_functions(double State_Vector[e_State_Number],
+                                                  Initial_conditions_type* s_Initial_conditions,
+                                                  double Emission_functions[4],
+                                                  double Absorbtion_functions[4],
+                                                  double Faradey_functions[4]);
 
             Disk_model_parameters get_disk_params();
 

@@ -143,7 +143,7 @@ def get_polarization_vector(Photon_Momentum: ndarray,
         Polarization_Vectors.append(Transported_Polarization_Vector)
         Scaled_Polarization_Vectors.append(Scaled_Transported_Polarization_Vector)
 
-    return array(Polarization_Vectors), array(Scaled_Polarization_Vectors)
+    return array(Polarization_Vectors[:-1]), array(Scaled_Polarization_Vectors[:-1])
 
 def get_observational_quantities(Polarization_Vectors, Image_Coordinates):
 
@@ -301,22 +301,26 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
     Schwarzschild_metric = Schwarzschild_class.metric(r = Schw_Parser.Source_R_Coord, theta = pi / 2)
 
     Figure_Param_Sweep, (Delta_I_Plot_Sweep, Delta_EVPA_Plot_Sweep) = plt.subplots(1, 2, gridspec_kw = {'width_ratios': [1, 1]}, constrained_layout = True)
-    Figure_Param_Sweep.set_figwidth(12)
+    Figure_Param_Sweep.set_figwidth(25)
+    Figure_Param_Sweep.set_figheight(12)
 
     Delta_I_Plot_Sweep.set_ylabel(r"$\max \Delta I\,[-]$", fontsize = Fontsize)
     Delta_I_Plot_Sweep.set_xlabel(r"$\gamma\,[-]$", fontsize = Fontsize)
-    Delta_I_Plot_Sweep.set_xlim([0, 3])
     Delta_I_Plot_Sweep.tick_params(axis='x', labelsize=Fontsize)
     Delta_I_Plot_Sweep.tick_params(axis='y', labelsize=Fontsize)
 
     Delta_EVPA_Plot_Sweep.set_ylabel(r"$\max \Delta EVPA$ [rad]", fontsize = Fontsize)
     Delta_EVPA_Plot_Sweep.set_xlabel(r"$\gamma\,[-]$", fontsize = Fontsize)
-    Delta_EVPA_Plot_Sweep.set_xlim([0, 3])
     Delta_EVPA_Plot_Sweep.tick_params(axis='x', labelsize=Fontsize)
     Delta_EVPA_Plot_Sweep.tick_params(axis='y', labelsize=Fontsize)
 
     colorbar_map = matplotlib.cm.ScalarMappable(cmap = "plasma")
-    colorbar_map.set_clim([1.8, 2.5])
+    
+    Tick_plot_list       = []
+    Intensity_Plot_list  = []
+    Delta_I_Plot_list    = []
+    EVPA_Plot_list       = []
+    Delta_EVPA_Plot_list = []
 
     for B_Field_Idx, (B_Field, beta_angle) in enumerate(zip(B_Fields, beta_angles)):
 
@@ -330,6 +334,9 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
         Tick_plot.set_ylabel(r"$y\,[M]$", fontsize = Fontsize)
         Tick_plot.set_xlabel(r"$x\,[M]$", fontsize = Fontsize)
         Tick_plot.set_xlim([-8, 8])
+        Tick_plot.set_xticks(arange(-8, 9, 2.0))
+        Tick_plot.set_ylim([-8, 8])
+        Tick_plot.set_yticks(arange(-8, 9, 2.0))
         Tick_plot.tick_params(axis='x', labelsize=Fontsize)
         Tick_plot.tick_params(axis='y', labelsize=Fontsize)
 
@@ -485,6 +492,16 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
             Max_Delta_EVPA.append(Delta_EVPA[Max_Delta_EVPA_idx])
             Param_Sweep_Values.append(Param_Sweep_Value)
 
+        """ ================ Append the plots to lists, so I can scale all their axis later, after I know all the limits ================ """
+
+        Tick_plot_list.append(Tick_plot)
+        Intensity_Plot_list.append(Intensity_Plot)
+        Delta_I_Plot_list.append(Delta_I_Plot)
+        EVPA_Plot_list.append(EVPA_Plot)
+        Delta_EVPA_Plot_list.append(Delta_EVPA_Plot)
+
+        """ ==================================== """
+
         Max_Delta_EVPA_Branches = split_Deltas(Delta = Max_Delta_EVPA)
         Max_Delta_I_Branches    = split_Deltas(Delta = Max_Delta_I) 
 
@@ -524,37 +541,79 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
         Delta_EVPA_Plot_Sweep.set_xlim([Param_Sweep_Min_Value, Param_Sweep_Max_Value])
         Delta_I_Plot_Sweep.set_xlim([Param_Sweep_Min_Value, Param_Sweep_Max_Value])
 
+        colorbar_map.set_clim([Param_Sweep_Min_Value, Param_Sweep_Max_Value])
+
+    Delta_I_Plot_Sweep.set_xlim([Param_Sweep_Min_Value, Param_Sweep_Max_Value])
+    Delta_EVPA_Plot_Sweep.set_xlim([Param_Sweep_Min_Value, Param_Sweep_Max_Value])
+
     Delta_EVPA_Plot_Sweep.legend(loc = "upper right", fontsize = 26)
-    Delta_I_Plot_Sweep.legend(loc = "upper right", fontsize = 26)
+    Delta_I_Plot_Sweep.legend(loc = "lower left", fontsize = 26)
 
     Delta_I_Plot_Sweep.plot([min(Param_Sweep_Values), max(Param_Sweep_Values)], [0, 0], "--", color = "k")
     Delta_EVPA_Plot_Sweep.plot([min(Param_Sweep_Values), max(Param_Sweep_Values)], [0, 0], "--", color = "k")
 
     ratio = 1.5
 
-    xleft, xright = Intensity_Plot.get_xlim()
-    ybottom, ytop = Intensity_Plot.get_ylim()
-    Intensity_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+    """ ================================= Scale all Y limits equally ================================= """
 
-    xleft, xright = Delta_I_Plot.get_xlim()
-    ybottom, ytop = Delta_I_Plot.get_ylim()
-    Delta_I_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+    I_y_limits = [0, 0]
+    Delta_I_y_limits = [0, 0]
+    Delta_EVPA_y_limits = [0, 0]
 
-    xleft, xright = Intensity_Plot.get_xlim()
-    ybottom, ytop = Intensity_Plot.get_ylim()
-    Intensity_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+    for index, _ in enumerate(Intensity_Plot_list):
 
-    xleft, xright = EVPA_Plot.get_xlim()
-    ybottom, ytop = EVPA_Plot.get_ylim()
-    EVPA_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+        I_y_min, I_y_max = Intensity_Plot_list[index].get_ylim()
+        Delta_I_y_min, Delta_I_y_max = Delta_I_Plot_list[index].get_ylim()
+        Delta_EVPA_min, Delta_EVPA_max = Delta_EVPA_Plot_list[index].get_ylim()
 
-    xleft, xright = Intensity_Plot.get_xlim()
-    ybottom, ytop = Intensity_Plot.get_ylim()
-    Intensity_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+        EVPA_Plot_list[index].set_ylim([-pi / 2, pi / 2])        
+        EVPA_Plot_list[index].set_aspect(2 / pi * ratio)
 
-    xleft, xright = Delta_EVPA_Plot.get_xlim()
-    ybottom, ytop = Delta_EVPA_Plot.get_ylim()
-    Delta_EVPA_Plot.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
+        if index > 0:
+
+            if I_y_min < I_y_limits[0]:
+                I_y_limits[0] = I_y_min
+            
+            if I_y_max > I_y_limits[1]:
+                I_y_limits[1] = I_y_max
+
+            if Delta_I_y_min < Delta_I_y_limits[0]:
+                Delta_I_y_limits[0] = Delta_I_y_min
+            
+            if Delta_I_y_max > Delta_I_y_limits[1]:
+                Delta_I_y_limits[1] = Delta_I_y_max
+
+            if Delta_EVPA_min < Delta_EVPA_y_limits[0]:
+                Delta_EVPA_y_limits[0] = Delta_EVPA_min
+            
+            if Delta_EVPA_max > Delta_EVPA_y_limits[1]:
+                Delta_EVPA_y_limits[1] = Delta_EVPA_max
+        
+        else:
+
+            I_y_limits = [I_y_min, I_y_max] 
+            Delta_I_y_limits = [Delta_I_y_min, Delta_I_y_max]
+            Delta_EVPA_y_limits = [Delta_EVPA_min, Delta_EVPA_max]
+
+    I_y_limits[0] = (I_y_limits[0] * 0.9) * (I_y_limits[0] > 0) + (I_y_limits[0] * 1.1) * (I_y_limits[0] < 0)
+    I_y_limits[1] = (I_y_limits[1] * 0.9) * (I_y_limits[1] < 0) + (I_y_limits[1] * 1.1) * (I_y_limits[1] > 0)
+
+    Delta_I_y_limits[0] = (Delta_I_y_limits[0] * 0.9) * (Delta_I_y_limits[0] > 0) + (Delta_I_y_limits[0] * 1.1) * (Delta_I_y_limits[0] < 0)
+    Delta_I_y_limits[1] = (Delta_I_y_limits[1] * 0.9) * (Delta_I_y_limits[1] < 0) + (Delta_I_y_limits[1] * 1.1) * (Delta_I_y_limits[1] > 0)
+
+    Delta_EVPA_y_limits[0] = (Delta_EVPA_y_limits[0] * 0.9) * (Delta_EVPA_y_limits[0] > 0) + (Delta_EVPA_y_limits[0] * 1.1) * (Delta_EVPA_y_limits[0] < 0)
+    Delta_EVPA_y_limits[1] = (Delta_EVPA_y_limits[1] * 0.9) * (Delta_EVPA_y_limits[1] < 0) + (Delta_EVPA_y_limits[1] * 1.1) * (Delta_EVPA_y_limits[1] > 0)
+
+    for index, _ in enumerate(Intensity_Plot_list):
+
+        Intensity_Plot_list[index].set_ylim([I_y_limits[0], I_y_limits[1]])
+        Intensity_Plot_list[index].set_aspect(abs(2 / (I_y_limits[0] - I_y_limits[1])) * ratio)
+
+        Delta_I_Plot_list[index].set_ylim([Delta_I_y_limits[0], Delta_I_y_limits[1]])
+        Delta_I_Plot_list[index].set_aspect(abs(2 / (Delta_I_y_limits[0] - Delta_I_y_limits[1])) * ratio)
+
+        Delta_EVPA_Plot_list[index].set_ylim([Delta_EVPA_y_limits[0], Delta_EVPA_y_limits[1]])
+        Delta_EVPA_Plot_list[index].set_aspect(abs(2 / (Delta_EVPA_y_limits[0] - Delta_EVPA_y_limits[1])) * ratio)
 
 if __name__ == '__main__':
  
@@ -569,24 +628,24 @@ if __name__ == '__main__':
 
     # ======================================================= Setup the Figure ======================================================= #
 
-    Figure_Pattern, (Tick_plot_1, Tick_plot_2, Tick_plot_3) = plt.subplots(1, 3, gridspec_kw = {'width_ratios': [1, 1, 1]}, constrained_layout = True)
-    Figure_Pattern.set_figwidth(12.5)
-    Figure_Pattern.set_figheight(25)
+    # Figure_Pattern, (Tick_plot_1, Tick_plot_2, Tick_plot_3) = plt.subplots(1, 3, gridspec_kw = {'width_ratios': [1, 1, 1]}, constrained_layout = True)
+    # Figure_Pattern.set_figwidth(12.5)
+    # Figure_Pattern.set_figheight(25)
 
-    colorbar_map = matplotlib.cm.ScalarMappable(cmap = matplotlib.colormaps['plasma'])
-    colorbar_map.set_clim([0,3])
+    # colorbar_map = matplotlib.cm.ScalarMappable(cmap = matplotlib.colormaps['plasma'])
+    # colorbar_map.set_clim([0,3])
             
-    Colorbar = Figure_Pattern.colorbar(colorbar_map, ax = Tick_plot_3)
-    Colorbar.set_label(r"$\gamma$", fontsize = 32)
-    Colorbar.ax.tick_params(labelsize = 26)    
+    # Colorbar = Figure_Pattern.colorbar(colorbar_map, ax = Tick_plot_3)
+    # Colorbar.set_label(r"$\gamma$", fontsize = 32)
+    # Colorbar.ax.tick_params(labelsize = 26)    
 
-    Tick_plot_2.axes.get_yaxis().set_visible(False)
-    Tick_plot_3.axes.get_yaxis().set_visible(False)
+    # Tick_plot_2.axes.get_yaxis().set_visible(False)
+    # Tick_plot_3.axes.get_yaxis().set_visible(False)
 
-    Tick_plot_1.axes.get_xaxis().set_ticks(arange(-8, 10, 2.0))
-    Tick_plot_1.axes.get_yaxis().set_ticks(arange(-8, 10, 2.0))
-    Tick_plot_2.axes.get_xaxis().set_ticks(arange(-8, 10, 2.0))
-    Tick_plot_3.axes.get_xaxis().set_ticks(arange(-8, 10, 2.0))
+    # Tick_plot_1.axes.get_xaxis().set_ticks(arange(-8, 10, 2.0))
+    # Tick_plot_1.axes.get_yaxis().set_ticks(arange(-8, 10, 2.0))
+    # Tick_plot_2.axes.get_xaxis().set_ticks(arange(-8, 10, 2.0))
+    # Tick_plot_3.axes.get_xaxis().set_ticks(arange(-8, 10, 2.0))
 
     # ================================================================================================================================= #
 
@@ -602,8 +661,8 @@ if __name__ == '__main__':
     Other_Metric_Sim_Path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\JNW_n0"
     Other_Metric_Parser_6   = Simulation_Parser(Other_Metric_Sim_Path)
 
-    QUIVER_SAMPLE_SKIP = 20
-    PARAWM_SWEEP_FIGURE_SKIP = 50
+    QUIVER_SAMPLE_SKIP = 8
+    PARAWM_SWEEP_FIGURE_SKIP = 20
 
     """  
     For metrics with more than one parameter these go as:
@@ -628,8 +687,8 @@ if __name__ == '__main__':
                        Other_Metric_Param_Number = Other_Metric_Param_Number,
                        Fontsize = 32,
                        Scalar = 1.5,
-                       PARAWM_SWEEP_FIGURE_SKIP = 10, 
-                       QUIVER_SAMPLE_SKIP = 4)
+                       PARAWM_SWEEP_FIGURE_SKIP = PARAWM_SWEEP_FIGURE_SKIP, 
+                       QUIVER_SAMPLE_SKIP = QUIVER_SAMPLE_SKIP)
 
     # ======================================= Initial Conditions ======================================= #
 

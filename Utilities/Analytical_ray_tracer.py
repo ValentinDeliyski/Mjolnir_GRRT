@@ -446,66 +446,65 @@ if __name__ == "__main__":
     r_min = []
     r_max = []
         
-    for JNW_PARAM in np.linspace(1, 1, 16):
+  
+    WH_ALPHA = 0.01
 
-        WH_ALPHA = 0.01
+    RBH_PARAM = 1    # [ - ]
 
-        RBH_PARAM = 1    # [ - ]
+    JNW_PARAM = 0.48  # [ - ]
 
-        # JNW_PARAM = 0.48  # [ - ]
+    GAUSS_BONET_PARAM = 1.5 # [ - ]
 
-        GAUSS_BONET_PARAM = 1.5 # [ - ]
+    #------      Metrics      -------#
 
-        #------      Metrics      -------#
+    SCH = Schwarzschild()
+    WH  = Wormhole(r_throat = WH_THROAT, parameter = WH_ALPHA)
+    RBH = Regular_Black_Hole(parameter = RBH_PARAM)
+    JNW = JNW_Naked_Singularity(parameter = JNW_PARAM)
+    GBNS = Gaus_Bonnet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
 
-        SCH = Schwarzschild()
-        WH  = Wormhole(r_throat = WH_THROAT, parameter = WH_ALPHA)
-        RBH = Regular_Black_Hole(parameter = RBH_PARAM)
-        JNW = JNW_Naked_Singularity(parameter = JNW_PARAM)
-        GBNS = Gaus_Bonnet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
-
-        Spacetime_dict ={"Schwarzshild":       SCH, 
+    Spacetime_dict ={"Schwarzshild":       SCH, 
                         "Wormhole":            WH,
                         "Regular Black Hole": RBH,
                         "Naked Singularity":  JNW,
                         "Gauss - Bonnet"    : GBNS}
 
-        Active_spacetime = "Schwarzshild"
+    Active_spacetime = "Schwarzshild"
 
     
-        Figure = plt.figure(1)
-        Plot_1 = Figure.add_subplot(111)
-        Figure_test = plt.figure(3)
-        Plot_3 = Figure_test.add_subplot(111)
+    Figure = plt.figure(1)
+    Plot_1 = Figure.add_subplot(111)
+    Figure_test = plt.figure(3)
+    Plot_3 = Figure_test.add_subplot(111)
 
-        Plot_2 = plt.figure(2).add_subplot(111)
+    Plot_2 = plt.figure(2).add_subplot(111)
 
-        orbit_radii = [4.5, 6]
+    orbit_radii = [6]
 
-        for r_s in orbit_radii:
+    for r_s in orbit_radii:
 
-            #----- Observer / Source  -------#
+        #----- Observer / Source  -------#
 
-            r_obs = 1e3                        # [ M ]
-            inclination_obs = 20 * DEG_TO_RAD   # [ rad ]
+        r_obs = 1e3                        # [ M ]
+        inclination_obs = 70 * DEG_TO_RAD   # [ rad ]
 
-            ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
+        ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
                                             Granularity = 1000, 
                                             r_source = r_s, 
                                             r_obs = r_obs, 
                                             inclination = inclination_obs, 
                                             MAX_IAMGE_ORDER = 4)
 
-            ray_tracer.propagate_rays()
-            ray_tracer.create_spline()
-            ray_tracer.construct_images()
+        ray_tracer.propagate_rays()
+        ray_tracer.create_spline()
+        ray_tracer.construct_images()
         
-            x_coords_spline, y_coords_spline = ray_tracer.plot_splined_data(subfigure_spline = Plot_3, 
+        x_coords_spline, y_coords_spline = ray_tracer.plot_splined_data(subfigure_spline = Plot_3, 
                                                                             Splines = ray_tracer.Image_Spline)
                 
-            # ray_tracer.plot_raw_data(subfigure_raw = Plot_2, 
-            #                                             Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
-            #                                             Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
+        # ray_tracer.plot_raw_data(subfigure_raw = Plot_2, 
+        #                                                 Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
+        #                                                 Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
 
             # plot_angle_impact_param_grapth(subfig                = Plot_1,
             #                             Splined_Impact_params = ray_tracer.Interpolated_Impact_params, 

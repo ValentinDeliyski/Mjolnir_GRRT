@@ -16,7 +16,7 @@
     const Spacetime_enums e_metric = Kerr; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.000001;
+    Real SPIN = 0.9;
 
     // Wormhole spacetime parameters //
 
@@ -46,15 +46,15 @@
 
     // ======================== Observer Inputs ======================== //
 
-    Real r_obs	   = 1e4;			    // Radial potision of the observer [ M ]
-    Real theta_obs = 20.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real r_obs	   = 1e3;			    // Radial potision of the observer [ M ]
+    Real theta_obs = 60.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			    // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
-    Real obs_cam_rotation_angle = 0; // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
+    Real obs_cam_rotation_angle = 0.0f; // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
-    const Emission_model_enums     e_emission   = Synchotron_exact; // Emission model to be used
-    const Disk_density_model_enums e_disk_model = Power_law;
+    const Emission_model_enums     e_emission   = Synchotron_phenomenological; // Emission model to be used
+    const Disk_density_model_enums e_disk_model = Exponential_law;
 
     // Novikov - Thorne accretion disk parameters
 
@@ -79,9 +79,9 @@
     
     Real EMISSION_POWER_LAW    = 0.0f;  // emission   ~ pow( redshity, EMISSION_POWER_LAW )
     Real SOURCE_F_POWER_LAW	   = 2.5;   // absorbtion ~ pow( redshity, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
-    Real DISK_ABSORBTION_COEFF = 1e-4;  // absorbtion ~ DISK_ABSORBTION_COEFF
+    Real DISK_ABSORBTION_COEFF = 1e5;  // absorbtion ~ DISK_ABSORBTION_COEFF
 
-    Real EMISSION_SCALE_PHENOMENOLOGICAL = 8e-19 * 0.6 / 1.964;
+    Real EMISSION_SCALE_PHENOMENOLOGICAL = 3e-18;
 
     // Exact Synchotron emission parameters //
     
@@ -89,7 +89,7 @@
     Real MAG_FIELD_GEOMETRY[3] = { 0.87, 0.0, 0.5 };
     
     Real N_ELECTRON_EXACT_CGS = 5e+05;
-    Real T_ELECTRON_EXACT_CGS = 6.5e+10;
+    Real T_ELECTRON_EXACT_CGS = 5.8e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
     const bool AVERAGE_EMISSION_PITCH_ANGLE = false;
@@ -104,16 +104,16 @@
 
     // ======================== Simulation Modes Inputs ======================== //
 
-    const int Active_Sim_Mode = 2;
+    const int Active_Sim_Mode = 1;
     const bool Truncate_files = true;
 
     // Simulation Mode 1 and 3 viewing window //
 
-    Real V_angle_min = -atan(30 / r_obs);
-    Real V_angle_max =  atan(30 / r_obs);
+    Real V_angle_min = -atan(15 / r_obs);
+    Real V_angle_max =  atan(15 / r_obs);
 
-    Real H_angle_min = -atan(30 / r_obs);
-    Real H_angle_max =  atan(30 / r_obs);
+    Real H_angle_min = -atan(15 / r_obs);
+    Real H_angle_max =  atan(15 / r_obs);
 
     const int RESOLUTION = 2048;                  // Linear size of the square pixel grid that makes up the image
 
@@ -126,12 +126,12 @@
 
     // Sim Mode 2 Configuration //
 
-    const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\Schwarzschild_r6_20deg_500_photons_direct.csv";
-    const int PARAM_SWEEP_NUMBER = 1;
-    Real INIT_PARAM_VALUE        = 0.0001;
+    const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\Schwarzschild_r6_70deg_500_photons_direct.csv";
+    const int PARAM_SWEEP_NUMBER = 200;
+    Real INIT_PARAM_VALUE        = 0.53;
     Real FINAL_PARAM_VALUE       = 1.0;
 
-    const Metric_Parameter_Selector PARAM_TYPE = JNW_Gamma;
+    const Metric_Parameter_Selector PARAM_TYPE = WH_Redshift;
 
     // Sim Mode 4 Initial Conditions //
 
@@ -145,7 +145,7 @@
 
     // 1e-12 Seems to be an opitimal tradeoff between accuracy and performace for low inclinations <60 deg. For higher inclinations, 
     // things could break using RK4 for the radiative transfer - for such cases use at most 1e-13.
-    Real RK45_ACCURACY     = 1e-14; 
+    Real RK45_ACCURACY     = 1e-12; 
     Real SAFETY_1          = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Real SAFETY_2          = 1e-25; // Near zero positive number used to avoid division by 0 when calculating the integration step
 

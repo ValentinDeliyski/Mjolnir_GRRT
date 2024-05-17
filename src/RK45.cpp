@@ -20,7 +20,7 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
     |                                                                                                |
     |   @ Inputs:                                                                                    |
     |     * State_Vector: Pointer to an array that holds the photon State Vector to be updated       |
-    |     * Derivatives: Pointer to an array that holds the evaluation of the E.O.M                  |
+    |     * Derivatives: Pointer to an array that holds the evaluation of the E.O.M.                 |
     |     * controller: Pointer to class instance of the integrator step controller                  |
     |                                                                                                |
     |   @ Ouput: None                                                                                |
@@ -93,9 +93,9 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
         // Close enough that it requires "manual" scattering, by flipping the p_r sign.
         // Otherwise the photons never reach the turning point and the integration grinds to a halt.
 
-        if (e_metric == Naked_Singularity && JNW_GAMMA < 0.5) {
+        if (e_metric == Naked_Singularity && s_Initial_Conditions->Spacetimes[e_metric]->get_parameters().JNW_Gamma_Parameter < 0.5) {
 
-            if (State_Vector[e_r] - JNW_R_SINGULARITY < 1e-8) {
+            if (State_Vector[e_r] - s_Initial_Conditions->Spacetimes[e_metric]->get_parameters().JNW_Gamma_Parameter < 1e-8) {
 
                 State_Vector[e_p_r] *= -1;
 

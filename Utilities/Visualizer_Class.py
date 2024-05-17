@@ -69,10 +69,10 @@ class Sim_Visualizer():
                 
             if Sim_Parser_0.Active_Sim_Mode != 2:
 
-                Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL) +
-                            self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+ 
-                            self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL)+
-                            self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL))
+                Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL) +
+                            self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL)+ 
+                            self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL)+
+                            self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL))
                 
                 self.Total_flux_str.append("Total flux at {}GHz = {} [Jy]\n".format(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9, np.round(Total_flux, 4)))
 
@@ -187,7 +187,7 @@ class Sim_Visualizer():
                                                                 self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
                                                                 
                 Cbar_label = r"Brightness Temperature [$10^9$K]"
-                Colormap = "hot"
+                Colormap = "plasma"
 
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
                 Cmap_min = 0

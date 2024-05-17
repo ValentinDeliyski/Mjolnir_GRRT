@@ -38,7 +38,7 @@ void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Ste
 
     }
 
-    s_Ray_Results->Ray_log_struct.Ray_path_log[e_path_log_step + log_offset * e_path_log_number] = Controller.previous_step;
+    s_Ray_Results->Ray_log_struct.Ray_path_log[e_path_log_step + log_offset * e_path_log_number] = Controller.step;
 
 }
 
@@ -540,9 +540,9 @@ void static Propagate_forward_emission(Initial_conditions_type* const s_Initial_
                  absorbtion_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
 
             if (!isinf(1.0 / redshift[Current]) && !isinf(1.0 / redshift[Next])) {
-                 
-                s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Current], s_Initial_Conditions, emission_functions[Current], faradey_functions[Current], absorbtion_functions[Current]);
-                s_Initial_Conditions->OTT_model->get_synchotron_transfer_functions(Logged_ray_path[Next], s_Initial_Conditions, emission_functions[Next], faradey_functions[Next], absorbtion_functions[Next]);
+
+                s_Initial_Conditions->OTT_model->get_radiative_transfer_functions(Logged_ray_path[Current], s_Initial_Conditions, emission_functions[Current], faradey_functions[Current], absorbtion_functions[Current]);
+                s_Initial_Conditions->OTT_model->get_radiative_transfer_functions(Logged_ray_path[Next], s_Initial_Conditions, emission_functions[Next], faradey_functions[Next], absorbtion_functions[Next]);
 
                 /* ------ Account for the relativistic doppler effet via the redshift ------ */
 

@@ -349,7 +349,10 @@ int Optically_Thin_Toroidal_Model::update_disk_velocity(double State_Vector[], I
 
     if (e_metric == Naked_Singularity) {
 
-        ell *= pow(1 - JNW_R_SINGULARITY / r_source, JNW_GAMMA);
+        double gamma = s_Initial_Conditions->Spacetimes[e_metric]->get_parameters().JNW_Gamma_Parameter;
+        double r_singularity = 2 / gamma;
+
+        ell *= pow(1 - r_singularity / r_source, gamma);
 
     }
     else if (e_metric == Wormhole) {
@@ -503,7 +506,7 @@ int Optically_Thin_Toroidal_Model::update_disk_density_profile(double State_Vect
     case Exponential_law:
 
         Height_Cutoff = h / this->s_Disk_Parameters.Exp_law_height_scale;
-        Radial_Cutoff = r / this->s_Disk_Parameters.Power_law_radial_scale;
+        Radial_Cutoff = r / this->s_Disk_Parameters.Exp_law_radial_scale;
 
         electron_density_profile = exp(-Radial_Cutoff * Radial_Cutoff / 2 - Height_Cutoff * Height_Cutoff / 2);
 
@@ -995,32 +998,66 @@ void Optically_Thin_Toroidal_Model::get_emission_function_synchotron_phenomenolo
     double& emission_power_law = this->s_Emission_Parameters.Emission_power_law;
     double& emission_scale = this->s_Emission_Parameters.Emission_scale;
 
-    double electron_density = emission_scale * get_disk_density_profile(State_vector);
-
-    /* Disk Coordinate Velocity */
-
     double* U_source_coord = this->get_disk_velocity(State_vector, s_Initial_conditions);
-
     double redshift = Redshift(State_vector, U_source_coord);
 
-    Emission_functions[I] = electron_density * pow(redshift, emission_power_law);
+    Emission_functions[I] = emission_scale * get_disk_density_profile(State_vector) * pow(redshift, emission_power_law);
+    Emission_functions[Q] = 0.0;
+    Emission_functions[U] = 0.0;
+    Emission_functions[V] = 0.0;
 
-    for (int stokes_index = 1; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+}
 
-        Emission_functions[stokes_index] = 0;
+void Optically_Thin_Toroidal_Model::get_radiative_transfer_functions(double State_Vector[e_State_Number],
+                                                                     Initial_conditions_type* s_Initial_conditions, 
+                                                                     double Emission_functions[4], 
+                                                                     double Faradey_functions[4],
+                                                                     double Absorbtion_functions[4]) {
+    switch (e_emission) {
 
+    case(Synchotron_phenomenological):
+
+        this->get_emission_function_synchotron_phenomenological(State_Vector, 
+                                                                s_Initial_conditions, 
+                                                                Emission_functions);
+        
+        this->get_absorbtion_function_phenomenological(State_Vector,
+                                                       s_Initial_conditions,
+                                                       Absorbtion_functions);
+
+        for (int index = I; index <= STOKES_PARAM_NUM - 1; index++) {
+
+            Faradey_functions[index] = 0.0;
+
+        }
+
+        break;
+
+    default:
+
+        this->get_synchotron_transfer_functions(State_Vector, s_Initial_conditions, Emission_functions, Faradey_functions, Absorbtion_functions);
+
+        break;
     }
 
 }
 
-double Optically_Thin_Toroidal_Model::get_absorbtion_function_phenomenological(double Emission_Functions, double State_vector[], double redshift) {
+void Optically_Thin_Toroidal_Model::get_absorbtion_function_phenomenological(double State_vector[], 
+                                                                             Initial_conditions_type* s_Initial_conditions,
+                                                                             double Absorbtion_functions[STOKES_PARAM_NUM]) {
 
     double& abs_coeff = this->s_Emission_Parameters.Absorbtion_coeff;
     double& emission_scale = this->s_Emission_Parameters.Emission_scale;
     double& source_f_power_law = this->s_Emission_Parameters.Source_f_power_law;
     double& emission_power_law = this->s_Emission_Parameters.Emission_power_law;
 
-    return abs_coeff * emission_scale * this->get_disk_density_profile(State_vector) * pow(redshift, source_f_power_law + emission_power_law);
+    double* U_source = this->get_disk_velocity(State_vector, s_Initial_conditions);
+    double redshift = Redshift(State_vector, U_source);
+
+    Absorbtion_functions[I] = abs_coeff * emission_scale * this->get_disk_density_profile(State_vector) * pow(redshift, source_f_power_law + emission_power_law);
+    Absorbtion_functions[Q] = 0;
+    Absorbtion_functions[U] = 0;
+    Absorbtion_functions[V] = 0;
 
 }
 
