@@ -82,7 +82,7 @@ int Kerr_class::update_dr_metric(double State_Vector[]) {
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
-    this->s_dr_Metric.Metric[0][0] = -2 * M * r / rho2 * (2 * r2 / rho2 - 1);
+    this->s_dr_Metric.Metric[0][0] = -2 * M / rho2 * (2 * r2 / rho2 - 1);
     this->s_dr_Metric.Metric[0][3] = 2 * M * a * sin_theta * sin_theta / rho2 * (2 * r2 / rho2 - 1);
     this->s_dr_Metric.Metric[3][0] = this->s_dr_Metric.Metric[0][3];
     this->s_dr_Metric.Metric[1][1] = 2 * r / delta * (1 - rho2 / delta * (1 - M / r));

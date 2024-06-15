@@ -393,8 +393,8 @@ void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][
             }
 
             double Polarized_Intensity_before = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
-                                              Stokes_Vector[U] * Stokes_Vector[U] +
-                                              Stokes_Vector[V] * Stokes_Vector[V]);
+                                                     Stokes_Vector[U] * Stokes_Vector[U] +
+                                                     Stokes_Vector[V] * Stokes_Vector[V]);
 
            
             Stokes_Vector[Q] =  Polarized_Intensity_before * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[1]) -

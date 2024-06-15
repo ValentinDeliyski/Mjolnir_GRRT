@@ -57,8 +57,7 @@ double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r, Spacetime_B
 
 }
 
-double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_obs, double theta_obs,
-    Spacetime_Base_Class* Spacetimes[]) {
+double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_obs, double theta_obs, Spacetime_Base_Class* Spacetimes[]) {
 
     double& r_source = State_Vector[e_r];
     double& theta_source = State_Vector[e_theta];
@@ -209,7 +208,7 @@ double Novikov_Thorne_Model::get_flux(double r, Spacetime_Base_Class* Spacetimes
 
     Metric_type s_Metric = Spacetimes[e_metric]->get_metric(State_Vector);
 
-    double metric_det = get_metric_det(s_Metric.Metric);
+    double metric_det = get_eq_induced_metric_det(s_Metric.Metric);
     double E_disk = disk_Energy(r, Spacetimes);
     double L_disk = disk_Angular_Momentum(r, Spacetimes);
 
@@ -562,7 +561,7 @@ double Optically_Thin_Toroidal_Model::get_magnetic_field(double B_field[4],
     /*
     
     Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity), called B_field,
-    in the basis of a static observer (with 4-velocity n^mu = {1, 0, 0, 0} ). 
+    in the basis of a static observer (with 4-velocity n_mu = {1, 0, 0, 0} ). 
     Returns the magnitude of the magnetic field in the plasma frame.
 
     NOTE: The magnitude of the magnetic field in these frames is different, because its not concerved under Lorentz boosts.

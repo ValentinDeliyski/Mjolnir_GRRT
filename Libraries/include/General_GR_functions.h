@@ -15,6 +15,8 @@
 
     double get_metric_det(double metric[4][4]);
 
+    double get_eq_induced_metric_det(double metric[4][4]);
+
     void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Conditions, double V_angle, double H_angle);
 
     void get_impact_parameters(Initial_conditions_type* p_Initial_Conditions, double Image_coords[2]);

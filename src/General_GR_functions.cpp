@@ -29,6 +29,12 @@ double get_metric_det(double metric[4][4]) {
 
 }
 
+double get_eq_induced_metric_det(double metric[4][4]) {
+
+    return metric[0][0] * metric[1][1] * metric[3][3] * (1 - metric[0][3] * metric[0][3] / (metric[0][0] * metric[3][3]));
+
+}
+
 /* Basis Related Functions */
 
 void get_ZAMO_tetrad(double e_t[4], double e_r[4], double e_theta[4], double e_phi[4], double metric[4][4]) {

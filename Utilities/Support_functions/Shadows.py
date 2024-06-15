@@ -273,13 +273,13 @@ def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float, fi
     problem_term = (K + spin**2*cos_0**2 - J**2/tan_0**2) * (K + spin**2*cos_0**2 - J**2/tan_0**2 > 0)
     beta = np.arcsin(np.sqrt(problem_term)/np.sqrt(obs_distance**2 + spin**2*cos_0**2)/(ksi - J*gamma)) 
 
-    alpha = alpha[(beta != 0)]
-    beta  = beta [(beta != 0)]
+    alpha = obs_distance * alpha[(beta != 0)]
+    beta  = obs_distance * beta [(beta != 0)]
 
     alpha = np.concatenate([alpha, np.flip(alpha), [alpha[0]]])
     beta  = np.concatenate([beta ,-np.flip(beta),  [beta[0]] ])
 
-    figure.plot(alpha,beta,"k")
+    figure.plot(alpha,beta,"k--")
 
 if __name__ == "__main__":
 

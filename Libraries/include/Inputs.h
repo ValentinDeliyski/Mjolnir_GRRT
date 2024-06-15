@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Kerr; // Spacetime to be used
+    const Spacetime_enums e_metric = Wormhole; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.9;
+    Real SPIN = 0.001;
 
     // Wormhole spacetime parameters //
 
@@ -47,7 +47,7 @@
     // ======================== Observer Inputs ======================== //
 
     Real r_obs	   = 1e3;			    // Radial potision of the observer [ M ]
-    Real theta_obs = 60.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real theta_obs = 20.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			    // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
     Real obs_cam_rotation_angle = 0.0f; // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
 
@@ -58,10 +58,10 @@
 
     // Novikov - Thorne accretion disk parameters
 
-    const bool Evaluate_NT_disk = false;
+    const bool Evaluate_NT_disk = true;
 
-    Real r_in  = 1;	// Inner accretion idsk radius [ M ]
-    Real r_out = 2500.0f; // Outer accretion disk radius [ M ]
+    Real r_in  = NULL;	// Inner accretion idsk radius [ M ]
+    Real r_out = 25.0f; // Outer accretion disk radius [ M ]
 
     // Exponential disk profile parameters //
 
@@ -109,11 +109,11 @@
 
     // Simulation Mode 1 and 3 viewing window //
 
-    Real V_angle_min = -atan(15 / r_obs);
-    Real V_angle_max =  atan(15 / r_obs);
+    Real V_angle_min = -atan(30 / r_obs);
+    Real V_angle_max =  atan(30 / r_obs);
 
-    Real H_angle_min = -atan(15 / r_obs);
-    Real H_angle_max =  atan(15 / r_obs);
+    Real H_angle_min = -atan(30 / r_obs);
+    Real H_angle_max =  atan(30 / r_obs);
 
     const int RESOLUTION = 2048;                  // Linear size of the square pixel grid that makes up the image
 

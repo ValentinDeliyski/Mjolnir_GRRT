@@ -218,8 +218,12 @@ class Sim_Visualizer():
                 Data_to_plot = Data_to_plot + NT_Flux_Shifted_n3 * (Data_to_plot == 0)
                 Data_to_plot = Data_to_plot / 1e-6
 
+
+
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
                 Cmap_min = 0
+
+                # print(Cmap_max)
 
                 Colormap = "hot"
 

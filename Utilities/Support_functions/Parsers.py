@@ -127,7 +127,7 @@ class Simulation_Parser():
                         except:
                             self.Param_2[index] = 0
 
-                    self.NT_Flux_Shifted[index] = self.NT_Redshift[index]**4*self.NT_Flux[index]
+                    self.NT_Flux_Shifted[index] = self.NT_Redshift[index]**4 * self.NT_Flux[index]
 
                     index += 1
 
@@ -167,7 +167,7 @@ class Simulation_Parser():
         NT_Flux_Shifted = self.NT_Flux_Shifted.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
         NT_Flux_Shifted = np.flip(NT_Flux_Shifted, 0)
 
-        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, NT_Flux, NT_Redshift, NT_Flux_Shifted
+        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, NT_Redshift, NT_Flux, NT_Flux_Shifted
     
     def export_ehtim_data(self, Spacetime: str, data: np.array, path: str):
 
