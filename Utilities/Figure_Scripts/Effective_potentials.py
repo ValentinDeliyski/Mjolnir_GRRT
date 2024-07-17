@@ -15,30 +15,30 @@ def plot_JNW_potential(subplot: plt.subplot, gamma: float, impact_param: float, 
 
     r_range = np.linspace(r_singularity, 11, 1000)
 
-    potential = -1 + impact_param**2 / r_range**2 * pow(1 - r_singularity / r_range, 2 * gamma - 1)
+    potential = impact_param**2 / r_range**2 * pow(1 - r_singularity / r_range, 2 * gamma - 1)
 
     subplot.plot(r_range, potential, color = color, linestyle = linestyle)
 
     if gamma == gamma_range[-1]:
         
-        x_coord = 6
+        x_coord = 6.3
 
         dx    = r_range[find_nearest(r_range, x_coord)[1]] - r_range[find_nearest(r_range, x_coord)[1] - 1]
         dy    = potential[find_nearest(r_range, x_coord)[1]] - potential[find_nearest(r_range, x_coord)[1] - 1]
         angle = np.rad2deg(np.arctan2(dy, dx))
 
         subplot.text(find_nearest(r_range, x_coord)[0], potential[find_nearest(r_range, x_coord)[1]] - 0.5, r'$\gamma=${}'.format(round(gamma, 2)), ha='left', va='bottom',
-                     transform_rotates_text = True, rotation = angle, rotation_mode='anchor')
+                     transform_rotates_text = True, rotation = angle, rotation_mode='anchor', fontsize = 16)
         
     if gamma == gamma_range[0]:
-        x_coord = 6.2
+        x_coord = 6.5
 
         dx    = r_range[find_nearest(r_range, x_coord)[1]] - r_range[find_nearest(r_range, x_coord)[1] - 1]
         dy    = potential[find_nearest(r_range, x_coord)[1]] - potential[find_nearest(r_range, x_coord)[1] - 1]
         angle = np.rad2deg(np.arctan2(dy, dx))
 
         subplot.text(find_nearest(r_range, x_coord)[0], potential[find_nearest(r_range, x_coord)[1]], r'$\gamma=${}'.format(round(gamma, 2)), ha='left', va='bottom',
-                     transform_rotates_text = True, rotation = angle, rotation_mode='anchor')
+                     transform_rotates_text = True, rotation = 0.9*angle , rotation_mode='anchor', fontsize = 16)
         
 
     subplot.set_ylim([0, 10])
@@ -51,7 +51,7 @@ def plot_GB_effective_potential(subplot: plt.subplot, gamma: float, impact_param
 
     f = 1 + r_range**2 / 2 / gamma * (1 - np.sqrt(1 + 8 * gamma / r_range**3))
 
-    potential = -1 + impact_param**2 / r_range**2 * f
+    potential = impact_param**2 / r_range**2 * f
 
     subplot.plot(r_range, potential, color = color, linestyle = linestyle)
 
@@ -64,7 +64,7 @@ def plot_GB_effective_potential(subplot: plt.subplot, gamma: float, impact_param
         angle = np.rad2deg(np.arctan2(dy, dx))
 
         subplot.text(2.2, potential[find_nearest(r_range, 2.5)[1]] + 0.5, r'$\gamma=${}'.format(round(gamma, 2)), ha='left', va='bottom',
-                     transform_rotates_text = True, rotation = angle, rotation_mode='anchor')
+                     transform_rotates_text = True, rotation = angle, rotation_mode='anchor', fontsize = 16)
         
     if gamma == gamma_range[0]:
 
@@ -75,9 +75,9 @@ def plot_GB_effective_potential(subplot: plt.subplot, gamma: float, impact_param
         angle = np.rad2deg(np.arctan2(dy, dx))
 
         subplot.text(2.2, potential[find_nearest(r_range, 2.5)[1]]- 0.5, r'$\gamma=${}'.format(round(gamma, 2)), ha='left', va='bottom',
-                     transform_rotates_text = True, rotation = angle, rotation_mode='anchor')
+                     transform_rotates_text = True, rotation = angle, rotation_mode='anchor', fontsize = 16)
 
-    subplot.set_ylim([-1, 10])
+    subplot.set_ylim([0, 10])
     subplot.set_xlim([0, 10])
 
     return
@@ -118,7 +118,7 @@ for gamma in gamma_range:
     
     # subplot.plot([1, 1], [-10, 100])
 
-subplot.tick_params(axis='both', which='major', labelsize=14)
+subplot.tick_params(axis='both', which='major', labelsize=16)
 subplot.set_xlabel(r"$r\,\,[M]$", fontsize = 16)
 subplot.set_ylabel(r"$V_\text{eff}(r)$",  fontsize = 16)
 
