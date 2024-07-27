@@ -95,7 +95,7 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
 
         if (e_metric == Naked_Singularity && s_Initial_Conditions->Spacetimes[e_metric]->get_parameters().JNW_Gamma_Parameter < 0.5) {
 
-            if (State_Vector[e_r] - s_Initial_Conditions->Spacetimes[e_metric]->get_parameters().JNW_Gamma_Parameter < 1e-8) {
+            if (State_Vector[e_r] - 2 / s_Initial_Conditions->Spacetimes[e_metric]->get_parameters().JNW_Gamma_Parameter < 1e-8) {
 
                 State_Vector[e_p_r] *= -1;
 

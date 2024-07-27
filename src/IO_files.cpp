@@ -195,7 +195,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
         Image_Output_files[Image_order] << "------------------------------------------------------- Novikov-Thorne Disk Metadata -------------------------------------------------------"
                                         << "\n"
                                         << "Inner Disk Radius [M]: "
-                                        << r_in * (r_in != NULL) + s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Inner] * (r_in == NULL)
+                                        << r_in * (r_in != NULL) + s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Outer] * (r_in == NULL)
                                         << "\n"
                                         << "Outer Disk Radius [M]: "
                                         << r_out
@@ -268,13 +268,13 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << " "
                                             << "Novikov-Thorne Flux [M^-2],"
                                             << " "
-                                            << "Synchotron Intensity I [Jy/sRad]"
+                                            << "Synchotron Intensity I [Jy/sRad],"
                                             << " "
-                                            << "Synchotron Intensity Q [Jy/sRad]"
+                                            << "Synchotron Intensity Q [Jy/sRad],"
                                             << " "
-                                            << "Synchotron Intensity U [Jy/sRad]"
+                                            << "Synchotron Intensity U [Jy/sRad],"
                                             << " "
-                                            << "Synchotron Intensity V [Jy/sRad]"
+                                            << "Synchotron Intensity V [Jy/sRad],"
                                             << " ";
             if (Active_Sim_Mode == 2) {
 

@@ -258,7 +258,7 @@ bool JNW_class::terminate_integration(double State_vector[], double Derivatives[
 
     bool hit_singularity = State_vector[e_r] - r_singularity < 1e-2;
 
-    bool scatter = State_vector[e_r] > 25000 && Derivatives[e_r] < 0;
+    bool scatter = State_vector[e_r] > 2500 && Derivatives[e_r] < 0;
 
     if (this->Gamma > 0.5) {
 

@@ -5,8 +5,8 @@ using VIDA
 using InteractiveUtils
 using DelimitedFiles
 
-Simulation_name = "Wormhole_ngEHT"
-File_name = "Results_345_blur.fits"
+Simulation_name = "Wormhole_a_0_alpha_1/EHT2017"
+File_name = "Results_blur.fits"
 
 display("Parsing EHTIM results...")
 

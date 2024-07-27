@@ -180,9 +180,15 @@ class Simulation_Parser():
 
         formatted_sim_data = data.reshape(1, self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT).flatten()
 
-        array_to_export = np.array([self.X_coords / max(self.X_coords) * ehtim_x_fov / 2, 
-                                    self.Y_coords / max(self.Y_coords) * ehtim_y_fov / 2, 
-                                    formatted_sim_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2]).T
+        X_coords = np.linspace(-1, 1, self.X_PIXEL_COUNT) * ehtim_x_fov / 2
+        X_coords = np.vstack([X_coords] * self.Y_PIXEL_COUNT).flatten()
+
+        Y_coords = np.linspace(-1, 1, self.Y_PIXEL_COUNT) * ehtim_y_fov / 2
+        Y_coords = np.repeat(Y_coords, self.X_PIXEL_COUNT, axis = 0)
+
+        array_to_export = np.array([X_coords, 
+                                    Y_coords, 
+                                    formatted_sim_data * Pixel_area * self.OBS_DISTANCE**2 / Units.M87_DISTANCE_GEOMETRICAL**2]).T
 
         header = ("SRC: M87 \n"                   + 
                   "RA: 12 h 30 m 49.3920 s \n"    +
