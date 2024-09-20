@@ -1,8 +1,8 @@
 /****************************************************************************************************
 |                                                                                                   |
-|                          ---------  Gravitational Ray Tracer  ---------                           | 
+|                ---------  Mjølnir General Relativistic Ray Tracer  ---------                      | 
 |                                                                                                   |
-|    @ Version: 3.9.2                                                                               |
+|    @ Version: 2.0                                                                                 |
 |    @ Author: Valentin Deliyski                                                                    |
 |    @ Description: This program numeriaclly integrates the equations of motion                     |
 |    for null geodesics and radiative transfer in a curved spacetime,then projects                  |
@@ -39,161 +39,167 @@
 #include "Sim_Modes.h"
 #include "Console_printing.h"
 
-/* 
+void static Allocate_Spacetime_Class(Spacetime_enums e_metric, Spacetime_Base_Class** p_Spacetime) {
 
-Define classes that holds the spacetime properites
+    // These do not ever get "delete" called on them, because they need to exist for the entire duration of the program
 
-*/
+    switch (e_metric) {
 
-Kerr_class Kerr_class_instance = Kerr_class();
-Wormhole_class Wormhole_class_instance = Wormhole_class();
-RBH_class RHB_class_instance = RBH_class();
-JNW_class JNW_class_intance = JNW_class();
-Gauss_Bonnet_class Gauss_Bonet_class_instance = Gauss_Bonnet_class();
-Black_Hole_w_Dark_Matter_Halo_class BH_w_DM_class_instace = Black_Hole_w_Dark_Matter_Halo_class();
+    case Kerr:
+        *p_Spacetime = new Kerr_class;
+        break;
 
-Spacetime_Base_Class* Spacetimes[] = {
+    case Wormhole:      
+        *p_Spacetime = new Wormhole_class;
+        break;
 
-    &Kerr_class_instance,
-    &Wormhole_class_instance,
-    &RHB_class_instance,
-    &JNW_class_intance,
-    &Gauss_Bonet_class_instance,
-    &BH_w_DM_class_instace
+    case Reg_Black_Hole:       
+        *p_Spacetime = new RBH_class;
+        break;
 
-};
+    case Naked_Singularity:       
+        *p_Spacetime = new JNW_class;
+        break;
 
-/*
+    case Gauss_Bonnet:       
+        *p_Spacetime = new Gauss_Bonnet_class;
+        break;
 
-Define the Observer class
+    case BH_w_Dark_Matter:      
+        *p_Spacetime = new Black_Hole_w_Dark_Matter_Halo_class;
+        break;
 
-*/
+    }
 
-Observer_class Observer(r_obs, theta_obs, phi_obs);
+}
 
-/*
+void static Allocate_GOT_Model_class_instance(Simulation_Context_type* s_Sim_Context) {
 
-Initialize the file manager
+    static Generic_Optically_Thin_Model GOT_Model_class_instance = Generic_Optically_Thin_Model();
+    s_Sim_Context->p_GOT_Model = &(GOT_Model_class_instance);
 
-*/
+    s_Sim_Context->p_GOT_Model->precompute_electron_pitch_angles();
 
-File_manager_class File_manager(input_file_path, Truncate_files);
+    // TODO: These need to get loaded from a file...
 
-Initial_conditions_type s_Initial_Conditions{};
+    s_Sim_Context->p_Init_Conditions->Disk_params = { { HOTSPOT_R_COORD, M_PI_2, 0.0 },
+                                                        HOTSPOT_SCALE,
+                                                        HOTSPOT_REL_SCALE,
+                                                        N_ELECTRON_EXACT_CGS,
+                                                        DISK_OPENING_ANGLE,
+                                                        DISK_CUTOFF_SCALE,
+                                                        R_Cutoff,
+                                                        R_0,
+                                                        DISK_HEIGHT_SCALE,
+                                                        DISK_RADIAL_SCALE,
+                                                        T_ELECTRON_EXACT_CGS,
+                                                        DISK_MAGNETIZATION };
+
+    s_Sim_Context->p_Init_Conditions->Emission_params = { EMISSION_SCALE_PHENOMENOLOGICAL,
+                                                          DISK_ABSORBTION_COEFF,
+                                                          EMISSION_POWER_LAW,
+                                                          SOURCE_F_POWER_LAW };
+
+    if (ERROR == s_Sim_Context->p_GOT_Model->load_parameters(&s_Sim_Context->p_Init_Conditions->Disk_params, &s_Sim_Context->p_Init_Conditions->Emission_params)) {
+
+        std::cout << "Could not load emission model parameters!" << "\n";
+        exit(ERROR);
+    }
+}
 
 int main() {
 
+    Console_Printer_class Console_Printer;
+    Console_Printer.print_ASCII_art();
+    Console_Printer.print_sim_parameters();
+
+    /*
+    
+    |============================== Define the Simulation Context struct ==============================|
+    
+    */
+
+    Simulation_Context_type s_Sim_Context{};
+
+    // Populate the Spacetime class instance 
+    Allocate_Spacetime_Class(e_metric, &s_Sim_Context.p_Spacetime);
+
+    // TODO: Read this from a file...
+
+    Initial_conditions_type Init_Conditions{};
+    s_Sim_Context.p_Init_Conditions = &Init_Conditions;
+
+    s_Sim_Context.p_Init_Conditions->Metric_Parameters = { WH_REDSHIFT,
+                                                            STOP_AT_THROAT,
+                                                            JNW_GAMMA,
+                                                            GAUSS_BONNET_GAMMA,
+                                                            RBH_PARAM,
+                                                            COMPACTNESS,
+                                                            M_HALO,
+                                                            SPIN };
+
+    s_Sim_Context.p_Spacetime->load_parameters(s_Sim_Context.p_Init_Conditions->Metric_Parameters);
+    s_Sim_Context.e_Spacetime = e_metric;
+
+    // Populate the Initial Conditions
+    s_Sim_Context.p_Init_Conditions->init_Pos[e_r]     = r_obs;
+    s_Sim_Context.p_Init_Conditions->init_Pos[e_theta] = theta_obs;
+    s_Sim_Context.p_Init_Conditions->init_Pos[e_phi]   = phi_obs;
+
+    Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_metric(s_Sim_Context.p_Init_Conditions->init_Pos);
+    
+    memcpy(s_Sim_Context.p_Init_Conditions->init_metric, s_init_Metric.Metric, sizeof(s_init_Metric.Metric));
+    s_Sim_Context.p_Init_Conditions->init_metric_Redshift_func = s_init_Metric.Lapse_function;
+    s_Sim_Context.p_Init_Conditions->init_metric_Shitft_func   = s_init_Metric.Shift_function;
+
+    // Populate the Emission Model class instances
+    Allocate_GOT_Model_class_instance(&s_Sim_Context);
+
+    Novikov_Thorne_Model NT_class_instance(r_in, r_out, s_Sim_Context.p_Spacetime);
+    s_Sim_Context.p_NT_model = &NT_class_instance;
+
+    // Populate the Observer class instance
+    Observer_class Observer_class_instance(s_Sim_Context.p_Init_Conditions);
+    s_Sim_Context.p_Observer = &Observer_class_instance;
+
+    // Populate the File Manager class instance
+    File_manager_class File_manager_instance(s_Sim_Context.p_Init_Conditions, input_file_path, Truncate_files);
+    s_Sim_Context.File_manager = &File_manager_instance;
+
     /*
 
-    Define the Optically Thin Disk Class
+    |============================== Run the simulation ==============================|
 
     */
 
-    Optically_Thin_Toroidal_Model OTT_Model({}, {});
+    switch (Active_Sim_Mode) {
+   
+    case 1:
+         run_simulation_mode_1(&s_Sim_Context);
+         break;
+   
+    case 2:
+         run_simulation_mode_2(&s_Sim_Context);
+         break;
+   
+    case 3:
+   
+         // With the python wrapper this wont need to exist anymore (yay)
 
-    OTT_Model.precompute_electron_pitch_angles();
-
-    Disk_model_parameters Disk_params{ { HOTSPOT_R_COORD, M_PI_2, 0.0 },
-                                         HOTSPOT_SCALE,
-                                         HOTSPOT_REL_SCALE,
-                                         N_ELECTRON_EXACT_CGS,
-                                         DISK_OPENING_ANGLE,
-                                         DISK_CUTOFF_SCALE,
-                                         R_Cutoff,
-                                         R_0,
-                                         DISK_HEIGHT_SCALE,
-                                         DISK_RADIAL_SCALE,
-                                         T_ELECTRON_EXACT_CGS,
-                                         DISK_MAGNETIZATION };
-
-    Emission_law_parameters Emission_params{ EMISSION_SCALE_PHENOMENOLOGICAL,
-                                             DISK_ABSORBTION_COEFF,
-                                             EMISSION_POWER_LAW,
-                                             SOURCE_F_POWER_LAW };
-
-    Metric_Parameters_type Metric_Parameter{ WH_REDSHIFT,
-                                             STOP_AT_THROAT,
-                                             JNW_GAMMA,
-                                             GAUSS_BONNET_GAMMA,
-                                             RBH_PARAM,
-                                             COMPACTNESS,
-                                             M_HALO,
-                                             SPIN };
-
-    Spacetimes[e_metric]->load_parameters(Metric_Parameter);
-
-    int result = OTT_Model.load_parameters(&Disk_params, &Emission_params);
-
-    /*
-
-    Define the Novikov-Thorne Disk Class
-
-    */
-
-    Novikov_Thorne_Model NT_Model(r_in, r_out, Spacetimes);
-
-    if (ERROR != result) {
-
-        Console_Printer_class Console_Printer;
-        Console_Printer.print_ASCII_art();
-        Console_Printer.print_sim_parameters();
-
-        /*
-
-        Get the metric at the observer to feed into the initial conditions struct
-
-        */
-
-        s_Initial_Conditions.init_Pos[e_r]     = r_obs;
-        s_Initial_Conditions.init_Pos[e_theta] = theta_obs;
-        s_Initial_Conditions.init_Pos[e_phi]   = phi_obs;
-
-        Metric_type s_Metric = Spacetimes[e_metric]->get_metric(s_Initial_Conditions.init_Pos);
-        
-        memcpy(s_Initial_Conditions.init_metric, s_Metric.Metric, sizeof(s_Metric.Metric));
-        s_Initial_Conditions.init_metric_Redshift_func = s_Metric.Lapse_function;
-        s_Initial_Conditions.init_metric_Shitft_func   = s_Metric.Shift_function;
-
-        memcpy(s_Initial_Conditions.Spacetimes, Spacetimes, sizeof(Spacetimes));
-
-        s_Initial_Conditions.OTT_model = &OTT_Model;
-        s_Initial_Conditions.NT_model  = &NT_Model;
-
-       switch (Active_Sim_Mode) {
-
-        case 1:
-
-            run_simulation_mode_1(&s_Initial_Conditions);
-
-            break;
-
-        case 2:
-
-            run_simulation_mode_2(&s_Initial_Conditions);
-
-            break;
-
-        case 3:
-
-            run_simulation_mode_3(&s_Initial_Conditions);
-
-            break;
-
-        case 4:
-
-            run_simulation_mode_4(&s_Initial_Conditions);
-
-            break;
-
-        default:
-
-            std::cout << "Unsuported simulation mode!";
-
-            return ERROR;
-
-        }
-
-        return OK;
-
+         //run_simulation_mode_3(s_Sim_Context);
+   
+         break;
+   
+    case 4:
+         run_simulation_mode_4(&s_Sim_Context);
+         break;
+   
+    default:
+         std::cout << "Unsuported simulation mode!" << "\n";
+         exit(ERROR);
+   
     }
+
+    return OK;
+
 }

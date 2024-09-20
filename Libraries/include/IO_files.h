@@ -8,6 +8,7 @@
 	#include <string>
 	#include <fstream>
 	#include "Enumerations.h"
+	#include "Structs.h"
 
 	struct Results_type;
 
@@ -15,7 +16,7 @@
 
 	private:
 
-		std::string Image_File_Names[SPACETIME_NUMBER] = {
+		std::string Base_File_Names[SPACETIME_NUMBER] = {
 
 			"Kerr",
 			"Wormhole",
@@ -29,12 +30,13 @@
 		std::ofstream Image_Output_files[ORDER_NUM];
 		std::ofstream Log_Output_File;
 		std::string Input_file_path_sim_mode_2;
+		Initial_conditions_type *p_Initial_Conditions;
 
-		bool Truncate_files;
+		bool Truncate_files{};
 
 		public:
 
-			File_manager_class(std::string input_file_path, bool truncate);
+			File_manager_class(Initial_conditions_type* p_Initial_Conditions, std::string input_file_path, bool truncate);
 
 			void open_image_output_files(int Sim_mode_2_number);
 

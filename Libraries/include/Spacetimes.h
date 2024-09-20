@@ -137,16 +137,9 @@
 
             /* Metric and its derivatives */
 
-            int update_metric(double State_vector[]);
             Metric_type get_metric(double State_vector[]) override;
-
-            int update_dr_metric(double State_vector[]);
             Metric_type get_dr_metric(double State_vector[]) override;
-
-            int update_dtheta_metric(double State_vector[]);
             Metric_type get_dtheta_metric(double State_vector[]) override;
-
-            int update_d2r_metric(double State_vector[]);
             Metric_type get_d2r_metric(double State_vector[]) override;
 
             /* Initial conditions derived from images */
@@ -193,16 +186,9 @@
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
         Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
         Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
         Metric_type get_dtheta_metric(double State_vector[]) override;
-
-        int update_d2r_metric(double State_vector[]);
         Metric_type get_d2r_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
@@ -243,16 +229,9 @@
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
         Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
         Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
         Metric_type get_dtheta_metric(double State_vector[]) override;
-
-        int update_d2r_metric(double State_vector[]);
         Metric_type get_d2r_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
@@ -293,16 +272,9 @@
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
         Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
         Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
         Metric_type get_dtheta_metric(double State_vector[]) override;
-
-        int update_d2r_metric(double State_vector[]);
         Metric_type get_d2r_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
@@ -343,16 +315,9 @@
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
         Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
         Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
         Metric_type get_dtheta_metric(double State_vector[]) override;
-
-        int update_d2r_metric(double State_vector[]);
         Metric_type get_d2r_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
@@ -393,13 +358,8 @@
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
         Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
         Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
         Metric_type get_dtheta_metric(double State_vector[]) override;
 
         /* Initial conditions derived from images */
@@ -433,7 +393,7 @@
 
     public:
 
-        Observer_class(double r, double theta, double phi);
+        Observer_class(Initial_conditions_type* p_Init_Conditions);
 
         double get_r_obs();
         double get_theta_obs();

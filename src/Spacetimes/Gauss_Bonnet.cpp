@@ -65,10 +65,10 @@ double* Gauss_Bonnet_class::get_Photon_Sphere() {
 
 };
 
-int Gauss_Bonnet_class::update_metric(double State_Vector[]) {
+Metric_type Gauss_Bonnet_class::get_metric(double State_Vector[]) {
 
-    double  M     = MASS;
-    double& r     = State_Vector[e_r];
+    double  M = MASS;
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -86,28 +86,20 @@ int Gauss_Bonnet_class::update_metric(double State_Vector[]) {
     this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
     this->s_Metric.Shift_function = 0.;
 
-    return OK;
-
-}
-
-Metric_type Gauss_Bonnet_class::get_metric(double State_Vector[]) {
-
-    this->update_metric(State_Vector);
-
     return this->s_Metric;
 
 }
 
-int Gauss_Bonnet_class::update_dr_metric(double State_Vector[]) {
+Metric_type Gauss_Bonnet_class::get_dr_metric(double State_Vector[]) {
 
-    double M      = MASS;
-    double& r     = State_Vector[e_r];
+    double M = MASS;
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    double f    = 1. + r2 / GAUSS_BONNET_GAMMA / 2. * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
+    double f = 1. + r2 / GAUSS_BONNET_GAMMA / 2. * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
     double dr_f = 2. / r * (f - 1.) + 6. * M / sqrt(r2 * r2 + 8. * GAUSS_BONNET_GAMMA * M * r);
 
     this->s_dr_Metric.Metric[0][0] = -dr_f;
@@ -120,19 +112,11 @@ int Gauss_Bonnet_class::update_dr_metric(double State_Vector[]) {
     this->s_dr_Metric.Lapse_function = -this->s_dr_Metric.Metric[0][0];
     this->s_dr_Metric.Shift_function = 0.;
 
-    return OK;
-
-}
-
-Metric_type Gauss_Bonnet_class::get_dr_metric(double State_Vector[]) {
-
-    this->update_dr_metric(State_Vector);
-
     return this->s_dr_Metric;
 
 }
 
-int Gauss_Bonnet_class::update_dtheta_metric(double State_Vector[]) {
+Metric_type Gauss_Bonnet_class::get_dtheta_metric(double State_Vector[]) {
 
     double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
@@ -150,21 +134,13 @@ int Gauss_Bonnet_class::update_dtheta_metric(double State_Vector[]) {
     this->s_dtheta_Metric.Lapse_function = 0.0;
     this->s_dtheta_Metric.Shift_function = 0.0;
 
-    return OK;
-
-}
-
-Metric_type Gauss_Bonnet_class::get_dtheta_metric(double State_Vector[]) {
-
-    this->update_dtheta_metric(State_Vector);
-
     return this->s_dtheta_Metric;
 }
 
-int Gauss_Bonnet_class::update_d2r_metric(double State_Vector[]) {
+Metric_type Gauss_Bonnet_class::get_d2r_metric(double State_Vector[]) {
 
-    double  M     = MASS;
-    double& r     = State_Vector[e_r];
+    double  M = MASS;
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -172,8 +148,8 @@ int Gauss_Bonnet_class::update_d2r_metric(double State_Vector[]) {
 
     double root = sqrt(r2 * r2 + 8 * GAUSS_BONNET_GAMMA * M * r);
 
-    double f     =  1 + r2 / GAUSS_BONNET_GAMMA / 2. * (1 - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
-    double dr_f  =  2. / r * (f - 1.) + 6 * M / root;
+    double f = 1 + r2 / GAUSS_BONNET_GAMMA / 2. * (1 - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
+    double dr_f = 2. / r * (f - 1.) + 6 * M / root;
     double d2r_f = -2. / r2 * (f - 1.) + 2. / r * dr_f - 12. * M / root / root / root * (r2 * r + 2. * GAUSS_BONNET_GAMMA * M);
 
     this->s_d2r_Metric.Metric[0][0] = -d2r_f;
@@ -186,13 +162,6 @@ int Gauss_Bonnet_class::update_d2r_metric(double State_Vector[]) {
     this->s_d2r_Metric.Lapse_function = -this->s_d2r_Metric.Metric[0][0];
     this->s_d2r_Metric.Shift_function = 0.;
 
-    return OK;
-
-}
-
-Metric_type Gauss_Bonnet_class::get_d2r_metric(double State_Vector[]) {
-
-    this->update_d2r_metric(State_Vector);
 
     return this->s_d2r_Metric;
 

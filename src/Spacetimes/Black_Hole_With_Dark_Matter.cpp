@@ -77,19 +77,19 @@ double* Black_Hole_w_Dark_Matter_Halo_class::get_ISCO() {
 
 };
 
-int Black_Hole_w_Dark_Matter_Halo_class::update_metric(double State_Vector[]) {
+Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_metric(double State_Vector[]) {
 
-    double  M     = MASS;
-    double& r     = State_Vector[e_r];
+    double  M = MASS;
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
     double ksi = 2 * A_0 - M_HALO + 4 * M;
-    double Y   = sqrt(M_HALO / ksi) * (2 * atan((r + A_0 + M_HALO) / sqrt(M_HALO * ksi)) - M_PI);
-    double f   = (1 - 2 * M / r) * exp(Y);
-    double m   = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
+    double Y = sqrt(M_HALO / ksi) * (2 * atan((r + A_0 + M_HALO) / sqrt(M_HALO * ksi)) - M_PI);
+    double f = (1 - 2 * M / r) * exp(Y);
+    double m = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
 
     this->s_Metric.Metric[0][0] = -f;
     this->s_Metric.Metric[1][1] = 1. / (1 - 2 * m / r);
@@ -101,18 +101,11 @@ int Black_Hole_w_Dark_Matter_Halo_class::update_metric(double State_Vector[]) {
     this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
     this->s_Metric.Shift_function = 0.;
 
-    return OK;
-}
-
-Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_metric(double State_Vector[]) {
-
-    this->update_metric(State_Vector);
-
     return this->s_Metric;
 
 }
 
-int Black_Hole_w_Dark_Matter_Halo_class::update_dr_metric(double State_Vector[]) {
+Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(double State_Vector[]) {
 
     double M = MASS;
     double& r = State_Vector[e_r];
@@ -121,15 +114,15 @@ int Black_Hole_w_Dark_Matter_Halo_class::update_dr_metric(double State_Vector[])
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    double ksi  = 2 * A_0 - M_HALO + 4 * M;
-    double Y    = sqrt(M_HALO / ksi) * (2 * atan((r + A_0 + M_HALO) / sqrt(M_HALO * ksi)) - M_PI);
+    double ksi = 2 * A_0 - M_HALO + 4 * M;
+    double Y = sqrt(M_HALO / ksi) * (2 * atan((r + A_0 + M_HALO) / sqrt(M_HALO * ksi)) - M_PI);
     double dr_Y = 2 / ksi / (1 + (r + A_0 + M_HALO) * (r + A_0 + M_HALO) / M / ksi);
 
     double exp_y = exp(Y);
 
-    double f    = (1 - 2 * M / r) * exp_y;
+    double f = (1 - 2 * M / r) * exp_y;
     double dr_f = 2 * M / r2 * exp_y + f * dr_Y;
-    double m    = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
+    double m = M + M_HALO * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
     double dr_m = 2 * (1 - 2 * M / r) * ((1 - 2 * M / r) * (1 - r / (r + A_0)) * r + 2 * M) * M_HALO / (r + A_0) / (r + A_0);
 
     this->s_Metric.Metric[0][0] = -dr_f;
@@ -142,18 +135,11 @@ int Black_Hole_w_Dark_Matter_Halo_class::update_dr_metric(double State_Vector[])
     this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
     this->s_Metric.Shift_function = 0.;
 
-    return OK;
-}
-
-Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(double State_Vector[]) {
-
-    this->update_dr_metric(State_Vector);
-
     return this->s_dr_Metric;
 
 }
 
-int Black_Hole_w_Dark_Matter_Halo_class::update_dtheta_metric(double State_Vector[]) {
+Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dtheta_metric(double State_Vector[]) {
 
     double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
@@ -170,14 +156,6 @@ int Black_Hole_w_Dark_Matter_Halo_class::update_dtheta_metric(double State_Vecto
 
     this->s_dtheta_Metric.Lapse_function = 0.0;
     this->s_dtheta_Metric.Shift_function = 0.0;
-
-    return OK;
-
-}
-
-Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dtheta_metric(double State_Vector[]) {
-
-    this->update_dtheta_metric(State_Vector);
 
     return this->s_dtheta_Metric;
 

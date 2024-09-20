@@ -28,8 +28,8 @@
 
     };
 
-    void RK45(double State_Vector[], Step_controller* controller, Initial_conditions_type* s_Initial_Conditions);
+    void RK45(double State_Vector[], Step_controller* controller, Spacetime_Base_Class* p_Spacetime);
 
-    Results_type* Propagate_ray(Initial_conditions_type* p_Initial_Conditions);
+    Results_type* Propagate_ray(Simulation_Context_type* s_Sim_Context);
 
 #endif 

@@ -6,8 +6,6 @@
 
 #include <cmath>
 
-extern Observer_class Observer;
-
 /* Metric Related Functions */
 
 void invert_metric(double inv_metric[4][4], double metric[4][4]) {
@@ -139,7 +137,7 @@ void get_impact_parameters(Initial_conditions_type* p_Initial_Conditions, double
 
 }
 
-double Redshift(double State_Vector[], double U_source[]) {
+double Redshift(double State_Vector[], double U_source[], Observer_class* Observer) {
 
     /******************************************************************************
     |																			  |
@@ -155,9 +153,9 @@ double Redshift(double State_Vector[], double U_source[]) {
     |                                                                             |
     ******************************************************************************/
 
-    double U_obs[4];
+    double U_obs[4]{};
 
-    Observer.get_obs_velocity(U_obs);
+    Observer->get_obs_velocity(U_obs);
 
     double redshift = (U_obs[0] * (-1) + U_obs[3] * State_Vector[e_p_phi]) / (U_source[0] * (-1) +
                                                                               U_source[1] * State_Vector[e_p_r] +

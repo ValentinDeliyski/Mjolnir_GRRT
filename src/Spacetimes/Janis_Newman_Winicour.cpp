@@ -59,9 +59,10 @@ double* JNW_class::get_Photon_Sphere() {
 
 };
 
-int JNW_class::update_metric(double State_Vector[]) {
 
-    double& r     = State_Vector[e_r];
+Metric_type JNW_class::get_metric(double State_Vector[]) {
+
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -79,23 +80,15 @@ int JNW_class::update_metric(double State_Vector[]) {
     this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
     this->s_Metric.Shift_function = 0.;
 
-    return OK;
-
-}
-
-Metric_type JNW_class::get_metric(double State_Vector[]) {
-
-    this->update_metric(State_Vector);
-
     return this->s_Metric;
 
 }
 
-int JNW_class::update_dr_metric(double State_Vector[]) {
+Metric_type JNW_class::get_dr_metric(double State_Vector[]) {
 
     Metric_type Metric = this->get_metric(State_Vector);
 
-    double& r     = State_Vector[e_r];
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -113,19 +106,11 @@ int JNW_class::update_dr_metric(double State_Vector[]) {
     this->s_dr_Metric.Lapse_function = -this->s_dr_Metric.Metric[0][0];
     this->s_dr_Metric.Shift_function = 0.0;
 
-    return OK;
-
-};
-
-Metric_type JNW_class::get_dr_metric(double State_Vector[]) {
-
-    this->update_dr_metric(State_Vector);
-
     return this->s_dr_Metric;
 
 }
 
-int JNW_class::update_dtheta_metric(double State_Vector[]) {
+Metric_type JNW_class::get_dtheta_metric(double State_Vector[]) {
 
     double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
@@ -143,23 +128,15 @@ int JNW_class::update_dtheta_metric(double State_Vector[]) {
     this->s_dtheta_Metric.Lapse_function = 0.0;
     this->s_dtheta_Metric.Shift_function = 0.0;
 
-    return OK;
-
-}
-
-Metric_type JNW_class::get_dtheta_metric(double State_Vector[]) {
-
-    this->update_dtheta_metric(State_Vector);
-
     return this->s_dtheta_Metric;
 }
 
-int JNW_class::update_d2r_metric(double State_Vector[]) {
+Metric_type JNW_class::get_d2r_metric(double State_Vector[]) {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
 
-    double& r     = State_Vector[e_r];
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -169,28 +146,20 @@ int JNW_class::update_d2r_metric(double State_Vector[]) {
     double r_singularity = 2 / this->Gamma;
 
     this->s_d2r_Metric.Metric[0][0] = -this->Gamma * (this->Gamma - 1) * pow(1 - r_singularity / r, this->Gamma - 2) * r_singularity * r_singularity / r2 / r2
-                                    + 2 * this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2 / r;
+        + 2 * this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2 / r;
 
     this->s_d2r_Metric.Metric[0][3] = 0.0;
 
     this->s_d2r_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_d2r_Metric.Metric[0][0]
-                     - 2.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0] * this->s_dr_Metric.Metric[0][0];
+        - 2.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0] * this->s_dr_Metric.Metric[0][0];
 
     this->s_d2r_Metric.Metric[2][2] = 2 * pow(1 - r_singularity / r, 1 - this->Gamma) + 2 * (1 - this->Gamma) * pow(1 - r_singularity / r, -this->Gamma) * r_singularity / r
-                     - (1 - this->Gamma) * this->Gamma * pow(1 - r_singularity / r, -this->Gamma - 1) * r_singularity * r_singularity / r2;
+        - (1 - this->Gamma) * this->Gamma * pow(1 - r_singularity / r, -this->Gamma - 1) * r_singularity * r_singularity / r2;
 
     this->s_d2r_Metric.Metric[3][3] = this->s_d2r_Metric.Metric[2][2] * sin_theta * sin_theta;
 
     this->s_d2r_Metric.Lapse_function = -this->s_d2r_Metric.Metric[0][0];
     this->s_d2r_Metric.Shift_function = 0.0;
-
-    return OK;
-
-}
-
-Metric_type JNW_class::get_d2r_metric(double State_Vector[]) {
-
-    this->update_d2r_metric(State_Vector);
 
     return this->s_d2r_Metric;
 

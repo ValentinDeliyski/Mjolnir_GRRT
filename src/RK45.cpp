@@ -11,7 +11,7 @@
 #include <vector>
 #include "Lensing.h"
 
-void RK45(double State_Vector[], Step_controller* controller, Initial_conditions_type* s_Initial_Conditions) {
+void RK45(double State_Vector[], Step_controller* controller, Spacetime_Base_Class* p_Spacetime) {
 
     /*************************************************************************************************
     |                                                                                                |
@@ -47,10 +47,9 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
                 inter_State_vector[vector_indexer + iteration * e_State_Number] += -controller->step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
 
             }
-
         }
 
-        s_Initial_Conditions->Spacetimes[e_metric]->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
+        p_Spacetime->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
 
         iteration += 1;
 
@@ -87,22 +86,20 @@ void RK45(double State_Vector[], Step_controller* controller, Initial_conditions
 
         }
 
-        controller->integration_complete = s_Initial_Conditions->Spacetimes[e_metric]->terminate_integration(New_State_vector_O5, Derivatives);
+        controller->integration_complete = p_Spacetime->terminate_integration(New_State_vector_O5, Derivatives);
 
         // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
         // Close enough that it requires "manual" scattering, by flipping the p_r sign.
         // Otherwise the photons never reach the turning point and the integration grinds to a halt.
 
-        if (e_metric == Naked_Singularity && s_Initial_Conditions->Spacetimes[e_metric]->get_parameters().JNW_Gamma_Parameter < 0.5) {
+        if (e_metric == Naked_Singularity && p_Spacetime->get_parameters().JNW_Gamma_Parameter < 0.5) {
 
-            if (State_Vector[e_r] - 2 / s_Initial_Conditions->Spacetimes[e_metric]->get_parameters().JNW_Gamma_Parameter < 1e-8) {
+            if (State_Vector[e_r] - 2 / p_Spacetime->get_parameters().JNW_Gamma_Parameter < 1e-8) {
 
                 State_Vector[e_p_r] *= -1;
 
             }
-
         }
-
     }
 }
 
@@ -137,7 +134,6 @@ void Step_controller::update_step(double const State_Vector[]) {
         //step = SAFETY_1 * step * pow((RK45_ACCURACY + 1e-10 * State_Vector[e_r]) / (current_err + SAFETY_2), 0.2);
 
         continue_integration = true;
-
     }
     else
     {
@@ -145,7 +141,5 @@ void Step_controller::update_step(double const State_Vector[]) {
         step = SAFETY_1 * step * pow(Error_threshold / (current_err + SAFETY_2), 0.25);
 
         continue_integration = false;
-
     }
-
 }

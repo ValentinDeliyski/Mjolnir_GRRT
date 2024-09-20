@@ -30,9 +30,9 @@ double* RBH_class::get_Photon_Sphere() {
 
 }
 
-int RBH_class::update_metric(double State_Vector[]) {
+Metric_type RBH_class::get_metric(double State_Vector[]) {
 
-    double& r     = State_Vector[e_r];
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -48,21 +48,15 @@ int RBH_class::update_metric(double State_Vector[]) {
     this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
     this->s_Metric.Shift_function = 0.0;
 
-    return OK;
-}
-
-Metric_type RBH_class::get_metric(double State_vector[]) {
-
-    this->update_metric(State_vector);
-
     return this->s_Metric;
 }
 
-int RBH_class::update_dr_metric(double State_Vector[]) {
+
+Metric_type RBH_class::get_dr_metric(double State_Vector[]) {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
 
-    double& r     = State_Vector[e_r];
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -80,18 +74,10 @@ int RBH_class::update_dr_metric(double State_Vector[]) {
     this->s_dr_Metric.Lapse_function = -this->s_dr_Metric.Metric[0][0];
     this->s_dr_Metric.Shift_function = 0.0;
 
-    return OK;
-
-}
-
-Metric_type RBH_class::get_dr_metric(double State_vector[]) {
-
-    this->update_dr_metric(State_vector);
-
     return this->s_dr_Metric;
 }
 
-int RBH_class::update_dtheta_metric(double State_Vector[]) {
+Metric_type RBH_class::get_dtheta_metric(double State_Vector[]) {
 
     double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
@@ -109,23 +95,15 @@ int RBH_class::update_dtheta_metric(double State_Vector[]) {
     this->s_dtheta_Metric.Lapse_function = 0.0;
     this->s_dtheta_Metric.Shift_function = 0.0;
 
-    return OK;
-
-}
-
-Metric_type RBH_class::get_dtheta_metric(double State_Vector[]) {
-
-    this->update_dtheta_metric(State_Vector);
-
     return this->s_dtheta_Metric;
 }
 
-int RBH_class::update_d2r_metric(double State_Vector[]) {
+Metric_type RBH_class::get_d2r_metric(double State_Vector[]) {
 
-    Metric_type s_Metric    = this->get_metric(State_Vector);
+    Metric_type s_Metric = this->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
 
-    double& r     = State_Vector[e_r];
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -138,20 +116,12 @@ int RBH_class::update_d2r_metric(double State_Vector[]) {
     this->s_d2r_Metric.Metric[0][0] = -2 * MASS / rho3 + 6 * MASS * r2 / (rho5);
     this->s_d2r_Metric.Metric[0][3] = 0.0;
     this->s_d2r_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_d2r_Metric.Metric[0][0] -
-                       2.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0] * this->s_dr_Metric.Metric[0][0];
+        2.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0] * this->s_dr_Metric.Metric[0][0];
     this->s_d2r_Metric.Metric[2][2] = 2.0;
     this->s_d2r_Metric.Metric[3][3] = 2 * sin_theta * sin_theta;
 
     this->s_d2r_Metric.Lapse_function = -this->s_d2r_Metric.Metric[0][0];
     this->s_d2r_Metric.Shift_function = 0.0;
-
-    return OK;
-
-}
-
-Metric_type RBH_class::get_d2r_metric(double State_vector[]) {
-
-    this->update_d2r_metric(State_vector);
 
     return this->s_d2r_Metric;
 }

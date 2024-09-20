@@ -31,7 +31,7 @@ double* Kerr_class::get_Photon_Sphere() {
 
 }
 
-int Kerr_class::update_metric(double State_Vector[]) {
+Metric_type Kerr_class::get_metric(double State_Vector[]) {
 
     double M = this->Mass;
     double a = this->Spin_Param;
@@ -57,23 +57,16 @@ int Kerr_class::update_metric(double State_Vector[]) {
     this->s_Metric.Lapse_function = sqrt(rho2 * delta / sigma2);
     this->s_Metric.Shift_function = 2 * a * r / sigma2;
 
-    return OK;
+    return this->s_Metric;
 
 };
 
-Metric_type Kerr_class::get_metric(double State_vector[]) {
-
-    this->update_metric(State_vector);
-
-    return this->s_Metric;
-}
-
-int Kerr_class::update_dr_metric(double State_Vector[]) {
+Metric_type Kerr_class::get_dr_metric(double State_Vector[]) {
 
     double M = this->Mass;
     double a = this->Spin_Param;
 
-    double& r     = State_Vector[e_r];
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -95,18 +88,11 @@ int Kerr_class::update_dr_metric(double State_Vector[]) {
     this->s_dr_Metric.Lapse_function = this->s_Metric.Lapse_function * (r / rho2 + (r - M) / delta - dr_sigma2 / 2 / sigma2);
     this->s_dr_Metric.Shift_function = this->s_Metric.Shift_function / r * (1 - r * dr_sigma2 / sigma2);
 
-    return OK;
-
-}
-
-Metric_type Kerr_class::get_dr_metric(double State_Vector[]) {
-
-    this->update_dr_metric(State_Vector);
 
     return this->s_dr_Metric;
 }
 
-int Kerr_class::update_dtheta_metric(double State_Vector[]) {
+Metric_type Kerr_class::get_dtheta_metric(double State_Vector[]) {
 
     double M = this->Mass;
     double a = this->Spin_Param;
@@ -125,8 +111,8 @@ int Kerr_class::update_dtheta_metric(double State_Vector[]) {
     this->s_dtheta_Metric.Metric[3][0] = this->s_dr_Metric.Metric[0][3];
     this->s_dtheta_Metric.Metric[1][1] = -2 * a * a * cos_theta * sin_theta / delta;
     this->s_dtheta_Metric.Metric[2][2] = 0.0;
-    this->s_dtheta_Metric.Metric[3][3] = 4 * M * r * a * a * sin_theta * cos_theta / rho2 * (1 + a * a * sin_theta * sin_theta / rho2) * sin_theta * sin_theta + 
-                                         2 * this->s_Metric.Metric[3][3] / sin_theta * cos_theta;
+    this->s_dtheta_Metric.Metric[3][3] = 4 * M * r * a * a * sin_theta * cos_theta / rho2 * (1 + a * a * sin_theta * sin_theta / rho2) * sin_theta * sin_theta +
+        2 * this->s_Metric.Metric[3][3] / sin_theta * cos_theta;
 
     double sigma2 = rho2 * this->s_Metric.Metric[3][3] / sin_theta / sin_theta;
     double dtheta_sigma2 = -2 * a * a * delta * sin_theta * cos_theta;
@@ -134,23 +120,15 @@ int Kerr_class::update_dtheta_metric(double State_Vector[]) {
     this->s_dtheta_Metric.Lapse_function = this->s_Metric.Lapse_function * a * a * sin_theta * cos_theta * (delta / sigma2 - 1 / rho2);
     this->s_dtheta_Metric.Shift_function = -this->s_Metric.Shift_function * dtheta_sigma2 / sigma2;
 
-    return OK;
-
-}
-
-Metric_type Kerr_class::get_dtheta_metric(double State_Vector[]) {
-
-    this->update_dtheta_metric(State_Vector);
-
     return this->s_dtheta_Metric;
 }
 
-int Kerr_class::update_d2r_metric(double State_Vector[]) {
+Metric_type Kerr_class::get_d2r_metric(double State_Vector[]) {
 
     double M = this->Mass;
     double a = this->Spin_Param;
 
-    double& r     = State_Vector[e_r];
+    double& r = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -166,29 +144,20 @@ int Kerr_class::update_d2r_metric(double State_Vector[]) {
     this->s_d2r_Metric.Metric[2][2] = 2.0;
     this->s_d2r_Metric.Metric[3][3] = 2 * (1 + 2 * M * a * a * r / rho2 / rho2 * (4 * r2 / rho2 - 3) * sin_theta * sin_theta) * sin_theta * sin_theta;
 
-    double sigma2     = rho2 * this->s_Metric.Metric[3][3] / sin_theta / sin_theta;
-    double dr_sigma2  = (2 * r * this->s_Metric.Metric[3][3] + rho2 * this->s_dr_Metric.Metric[3][3]) / sin_theta / sin_theta;
+    double sigma2 = rho2 * this->s_Metric.Metric[3][3] / sin_theta / sin_theta;
+    double dr_sigma2 = (2 * r * this->s_Metric.Metric[3][3] + rho2 * this->s_dr_Metric.Metric[3][3]) / sin_theta / sin_theta;
     double d2r_sigma2 = (2 * this->s_Metric.Metric[3][3] + 4 * r * this->s_dr_Metric.Metric[3][3] + rho2 * this->s_d2r_Metric.Metric[3][3]) / sin_theta / sin_theta;
 
-    double& N    = this->s_Metric.Lapse_function;
+    double& N = this->s_Metric.Lapse_function;
     double& dr_N = this->s_dr_Metric.Lapse_function;
     this->s_d2r_Metric.Lapse_function = dr_N * dr_N / N + N / rho2 * (1 - 2 * r2 / rho2 + rho2 / delta * (1 - (r - M) * (r - M) / delta) - rho2 / sigma2 / 2 * (d2r_sigma2 - dr_sigma2 * dr_sigma2 / sigma2));
 
-    double& omega    = this->s_Metric.Shift_function;
+    double& omega = this->s_Metric.Shift_function;
     double& dr_omega = this->s_dr_Metric.Shift_function;
     this->s_d2r_Metric.Shift_function = -omega / r2 * (1 - r * dr_omega / omega + r * dr_sigma2 / sigma2) * (1 - r * dr_sigma2 / sigma2);
 
-    return OK;
-
-}
-
-Metric_type Kerr_class::get_d2r_metric(double State_Vector[]) {
-
-    this->update_d2r_metric(State_Vector);
-
     return this->s_d2r_Metric;
 }
-
 
 int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 

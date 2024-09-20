@@ -6,17 +6,16 @@
 #include "Spacetimes.h"
 #include "Constants.h"
 
-extern Spacetime_Base_Class* Spacetimes[];
+Observer_class::Observer_class(Initial_conditions_type* p_Init_Conditions) {
 
-Observer_class::Observer_class(double r, double theta, double phi) {
+    r_obs     = p_Init_Conditions->init_Pos[e_r];
+    theta_obs = p_Init_Conditions->init_Pos[e_theta];
+    phi_obs   = p_Init_Conditions->init_Pos[e_phi];
 
-    r_obs     = r;
-    theta_obs = theta;
-    phi_obs   = phi;
-
-    double Obs_State_Vector[3] = {r, theta, phi};
-
-    Metric_type obs_metric = Spacetimes[e_metric]->get_metric(Obs_State_Vector);
+    Metric_type obs_metric{};
+    memcpy(obs_metric.Metric, p_Init_Conditions->init_metric, sizeof(obs_metric.Metric));
+    obs_metric.Lapse_function = p_Init_Conditions->init_metric_Redshift_func;
+    obs_metric.Shift_function = p_Init_Conditions->init_metric_Shitft_func;
 
     /*
 

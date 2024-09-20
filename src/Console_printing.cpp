@@ -1,8 +1,6 @@
 #include "Console_printing.h"
 #include "Spacetimes.h"
 
-extern Spacetime_Base_Class* Spacetimes[];
-
 void Console_Printer_class::print_ASCII_art() {
 
         std::cout <<
@@ -93,21 +91,7 @@ void Console_Printer_class::print_sim_parameters() {
             << "\n"
             << "R_Cutoff [M]: ";
 
-        if (R_Cutoff < 0) {
-
-            std::cout << Spacetimes[e_metric]->get_ISCO()[Outer] << "\n";
-
-        }
-        else if (R_Cutoff == NULL) {
-
-            std::cout << Spacetimes[e_metric]->get_ISCO()[Inner] << "\n";
-
-        }
-        else {
-
-            std::cout << R_Cutoff << "\n";
-
-        }
+        std::cout << R_Cutoff << "\n";
 
         std::cout << "Cutoff Scale [M]: " << DISK_CUTOFF_SCALE << "\n";
 

@@ -8,13 +8,11 @@
 #include "Spacetimes.h"
 #include <iostream>
 
-extern Initial_conditions_type s_Initial_Conditions;
+File_manager_class::File_manager_class(Initial_conditions_type *p_Initial_Conditions, std::string input_file_path, bool truncate) {
 
-File_manager_class::File_manager_class(std::string input_file_path, bool truncate) {
-
-    Input_file_path_sim_mode_2 = input_file_path;
-    Truncate_files = truncate;
-
+    this->p_Initial_Conditions       = p_Initial_Conditions;
+    this->Input_file_path_sim_mode_2 = input_file_path;
+    this->Truncate_files             = truncate;
 }
 
 void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) {
@@ -35,20 +33,15 @@ void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[
             p_theta_data[*Data_number] = P_input;
             
             *Data_number += 1;
-
         }
 
         if (geodesic_data.eof()) {
 
             break;
-
         }
-
-
     }
 
     geodesic_data.close();
-
 }
 
 void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
@@ -58,12 +51,12 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
         Image_Output_files[Image_order] << "============================================================ SIMULATION METADATA ============================================================"
                                         << "\n"
                                         << "Spacetime: "
-                                        << Image_File_Names[e_metric]
+                                        << Base_File_Names[e_metric]
                                         << "\n"
                                         << "Image Order [-]: "
                                         << Image_order
                                         << "\n"
-                                        << "Observer Radial Position [M]: " << r_obs << '\n'
+                                        << "Observer Radial Position [M]: " << p_Initial_Conditions->init_Pos[e_r] << '\n'
                                         << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI << '\n'
                                         << "Observation Frequency [Hz]: " << OBS_FREQUENCY_CGS << '\n'
                                         << "Active Simulation Mode: " << Active_Sim_Mode
@@ -76,7 +69,6 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << '\n'
                                             << "Number Of Param Values: " << PARAM_SWEEP_NUMBER
                                             << '\n';
-
         }
 
 
@@ -98,22 +90,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << "\n"
                                             << "R_Cutoff [M]: ";
 
-            if (R_Cutoff < 0) {
-
-                Image_Output_files[Image_order] << s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Outer] << "\n";
-
-            }
-            else if (R_Cutoff == NULL) {
-
-                Image_Output_files[Image_order] << s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Inner] << "\n";
-
-            }
-            else {
-
-                Image_Output_files[Image_order] << R_Cutoff << "\n";
-
-            }
-                     
+            Image_Output_files[Image_order] << R_Cutoff << "\n";     
             Image_Output_files[Image_order] << "Cutoff Scale [M]: " << DISK_CUTOFF_SCALE << "\n";
 
             break;
@@ -130,7 +107,6 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << "\n";
 
             break;
-
         }
 
         switch (e_emission) {
@@ -176,7 +152,6 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << "\n";
 
             break;
-
         }
 
         Image_Output_files[Image_order] << "------------------------------------------------------------- Hotpost Metadata -------------------------------------------------------------"
@@ -195,7 +170,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
         Image_Output_files[Image_order] << "------------------------------------------------------- Novikov-Thorne Disk Metadata -------------------------------------------------------"
                                         << "\n"
                                         << "Inner Disk Radius [M]: "
-                                        << r_in * (r_in != NULL) + s_Initial_Conditions.Spacetimes[e_metric]->get_ISCO()[Outer] * (r_in == NULL)
+                                        << r_in
                                         << "\n"
                                         << "Outer Disk Radius [M]: "
                                         << r_out
@@ -216,7 +191,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << NUM_RAYS_Y
                                             << '\n';
 
-            Metric_Parameters_type Parameters = s_Initial_Conditions.Spacetimes[e_metric]->get_parameters();
+            Metric_Parameters_type &Parameters = this->p_Initial_Conditions->Metric_Parameters;
 
             switch (e_metric) {
 
@@ -255,9 +230,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                 Image_Output_files[Image_order] << "Mass_Halo: " << Parameters.Halo_Mass << ", Halo Compactness: " << Parameters.Compactness
                     << '\n';
                 break;
-
             }
-
         }
 
             Image_Output_files[Image_order] << "Image X Coord [M],"
@@ -324,32 +297,32 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                                     << " " 
                                                     << "Halo Compactness";
                     break;
-
                 }
-
             }
 
             Image_Output_files[Image_order] << '\n';
-
     }
-
 }
-
 
 void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
 
     const int File_number = SPACETIME_NUMBER;
 
-    std::filesystem::path dir(std::filesystem::current_path() / "Sim_Results"); // Main results directory
-    std::filesystem::create_directories(dir / "Hotspot_animation_frames");      // Only relevant for simulation mode 3
+    // Create the path to the main results directory
+    std::filesystem::path dir(std::filesystem::current_path() / "Sim_Results"); 
 
+    // Init the std::path variables where we will store the names of the output files
     std::filesystem::path Image_file_names[File_number];
     std::filesystem::path Momenta_file_names[File_number];
 
-    std::filesystem::path Image_full_path[ORDER_NUM];
-    std::filesystem::path Momenta_full_path[ORDER_NUM];
+    // Init the std::path variables of the full file paths
+    std::filesystem::path Image_full_path[ORDER_NUM]{};
+    std::filesystem::path Momenta_full_path[ORDER_NUM]{};
+
+    // Specify the output file extention
     std::filesystem::path file_extention(".txt");
 
+    // Set weather we truncate the file upon opening or not
     auto open_type = std::ios::app;
 
     if (Truncate_files) {
@@ -358,29 +331,16 @@ void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
 
     }
 
+    // Loop over all the files and populate the (so far empty) 
     for (int File_Index = 0; File_Index <= ORDER_NUM - 1; File_Index += 1) {
 
-        if (Active_Sim_Mode == 3) {
+        Image_file_names[File_Index] = Base_File_Names[e_metric]
+                                     + "_n"
+                                     + std::to_string(File_Index);
 
-            Image_file_names[File_Index] = Image_File_Names[e_metric]
-                                         + "_frame_"
-                                         + std::to_string(int(s_Initial_Conditions.OTT_model->get_disk_params().Hotspot_position[e_phi] * HOTSPOT_ANIMATION_NUMBER / (2 * M_PI)))
-                                         + "_n"
-                                         + std::to_string(File_Index);
-
-            Image_file_names[File_Index].replace_extension(file_extention);
-            Image_full_path[File_Index] = dir / "Hotspot_animation_frames" / Image_file_names[File_Index];
-
-        }
-        else {
-
-            Image_file_names[File_Index] = Image_File_Names[e_metric]
-                + "_n"
-                + std::to_string(File_Index);
-
-            Image_file_names[File_Index].replace_extension(file_extention);
-            Image_full_path[File_Index] = dir / Image_file_names[File_Index];
-        }
+        Image_file_names[File_Index].replace_extension(file_extention);
+        Image_full_path[File_Index] = dir / Image_file_names[File_Index];
+       
 
         Image_Output_files[File_Index].open(Image_full_path[File_Index], open_type);
 
@@ -388,6 +348,7 @@ void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
 
     if (Truncate_files) {
 
+        // If we are truncating the file, we should write the metadata to it
         File_manager_class::write_simulation_metadata(Sim_mode_2_number);
 
     }
@@ -411,7 +372,6 @@ void File_manager_class::open_log_output_file() {
     Log_Output_File.open(Log_File_full_path, open_type);
 
     File_manager_class::write_simulation_metadata(int(0));
-
 }
 
 void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
@@ -450,46 +410,38 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
                 switch (e_metric) {
 
                 case Kerr:
-
                     Image_Output_files[Image_order] << s_Ray_results->Parameters.Spin;
                     break;
 
                 case Wormhole:
-
                     Image_Output_files[Image_order] << s_Ray_results->Parameters.Spin
                                                     << " " 
                                                     << s_Ray_results->Parameters.Redshift_Parameter;
                     break;
 
                 case Reg_Black_Hole:
-
                     Image_Output_files[Image_order] << s_Ray_results->Parameters.RBH_Parameter;
          
                     break;
 
                 case Naked_Singularity:
-
                     Image_Output_files[Image_order] << s_Ray_results->Parameters.JNW_Gamma_Parameter;
                     break;
 
                 case Gauss_Bonnet:
-
                     Image_Output_files[Image_order] << s_Ray_results->Parameters.GB_Gamma_Parameter;
                     break;
 
                 case BH_w_Dark_Matter:
-
                     Image_Output_files[Image_order] << s_Ray_results->Parameters.Halo_Mass << " " << s_Ray_results->Parameters.Compactness;
                     break;
-
                 }
-
         }
 
         Image_Output_files[Image_order] << '\n';
-    }
 
-};
+    }
+}
 
 void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
@@ -511,9 +463,7 @@ void File_manager_class::close_image_output_files() {
     for (int File_Index = 0; File_Index <= ORDER_NUM - 1; File_Index++) {
 
         Image_Output_files[File_Index].close();
-
     }
-
 }
 
 void File_manager_class::close_log_output_file() {

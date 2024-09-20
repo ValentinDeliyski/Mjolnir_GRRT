@@ -110,10 +110,6 @@
 
     };
 
-    class Spacetime_Base_Class;
-    class Optically_Thin_Toroidal_Model;
-    class Novikov_Thorne_Model;
-
     struct Initial_conditions_type {
 
         double init_metric[4][4];
@@ -123,9 +119,30 @@
         double init_Pos[3];
         double init_Three_Momentum[3];
 
-        Spacetime_Base_Class* Spacetimes[SPACETIME_NUMBER];
-        Optically_Thin_Toroidal_Model* OTT_model;
-        Novikov_Thorne_Model* NT_model;
+        Disk_model_parameters Disk_params;
+        Emission_law_parameters Emission_params;
+        Metric_Parameters_type Metric_Parameters;
+
+    };
+
+    class Spacetime_Base_Class;
+    class Generic_Optically_Thin_Model;
+    class Novikov_Thorne_Model;
+    class Observer_class;
+    class File_manager_class;
+
+    struct Simulation_Context_type {
+
+        Initial_conditions_type* p_Init_Conditions;
+
+        Spacetime_enums       e_Spacetime;
+        Spacetime_Base_Class* p_Spacetime;
+        Observer_class*       p_Observer;
+
+        Generic_Optically_Thin_Model* p_GOT_Model;
+        Novikov_Thorne_Model* p_NT_model;
+
+        File_manager_class* File_manager;
 
     };
 

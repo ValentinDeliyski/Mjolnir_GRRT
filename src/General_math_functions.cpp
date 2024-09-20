@@ -121,7 +121,11 @@ double my_max(double const vector[], int const element_number) {
 	return max;
 }
 
-bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], double Crossing_coords[], double crossing_momenta[], Novikov_Thorne_Model* NT_Model) {
+bool interpolate_crossing(double State_Vector[], 
+						  double Old_State_Vector[], 
+						  double Crossing_coords[], 
+						  double crossing_momenta[], 
+						  Novikov_Thorne_Model* const NT_Model) {
 
 	/***********************************************************************************************
 	|                                                                                              |
@@ -184,8 +188,8 @@ bool interpolate_crossing(double State_Vector[], double Old_State_Vector[], doub
 		crossing_momenta[index] = momentum_param * State_Vector[e_p_r - index] + (1 - momentum_param) * Old_State_Vector[e_p_r - index];
 	}
 
-	double r_out = NT_Model->get_r_out();
-	double r_in  = NT_Model->get_r_in();
+	double r_out = NT_Model->get_r_in();
+	double r_in  = NT_Model->get_r_out();
 
 	if (e_metric == Wormhole) {
 

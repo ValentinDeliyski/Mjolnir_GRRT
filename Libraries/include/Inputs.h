@@ -16,14 +16,14 @@
     const Spacetime_enums e_metric = Wormhole; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.001;
+    Real SPIN = 0.9;
 
     // Wormhole spacetime parameters //
 
     Real WH_REDSHIFT = 2.0f;
     Real WH_R_THROAT = MASS;
 
-    const bool STOP_AT_THROAT = false;
+    const bool STOP_AT_THROAT = true;
  
     // Regular Black Hole spacetime parameters //
 
@@ -46,22 +46,22 @@
 
     // ======================== Observer Inputs ======================== //
 
-    Real r_obs	   = 1e3;			    // Radial potision of the observer [ M ]
-    Real theta_obs = 20.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
-    Real phi_obs   = 0.0f;			    // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
-    Real obs_cam_rotation_angle = 0.0f; // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
+    Real r_obs	   = 1e4;			     // Radial potision of the observer [ M ]
+    Real theta_obs = 65.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real phi_obs   = 0.0f;			     // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
+    Real obs_cam_rotation_angle = 0;  // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
-    const Emission_model_enums     e_emission   = Synchotron_phenomenological; // Emission model to be used
-    const Disk_density_model_enums e_disk_model = Exponential_law;
+    const Emission_model_enums     e_emission   = Synchotron_exact; // Emission model to be used
+    const Disk_density_model_enums e_disk_model = Power_law;
 
     // Novikov - Thorne accretion disk parameters
 
-    const bool Evaluate_NT_disk = true;
+    const bool Evaluate_NT_disk = false;
 
-    Real r_in  = NULL;	// Inner accretion idsk radius [ M ]
-    Real r_out = 25.0f; // Outer accretion disk radius [ M ]
+    Real r_in  = 1;	// Inner accretion idsk radius [ M ]
+    Real r_out = 500; // Outer accretion disk radius [ M ]
 
     // Exponential disk profile parameters //
 
@@ -72,8 +72,8 @@
 
     Real DISK_OPENING_ANGLE = 1.0f / 10;  // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
     Real DISK_CUTOFF_SCALE  = 0.4f;       // disk density ~ exp( - (r - R_Cutoff)^2 / DISK_CUTOFF_SCALE^2) if r < R_Cutoff
-    Real R_Cutoff           = 4.5f;       // = r_isco[Inner] if = NULL or = r_isco[Outer] if < 0
-    Real R_0                = 4.5f;
+    Real R_Cutoff           = 5.0f;
+    Real R_0                = 5.0f;
 
     // Phenomenological Synchotron emission parameters //
     
@@ -89,10 +89,10 @@
     Real MAG_FIELD_GEOMETRY[3] = { 0.87, 0.0, 0.5 };
     
     Real N_ELECTRON_EXACT_CGS = 5e+05;
-    Real T_ELECTRON_EXACT_CGS = 5.8e+10;
+    Real T_ELECTRON_EXACT_CGS = 5.1e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
-    const bool AVERAGE_EMISSION_PITCH_ANGLE = false;
+    const bool AVERAGE_EMISSION_PITCH_ANGLE = true;
     const bool INCLUDE_POLARIZATION = false;
 
     // Hotspot paramteres //
@@ -109,11 +109,11 @@
 
     // Simulation Mode 1 and 3 viewing window //
 
-    Real V_angle_min = -atan(30 / r_obs);
-    Real V_angle_max =  atan(30 / r_obs);
+    Real V_angle_min = -atan(15 / r_obs);
+    Real V_angle_max =  atan(15 / r_obs);
 
-    Real H_angle_min = -atan(30 / r_obs);
-    Real H_angle_max =  atan(30 / r_obs);
+    Real H_angle_min = -atan(15 / r_obs);
+    Real H_angle_max =  atan(15 / r_obs);
 
     const int RESOLUTION = 2048;                  // Linear size of the square pixel grid that makes up the image
 
@@ -126,10 +126,10 @@
 
     // Sim Mode 2 Configuration //
 
-    const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\Schwarzschild_r6_70deg_500_photons_direct.csv";
-    const int PARAM_SWEEP_NUMBER = 200;
-    Real INIT_PARAM_VALUE        = 0.53;
-    Real FINAL_PARAM_VALUE       = 1.0;
+    const std::string input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\Schwarzschild_r6_20deg_500_photons_indirect.csv";
+    const int PARAM_SWEEP_NUMBER = 1;
+    Real INIT_PARAM_VALUE        = 0.001;
+    Real FINAL_PARAM_VALUE       = 1;
 
     const Metric_Parameter_Selector PARAM_TYPE = WH_Redshift;
 
