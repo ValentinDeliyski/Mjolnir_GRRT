@@ -39,6 +39,7 @@
 #include "Sim_Modes.h"
 #include "Console_printing.h"
 
+
 void static Allocate_Spacetime_Class(Spacetime_enums e_metric, Spacetime_Base_Class** p_Spacetime) {
 
     // These do not ever get "delete" called on them, because they need to exist for the entire duration of the program
@@ -108,7 +109,7 @@ void static Allocate_GOT_Model_class_instance(Simulation_Context_type* s_Sim_Con
 }
 
 int main() {
-
+    
     Console_Printer_class Console_Printer;
     Console_Printer.print_ASCII_art();
     Console_Printer.print_sim_parameters();

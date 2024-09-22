@@ -18,8 +18,10 @@
 
     enum Emission_model_enums {
 
-        Synchotron_exact            = 0,
-        Synchotron_phenomenological = 1
+        Thermal_dist_synchotron     = 0,
+        Power_dist_synchotron       = 1,
+        Kappa_dist_synchotron       = 2,
+        Phenomenological_synchotron = 3,
 
     };
 
@@ -112,7 +114,7 @@
 
     };
 
-    enum Sync_emission_fit_functions {
+    enum Thermal_Syncotron_fit_selector {
 
         Leung_2011  = 0,
         Dexter_2016 = 1

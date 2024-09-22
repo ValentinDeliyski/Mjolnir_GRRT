@@ -76,8 +76,8 @@
 
         double Emission_scale;
         double Absorbtion_coeff;    
-        double Emission_power_law;  // emission   ~ pow( redshity, EMISSION_POWER_LAW )
-        double Source_f_power_law;  // absorbtion ~ pow( redshity, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
+        double Emission_power_law;  // emission   ~ pow( redshift, EMISSION_POWER_LAW )
+        double Source_f_power_law;  // absorbtion ~ pow( redshift, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
         
     };
 
@@ -85,20 +85,31 @@
 
         double sin_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
         double cos_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
+
+        // Used in the thermal synchotron emission functions
+
         double one_over_sqrt_sin[NUM_SAMPLES_TO_AVG];
         double one_over_cbrt_sin[NUM_SAMPLES_TO_AVG];
+
+        // Used in the thermal synchotron Faradey functions
+
         double one_over_sin_to_1_point_035[NUM_SAMPLES_TO_AVG];
         double one_over_sin_to_1_point_2_over_2[NUM_SAMPLES_TO_AVG];
     };
 
-    struct Emission_functions_arguments {
+    struct Thermal_emission_f_arguments {
 
-        double X_emission;
-        double X_1_2_emission;
-        double X_1_3_emission;
-        double X_faradey;
-        double X_to_1_point_035_faradey;
-        double X_to_1_point_2_faradey;
+        double X;
+        double sqrt_X;
+        double cbrt_X;
+
+    };
+
+    struct Thermal_faradey_f_arguments {
+
+        double X;
+        double X_to_1_point_035;
+        double X_to_1_point_2;
 
     };
 

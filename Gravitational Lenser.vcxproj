@@ -20,6 +20,276 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\Console_printing.h" />
+    <ClInclude Include="Libraries\include\glad\glad.h" />
+    <ClInclude Include="Libraries\include\GLFW\glfw3.h" />
+    <ClInclude Include="Libraries\include\GLFW\glfw3native.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_blas.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_blas_types.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_block_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_bspline.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_bst.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_bst_avl.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_bst_rb.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_bst_types.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_cblas.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_cdf.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_chebyshev.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_check_range.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_combination.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_complex.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_complex_math.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_const.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_const_cgs.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_const_cgsm.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_const_mks.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_const_mksa.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_const_num.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_deriv.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_dft_complex.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_dft_complex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_dht.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_diff.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_eigen.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_errno.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_fft.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_fft_complex.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_fft_complex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_fft_halfcomplex.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_fft_halfcomplex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_fft_real.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_fft_real_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_filter.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_fit.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_heapsort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_histogram.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_histogram2d.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_ieee_utils.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_inline.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_integration.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_interp.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_interp2d.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_linalg.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_machine.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_math.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_complex_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_complex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_complex_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_message.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_min.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_minmax.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_mode.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_monte.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_monte_miser.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_monte_plain.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_monte_vegas.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_movstat.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_multifit.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_multifit_nlin.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_multifit_nlinear.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_multilarge.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_multilarge_nlinear.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_multimin.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_multiroots.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_multiset.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_nan.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_ntuple.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_odeiv.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_odeiv2.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permutation.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_complex_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_complex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_complex_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_complex_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_complex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_complex_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_matrix_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_complex_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_complex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_complex_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_permute_vector_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_poly.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_pow_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_precision.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_qrng.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_randist.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_rng.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_roots.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_rstat.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_airy.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_alf.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_bessel.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_clausen.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_coulomb.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_coupling.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_dawson.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_debye.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_dilog.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_elementary.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_ellint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_elljac.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_erf.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_exp.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_expint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_fermi_dirac.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_gamma.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_gegenbauer.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_hermite.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_hyperg.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_laguerre.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_lambert.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_legendre.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_log.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_mathieu.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_pow_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_psi.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_result.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_sincos_pi.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_synchrotron.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_transport.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_trig.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sf_zeta.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_siman.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sort_vector_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spblas.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_specfunc.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_splinalg.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spline.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spline2d.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_complex_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_complex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_complex_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_spmatrix_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_statistics_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sum.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_sys.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_test.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_types.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_char.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_complex.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_complex_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_complex_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_complex_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_float.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_int.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_long.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_long_double.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_short.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_uchar.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_uint.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_ulong.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_vector_ushort.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_version.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_wavelet.h" />
+    <ClInclude Include="Libraries\include\gsl\gsl_wavelet2d.h" />
+    <ClInclude Include="Libraries\include\KHR\khrplatform.h" />
     <ClInclude Include="Libraries\include\Radiative_Transfer.h" />
     <ClInclude Include="Libraries\include\Spacetimes.h" />
     <ClInclude Include="Libraries\include\Structs.h" />
@@ -33,6 +303,7 @@
     <ClInclude Include="Libraries\include\Lensing.h" />
     <ClInclude Include="Libraries\include\Rendering_Engine.h" />
     <ClInclude Include="Libraries\include\Sim_Modes.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Console_printing.cpp" />
@@ -148,7 +419,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -161,7 +432,6 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -178,14 +448,14 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;libgsl.a;libmingwex.a;libgcc.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -198,7 +468,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;libgsl.a;libmingwex.a;libgcc.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

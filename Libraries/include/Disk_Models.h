@@ -51,64 +51,97 @@
             double Disk_density_profile{};
             double Hotspot_density_profile{};
 
-            void get_synchotron_emission_fit_function(Sync_emission_fit_functions e_fit_functions,
-                                                         double Emission_functions[4],
-                                                         double X,
-                                                         double X_1_2,
-                                                         double X_1_3);
 
-            void get_faradey_fit_functions(double X, 
-                                           double X_1_2, 
-                                           double X_frac, 
-                                           double faradey_fucntions[STOKES_PARAM_NUM]);
+            // ====================== Thermally Distributed Synchotron Fit Functions ====================== //
 
-            void get_transfer_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
-                                            double Faradey_functions[STOKES_PARAM_NUM],
-                                            Emission_functions_arguments* Arguments);
+            void get_thermal_synchotron_emission_fit_functions(Thermal_Syncotron_fit_selector e_fit_functions,
+                                                              double Emission_functions[4],
+                                                              double X,
+                                                              double sqrt_X,
+                                                              double cbrt_X);
+
+            void get_thermal_synchotron_faradey_fit_functions(double X,
+                                                              double X_to_1_point_2,
+                                                              double X_frac, 
+                                                              double faradey_fucntions[STOKES_PARAM_NUM]);
+
+            void get_thermal_synchotron_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
+                                                      double Faradey_functions[STOKES_PARAM_NUM],
+                                                      Thermal_emission_f_arguments* Emission_args,
+                                                      Thermal_faradey_f_arguments* Faradey_args);
+
+
+            // ====================== Kappa Distributed Synchotron Fit Functions ====================== //
+
+            void get_kappa_synchotron_emission_fit_functions(double Emission_functions[STOKES_PARAM_NUM],
+                                                             double X,
+                                                             double sqrt_X,
+                                                             double cbrt_X,
+                                                             double X_to_7_over_20,
+                                                             double kappa,
+                                                             double sin_emission_angle,
+                                                             double T_electron_dim);
+
+            void get_kappa_synchotron_absorbtion_fit_functions(double Absorbtion_functions[STOKES_PARAM_NUM],
+                                                               double X,
+                                                               double sqrt_X,
+                                                               double cbrt_X,
+                                                               double X_to_7_over_20,
+                                                               double kappa,
+                                                               double sin_emission_angle,
+                                                               double T_electron_dim);
+
+            // ====================== Power Distributed Synchotron Fit Functions ====================== //
+
 
         public:
 
-            double  get_disk_temperature(double State_vector[]);
-            double* get_disk_velocity(double State_Vector[], Simulation_Context_type* p_Sim_Context);
-            double  get_disk_density_profile(double State_vector[]);
-            double  get_disk_hotspot_density_profile(double State_Vector[]);
+            // ====================== Accretion Disk State Functions ====================== //
 
-            void update_hotspot_position(int simulation_frame);
+            double  get_disk_temperature(double State_vector[]);
+
+            double* get_disk_velocity(double State_Vector[], Simulation_Context_type* p_Sim_Context);
+
+            double  get_disk_density_profile(double State_vector[]);
+
+            double  get_disk_hotspot_density_profile(double State_Vector[]);
 
             double get_magnetic_field(double B_field[4], 
                                       double State_Vector[],
                                       Simulation_Context_type* p_Sim_Context);
 
-            void get_synchotron_transfer_functions(double State_vector[],
-                                                   Simulation_Context_type* p_Sim_Context,
-                                                   double Emission_fucntions[STOKES_PARAM_NUM],
-                                                   double Faradey_functions[STOKES_PARAM_NUM],
-                                                   double Absorbtion_functions[STOKES_PARAM_NUM]);
+            // ======================= Radiative Fransfer Functions ======================= //
 
-            void get_emission_function_synchotron_phenomenological(double State_Vector[], 
-                                                                   Simulation_Context_type* p_Sim_Context, 
-                                                                   double Emission_functions[4]);
+            void get_radiative_transfer_functions(double State_Vector[e_State_Number],
+                                                  Simulation_Context_type* p_Sim_Context,
+                                                  double Emission_functions[STOKES_PARAM_NUM],
+                                                  double Absorbtion_functions[STOKES_PARAM_NUM],
+                                                  double Faradey_functions[STOKES_PARAM_NUM]);
 
-            void get_absorbtion_function_phenomenological(double State_vector[], 
-                                                          Simulation_Context_type* p_Sim_Context, 
-                                                          double Absorbtion_functions[STOKES_PARAM_NUM]);
+            void get_thermal_synchotron_transfer_functions(double State_vector[],
+                                                           Simulation_Context_type* p_Sim_Context,
+                                                           double Emission_functions[STOKES_PARAM_NUM],
+                                                           double Faradey_functions[STOKES_PARAM_NUM],
+                                                           double Absorbtion_functions[STOKES_PARAM_NUM]);
+
+            void get_phenomenological_synchotron_functions(double State_Vector[],
+                                                           Simulation_Context_type* p_Sim_Context, 
+                                                           double Emission_functions[STOKES_PARAM_NUM],
+                                                           double Faradey_functions[STOKES_PARAM_NUM],
+                                                           double Absorbtion_functions[STOKES_PARAM_NUM]);
+
+            // ======================= Electron Pitch Angle Functions ======================= //
 
             double get_electron_pitch_angle(double B_field_local[4], 
                                             double State_Vector[], 
                                             Simulation_Context_type* p_Sim_Context);
 
+            // =============================== Misc Functions =============================== //
+
             void precompute_electron_pitch_angles();
 
             int load_parameters(Disk_model_parameters* p_Disk_Parameters, 
                                 Emission_law_parameters* p_Emission_Parameters);
-
-            void get_radiative_transfer_functions(double State_Vector[e_State_Number],
-                                                  Simulation_Context_type* p_Sim_Context,
-                                                  double Emission_functions[4],
-                                                  double Absorbtion_functions[4],
-                                                  double Faradey_functions[4]);
-
-            Disk_model_parameters get_disk_params();
 
     };
 

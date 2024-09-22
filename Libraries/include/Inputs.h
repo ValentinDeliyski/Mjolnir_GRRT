@@ -13,7 +13,7 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Wormhole; // Spacetime to be used
+    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
 
     Real MASS = 1.0f;
     Real SPIN = 0.9;
@@ -47,13 +47,13 @@
     // ======================== Observer Inputs ======================== //
 
     Real r_obs	   = 1e4;			     // Radial potision of the observer [ M ]
-    Real theta_obs = 65.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real theta_obs = 160.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			     // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
     Real obs_cam_rotation_angle = 0;  // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
-    const Emission_model_enums     e_emission   = Synchotron_exact; // Emission model to be used
+    const Emission_model_enums     e_emission   = Thermal_dist_synchotron; // Emission model to be used
     const Disk_density_model_enums e_disk_model = Power_law;
 
     // Novikov - Thorne accretion disk parameters
@@ -115,7 +115,7 @@
     Real H_angle_min = -atan(15 / r_obs);
     Real H_angle_max =  atan(15 / r_obs);
 
-    const int RESOLUTION = 2048;                  // Linear size of the square pixel grid that makes up the image
+    const int RESOLUTION = 4096;                  // Linear size of the square pixel grid that makes up the image
 
     Real Scan_Step = (V_angle_max - V_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons
 

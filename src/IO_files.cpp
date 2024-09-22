@@ -111,7 +111,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         switch (e_emission) {
 
-        case Synchotron_phenomenological:
+        case Phenomenological_synchotron:
 
             Image_Output_files[Image_order] << "Emission Model: " 
                                             << "Phenomenological"
@@ -131,7 +131,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
             break;
 
-        case Synchotron_exact:
+        case Thermal_dist_synchotron:
 
             Image_Output_files[Image_order] << "Emission Model: "
                                             << "Exact"

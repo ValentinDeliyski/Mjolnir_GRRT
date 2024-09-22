@@ -487,7 +487,7 @@ void static Propagate_forward_emission(Simulation_Context_type* const p_Sim_Cont
 
     for (int log_index = s_Ray_results->Ray_log_struct.Log_length; log_index > 0; log_index--) {
 
-    /* =================== Pick out the ray position / momenta from the Log, at the given log index =================== */
+        /* =============== Pick out the ray position / momenta from the Log, at the given log index =============== */
 
         Logged_ray_path[Current] = &(s_Ray_results->Ray_log_struct.Ray_path_log[ log_index      * e_path_log_number]);
         Logged_ray_path[Next]    = &(s_Ray_results->Ray_log_struct.Ray_path_log[(log_index - 1) * e_path_log_number]);
@@ -497,11 +497,13 @@ void static Propagate_forward_emission(Simulation_Context_type* const p_Sim_Cont
         *N_theta_turning_points += Increment_theta_turning_points(Logged_ray_path[Current], Logged_ray_path[Next]);
         
         if (INCLUDE_POLARIZATION) {
-        /* ======================================== Parallel transport the polarization vector ================================ */
+
+            /* ======================================== Parallel transport the polarization vector ======================== */
 
             Parallel_Transport_Polarization_Vector(Logged_ray_path[Current], p_Sim_Context->p_Spacetime, Coord_Basis_Pol_vec);
 
-        /* ==================================================================================================================== */
+            /* ============================================================================================================ */
+
         }
 
         double Normalized_plasma_density = p_Sim_Context->p_GOT_Model->get_disk_density_profile(Logged_ray_path[Current]);
@@ -522,7 +524,7 @@ void static Propagate_forward_emission(Simulation_Context_type* const p_Sim_Cont
                 }
             }
 
-        /* ======================================== Propagate the radiative transfer equations ============================== */
+            /* ================================= Propagate the radiative transfer equations ================================= */
 
             double* U_source_coord[2]{};
             U_source_coord[Current] = p_Sim_Context->p_GOT_Model->get_disk_velocity(Logged_ray_path[Current], p_Sim_Context);
@@ -550,7 +552,7 @@ void static Propagate_forward_emission(Simulation_Context_type* const p_Sim_Cont
                                                                              faradey_functions[Next],    
                                                                              absorbtion_functions[Next]);
 
-            /* --------------------- Account for the relativistic doppler effet via the redshift --------------------- */
+                /* --------------------- Account for the relativistic doppler effet via the redshift --------------------- */
 
                 for (int interp_idx = 0; interp_idx <= INTERPOLATION_NUM - 1; interp_idx++) {
 
@@ -562,7 +564,7 @@ void static Propagate_forward_emission(Simulation_Context_type* const p_Sim_Cont
                     }
                 }
 
-            /* ------------------------------------------------------------------------------------------------------- */
+                /* ------------------------------------------------------------------------------------------------------- */
 
                 Propagate_Stokes_vector(RK4, emission_functions, absorbtion_functions, faradey_functions, step, Stokes_Vector);
 
@@ -570,11 +572,11 @@ void static Propagate_forward_emission(Simulation_Context_type* const p_Sim_Cont
 
             if (INCLUDE_POLARIZATION){
 
-            /* =================================== Convert the stokes vector into a polarization vector ===================== */
+                /* ============================ Convert the stokes vector into a polarization vector ===================== */
 
                 Map_Stokes_to_Polarization_Vector(std::as_const(Stokes_Vector), std::as_const(Tetrad), Coord_Basis_Pol_vec);
 
-            /* ============================================================================================================== */
+                /* ======================================================================================================= */
 
             }
         }

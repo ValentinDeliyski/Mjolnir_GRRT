@@ -118,7 +118,7 @@ void Console_Printer_class::print_sim_parameters() {
 
     switch (e_emission) {
 
-    case Synchotron_phenomenological:
+    case Phenomenological_synchotron:
 
         std::cout << "Emission Power Law Exponent [-]: "
                   << EMISSION_POWER_LAW
@@ -135,7 +135,7 @@ void Console_Printer_class::print_sim_parameters() {
 
         break;
 
-    case Synchotron_exact:
+    case Thermal_dist_synchotron:
 
         std::cout << "Disk Magnetization [-]: "
                   << DISK_MAGNETIZATION

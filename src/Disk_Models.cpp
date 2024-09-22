@@ -8,12 +8,12 @@
 #include "Spacetimes.h"
 #include "Constants.h"
 
-#include <vector>
+#include "gsl/gsl_sf_hyperg.h"
 
 /***************************************************
 |                                                  |
 | Novikov-Thorne Model Class Functions Definitions |
-|                                                  |
+|                                                  | 
 ***************************************************/
 
 Novikov_Thorne_Model::Novikov_Thorne_Model(double x, double y, Spacetime_Base_Class* Spacetime) {
@@ -243,45 +243,7 @@ double Novikov_Thorne_Model::get_r_out() { return r_out; };
 |                                                           |
 ************************************************************/
 
-int Generic_Optically_Thin_Model::load_parameters(Disk_model_parameters* p_Disk_Parameters, Emission_law_parameters* p_Emission_Parameters) {
-
-    if (NULL != p_Disk_Parameters) {
-
-        this->s_Disk_Parameters = *p_Disk_Parameters;
-
-    }
-    else {
-
-        std::cout << "p_Disk_Parameters is a NULL pointer! \n";
-
-        exit(ERROR);
-    }
-
-    if (NULL != p_Emission_Parameters) {
-
-        this->s_Emission_Parameters = *p_Emission_Parameters;
-
-    }
-    else {
-
-        std::cout << "p_Emission_Parameters is a NULL pointer! \n";
-
-        exit(ERROR);
-    }
-
-    return OK;
-
-}
-
-void Generic_Optically_Thin_Model::update_hotspot_position(int simulation_frame) {
-
-    this->s_Disk_Parameters.Hotspot_position[e_phi] += 2 * M_PI / HOTSPOT_ANIMATION_NUMBER;
-
-}
-
-Disk_model_parameters Generic_Optically_Thin_Model::get_disk_params() { return this->s_Disk_Parameters; };
-
-/* Disk Temperature Functions */
+/* ==================================================== Disk Temperature Functions ===================================================== */
 
 double Generic_Optically_Thin_Model::get_disk_temperature(double State_vector[]) {
 
@@ -313,7 +275,7 @@ double Generic_Optically_Thin_Model::get_disk_temperature(double State_vector[])
 
 }
 
-/* Disk Velocity Functions */
+/* ====================================================== Disk Velocity Functions ====================================================== */
 
 double* Generic_Optically_Thin_Model::get_disk_velocity(double State_Vector[], Simulation_Context_type* p_Sim_Context) {
 
@@ -386,7 +348,7 @@ double* Generic_Optically_Thin_Model::get_disk_velocity(double State_Vector[], S
 
 }
 
-/* Disk Density Functions */
+/* ======================================================= Disk Density Functions ====================================================== */
 
 double Generic_Optically_Thin_Model::get_disk_hotspot_density_profile(double State_Vector[]) {
 
@@ -495,7 +457,7 @@ double Generic_Optically_Thin_Model::get_disk_density_profile(double State_Vecto
 
 }
 
-/* Disk Magnetic Field Functions */
+/* =================================================== Disk Magnetic Field Functions =================================================== */
 
 double Generic_Optically_Thin_Model::get_magnetic_field(double B_field[4],
                                                         double State_Vector[],
@@ -620,12 +582,12 @@ double Generic_Optically_Thin_Model::get_electron_pitch_angle(double B_field_loc
 
 }
 
-/* =============================================== Disk Transfer Functions Functions =============================================== */
+/* =============================================== Thermal Synchotron Transfer Functions =============================================== */
 
-void Generic_Optically_Thin_Model::get_faradey_fit_functions(double X,
-                                                             double X_to_1_point_2,
-                                                             double X_frac,
-                                                             double faradey_fucntions[STOKES_PARAM_NUM]) {
+void Generic_Optically_Thin_Model::get_thermal_synchotron_faradey_fit_functions(double X,
+                                                                                double X_to_1_point_2,
+                                                                                double X_frac,
+                                                                                double faradey_fucntions[STOKES_PARAM_NUM]) {
 
     /* The reference for this implementation is from Appendix B2 of https://arxiv.org/pdf/1602.03184.pdf */
 
@@ -647,11 +609,11 @@ void Generic_Optically_Thin_Model::get_faradey_fit_functions(double X,
 
 }
 
-void Generic_Optically_Thin_Model::get_synchotron_emission_fit_function(Sync_emission_fit_functions e_fit_functions,
-                                                                        double Emission_functions[4],
-                                                                        double X,
-                                                                        double sqrt_X,
-                                                                        double cbrt_X) {
+void Generic_Optically_Thin_Model::get_thermal_synchotron_emission_fit_functions(Thermal_Syncotron_fit_selector e_fit_functions,
+                                                                                 double Emission_functions[4],
+                                                                                 double X,
+                                                                                 double sqrt_X,
+                                                                                 double cbrt_X) {
 
     Emission_functions[I] = 0;
     Emission_functions[U] = 0;
@@ -716,30 +678,32 @@ void Generic_Optically_Thin_Model::get_synchotron_emission_fit_function(Sync_emi
 
 }
 
-void Generic_Optically_Thin_Model::get_transfer_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
-                                                               double Faradey_functions[STOKES_PARAM_NUM],
-                                                               Emission_functions_arguments* Arguments) {
+void Generic_Optically_Thin_Model::get_thermal_synchotron_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
+                                                                        double Faradey_functions[STOKES_PARAM_NUM],
+                                                                        Thermal_emission_f_arguments* Emission_args,
+                                                                        Thermal_faradey_f_arguments* Faradey_args) {
 
     if (INCLUDE_POLARIZATION){
 
-        this->get_synchotron_emission_fit_function(Dexter_2016, Emission_fucntions, Arguments->X_emission, Arguments->X_1_2_emission, Arguments->X_1_3_emission);
-        this->get_faradey_fit_functions(Arguments->X_faradey, Arguments->X_to_1_point_2_faradey, Arguments->X_to_1_point_035_faradey, Faradey_functions);
+        this->get_thermal_synchotron_emission_fit_functions(Dexter_2016, Emission_fucntions, Emission_args->X, Emission_args->sqrt_X, Emission_args->cbrt_X);
+        this->get_thermal_synchotron_faradey_fit_functions(Faradey_args->X, Faradey_args->X_to_1_point_2, Faradey_args->X_to_1_point_035, Faradey_functions);
 
     }
     else {
 
-        this->get_synchotron_emission_fit_function(Leung_2011, Emission_fucntions, Arguments->X_emission, Arguments->X_1_2_emission, Arguments->X_1_3_emission);
+        this->get_thermal_synchotron_emission_fit_functions(Leung_2011, Emission_fucntions, Emission_args->X, Emission_args->sqrt_X, Emission_args->cbrt_X);
 
     }
 }
 
-void Generic_Optically_Thin_Model::get_synchotron_transfer_functions(double State_Vector[],
-                                                                      Simulation_Context_type* p_Sim_Context,
-                                                                      double Emission_fucntions[STOKES_PARAM_NUM],
-                                                                      double Faradey_functions[STOKES_PARAM_NUM],
-                                                                      double Absorbtion_functions[STOKES_PARAM_NUM]) {
 
-/* === The transfer functions arrays needs to be manually cleared, because this function only adds to it. === */
+void Generic_Optically_Thin_Model::get_thermal_synchotron_transfer_functions(double State_Vector[],
+                                                                             Simulation_Context_type* p_Sim_Context,
+                                                                             double Emission_fucntions[STOKES_PARAM_NUM],
+                                                                             double Faradey_functions[STOKES_PARAM_NUM],
+                                                                             double Absorbtion_functions[STOKES_PARAM_NUM]) {
+
+    /* === The transfer functions arrays needs to be manually cleared, because this function only adds to it. === */
     for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
 
         Emission_fucntions[stokes_index]   = 0.0;
@@ -762,11 +726,8 @@ void Generic_Optically_Thin_Model::get_synchotron_transfer_functions(double Stat
     double B_field_local[4]{};
     double B_CGS = this->get_magnetic_field(B_field_local, State_Vector, p_Sim_Context);
 
-    /* Disk Coordinate Velocity */
-    double* U_source_coord = this->get_disk_velocity(State_Vector, p_Sim_Context);
-
     /* Redshit */
-    double redshift = Redshift(State_Vector, U_source_coord, p_Sim_Context->p_Observer);
+    double redshift = Redshift(State_Vector, this->get_disk_velocity(State_Vector, p_Sim_Context), p_Sim_Context->p_Observer);
 
     /* Cyclotron Frequency */
     double f_cyclo = Q_ELECTRON_CGS * B_CGS / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
@@ -774,16 +735,17 @@ void Generic_Optically_Thin_Model::get_synchotron_transfer_functions(double Stat
     /* The "averaged" critical frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
     double f_crit_no_sin = 3. / 2 * f_cyclo * T_electron_dim * T_electron_dim;
 
-    Emission_functions_arguments Arguments_angle_uncorrected{};
+    Thermal_emission_f_arguments Emission_args_ang_uncorrected{};
+    Thermal_faradey_f_arguments Faradey_args_ang_uncorrected{};
 
     /* Both the emission and faradey function expressions are in terms of an dimentionless variable X, but the definitions for X are different */
-    Arguments_angle_uncorrected.X_emission = 1e100;
-    Arguments_angle_uncorrected.X_faradey  = 1e100;
+    Emission_args_ang_uncorrected.X = 1e100;
+    Faradey_args_ang_uncorrected.X  = 1e100;
 
     if (f_crit_no_sin > std::numeric_limits<double>::min()) {
 
-        Arguments_angle_uncorrected.X_emission = OBS_FREQUENCY_CGS / f_crit_no_sin / redshift;
-        Arguments_angle_uncorrected.X_faradey = T_electron_dim * sqrt(M_SQRT2 * 1e3 * f_cyclo / (OBS_FREQUENCY_CGS / redshift));
+        Emission_args_ang_uncorrected.X = OBS_FREQUENCY_CGS / f_crit_no_sin / redshift;
+        Faradey_args_ang_uncorrected.X  = T_electron_dim * sqrt(M_SQRT2 * 1e3 * f_cyclo / (OBS_FREQUENCY_CGS / redshift));
 
     }
 
@@ -792,11 +754,11 @@ void Generic_Optically_Thin_Model::get_synchotron_transfer_functions(double Stat
 
        /* == Compute all the weird powers of X outside the averaging loop == */
 
-        Arguments_angle_uncorrected.X_1_2_emission = sqrt(Arguments_angle_uncorrected.X_emission);
-        Arguments_angle_uncorrected.X_1_3_emission = cbrt(Arguments_angle_uncorrected.X_emission);
+        Emission_args_ang_uncorrected.sqrt_X = sqrt(Emission_args_ang_uncorrected.X);
+        Emission_args_ang_uncorrected.cbrt_X = cbrt(Emission_args_ang_uncorrected.X);
 
-        Arguments_angle_uncorrected.X_to_1_point_2_faradey = pow(Arguments_angle_uncorrected.X_faradey, 1.2);
-        Arguments_angle_uncorrected.X_to_1_point_035_faradey = pow(Arguments_angle_uncorrected.X_faradey, 1.035f);
+        Faradey_args_ang_uncorrected.X_to_1_point_2   = pow(Faradey_args_ang_uncorrected.X, 1.2f);
+        Faradey_args_ang_uncorrected.X_to_1_point_035 = pow(Faradey_args_ang_uncorrected.X, 1.035f);
 
        /* ================================================================== */
 
@@ -804,23 +766,24 @@ void Generic_Optically_Thin_Model::get_synchotron_transfer_functions(double Stat
 
             for (int averaging_idx = 0; averaging_idx <= NUM_SAMPLES_TO_AVG - 1; averaging_idx++) {
 
-                Emission_functions_arguments Arguments_angle_corrected{};
+                Thermal_emission_f_arguments Emission_args_ang_corrected{};
+                Thermal_faradey_f_arguments Faradey_args_ang_corrected{};
 
-                double sin_pitch_angle = this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[averaging_idx];
-                double cos_pitch_angle = this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[averaging_idx];
+                double& sin_pitch_angle = this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[averaging_idx];
+                double& cos_pitch_angle = this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[averaging_idx];
 
                 double temp_emission_functions[STOKES_PARAM_NUM]{};
                 double temp_faradey_functions[STOKES_PARAM_NUM]{};
 
-                Arguments_angle_corrected.X_emission = Arguments_angle_uncorrected.X_emission / sin_pitch_angle;
-                Arguments_angle_corrected.X_1_2_emission = Arguments_angle_uncorrected.X_1_2_emission * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
-                Arguments_angle_corrected.X_1_3_emission = Arguments_angle_uncorrected.X_1_3_emission * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
+                Emission_args_ang_corrected.X      = Emission_args_ang_uncorrected.X / sin_pitch_angle;
+                Emission_args_ang_corrected.sqrt_X = Emission_args_ang_uncorrected.sqrt_X * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
+                Emission_args_ang_corrected.cbrt_X = Emission_args_ang_uncorrected.cbrt_X * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
 
-                Arguments_angle_corrected.X_faradey = Arguments_angle_corrected.X_faradey / this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
-                Arguments_angle_corrected.X_to_1_point_035_faradey = Arguments_angle_corrected.X_to_1_point_035_faradey / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[averaging_idx];
-                Arguments_angle_corrected.X_to_1_point_2_faradey = Arguments_angle_corrected.X_to_1_point_2_faradey / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[averaging_idx];
+                Faradey_args_ang_corrected.X                = Faradey_args_ang_uncorrected.X / this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
+                Faradey_args_ang_corrected.X_to_1_point_035 = Faradey_args_ang_uncorrected.X_to_1_point_035 / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[averaging_idx];
+                Faradey_args_ang_corrected.X_to_1_point_2   = Faradey_args_ang_uncorrected.X_to_1_point_2 / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[averaging_idx];
 
-                this->get_transfer_fit_functions(temp_emission_functions, temp_faradey_functions, &Arguments_angle_corrected);
+                this->get_thermal_synchotron_fit_functions(temp_emission_functions, temp_faradey_functions, &Emission_args_ang_corrected, &Faradey_args_ang_corrected);
 
                 /* ================================================ The emission functions ================================================ */
 
@@ -830,7 +793,7 @@ void Generic_Optically_Thin_Model::get_synchotron_transfer_functions(double Stat
                 temp_emission_functions[Q] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / K2_Bessel; // Scale the emission by the remaining position-dependant factors
                 temp_emission_functions[Q] *= sin_pitch_angle * M_PI / NUM_SAMPLES_TO_AVG / 2;                  // Scale by the factors coming form averaging over all emission orientations
 
-                if (!isinf(1e2 / sin_pitch_angle)) {
+                if (!isinf(1e2 / sin_pitch_angle) && !isnan(1e2 / sin_pitch_angle)) {
 
                     temp_emission_functions[V] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / K2_Bessel; // Scale the emission by the remaining position-dependant factors
                     temp_emission_functions[V] *= (1. / T_electron_dim) * cos_pitch_angle / sin_pitch_angle;        // The V component has some extra angle dependance
@@ -873,24 +836,25 @@ void Generic_Optically_Thin_Model::get_synchotron_transfer_functions(double Stat
             double one_over_sqrt_sin = 1.0 / sqrt(sin_pitch_angle);
             double one_over_cbrt_sin = 1.0 / cbrt(sin_pitch_angle);
 
-            Emission_functions_arguments Arguments_angle_corrected{};
+            Thermal_emission_f_arguments Emission_args_ang_corrected{};
+            Thermal_faradey_f_arguments Faradey_args_ang_corrected{};
 
-            Arguments_angle_corrected.X_emission     = Arguments_angle_uncorrected.X_emission / sin_pitch_angle;
-            Arguments_angle_corrected.X_1_2_emission = Arguments_angle_uncorrected.X_1_2_emission * one_over_sqrt_sin;
-            Arguments_angle_corrected.X_1_3_emission = Arguments_angle_uncorrected.X_1_3_emission * one_over_cbrt_sin;
+            Emission_args_ang_corrected.X      = Emission_args_ang_uncorrected.X / sin_pitch_angle;
+            Emission_args_ang_corrected.sqrt_X = Emission_args_ang_uncorrected.sqrt_X * one_over_sqrt_sin;
+            Emission_args_ang_corrected.cbrt_X = Emission_args_ang_uncorrected.cbrt_X * one_over_cbrt_sin;
 
-            Arguments_angle_corrected.X_faradey                = Arguments_angle_uncorrected.X_faradey / one_over_sqrt_sin;
-            Arguments_angle_corrected.X_to_1_point_035_faradey = Arguments_angle_uncorrected.X_to_1_point_035_faradey * pow(sin_pitch_angle, 1.035);
-            Arguments_angle_corrected.X_to_1_point_2_faradey   = Arguments_angle_uncorrected.X_to_1_point_2_faradey * pow(sin_pitch_angle, 1.2);
+            Faradey_args_ang_corrected.X                = Faradey_args_ang_uncorrected.X / one_over_sqrt_sin;
+            Faradey_args_ang_corrected.X_to_1_point_035 = Faradey_args_ang_uncorrected.X_to_1_point_035 * pow(sin_pitch_angle, 1.035);
+            Faradey_args_ang_corrected.X_to_1_point_2   = Faradey_args_ang_uncorrected.X_to_1_point_2 * pow(sin_pitch_angle, 1.2);
 
-            this->get_transfer_fit_functions(Emission_fucntions, Faradey_functions, &Arguments_angle_corrected);
+            this->get_thermal_synchotron_fit_functions(Emission_fucntions, Faradey_functions, &Emission_args_ang_corrected, &Faradey_args_ang_corrected);
 
             /* ================================================ The emission functions ================================================ */
 
             Emission_fucntions[I] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / K2_Bessel; // Scale the emission by the remaining position-dependant factors
             Emission_fucntions[Q] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / K2_Bessel; // Scale the emission by the remaining position-dependant factors
 
-            if (!isinf(1.0 / sin_pitch_angle) && !isnan(1.0 / sin_pitch_angle)) {
+            if (!isinf(1e2 / sin_pitch_angle) && !isnan(1e2 / sin_pitch_angle)) {
 
                 Emission_fucntions[V] *= electron_density * (f_crit_no_sin * sin_pitch_angle) / K2_Bessel; // Scale the emission by the remaining position-dependant factors
                 Emission_fucntions[V] *= (1. / T_electron_dim) * cos_pitch_angle / sin_pitch_angle;        // The V component has some extra angle dependance
@@ -931,10 +895,131 @@ void Generic_Optically_Thin_Model::get_synchotron_transfer_functions(double Stat
     }
 }
 
-void Generic_Optically_Thin_Model::get_emission_function_synchotron_phenomenological(double State_Vector[], Simulation_Context_type* p_Sim_Context, double Emission_functions[4]) {
+/* ========================================== Kappa Synchotron Transfer Functions ========================================== */
+
+void Generic_Optically_Thin_Model::get_kappa_synchotron_emission_fit_functions(double Emission_functions[STOKES_PARAM_NUM],
+                                                                               double X,
+                                                                               double sqrt_X,
+                                                                               double cbrt_X,
+                                                                               double X_to_7_over_20,
+                                                                               double kappa,
+                                                                               double sin_emission_angle,
+                                                                               double T_electron_dim){
+
+    // The reference for these expressions is https://arxiv.org/pdf/1602.08749, equations (35), (36), (37) and (38).
+
+    // ------------------------------------------------------------------------ Low frequency fit ------------------------------------------------------------------------ //
+
+    constexpr double THREE_TO_7_OVER_3 = 12.980246132766677;
+
+    double Emission_functions_low[STOKES_PARAM_NUM]{};
+    double Common_factor_low = cbrt_X * sin_emission_angle * (4 * M_PI / THREE_TO_7_OVER_3) * std::tgamma(kappa - 4.0 / 3) / std::tgamma(kappa - 2);
+
+    Emission_functions_low[I] =  Common_factor_low;
+    Emission_functions_low[Q] = -Common_factor_low / 2;
+    Emission_functions_low[U] = 0;
+    Emission_functions_low[V] = -Common_factor_low * (9.0 / 16 * pow(pow(sin_emission_angle, -12.0 / 5) - 1, 12.0 / 25)) * pow(kappa, -66.0/125) / T_electron_dim / X_to_7_over_20;
+
+    // ----------------------------------------------------------------------- High frequency fit ------------------------------------------------------------------------ //
+
+    double Emission_functions_high[STOKES_PARAM_NUM]{};
+    double Common_factor_high = pow(X, -(kappa - 2) / 2) * sin_emission_angle * pow(3, (kappa - 1) / 2) * (kappa - 2) * (kappa - 1) / 4 * std::tgamma(kappa / 4 - 1.0 / 3) * std::tgamma(kappa / 4 + 4.0 / 3);
+
+    Emission_functions_high[I] =  Common_factor_high;
+    Emission_functions_high[Q] = -Common_factor_high * (16.0 / 25 + kappa / 50);
+    Emission_functions_high[U] = 0;
+    Emission_functions_high[V] = -Common_factor_high * (49.0 / 64 * pow(pow(sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(kappa, -11.0 / 25) / T_electron_dim / sqrt_X;
+
+    // ------------------------------------------------------------------------ Bridging function ------------------------------------------------------------------------ //
+
+    double power_I = 3 * pow(kappa, -3.0 / 2);
+    Emission_functions[I] = pow(pow(Emission_functions_low[I], -power_I) + pow(Emission_functions_high[I], -power_I), -1.0 / power_I);
+
+    double power_Q = 3.7 * pow(kappa, -8.0 / 5);
+    Emission_functions[Q] = pow(pow(Emission_functions_low[Q], -power_Q) + pow(Emission_functions_high[Q], -power_Q), -1.0 / power_Q);
+
+    Emission_functions[U] = 0;
+
+    double power_V = 13.0 / 5 * pow(kappa, -36.0 / 25);
+    Emission_functions[V] = pow(pow(Emission_functions_low[V], -power_V) + pow(Emission_functions_high[V], -power_V), -1.0 / power_V);
+
+}
+
+void Generic_Optically_Thin_Model::get_kappa_synchotron_absorbtion_fit_functions(double Absorbtion_functions[STOKES_PARAM_NUM],
+                                                                                 double X,
+                                                                                 double sqrt_X,
+                                                                                 double cbrt_X,
+                                                                                 double X_to_7_over_20,
+                                                                                 double kappa,
+                                                                                 double sin_emission_angle,
+                                                                                 double T_electron_dim){
+
+    // The reference for these expressions is https://arxiv.org/pdf/1602.08749, equations (39), (40), (41) and (42).
+
+    // ------------------------------------------------------------------------ Low frequency fit ------------------------------------------------------------------------ //
+
+    constexpr double THREE_TO_1_OVER_6 = 1.2009369551760027;
+    constexpr double GAMMA_OF_5_OVER_3 = 0.90274529295;
+
+    // Below are the coefficients, present in the 2F1 hypergoemetric function from expression (39). Bcause in general |(-kappa * T_electron_dim)| > 1, I will use the algebraic relation 
+    // from Abramowitz and Stegun 15.3.8. Note that our equivalent to the argument z in 15.3.8 is strictly real and negative, so taking fractional powers of it returns a real number.
+
+    double a =  kappa - 1.0 / 3;
+    double b =  kappa + 1.0;
+    double c =  kappa + 2.0 / 3;
+    double z = -kappa * T_electron_dim;
+
+    double _2F1 = pow(1 - z, -a) * std::tgamma(c) / std::tgamma(b) * std::tgamma(b - a) / std::tgamma(c - a) * gsl_sf_hyperg_2F1(a, c - b, a - b + 1, 1.0 / (1 - z))
+                + pow(1 - z, -b) * std::tgamma(c) / std::tgamma(a) * std::tgamma(a - b) / std::tgamma(c - b) * gsl_sf_hyperg_2F1(b, c - a, b - a + 1, 1.0 / (1 - z));
+
+    double Absorbtion_functions_low[STOKES_PARAM_NUM]{};
+    double Common_factor_low =  1.0 / cbrt_X / cbrt_X * THREE_TO_1_OVER_6 * 10.0 / 41 * 2 * M_PI / pow(T_electron_dim * kappa, 10.0 / 3 - kappa) * (kappa - 2) * (kappa - 1) * kappa / (3 * kappa - 1) 
+                             * GAMMA_OF_5_OVER_3 * _2F1;
+
+    Absorbtion_functions_low[I] =  Common_factor_low;
+    Absorbtion_functions_low[Q] = -Common_factor_low * 25.0 / 48;
+    Absorbtion_functions_low[U] = 0;
+    Absorbtion_functions_low[V] = -Common_factor_low * pow((pow(sin_emission_angle, -114.0 / 50) - 1), 223.0 / 500) / X_to_7_over_20 * pow(kappa, -7.0 / 10);
+
+    // ----------------------------------------------------------------------- High frequency fit ------------------------------------------------------------------------ //
+
+    double Absorbtion_functions_high[STOKES_PARAM_NUM]{};
+    double Common_factor_high = pow(X, -(1 + kappa) / 2) * M_PI * (2 / M_2_SQRTPI) / 3 * (kappa - 2) * (kappa - 1) * kappa / (kappa * T_electron_dim) / (kappa * T_electron_dim) / (kappa * T_electron_dim)
+                              * (2 * std::tgamma(2 + kappa / 2) / (2 + kappa) - 1);
+
+    Absorbtion_functions_high[I] =  Common_factor_low * (pow(3.0 / kappa, 19.0 / 4) + 3.0 / 5);
+    Absorbtion_functions_high[Q] = -Common_factor_low * (441 * pow(kappa, - 144.0/ 25) + 11.0 / 20);
+    Absorbtion_functions_high[U] = 0;
+    Absorbtion_functions_high[V] = -Common_factor_low * 143.0 / 10 * pow(T_electron_dim, -116.0 / 125) * sqrt(pow(sin_emission_angle, -41.0 / 20) - 1) * (169 * pow(kappa, -8) + 13.0 / 2500 * kappa - 1.0 / 200 + 47.0 / 200 / kappa) / sqrt_X;
+
+    // ------------------------------------------------------------------------ Bridging function ------------------------------------------------------------------------ //
+
+    double power_I = pow(-7.0 / 4 + 8.0 / 5 * kappa, -43.0 / 50);
+    Absorbtion_functions[I] = pow(pow(Absorbtion_functions_low[I], -power_I) + pow(Absorbtion_functions_high[I], -power_I), -1.0 / power_I);
+
+    double power_Q = 7.0 / 5 * pow(kappa, -23.0 / 20);
+    Absorbtion_functions[Q] = pow(pow(Absorbtion_functions_low[Q], -power_Q) + pow(Absorbtion_functions_high[Q], -power_Q), -1.0 / power_Q);
+
+    Absorbtion_functions[U] = 0;
+
+    double power_V = 61.0 / 50 * pow(kappa, -142.0 / 125) + 7.0 / 1000;
+    Absorbtion_functions[V] = pow(pow(Absorbtion_functions_low[V], -power_V) + pow(Absorbtion_functions_high[V], -power_V), -1.0 / power_V);
+
+
+}
+
+/* ========================================== Phenomenological Synchotron Transfer Functions ========================================== */
+
+void Generic_Optically_Thin_Model::get_phenomenological_synchotron_functions(double State_Vector[],
+                                                                             Simulation_Context_type* p_Sim_Context, 
+                                                                             double Emission_functions[STOKES_PARAM_NUM],
+                                                                             double Faradey_functions[STOKES_PARAM_NUM],
+                                                                             double Absorbtion_functions[STOKES_PARAM_NUM]) {
 
     double& emission_power_law = this->s_Emission_Parameters.Emission_power_law;
-    double& emission_scale = this->s_Emission_Parameters.Emission_scale;
+    double& source_f_power_law = this->s_Emission_Parameters.Source_f_power_law;
+    double& emission_scale     = this->s_Emission_Parameters.Emission_scale;
+    double& abs_coeff          = this->s_Emission_Parameters.Absorbtion_coeff;
 
     double* U_source_coord = this->get_disk_velocity(State_Vector, p_Sim_Context);
     double redshift = Redshift(State_Vector, U_source_coord, p_Sim_Context->p_Observer);
@@ -943,53 +1028,41 @@ void Generic_Optically_Thin_Model::get_emission_function_synchotron_phenomenolog
     Emission_functions[Q] = 0.0;
     Emission_functions[U] = 0.0;
     Emission_functions[V] = 0.0;
+
+    Absorbtion_functions[I] = abs_coeff * emission_scale * this->get_disk_density_profile(State_Vector) * pow(redshift, source_f_power_law + emission_power_law);
+    Absorbtion_functions[Q] = 0.0;
+    Absorbtion_functions[U] = 0.0;
+    Absorbtion_functions[V] = 0.0;
+
+    Faradey_functions[I] = 0.0;
+    Faradey_functions[Q] = 0.0;
+    Faradey_functions[U] = 0.0;
+    Faradey_functions[V] = 0.0;
+
 }
+
+/* ============================================ Main "Selector" For The Transfer Functions ============================================ */
 
 void Generic_Optically_Thin_Model::get_radiative_transfer_functions(double State_Vector[e_State_Number],
                                                                     Simulation_Context_type* p_Sim_Context, 
-                                                                    double Emission_functions[4], 
-                                                                    double Faradey_functions[4],
-                                                                    double Absorbtion_functions[4]) {
+                                                                    double Emission_functions[STOKES_PARAM_NUM],
+                                                                    double Faradey_functions[STOKES_PARAM_NUM],
+                                                                    double Absorbtion_functions[STOKES_PARAM_NUM]) {
     switch (e_emission) {
 
-    case(Synchotron_phenomenological):
+    case(Phenomenological_synchotron):
 
-        this->get_emission_function_synchotron_phenomenological(State_Vector, p_Sim_Context, Emission_functions);
-        this->get_absorbtion_function_phenomenological(State_Vector, p_Sim_Context, Absorbtion_functions);
-
-        for (int index = I; index <= STOKES_PARAM_NUM - 1; index++) {
-
-            Faradey_functions[index] = 0.0;
-        }
-
+        this->get_phenomenological_synchotron_functions(State_Vector, p_Sim_Context, Emission_functions, Faradey_functions, Absorbtion_functions);
         break;
 
     default:
 
-        this->get_synchotron_transfer_functions(State_Vector, p_Sim_Context, Emission_functions, Faradey_functions, Absorbtion_functions);
-
+        this->get_thermal_synchotron_transfer_functions(State_Vector, p_Sim_Context, Emission_functions, Faradey_functions, Absorbtion_functions);
         break;
     }
 }
 
-void Generic_Optically_Thin_Model::get_absorbtion_function_phenomenological(double State_vector[], 
-                                                                             Simulation_Context_type* p_Sim_Context,
-                                                                             double Absorbtion_functions[STOKES_PARAM_NUM]) {
-
-    double& abs_coeff = this->s_Emission_Parameters.Absorbtion_coeff;
-    double& emission_scale = this->s_Emission_Parameters.Emission_scale;
-    double& source_f_power_law = this->s_Emission_Parameters.Source_f_power_law;
-    double& emission_power_law = this->s_Emission_Parameters.Emission_power_law;
-
-    double* U_source = this->get_disk_velocity(State_vector, p_Sim_Context);
-    double redshift = Redshift(State_vector, U_source, p_Sim_Context->p_Observer);
-
-    Absorbtion_functions[I] = abs_coeff * emission_scale * this->get_disk_density_profile(State_vector) * pow(redshift, source_f_power_law + emission_power_law);
-    Absorbtion_functions[Q] = 0;
-    Absorbtion_functions[U] = 0;
-    Absorbtion_functions[V] = 0;
-
-}
+/* ========================================================== Misc Functions ========================================================== */
 
 void Generic_Optically_Thin_Model::precompute_electron_pitch_angles() {
 
@@ -1001,8 +1074,13 @@ void Generic_Optically_Thin_Model::precompute_electron_pitch_angles() {
 
         if (this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index] != 0) {
 
+            // Used in the thermal synchotron emission functions
+
             this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[index] = 1. / sqrt(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index]);
             this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[index] = 1. / cbrt(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index]);
+
+            // Used in the thermal synchotron Faradey functions
+
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 1.035f);
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 1.2f / 2);
 
@@ -1010,9 +1088,38 @@ void Generic_Optically_Thin_Model::precompute_electron_pitch_angles() {
     }
 }
 
+int Generic_Optically_Thin_Model::load_parameters(Disk_model_parameters* p_Disk_Parameters, Emission_law_parameters* p_Emission_Parameters) {
+
+    if (NULL != p_Disk_Parameters) {
+
+        this->s_Disk_Parameters = *p_Disk_Parameters;
+
+    }
+    else {
+
+        std::cout << "p_Disk_Parameters is a NULL pointer! \n";
+
+        exit(ERROR);
+    }
+
+    if (NULL != p_Emission_Parameters) {
+
+        this->s_Emission_Parameters = *p_Emission_Parameters;
+
+    }
+    else {
+
+        std::cout << "p_Emission_Parameters is a NULL pointer! \n";
+
+        exit(ERROR);
+    }
+
+    return OK;
+
+}
+
 double get_planck_function_CGS(double Frequency, double Temperature) {
 
     return 2 * PLANCK_CONSTANT_CGS * Frequency * Frequency * Frequency / C_LIGHT_CGS / C_LIGHT_CGS / (exp(PLANCK_CONSTANT_CGS * Frequency / BOLTZMANN_CONST_CGS / Temperature) - 1);
 
 }
-
