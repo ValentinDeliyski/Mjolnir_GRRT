@@ -303,11 +303,11 @@
     <ClInclude Include="Libraries\include\Lensing.h" />
     <ClInclude Include="Libraries\include\Rendering_Engine.h" />
     <ClInclude Include="Libraries\include\Sim_Modes.h" />
-    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Console_printing.cpp" />
     <ClCompile Include="src\Disk_Models.cpp" />
+    <ClCompile Include="src\Emission_fit_functions.cpp" />
     <ClCompile Include="src\General_GR_functions.cpp" />
     <ClCompile Include="src\General_math_functions.cpp" />
     <ClCompile Include="src\glad.c" />

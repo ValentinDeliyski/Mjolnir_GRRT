@@ -45,6 +45,8 @@ Metric_type Kerr_class::get_metric(double State_Vector[]) {
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
+    memset(&this->s_Metric, 0., sizeof(this->s_Metric));
+
     this->s_Metric.Metric[0][0] = -(1 - 2 * M * r / rho2);
     this->s_Metric.Metric[0][3] = -2 * M * r * a * sin_theta * sin_theta / rho2;
     this->s_Metric.Metric[3][0] = this->s_Metric.Metric[0][3];
@@ -74,6 +76,8 @@ Metric_type Kerr_class::get_dr_metric(double State_Vector[]) {
     double cos_theta = cos(theta);
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
+
+    memset(&this->s_dr_Metric, 0., sizeof(this->s_dr_Metric));
 
     this->s_dr_Metric.Metric[0][0] = -2 * M / rho2 * (2 * r2 / rho2 - 1);
     this->s_dr_Metric.Metric[0][3] = 2 * M * a * sin_theta * sin_theta / rho2 * (2 * r2 / rho2 - 1);
@@ -106,6 +110,8 @@ Metric_type Kerr_class::get_dtheta_metric(double State_Vector[]) {
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
+    memset(&this->s_dtheta_Metric, 0., sizeof(this->s_dtheta_Metric));
+
     this->s_dtheta_Metric.Metric[0][0] = 4 * M / rho2 / rho2 * (a * a * cos_theta * sin_theta);
     this->s_dtheta_Metric.Metric[0][3] = -4 * M * a * sin_theta * cos_theta / rho2 * (1 - a * a * sin_theta * sin_theta);
     this->s_dtheta_Metric.Metric[3][0] = this->s_dr_Metric.Metric[0][3];
@@ -136,6 +142,8 @@ Metric_type Kerr_class::get_d2r_metric(double State_Vector[]) {
     double cos_theta = cos(theta);
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
+
+    memset(&this->s_d2r_Metric, 0., sizeof(this->s_d2r_Metric));
 
     this->s_d2r_Metric.Metric[0][0] = 4 * M * r / rho2 / rho2 * (4 * r2 / rho2 - 3);
     this->s_d2r_Metric.Metric[0][3] = -4 * M * a * r * sin_theta * sin_theta / rho2 / rho2 * (4 * r2 / rho2 - 3);

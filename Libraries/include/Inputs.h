@@ -13,10 +13,10 @@
 
     // ======================== Spacetime Inputs ======================== //
 
-    const Spacetime_enums e_metric = Gauss_Bonnet; // Spacetime to be used
+    const Spacetime_enums e_metric = Kerr; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.9;
+    Real SPIN = 0.0001;
 
     // Wormhole spacetime parameters //
 
@@ -47,13 +47,14 @@
     // ======================== Observer Inputs ======================== //
 
     Real r_obs	   = 1e4;			     // Radial potision of the observer [ M ]
-    Real theta_obs = 160.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real theta_obs = 170.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			     // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
-    Real obs_cam_rotation_angle = 0;  // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
+    Real obs_cam_rotation_angle = 0.0f;  // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
-    const Emission_model_enums     e_emission   = Thermal_dist_synchotron; // Emission model to be used
+    const Emission_model_enums     e_disk_emission = Thermal_dist_synchotron; // Emission model to be used
+    const Emission_model_enums     e_hotspot_emission = Kappa_dist_synchotron;
     const Disk_density_model_enums e_disk_model = Power_law;
 
     // Novikov - Thorne accretion disk parameters
@@ -70,15 +71,15 @@
 
     // Power law disk profile parameters //
 
-    Real DISK_OPENING_ANGLE = 1.0f / 10;  // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
+    Real DISK_OPENING_ANGLE = 0.1;  // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
     Real DISK_CUTOFF_SCALE  = 0.4f;       // disk density ~ exp( - (r - R_Cutoff)^2 / DISK_CUTOFF_SCALE^2) if r < R_Cutoff
-    Real R_Cutoff           = 5.0f;
-    Real R_0                = 5.0f;
+    Real DISK_R_Cutoff      = 5.0f;
+    Real DISK_R_0           = 5.0f;
 
     // Phenomenological Synchotron emission parameters //
     
-    Real EMISSION_POWER_LAW    = 0.0f;  // emission   ~ pow( redshity, EMISSION_POWER_LAW )
-    Real SOURCE_F_POWER_LAW	   = 2.5;   // absorbtion ~ pow( redshity, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
+    Real EMISSION_POWER_LAW    = 0.0f; // emission   ~ pow( redshity, EMISSION_POWER_LAW )
+    Real SOURCE_F_POWER_LAW	   = 2.5;  // absorbtion ~ pow( redshity, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
     Real DISK_ABSORBTION_COEFF = 1e5;  // absorbtion ~ DISK_ABSORBTION_COEFF
 
     Real EMISSION_SCALE_PHENOMENOLOGICAL = 3e-18;
@@ -88,19 +89,20 @@
     Real DISK_MAGNETIZATION    = 0.01;
     Real MAG_FIELD_GEOMETRY[3] = { 0.87, 0.0, 0.5 };
     
-    Real N_ELECTRON_EXACT_CGS = 5e+05;
-    Real T_ELECTRON_EXACT_CGS = 5.1e+10;
+    Real DISK_N_ELECTRON_SCALE_CGS = 5e+05;
+    Real DISK_T_ELECTRON_SCALE_CGS = 3.5e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
-    const bool AVERAGE_EMISSION_PITCH_ANGLE = true;
-    const bool INCLUDE_POLARIZATION = false;
+    const bool AVERAGE_EMISSION_PITCH_ANGLE = false;
+    const bool INCLUDE_POLARIZATION = true;
 
     // Hotspot paramteres //
-
-    Real HOTSPOT_REL_SCALE  = 0.0f; // Hotspot density ~ HOTSPOT_REL_SCALE
-    Real HOTSPOT_SCALE      = 1.0f; // Hotspot density ~ exp(-|r - r_c|^2 / HOTSPOT_SCALE&^2)
-    Real HOTSPOT_R_COORD    = 8.0f;
-    const int HOTSPOT_ANIMATION_NUMBER = 4;
+     
+    Real HOTSPOT_N_ELECTRON_SLACE_CGS  = 2e+06; 
+    Real HOTSPOT_T_ELECTRON_SCALE_CGS  = 1e+11;
+    Real HOTSPOT_SPREAD                = 1.0;    // Hotspot density ~ exp(-|r - r_c|^2 / HOTSPOT_SPREAD^2)
+    Real HOTSPOT_R_COORD               = 8.0;
+    Real HOTSPOT_MAGNETIZATION         = 1.0;
 
     // ======================== Simulation Modes Inputs ======================== //
 
@@ -115,7 +117,7 @@
     Real H_angle_min = -atan(15 / r_obs);
     Real H_angle_max =  atan(15 / r_obs);
 
-    const int RESOLUTION = 4096;                  // Linear size of the square pixel grid that makes up the image
+    const int RESOLUTION = 256;                  // Linear size of the square pixel grid that makes up the image
 
     Real Scan_Step = (V_angle_max - V_angle_min) / (RESOLUTION - 1); // The angular step when iterating photons
 
@@ -145,7 +147,7 @@
 
     // 1e-12 Seems to be an opitimal tradeoff between accuracy and performace for low inclinations <60 deg. For higher inclinations, 
     // things could break using RK4 for the radiative transfer - for such cases use at most 1e-13.
-    Real RK45_ACCURACY     = 1e-12; 
+    Real RK45_ACCURACY     = 1e-13; 
     Real SAFETY_1          = 0.8;   // Value between 0 and 1, used for scaling the integration step - between 0.8 and 0.9 is optimal
     Real SAFETY_2          = 1e-25; // Near zero positive number used to avoid division by 0 when calculating the integration step
 

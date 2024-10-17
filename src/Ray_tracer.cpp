@@ -83,25 +83,36 @@ void static Allocate_GOT_Model_class_instance(Simulation_Context_type* s_Sim_Con
 
     // TODO: These need to get loaded from a file...
 
-    s_Sim_Context->p_Init_Conditions->Disk_params = { { HOTSPOT_R_COORD, M_PI_2, 0.0 },
-                                                        HOTSPOT_SCALE,
-                                                        HOTSPOT_REL_SCALE,
-                                                        N_ELECTRON_EXACT_CGS,
-                                                        DISK_OPENING_ANGLE,
-                                                        DISK_CUTOFF_SCALE,
-                                                        R_Cutoff,
-                                                        R_0,
-                                                        DISK_HEIGHT_SCALE,
-                                                        DISK_RADIAL_SCALE,
-                                                        T_ELECTRON_EXACT_CGS,
-                                                        DISK_MAGNETIZATION };
+    s_Sim_Context->p_Init_Conditions->Disk_params = { 0*DISK_N_ELECTRON_SCALE_CGS,
+                                                      DISK_T_ELECTRON_SCALE_CGS,
+                                                      DISK_MAGNETIZATION,
+                                                     { 0.87, 0.0, 0.5 },
+                                                      DISK_OPENING_ANGLE,
+                                                      DISK_R_0,
+                                                      DISK_R_Cutoff,
+                                                      DISK_CUTOFF_SCALE,
+                                                      2,                                                     
+                                                      DISK_HEIGHT_SCALE,
+                                                      DISK_RADIAL_SCALE,
+                                                      DISK_R_0,
+                                                      DISK_R_Cutoff,
+                                                      DISK_CUTOFF_SCALE,
+                                                      1};
+
+    s_Sim_Context->p_Init_Conditions->Hotspot_params = { {HOTSPOT_R_COORD, M_PI_2, -M_PI_2},
+                                                          HOTSPOT_SPREAD,
+                                                          HOTSPOT_N_ELECTRON_SLACE_CGS,
+                                                          HOTSPOT_T_ELECTRON_SCALE_CGS,
+                                                          HOTSPOT_MAGNETIZATION,
+                                                         { 0.0, 0.0, 1.0}};
 
     s_Sim_Context->p_Init_Conditions->Emission_params = { EMISSION_SCALE_PHENOMENOLOGICAL,
                                                           DISK_ABSORBTION_COEFF,
                                                           EMISSION_POWER_LAW,
-                                                          SOURCE_F_POWER_LAW };
+                                                          SOURCE_F_POWER_LAW,
+                                                          4.0};
 
-    if (ERROR == s_Sim_Context->p_GOT_Model->load_parameters(&s_Sim_Context->p_Init_Conditions->Disk_params, &s_Sim_Context->p_Init_Conditions->Emission_params)) {
+    if (ERROR == s_Sim_Context->p_GOT_Model->load_parameters(&s_Sim_Context->p_Init_Conditions->Disk_params, &s_Sim_Context->p_Init_Conditions->Hotspot_params, &s_Sim_Context->p_Init_Conditions->Emission_params)) {
 
         std::cout << "Could not load emission model parameters!" << "\n";
         exit(ERROR);

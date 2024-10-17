@@ -70,6 +70,8 @@ Metric_type JNW_class::get_metric(double State_Vector[]) {
 
     double r_singularity = 2 / this->Gamma;
 
+    memset(&this->s_Metric, 0., sizeof(this->s_Metric));
+
     this->s_Metric.Metric[0][0] = -pow(1 - r_singularity / r, this->Gamma);
     this->s_Metric.Metric[1][1] = -1.0 / this->s_Metric.Metric[0][0];
     this->s_Metric.Metric[2][2] = pow(1 - r_singularity / r, 1 - this->Gamma) * r2;
@@ -96,6 +98,8 @@ Metric_type JNW_class::get_dr_metric(double State_Vector[]) {
 
     double r_singularity = 2 / this->Gamma;
 
+    memset(&this->s_dr_Metric, 0., sizeof(this->s_dr_Metric));
+
     this->s_dr_Metric.Metric[0][0] = -this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2;
     this->s_dr_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0];;
     this->s_dr_Metric.Metric[2][2] = 2 * r * pow(1 - r_singularity / r, 1 - this->Gamma) + (1 - this->Gamma) * pow(1 - r_singularity / r, -this->Gamma) * r_singularity;
@@ -117,6 +121,8 @@ Metric_type JNW_class::get_dtheta_metric(double State_Vector[]) {
 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
+
+    memset(&this->s_dtheta_Metric, 0., sizeof(this->s_dtheta_Metric));
 
     this->s_dtheta_Metric.Metric[0][0] = 0.0;
     this->s_dtheta_Metric.Metric[0][3] = 0.0;
@@ -144,6 +150,8 @@ Metric_type JNW_class::get_d2r_metric(double State_Vector[]) {
     double cos_theta = cos(theta);
 
     double r_singularity = 2 / this->Gamma;
+
+    memset(&this->s_d2r_Metric, 0., sizeof(this->s_d2r_Metric));
 
     this->s_d2r_Metric.Metric[0][0] = -this->Gamma * (this->Gamma - 1) * pow(1 - r_singularity / r, this->Gamma - 2) * r_singularity * r_singularity / r2 / r2
         + 2 * this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2 / r;

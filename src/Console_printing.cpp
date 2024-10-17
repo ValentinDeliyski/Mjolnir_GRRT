@@ -87,11 +87,11 @@ void Console_Printer_class::print_sim_parameters() {
             << DISK_OPENING_ANGLE
             << "\n"
             << "R_0 [M]: "
-            << R_0
+            << DISK_R_0
             << "\n"
             << "R_Cutoff [M]: ";
 
-        std::cout << R_Cutoff << "\n";
+        std::cout << DISK_R_Cutoff << "\n";
 
         std::cout << "Cutoff Scale [M]: " << DISK_CUTOFF_SCALE << "\n";
 
@@ -114,9 +114,9 @@ void Console_Printer_class::print_sim_parameters() {
 
     std::cout << '\n';
     std::cout << "Active Emission Function: "
-              << this->Emission_model_strings[e_emission] << '\n';
+              << this->Emission_model_strings[e_disk_emission] << '\n';
 
-    switch (e_emission) {
+    switch (e_disk_emission) {
 
     case Phenomenological_synchotron:
 
@@ -141,10 +141,10 @@ void Console_Printer_class::print_sim_parameters() {
                   << DISK_MAGNETIZATION
                   << "\n"
                   << "Max Electron Temperature [K]: "
-                  << T_ELECTRON_EXACT_CGS
+                  << DISK_T_ELECTRON_SCALE_CGS
                   << "\n"
                   << "Max Disk Density [g / cm^3]: "
-                  << N_ELECTRON_EXACT_CGS
+                  << DISK_N_ELECTRON_SCALE_CGS
                   << "\n";
 
         break;
@@ -155,11 +155,11 @@ void Console_Printer_class::print_sim_parameters() {
 
     std::cout << "------------------------------------------------------------- Hotpost Metadata -------------------------------------------------------------"
              << "\n"
-             << "Hotspot Relative Scale [-]: "
-             << HOTSPOT_REL_SCALE
+             << "Max Hotspot Density[g / cm ^ 3] "
+             << HOTSPOT_N_ELECTRON_SLACE_CGS
              << "\n"
              << "Hotspot Radial Scale [M]: "
-             << HOTSPOT_SCALE
+             << HOTSPOT_SPREAD
              << "\n"
              << "Hotspot r_center [M]: "
              << HOTSPOT_R_COORD

@@ -888,9 +888,6 @@
     <ClInclude Include="Libraries\include\KHR\khrplatform.h">
       <Filter>Header Files\KHR</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\IO_files.cpp">
@@ -949,6 +946,9 @@
     </ClCompile>
     <ClCompile Include="src\Spacetimes\Black_Hole_With_Dark_Matter.cpp">
       <Filter>Source Files\Spacetimes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Emission_fit_functions.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -8,36 +8,65 @@
 
     struct Disk_model_parameters {
 
-        /* --- Hotspot Parameters --- */
-
-        double Hotspot_position[3];
-        double Hotspot_spread;
-        double Hotspot_scale;
-
-        /* --- Density Parameters --- */
-
-        double Density_scale;
-
-        /* Power Law Profile Parameters */
-
-        double Disk_opening_angle;
-        double Disk_cutoff_scale;
-        double Disk_r_cutoff;
-        double Power_law_radial_scale;
-
-        /* Exponential Law Profile Parameters */
-
-        double Exp_law_height_scale;
-        double Exp_law_radial_scale;
-
-        /* Temperature Parameters */
-
-        double Temperature_scale;
-
-        /* Magnetic Field Parameters */
-
+        double Electron_density_scale;
+        double Electron_temperature_scale;
         double Magnetization;
 
+        double Mag_field_geometry[3];
+
+        /* ----------- Power law density profile parameters ----------- */
+
+        double Power_law_disk_opening_angle;
+        double Power_law_density_R_0;
+        double Power_law_density_R_cutoff;
+        double Power_law_density_cutoff_scale;
+        double Power_law_density_radial_power_law;
+
+        /* -------- Exponential law density profile parameters ------- */
+
+        double Exp_law_density_height_scale;
+        double Exp_law_density_radial_scale;
+
+        /* --------- Power law temperature profile parameters -------- */
+
+        double Power_law_temperature_R_0;
+        double Power_law_temperature_R_cutoff;
+        double Power_law_temperature_cutoff_scale;
+        double Power_law_temperature_radial_power_law;
+
+
+    };
+
+    struct Hotspot_model_parameters {
+
+        double Position[3];
+
+        // The hotspot is modelled as a Gaussian with an std = Spread
+        double Spread;
+
+        double Electron_density_scale;
+        double Electron_temperature_scale;
+        double Magnetization;
+
+        double Mag_field_geometry[3];
+
+    };
+
+    struct Emission_model_parameters {
+
+        // --------------- Thermal Synchotron Model --------------- //
+        // It is fully determined by the electron density and temperature
+
+        // ----------- Phenomenological Synchotron Model ---------- //
+
+        double Phenomenological_emission_coeff;
+        double Phenomenological_absorbtion_coeff;
+        double Phenomenological_emission_power_law;  // emission   ~ pow( redshift, EMISSION_POWER_LAW )
+        double Phenomenological_source_f_power_law;  // absorbtion ~ pow( redshift, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
+
+        // ---------------- Kappa Synchotron Model ---------------- //
+
+        double Kappa;
     };
 
     struct Metric_Parameters_type {
@@ -70,17 +99,6 @@
 
     };
 
-    struct Emission_law_parameters {
-
-        /* Phenomenological emission model parameters */
-
-        double Emission_scale;
-        double Absorbtion_coeff;    
-        double Emission_power_law;  // emission   ~ pow( redshift, EMISSION_POWER_LAW )
-        double Source_f_power_law;  // absorbtion ~ pow( redshift, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
-        
-    };
-
     struct Precomputed_e_pitch_angles {
 
         double sin_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
@@ -95,6 +113,10 @@
 
         double one_over_sin_to_1_point_035[NUM_SAMPLES_TO_AVG];
         double one_over_sin_to_1_point_2_over_2[NUM_SAMPLES_TO_AVG];
+
+        // Used in the kappa synchotron emission functions
+
+        double one_over_sin_to_7_over_20[NUM_SAMPLES_TO_AVG];
     };
 
     struct Thermal_emission_f_arguments {
@@ -110,6 +132,18 @@
         double X;
         double X_to_1_point_035;
         double X_to_1_point_2;
+
+    };
+
+    struct Kappa_transfer_f_arguments {
+
+        double X;
+        double sqrt_X;
+        double cbrt_X;
+        double X_to_7_over_20;
+        double kappa;
+        double sin_emission_angle;
+        double T_electron_dim;
 
     };
 
@@ -131,7 +165,8 @@
         double init_Three_Momentum[3];
 
         Disk_model_parameters Disk_params;
-        Emission_law_parameters Emission_params;
+        Hotspot_model_parameters Hotspot_params;
+        Emission_model_parameters Emission_params;
         Metric_Parameters_type Metric_Parameters;
 
     };

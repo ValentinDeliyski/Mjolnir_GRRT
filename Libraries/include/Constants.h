@@ -35,7 +35,7 @@
     */
 
     Real M_SUN_SI = 1.989e30;
-    Real OBJECT_MASS_SI = 6.2e9 * M_SUN_SI;
+    Real OBJECT_MASS_SI = 4.3e6 * M_SUN_SI;
 
     Real G_NEWTON_SI = 6.6743e-11;
 
@@ -68,7 +68,7 @@
 
     Real PLANCK_CONSTANT_CGS = 6.626196e-27;
 
-    Real OBS_FREQUENCY_CGS = 230e9;
+    Real OBS_FREQUENCY_CGS = C_LIGHT_SI / 2.2e-6;
 
     Real CGS_TO_JANSKY = 1e+23;
 

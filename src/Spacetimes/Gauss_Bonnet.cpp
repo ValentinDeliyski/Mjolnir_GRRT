@@ -76,6 +76,8 @@ Metric_type Gauss_Bonnet_class::get_metric(double State_Vector[]) {
 
     double f = 1. + r2 / GAUSS_BONNET_GAMMA / 2. * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
 
+    memset(&this->s_Metric, 0., sizeof(this->s_Metric));
+
     this->s_Metric.Metric[0][0] = -f;
     this->s_Metric.Metric[1][1] = 1. / f;
     this->s_Metric.Metric[2][2] = r2;
@@ -102,6 +104,8 @@ Metric_type Gauss_Bonnet_class::get_dr_metric(double State_Vector[]) {
     double f = 1. + r2 / GAUSS_BONNET_GAMMA / 2. * (1. - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
     double dr_f = 2. / r * (f - 1.) + 6. * M / sqrt(r2 * r2 + 8. * GAUSS_BONNET_GAMMA * M * r);
 
+    memset(&this->s_dr_Metric, 0., sizeof(this->s_dr_Metric));
+
     this->s_dr_Metric.Metric[0][0] = -dr_f;
     this->s_dr_Metric.Metric[1][1] = -1. / f / f * dr_f;
     this->s_dr_Metric.Metric[2][2] = 2. * r;
@@ -123,6 +127,8 @@ Metric_type Gauss_Bonnet_class::get_dtheta_metric(double State_Vector[]) {
 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
+
+    memset(&this->s_dtheta_Metric, 0., sizeof(this->s_dtheta_Metric));
 
     this->s_dtheta_Metric.Metric[0][0] = 0.0;
     this->s_dtheta_Metric.Metric[0][3] = 0.0;
@@ -151,6 +157,8 @@ Metric_type Gauss_Bonnet_class::get_d2r_metric(double State_Vector[]) {
     double f = 1 + r2 / GAUSS_BONNET_GAMMA / 2. * (1 - sqrt(1. + 8. * GAUSS_BONNET_GAMMA * M / r2 / r));
     double dr_f = 2. / r * (f - 1.) + 6 * M / root;
     double d2r_f = -2. / r2 * (f - 1.) + 2. / r * dr_f - 12. * M / root / root / root * (r2 * r + 2. * GAUSS_BONNET_GAMMA * M);
+
+    memset(&this->s_d2r_Metric, 0., sizeof(this->s_d2r_Metric));
 
     this->s_d2r_Metric.Metric[0][0] = -d2r_f;
     this->s_d2r_Metric.Metric[1][1] = 2. / f / f / f * dr_f - 1. / f / f * d2r_f;

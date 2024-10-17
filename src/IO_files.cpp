@@ -86,11 +86,11 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << DISK_OPENING_ANGLE
                                             << "\n"
                                             << "R_0 [M]: "
-                                            << R_0
+                                            << DISK_R_0
                                             << "\n"
                                             << "R_Cutoff [M]: ";
 
-            Image_Output_files[Image_order] << R_Cutoff << "\n";     
+            Image_Output_files[Image_order] << DISK_R_Cutoff << "\n";     
             Image_Output_files[Image_order] << "Cutoff Scale [M]: " << DISK_CUTOFF_SCALE << "\n";
 
             break;
@@ -109,7 +109,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
             break;
         }
 
-        switch (e_emission) {
+        switch (e_disk_emission) {
 
         case Phenomenological_synchotron:
 
@@ -145,10 +145,10 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << ", " << MAG_FIELD_GEOMETRY[2] << "]"
                                             << "\n"
                                             << "Max Electron Temperature [K]: "
-                                            << T_ELECTRON_EXACT_CGS
+                                            << DISK_T_ELECTRON_SCALE_CGS
                                             << "\n"
                                             << "Max Disk Density [g / cm^3]: "
-                                            << N_ELECTRON_EXACT_CGS
+                                            << DISK_N_ELECTRON_SCALE_CGS
                                             << "\n";
 
             break;
@@ -156,11 +156,11 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         Image_Output_files[Image_order] << "------------------------------------------------------------- Hotpost Metadata -------------------------------------------------------------"
                                         << "\n"
-                                        << "Hotspot Relative Scale [-]: "
-                                        << HOTSPOT_REL_SCALE
+                                        << "Max Hotspot Density[g / cm ^ 3] "
+                                        << HOTSPOT_N_ELECTRON_SLACE_CGS
                                         << "\n"
                                         << "Hotspot Radial Scale [M]: "
-                                        << HOTSPOT_SCALE
+                                        << HOTSPOT_SPREAD
                                         << "\n"
                                         << "Hotspot r_center [M]: "
                                         << HOTSPOT_R_COORD

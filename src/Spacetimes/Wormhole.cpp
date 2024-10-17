@@ -52,6 +52,8 @@ Metric_type Wormhole_class::get_metric(double State_Vector[]) {
 
     double exponent = -this->Mass / r - this->Redshift_Param * this->Mass * this->Mass / r2;
 
+    memset(&this->s_Metric, 0., sizeof(this->s_Metric));
+
     this->s_Metric.Lapse_function = exp(exponent);
     this->s_Metric.Shift_function = 2 * this->Spin_Param * this->Mass * this->Mass / r2 / r;
 
@@ -75,6 +77,8 @@ Metric_type Wormhole_class::get_dr_metric(double State_Vector[]) {
 
     double r2 = r * r;
     double sin_theta = sin(theta);
+
+    memset(&this->s_dr_Metric, 0., sizeof(this->s_dr_Metric));
 
     this->s_dr_Metric.Lapse_function = this->s_Metric.Lapse_function * (1 / r2 + 2 * this->Redshift_Param / (r2 * r));
     this->s_dr_Metric.Shift_function = -3 * this->s_Metric.Shift_function / r;
@@ -105,6 +109,8 @@ Metric_type Wormhole_class::get_dtheta_metric(double State_Vector[]) {
 
     double exponent = -this->Mass / r - this->Redshift_Param * this->Mass * this->Mass / r2;
 
+    memset(&this->s_dtheta_Metric, 0., sizeof(this->s_dtheta_Metric));
+
     this->s_dtheta_Metric.Lapse_function = 0.0;
     this->s_dtheta_Metric.Shift_function = 0.0;
 
@@ -133,6 +139,8 @@ Metric_type Wormhole_class::get_d2r_metric(double State_Vector[]) {
     double& dr_N = this->s_dr_Metric.Lapse_function;
     double& omega = this->s_Metric.Shift_function;
     double& dr_omega = this->s_dr_Metric.Shift_function;
+
+    memset(&this->s_d2r_Metric, 0., sizeof(this->s_d2r_Metric));
 
     this->s_d2r_Metric.Lapse_function = dr_N * (1 / r2 + 2 * this->Redshift_Param / (r2 * r)) - N * (2. / (r2 * r) + 6 * this->Redshift_Param / (r2 * r2));
     this->s_d2r_Metric.Shift_function = -3 * dr_omega / r + 3 * omega / r2;

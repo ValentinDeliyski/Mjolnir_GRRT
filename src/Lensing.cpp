@@ -172,8 +172,19 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
      double* Plasma_velocity_contravariant = p_Sim_Context->p_GOT_Model->get_disk_velocity(State_vector, p_Sim_Context);
 
-     double B_field_contravariant[4]{};
-     p_Sim_Context->p_GOT_Model->get_magnetic_field(B_field_contravariant, State_vector, p_Sim_Context);
+     double Disk_B_field_contravariant[4]{};
+     p_Sim_Context->p_GOT_Model->get_total_magnetic_field(Disk_B_field_contravariant, State_vector, p_Sim_Context);
+
+     double Hotspot_B_field_contravariant[4]{};
+     p_Sim_Context->p_GOT_Model->get_total_magnetic_field(Hotspot_B_field_contravariant, State_vector, p_Sim_Context);
+
+     double Total_B_field_contravariant[4]{};
+
+     for (int index = 0; index <= 3; index++) {
+
+         Total_B_field_contravariant[index] = Disk_B_field_contravariant[index] + Hotspot_B_field_contravariant[index];
+
+     }
 
      double Wave_Vector_covariant[4] = { -1, State_vector[e_p_r], State_vector[e_p_theta], State_vector[e_p_phi] };
 
@@ -186,12 +197,12 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
      for (int left_idx = 0; left_idx <= 3; left_idx++) {
 
          Wave_vec_dot_Plasma_vel += Wave_Vector_covariant[left_idx] * Plasma_velocity_contravariant[left_idx];
-         Wave_vec_dot_B_field    += Wave_Vector_covariant[left_idx] * B_field_contravariant[left_idx];
+         Wave_vec_dot_B_field    += Wave_Vector_covariant[left_idx] * Total_B_field_contravariant[left_idx];
 
          for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
-             Plasma_vel_dot_B_field += s_Metric.Metric[left_idx][right_idx] * Plasma_velocity_contravariant[left_idx] * B_field_contravariant[right_idx];
-             B_field_norm_squared   += s_Metric.Metric[left_idx][right_idx] * B_field_contravariant[left_idx] * B_field_contravariant[right_idx];
+             Plasma_vel_dot_B_field += s_Metric.Metric[left_idx][right_idx] * Plasma_velocity_contravariant[left_idx] * Total_B_field_contravariant[right_idx];
+             B_field_norm_squared   += s_Metric.Metric[left_idx][right_idx] * Total_B_field_contravariant[left_idx] * Total_B_field_contravariant[right_idx];
 
          }
          
@@ -225,7 +236,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
          for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
              Wave_vector_contravariant[left_idx]  +=      inv_Metric[left_idx][right_idx] * Wave_Vector_covariant[right_idx];
-             B_field_covariant[left_idx]          += s_Metric.Metric[left_idx][right_idx] * B_field_contravariant[right_idx];
+             B_field_covariant[left_idx]          += s_Metric.Metric[left_idx][right_idx] * Total_B_field_contravariant[right_idx];
              Plasma_velocity_covavriant[left_idx] += s_Metric.Metric[left_idx][right_idx] * Plasma_velocity_contravariant[right_idx];
          }
 
@@ -265,7 +276,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
  
      for (int index = 0; index <= 3; index++) {
 
-         Tetrad[e_theta_coord][index] = (B_field_contravariant[index] + Plasma_vel_dot_B_field * Plasma_velocity_contravariant[index] - C_coeff * Tetrad[e_phi_coord][index]) / N_coeff;
+         Tetrad[e_theta_coord][index] = (Total_B_field_contravariant[index] + Plasma_vel_dot_B_field * Plasma_velocity_contravariant[index] - C_coeff * Tetrad[e_phi_coord][index]) / N_coeff;
 
          for (int i = 0; i <= 3; i++) {
 
@@ -506,9 +517,10 @@ void static Propagate_forward_emission(Simulation_Context_type* const p_Sim_Cont
 
         }
 
-        double Normalized_plasma_density = p_Sim_Context->p_GOT_Model->get_disk_density_profile(Logged_ray_path[Current]);
+        double Normalized_disk_density    = p_Sim_Context->p_GOT_Model->get_disk_density(Logged_ray_path[Current]) / p_Sim_Context->p_Init_Conditions->Disk_params.Electron_density_scale;
+        double Normalized_hotspot_density = p_Sim_Context->p_GOT_Model->get_hotspot_density(Logged_ray_path[Current]) / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale;
 
-        if (Normalized_plasma_density > 1e-6){
+        if ((Normalized_disk_density > 1e-3 || Normalized_hotspot_density > 1e-6) && Logged_ray_path[Current][e_r] > 6 && Logged_ray_path[Next][e_r] > 6) {
 
             double Tetrad[4][4]{};
             double inv_Tetrad[4][4]{};
@@ -538,7 +550,7 @@ void static Propagate_forward_emission(Simulation_Context_type* const p_Sim_Cont
             double    faradey_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
             double absorbtion_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
 
-            if (!isinf(1.0 / redshift[Current]) && !isinf(1.0 / redshift[Next])) {
+            if (!isinf(1. / redshift[Current]) && !isinf(1. / redshift[Next])) {
 
                 p_Sim_Context->p_GOT_Model->get_radiative_transfer_functions(Logged_ray_path[Current], 
                                                                              p_Sim_Context, 
@@ -579,6 +591,7 @@ void static Propagate_forward_emission(Simulation_Context_type* const p_Sim_Cont
                 /* ======================================================================================================= */
 
             }
+
         }
 
         double Polarized_Intensity = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +

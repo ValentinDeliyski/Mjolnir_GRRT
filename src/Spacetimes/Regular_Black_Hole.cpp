@@ -39,6 +39,8 @@ Metric_type RBH_class::get_metric(double State_Vector[]) {
     double sin_theta = sin(theta);
     double rho = sqrt(r2 + RBH_PARAM * RBH_PARAM);
 
+    memset(&this->s_Metric, 0., sizeof(this->s_Metric));
+
     this->s_Metric.Metric[0][0] = -(1 - 2 * MASS / rho);
     this->s_Metric.Metric[0][3] = 0.0;
     this->s_Metric.Metric[1][1] = -1.0 / this->s_Metric.Metric[0][0];
@@ -65,6 +67,8 @@ Metric_type RBH_class::get_dr_metric(double State_Vector[]) {
     double rho = sqrt(r2 + RBH_PARAM * RBH_PARAM);
     double rho3 = rho * rho * rho;
 
+    memset(&this->s_dr_Metric, 0., sizeof(this->s_dr_Metric));
+
     this->s_dr_Metric.Metric[0][0] = -2 * MASS * r / rho3;
     this->s_dr_Metric.Metric[0][3] = 0.0;
     this->s_dr_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0];
@@ -84,6 +88,8 @@ Metric_type RBH_class::get_dtheta_metric(double State_Vector[]) {
 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
+
+    memset(&this->s_dtheta_Metric, 0., sizeof(this->s_dtheta_Metric));
 
     this->s_dtheta_Metric.Metric[0][0] = 0.0;
     this->s_dtheta_Metric.Metric[0][3] = 0.0;
@@ -112,6 +118,8 @@ Metric_type RBH_class::get_d2r_metric(double State_Vector[]) {
     double rho = sqrt(r2 + RBH_PARAM * RBH_PARAM);
     double rho3 = rho * rho * rho;
     double rho5 = rho * rho * rho * rho * rho;
+
+    memset(&this->s_d2r_Metric, 0., sizeof(this->s_d2r_Metric));
 
     this->s_d2r_Metric.Metric[0][0] = -2 * MASS / rho3 + 6 * MASS * r2 / (rho5);
     this->s_d2r_Metric.Metric[0][3] = 0.0;
