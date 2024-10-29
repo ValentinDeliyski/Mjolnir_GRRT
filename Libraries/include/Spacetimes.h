@@ -92,21 +92,11 @@
             
             };
 
-            virtual bool load_parameters(Metric_Parameters_type Metric_Parameters) {
+            virtual bool load_parameters(Metric_parameters_type Metric_Parameters) {
             
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
                 return true;
-            
-            };
-
-            virtual Metric_Parameters_type get_parameters() {
-            
-                std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-                Metric_Parameters_type Error{};
-
-                return Error;
             
             };
 
@@ -154,9 +144,7 @@
 
             bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-            bool load_parameters(Metric_Parameters_type Metric_Parameters);
-
-            Metric_Parameters_type get_parameters();
+            bool load_parameters(Metric_parameters_type Metric_Parameters);
 
             void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
 
@@ -203,9 +191,7 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-        bool load_parameters(Metric_Parameters_type Metric_Parameters);
-
-        Metric_Parameters_type get_parameters();
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
 
         void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
 
@@ -246,9 +232,7 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-        bool load_parameters(Metric_Parameters_type Metric_Parameters);
-
-        Metric_Parameters_type get_parameters();
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
 
         void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
 
@@ -289,9 +273,7 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-        bool load_parameters(Metric_Parameters_type Metric_Parameters);
-
-        Metric_Parameters_type get_parameters();
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
 
         void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
 
@@ -332,9 +314,7 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-        bool load_parameters(Metric_Parameters_type Metric_Parameters);
-
-        Metric_Parameters_type get_parameters();
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
 
         void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
 
@@ -374,9 +354,7 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
-        bool load_parameters(Metric_Parameters_type Metric_Parameters);
-
-        Metric_Parameters_type get_parameters();
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
 
         void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
 
@@ -386,18 +364,14 @@
 
     private:
 
-        double r_obs;
-        double theta_obs;
-        double phi_obs;
+        Observer_parameters_type obs_params;
         double obs_velocity[4];
 
     public:
 
-        Observer_class(Initial_conditions_type* p_Init_Conditions);
+        Observer_class(Simulation_Context_type* p_Sim_Context);
 
-        double get_r_obs();
-        double get_theta_obs();
-        double get_phi_obs();
+        Observer_parameters_type get_parameters();
 
         int get_obs_velocity(double Obs_velocity[4]);
 

@@ -160,8 +160,8 @@ Metric_type Wormhole_class::get_d2r_metric(double State_Vector[]) {
 int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
 
-    double& r_obs = p_Initial_Conditions->init_Pos[e_r];
-    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
+    double& r_obs = p_Initial_Conditions->Observer_params.distance;
+    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
 
     p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
     p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
@@ -232,7 +232,7 @@ bool Wormhole_class::terminate_integration(double State_vector[], double Derivat
     }
 };
 
-bool Wormhole_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
+bool Wormhole_class::load_parameters(Metric_parameters_type Metric_Parameters) {
 
     if (!isnan(Metric_Parameters.Spin) &&
         !isnan(Metric_Parameters.Redshift_Parameter)) {
@@ -249,18 +249,6 @@ bool Wormhole_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
 
 }
 
-Metric_Parameters_type Wormhole_class::get_parameters() {
-
-    Metric_Parameters_type Parameters{};
-
-    Parameters.Spin = this->Spin_Param;
-    Parameters.Redshift_Parameter = this->Redshift_Param;
-
-    return Parameters;
-
-}
-
-
 void Wormhole_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
 
 
@@ -274,7 +262,7 @@ void Wormhole_class::update_parameters(double Param_value, Metric_Parameter_Sele
 
     }
 
-    if (this->Spin_Param == Parameter) {
+    if (Spin == Parameter) {
 
         this->Spin_Param = Param_value;
 

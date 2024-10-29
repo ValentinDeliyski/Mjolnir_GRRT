@@ -175,8 +175,8 @@ Metric_type JNW_class::get_d2r_metric(double State_Vector[]) {
 
 int JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
-    double& r_obs = p_Initial_Conditions->init_Pos[e_r];
-    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
+    double& r_obs = p_Initial_Conditions->Observer_params.distance;
+    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
 
     double r_singularity = 2 / this->Gamma;
 
@@ -249,17 +249,7 @@ bool JNW_class::terminate_integration(double State_vector[], double Derivatives[
     }
 };
 
-Metric_Parameters_type JNW_class::get_parameters() {
-
-    Metric_Parameters_type Parameters{};
-
-    Parameters.JNW_Gamma_Parameter = this->Gamma;
-
-    return Parameters;
-
-}
-
-bool JNW_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
+bool JNW_class::load_parameters(Metric_parameters_type Metric_Parameters) {
 
     if (!isnan(Metric_Parameters.JNW_Gamma_Parameter)) {
 

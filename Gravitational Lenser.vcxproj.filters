@@ -34,6 +34,9 @@
     <Filter Include="Header Files\KHR">
       <UniqueIdentifier>{f5333f71-c811-4ec9-ba26-de88bfd86ceb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Parsers">
+      <UniqueIdentifier>{9791d647-177d-4546-a20d-ad236728a222}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\Constants.h">
@@ -888,6 +891,12 @@
     <ClInclude Include="Libraries\include\KHR\khrplatform.h">
       <Filter>Header Files\KHR</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\include\Input_parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\tinyxml2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\IO_files.cpp">
@@ -949,6 +958,12 @@
     </ClCompile>
     <ClCompile Include="src\Emission_fit_functions.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Input_parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tinyxml2.cpp">
+      <Filter>Source Files\Parsers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -11,7 +11,7 @@
 #include <vector>
 #include "Lensing.h"
 
-void RK45(double State_Vector[], Step_controller* controller, Spacetime_Base_Class* p_Spacetime) {
+void RK45(double State_Vector[], Step_controller* controller, Simulation_Context_type* p_Sim_context) {
 
     /*************************************************************************************************
     |                                                                                                |
@@ -49,7 +49,7 @@ void RK45(double State_Vector[], Step_controller* controller, Spacetime_Base_Cla
             }
         }
 
-        p_Spacetime->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
+        p_Sim_context->p_Spacetime->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
 
         iteration += 1;
 
@@ -72,10 +72,11 @@ void RK45(double State_Vector[], Step_controller* controller, Spacetime_Base_Cla
     }
 
     controller->previous_step = controller->step;
+    controller->sec_prev_err  = controller->prev_err;
+    controller->prev_err      = controller->current_err;
 
-    controller->sec_prev_err = controller->prev_err;
-    controller->prev_err = controller->current_err;
     controller->current_err = my_max(state_error, e_State_Number);
+
     controller->update_step(std::as_const(State_Vector));
 
     if (controller->continue_integration) {
@@ -86,15 +87,15 @@ void RK45(double State_Vector[], Step_controller* controller, Spacetime_Base_Cla
 
         }
 
-        controller->integration_complete = p_Spacetime->terminate_integration(New_State_vector_O5, Derivatives);
+        controller->integration_complete = p_Sim_context->p_Spacetime->terminate_integration(New_State_vector_O5, Derivatives);
 
         // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
         // Close enough that it requires "manual" scattering, by flipping the p_r sign.
         // Otherwise the photons never reach the turning point and the integration grinds to a halt.
 
-        if (e_metric == Naked_Singularity && p_Spacetime->get_parameters().JNW_Gamma_Parameter < 0.5) {
+        if (p_Sim_context->e_Spacetime == Naked_Singularity && p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 0.5) {
 
-            if (State_Vector[e_r] - 2 / p_Spacetime->get_parameters().JNW_Gamma_Parameter < 1e-8) {
+            if (State_Vector[e_r] - 2 / p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 1e-8) {
 
                 State_Vector[e_p_r] *= -1;
 
@@ -103,43 +104,48 @@ void RK45(double State_Vector[], Step_controller* controller, Spacetime_Base_Cla
     }
 }
 
-Step_controller::Step_controller(double const init_stepsize) {
+Step_controller::Step_controller(Integrator_parameters_type Integrator_parameters) {
 
-    Gain_I =  0.58 / 5;
-    Gain_P = -0.21 / 5;
-    Gain_D =  0.10 / 5;
+    this->Gain_I = Integrator_parameters.Gain_I;
+    this->Gain_P = Integrator_parameters.Gain_P;
+    this->Gain_D = Integrator_parameters.Gain_D;
 
-    step = init_stepsize;
-    previous_step = init_stepsize;
+    this->step = Integrator_parameters.Init_stepzie;
+    this->previous_step = Integrator_parameters.Init_stepzie;
 
-    current_err     = RK45_ACCURACY;
-    prev_err        = RK45_ACCURACY;
-    sec_prev_err    = RK45_ACCURACY;
+    this->Max_absolute_err = Integrator_parameters.RK_45_accuracy;
 
-    continue_integration = false;
-    integration_complete = false;
+    this->current_err  = this->Max_absolute_err;
+    this->prev_err     = this->Max_absolute_err;
+    this->sec_prev_err = this->Max_absolute_err;
+
+    this->Safety_1 = Integrator_parameters.Safety_1;
+    this->Safety_2 = Integrator_parameters.Safety_2;
+
+    this->Max_integration_count = Integrator_parameters.Max_integration_count;
+
+    this->continue_integration = false;
+    this->integration_complete = false;
 
 }
 
 void Step_controller::update_step(double const State_Vector[]) {
 
-    double const Error_threshold = RK45_ACCURACY + RK45_ACCURACY * my_max(State_Vector, e_State_Number);
+    double const Error_threshold = this->Max_absolute_err + this->Max_absolute_err * my_max(State_Vector, e_State_Number);
 
     if (current_err < Error_threshold)
     {
-        step = pow(Error_threshold / (current_err  + SAFETY_2), Gain_I) *
-               pow(Error_threshold / (prev_err     + SAFETY_2), Gain_P) *
-               pow(Error_threshold / (sec_prev_err + SAFETY_2), Gain_D) * step;
+        this->step = pow(Error_threshold / (current_err  + this->Safety_2), this->Gain_I) *
+               pow(Error_threshold / (prev_err     + this->Safety_2), this->Gain_P) *
+               pow(Error_threshold / (sec_prev_err + this->Safety_2), this->Gain_D) * this->step;
 
-        //step = SAFETY_1 * step * pow((RK45_ACCURACY + 1e-10 * State_Vector[e_r]) / (current_err + SAFETY_2), 0.2);
-
-        continue_integration = true;
+        this->continue_integration = true;
     }
     else
     {
 
-        step = SAFETY_1 * step * pow(Error_threshold / (current_err + SAFETY_2), 0.25);
+        step = this->Safety_1 * this->step * pow(Error_threshold / (current_err + this->Safety_2), 0.25);
 
-        continue_integration = false;
+        this->continue_integration = false;
     }
 }

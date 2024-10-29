@@ -128,7 +128,7 @@ void get_impact_parameters(Initial_conditions_type* p_Initial_Conditions, double
     ksi = sqrt(metric[3][3] / g2);
     gamma = -metric[0][3] / metric[3][3] * ksi;
 
-    double& r_0 = p_Initial_Conditions->init_Pos[e_r];
+    double& r_0 = p_Initial_Conditions->Observer_params.distance;
     double& J = p_Initial_Conditions->init_Three_Momentum[e_phi];
     double& p_th = p_Initial_Conditions->init_Three_Momentum[e_theta];
 

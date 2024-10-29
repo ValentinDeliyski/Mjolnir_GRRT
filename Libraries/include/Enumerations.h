@@ -16,19 +16,20 @@
 
     };
 
-    enum Emission_model_enums {
+    enum Ensamble_enums {
 
-        Thermal_dist_synchotron     = 0,
-        Power_dist_synchotron       = 1,
-        Kappa_dist_synchotron       = 2,
-        Phenomenological_synchotron = 3,
+        e_Thermal_ensamble          = 0,
+        e_Power_law_ensamble        = 1,
+        e_Kappa_ensamble            = 2,
+        e_Phenomenological_ensamble = 3,
 
     };
 
-    enum Disk_density_model_enums {
+    enum Profile_enums {
 
-        Power_law       = 0,
-        Exponential_law = 1
+        e_Power_law_profile       = 0,
+        e_Exponential_law_profile = 1,
+        e_Gaussian_profile        = 2
 
     };
 
@@ -88,14 +89,6 @@
 
         OK    =  0,
         ERROR = -1
-
-    };
-
-    enum Disk_Model{
-
-        Novikov_Thorne          = 0,
-        Optically_Thin_Toroidal = 1,
-        DISK_MODEL_NUM          = 2
 
     };
 

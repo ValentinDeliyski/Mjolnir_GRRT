@@ -17,7 +17,7 @@
 
         public:
 
-            Novikov_Thorne_Model(double x, double y, Spacetime_Base_Class* Spacetime);
+            Novikov_Thorne_Model(NT_parameters_type NT_params, Spacetime_Base_Class* Spacetime);
 
             double get_r_in();
             double get_r_out();
@@ -43,10 +43,10 @@
     class Generic_Optically_Thin_Model {
 
         private:
-            Disk_model_parameters      s_Disk_params;
-            Hotspot_model_parameters   s_Hotspot_params;
-            Emission_model_parameters  s_Emission_params;
-            Precomputed_e_pitch_angles s_Precomputed_e_pitch_angles{};
+            Disk_model_parameters_type      s_Disk_params;
+            Hotspot_model_parameters_type   s_Hotspot_params;
+            Emission_model_parameters_type  s_Emission_params;
+            Precomputed_e_pitch_angles      s_Precomputed_e_pitch_angles{};
             double Disk_velocity[4]{};
             double Disk_Temperature{};
             double Hotspot_Temperature{};
@@ -75,7 +75,6 @@
             void evaluate_thermal_synchotron_transfer_functions(double Density,
                                                                 double T_electron_dim,
                                                                 double f_cyclo,
-                                                                double redshift,
                                                                 double sin_pitch_angle,
                                                                 double cos_pitch_angle,
                                                                 double Emission_functions[STOKES_PARAM_NUM],
@@ -106,7 +105,6 @@
 
             void evaluate_kappa_synchotron_transfer_functions(double Density,
                                                               double f_cyclo,
-                                                              double redshift,
                                                               double Emission_functions[STOKES_PARAM_NUM],
                                                               double Faradey_functions[STOKES_PARAM_NUM],
                                                               double Absorbtion_functions[STOKES_PARAM_NUM],
@@ -183,9 +181,9 @@
 
             void precompute_electron_pitch_angles();
 
-            int load_parameters(Disk_model_parameters* Disk_params,
-                                Hotspot_model_parameters* Hotspot_params,
-                                Emission_model_parameters* Emission_params);
+            int load_parameters(Disk_model_parameters_type* Disk_params,
+                                Hotspot_model_parameters_type* Hotspot_params,
+                                Emission_model_parameters_type* Emission_params);
 
     };
 

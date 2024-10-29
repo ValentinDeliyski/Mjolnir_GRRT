@@ -77,7 +77,7 @@ double my_max(double const vector[], int const element_number) {
 	|                                                                            |
 	*****************************************************************************/
 
-	int index_max = element_number - 1;
+	int index_max = element_number;
 
 	double* temp_vec = (double*) calloc(element_number, sizeof(double));
 	double max{};
@@ -96,7 +96,7 @@ double my_max(double const vector[], int const element_number) {
 
 	}
 
-	for (int index = 0; index <= index_max; index += 1) {
+	for (int index = 0; index <= index_max - 1; index += 1) {
 
 		temp_vec[index] = vector[index];
 
@@ -107,7 +107,7 @@ double my_max(double const vector[], int const element_number) {
 
 	}
 
-	for (int index = 1; index <= index_max; index += 1) {
+	for (int index = 1; index <= index_max - 1; index += 1) {
 
 		if (temp_vec[index] > max) {
 
@@ -124,8 +124,7 @@ double my_max(double const vector[], int const element_number) {
 bool interpolate_crossing(double State_Vector[], 
 						  double Old_State_Vector[], 
 						  double Crossing_coords[], 
-						  double crossing_momenta[], 
-						  Novikov_Thorne_Model* const NT_Model) {
+						  double crossing_momenta[]) {
 
 	/***********************************************************************************************
 	|                                                                                              |
@@ -173,8 +172,6 @@ bool interpolate_crossing(double State_Vector[],
 
 	}
 
-	double r_crossing_squared = Crossing_coords[0] * Crossing_coords[0] + Crossing_coords[1] * Crossing_coords[1];
-
 	/*
 	
 	Interpolate the covariant momenta at those coorinates
@@ -187,17 +184,8 @@ bool interpolate_crossing(double State_Vector[],
 
 		crossing_momenta[index] = momentum_param * State_Vector[e_p_r - index] + (1 - momentum_param) * Old_State_Vector[e_p_r - index];
 	}
-
-	double r_out = NT_Model->get_r_in();
-	double r_in  = NT_Model->get_r_out();
-
-	if (e_metric == Wormhole) {
-
-		return r_crossing_squared < r_out * r_out - WH_R_THROAT * WH_R_THROAT && r_crossing_squared > r_in * r_in - WH_R_THROAT * WH_R_THROAT;
-
-	}
 	
-	return r_crossing_squared < r_out * r_out && r_crossing_squared > r_in * r_in;
+	return true;
 }
 
 double dot_product(double vector_1[3], double vector_2[3]) {

@@ -6,7 +6,11 @@
     #include "Constants.h"
     #include <vector>
 
-    struct Disk_model_parameters {
+    struct Disk_model_parameters_type {
+
+        Ensamble_enums Ensamble_type;
+        Profile_enums Density_profile_type;
+        Profile_enums Temperature_profile_type;
 
         double Electron_density_scale;
         double Electron_temperature_scale;
@@ -34,15 +38,25 @@
         double Power_law_temperature_cutoff_scale;
         double Power_law_temperature_radial_power_law;
 
+        /* -------- Exponential law temperature profile parameters ------- */
+
+        double Exp_law_temperature_height_scale;
+        double Exp_law_temperature_radial_scale;
+
 
     };
 
-    struct Hotspot_model_parameters {
+    struct Hotspot_model_parameters_type {
+
+        Ensamble_enums Ensamble_type;
+        Profile_enums Density_profile_type;
+        Profile_enums Temperature_profile_type;
 
         double Position[3];
 
         // The hotspot is modelled as a Gaussian with an std = Spread
-        double Spread;
+        double Density_spread;
+        double Temperature_spread;
 
         double Electron_density_scale;
         double Electron_temperature_scale;
@@ -52,7 +66,7 @@
 
     };
 
-    struct Emission_model_parameters {
+    struct Emission_model_parameters_type {
 
         // --------------- Thermal Synchotron Model --------------- //
         // It is fully determined by the electron density and temperature
@@ -69,11 +83,12 @@
         double Kappa;
     };
 
-    struct Metric_Parameters_type {
+    struct Metric_parameters_type {
 
         /* ============ Wormhole Specific Parameters ============ = */
 
         double Redshift_Parameter;
+        double R_throat;
         bool Stop_At_Throat;
 
         /* ============ Janis-Newman-Winicour Specific Parameters ============ = */
@@ -124,6 +139,7 @@
         double X;
         double sqrt_X;
         double cbrt_X;
+        double frequency;
 
     };
 
@@ -132,6 +148,7 @@
         double X;
         double X_to_1_point_035;
         double X_to_1_point_2;
+        double frequency;
 
     };
 
@@ -155,19 +172,75 @@
 
     };
 
+    struct Integrator_parameters_type {
+
+        double Gain_I;
+        double Gain_P;
+        double Gain_D;
+        double Init_stepzie;
+        double RK_45_accuracy;
+        double Safety_1;
+        double Safety_2;
+        int Max_integration_count;
+
+    };
+
+    struct Observer_parameters_type {
+
+        double distance;
+        double inclination;
+        double azimuth;
+
+        double x_min;
+        double x_max;
+        double y_min;
+        double y_max;
+
+        double resolution_x;
+        double resolution_y;
+
+        double obs_frequency;
+        double cam_rotation_angle;
+
+        bool include_polarization;
+
+    };
+
+    struct NT_parameters_type {
+
+        double r_in;
+        double r_out;
+        bool evaluate_NT_disk;
+
+    };
+
+    struct File_manager_paths_type {
+
+        std::string Sim_mode_2_imput_path;
+        std::string Output_file_path;
+        std::string Common_file_names;
+        std::string Vert_shader_path;
+        std::string Frag_shader_path;
+
+    };
+
     struct Initial_conditions_type {
 
         double init_metric[4][4];
         double init_metric_Redshift_func;
         double init_metric_Shitft_func;
-
-        double init_Pos[3];
         double init_Three_Momentum[3];
 
-        Disk_model_parameters Disk_params;
-        Hotspot_model_parameters Hotspot_params;
-        Emission_model_parameters Emission_params;
-        Metric_Parameters_type Metric_Parameters;
+        Disk_model_parameters_type Disk_params;
+        Hotspot_model_parameters_type Hotspot_params;
+        Emission_model_parameters_type Emission_params;
+        Metric_parameters_type Metric_params;
+        Integrator_parameters_type Integrator_params;
+        Observer_parameters_type Observer_params;
+        NT_parameters_type NT_params;
+        File_manager_paths_type File_manager_paths;
+
+        bool Average_electron_pitch_angle;
 
     };
 
@@ -194,10 +267,10 @@
 
     struct s_Ray_log_type {
 
-        double Ray_path_log[MAX_INTEGRATION_COUNT * e_path_log_number];
-        double Ray_emission_log[MAX_INTEGRATION_COUNT * 2][STOKES_PARAM_NUM];
-        int Log_offset{};
-        int Log_length{};
+        double *Ray_path_log;
+        double *Ray_emission_log[4];
+        int Log_offset;
+        int Log_length;
 
     };
 
@@ -216,7 +289,7 @@
 
         s_Ray_log_type Ray_log_struct;
 
-        Metric_Parameters_type Parameters{};
+        Metric_parameters_type Parameters{};
 
     };
 

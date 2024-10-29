@@ -54,8 +54,6 @@ void Generic_Optically_Thin_Model::get_thermal_synchotron_emission_fit_functions
 
         */
 
-        Emission_functions[I] = 0.0;
-
         if (!isnan(cbrt_X) && !isinf(cbrt_X) && !isnan(X) && !isinf(X) && !isnan(1.0 / cbrt_X) && !isinf(1.0 / cbrt_X)) {
 
             Emission_functions[I] = M_SQRT2 * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 3 / C_LIGHT_CGS;
@@ -174,7 +172,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_emission_fit_functions(d
         // ----------------------------------------------------------------------- High frequency fit ------------------------------------------------------------------------ //
 
         double Emission_functions_high[STOKES_PARAM_NUM]{};
-        double Common_factor_high = pow(X, -(kappa - 2) / 2) * sin_emission_angle * pow(3, (kappa - 1) / 2) * (kappa - 2) * (kappa - 1) / 4 * std::tgamma(kappa / 4 - 1.0 / 3) * std::tgamma(kappa / 4 + 4.0 / 3);
+        double Common_factor_high = pow(X, -(kappa - 2.) / 2.) * sin_emission_angle * pow(3, (kappa - 1) / 2) * (kappa - 2) * (kappa - 1) / 4 * std::tgamma(kappa / 4 - 1.0 / 3) * std::tgamma(kappa / 4 + 4.0 / 3);
 
         Emission_functions_high[I] = Common_factor_high;
         Emission_functions_high[Q] = -Common_factor_high * (16.0 / 25 + kappa / 50);
@@ -208,7 +206,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_emission_fit_functions(d
 
         }
 
-        //Emission_functions[I] = Emission_functions_high[I];
+       Emission_functions[I] = Emission_functions_high[I];
 
     }
 
@@ -293,5 +291,6 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_absorbtion_fit_functions
 
     }
 
-    //Absorbtion_functions[I] = Absorbtion_functions_high[I];
+   Absorbtion_functions[I] = Absorbtion_functions_high[I];
+
 }

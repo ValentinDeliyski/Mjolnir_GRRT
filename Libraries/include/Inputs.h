@@ -16,7 +16,7 @@
     const Spacetime_enums e_metric = Kerr; // Spacetime to be used
 
     Real MASS = 1.0f;
-    Real SPIN = 0.0001;
+    Real SPIN = 0.90;
 
     // Wormhole spacetime parameters //
 
@@ -46,16 +46,16 @@
 
     // ======================== Observer Inputs ======================== //
 
-    Real r_obs	   = 1e4;			     // Radial potision of the observer [ M ]
-    Real theta_obs = 170.0 / 180 * M_PI; // Polar angle of the observer [ Rad ]
+    Real r_obs	   = 1e3;			     // Radial potision of the observer [ M ]
+    Real theta_obs = 60. / 180 * M_PI; // Polar angle of the observer [ Rad ]
     Real phi_obs   = 0.0f;			     // Azimuthal angle of the observer ( not used - all metrics have axial symmetry ) [ Rad ]
     Real obs_cam_rotation_angle = 0.0f;  // [ Rad ] /*-70.0f / 180 * M_PI - M_PI_4;*/
 
     // ======================== Emission Model Inputs ======================== //
 
-    const Emission_model_enums     e_disk_emission = Thermal_dist_synchotron; // Emission model to be used
-    const Emission_model_enums     e_hotspot_emission = Kappa_dist_synchotron;
-    const Disk_density_model_enums e_disk_model = Power_law;
+    const Ensamble_enums     e_disk_emission = e_Thermal_ensamble; // Emission model to be used
+    const Ensamble_enums     e_hotspot_emission = e_Kappa_ensamble;
+    const Profile_enums      e_disk_model = e_Power_law_profile;
 
     // Novikov - Thorne accretion disk parameters
 
@@ -66,15 +66,15 @@
 
     // Exponential disk profile parameters //
 
-    Real DISK_HEIGHT_SCALE = 1.0f / (10.0f / 3.0f); // disk density ~ exp( - cos(theta)^2 / DISK_HEIGHT_SCALE^2 / 2 )
-    Real DISK_RADIAL_SCALE = 10.0f;               // disk density ~ exp( - r^2 / DISK_RADIAL_SCALE^2 / 2)
+    Real DISK_HEIGHT_SCALE = 1.0 / (10.0 / 3.0); // disk density ~ exp( - cos(theta)^2 / DISK_HEIGHT_SCALE^2 / 2 )
+    Real DISK_RADIAL_SCALE = 10.0;               // disk density ~ exp( - r^2 / DISK_RADIAL_SCALE^2 / 2)
 
     // Power law disk profile parameters //
 
     Real DISK_OPENING_ANGLE = 0.1;  // disk density ~ exp( - ctan(theta)^2 / DISK_OPENING_ANGLE^2 / 2)
-    Real DISK_CUTOFF_SCALE  = 0.4f;       // disk density ~ exp( - (r - R_Cutoff)^2 / DISK_CUTOFF_SCALE^2) if r < R_Cutoff
-    Real DISK_R_Cutoff      = 5.0f;
-    Real DISK_R_0           = 5.0f;
+    Real DISK_CUTOFF_SCALE  = 0.4;       // disk density ~ exp( - (r - R_Cutoff)^2 / DISK_CUTOFF_SCALE^2) if r < R_Cutoff
+    Real DISK_R_Cutoff      = 4.5;
+    Real DISK_R_0           = 4.5;
 
     // Phenomenological Synchotron emission parameters //
     
@@ -90,15 +90,15 @@
     Real MAG_FIELD_GEOMETRY[3] = { 0.87, 0.0, 0.5 };
     
     Real DISK_N_ELECTRON_SCALE_CGS = 5e+05;
-    Real DISK_T_ELECTRON_SCALE_CGS = 3.5e+10;
+    Real DISK_T_ELECTRON_SCALE_CGS = 6.5e+10;
 
     const int NUM_SAMPLES_TO_AVG = 50; // Number of samples used to average the emission function over the electron pitch angles
-    const bool AVERAGE_EMISSION_PITCH_ANGLE = false;
-    const bool INCLUDE_POLARIZATION = true;
+    const bool AVERAGE_EMISSION_PITCH_ANGLE = true;
+    const bool INCLUDE_POLARIZATION = false;
 
     // Hotspot paramteres //
      
-    Real HOTSPOT_N_ELECTRON_SLACE_CGS  = 2e+06; 
+    Real HOTSPOT_N_ELECTRON_SLACE_CGS  = 1e+06; 
     Real HOTSPOT_T_ELECTRON_SCALE_CGS  = 1e+11;
     Real HOTSPOT_SPREAD                = 1.0;    // Hotspot density ~ exp(-|r - r_c|^2 / HOTSPOT_SPREAD^2)
     Real HOTSPOT_R_COORD               = 8.0;

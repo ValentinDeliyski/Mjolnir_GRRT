@@ -77,7 +77,7 @@
 
     }
 
-    void static Generate_Image(Simulation_Context_type* s_Sim_Context, Rendering_engine* Renderer) {
+    void static Generate_Image(Simulation_Context_type* p_Sim_Context, Rendering_engine* Renderer, Results_type* p_Ray_results) {
 
         /*
 
@@ -85,7 +85,7 @@
 
         */
 
-        s_Sim_Context->File_manager->open_image_output_files(int(0));
+        p_Sim_Context->File_manager->open_image_output_files(int(0));
 
         /*
 
@@ -112,32 +112,51 @@
 
                 */
 
-                get_intitial_conditions_from_angles(s_Sim_Context->p_Init_Conditions,
+                get_intitial_conditions_from_angles(p_Sim_Context->p_Init_Conditions,
                                                     V_angle_min + V_pixel_num * Scan_Step,
                                                     H_angle_max - H_pixel_num * Scan_Step);
+                
+                /*
+                
+                Ray propagation happens here
+                
+                */
+                
+                Propagate_ray(p_Sim_Context, p_Ray_results);
+                
+                /*
+                
+                Updating the visualization happens here
+                
+                */
 
-               /*
+                Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Intensity[direct][I] +
+                                                                                 p_Ray_results->Intensity[first][I] +
+                                                                                 p_Ray_results->Intensity[second][I] +
+                                                                                 p_Ray_results->Intensity[third][I];
 
-               Ray propagation happens here
+                Renderer->texture_indexer += 3;
 
-               */
+                /*
+                
+                Results logging happens here
+                
+                */
 
-               Results_type* s_Ray_results = Propagate_ray(s_Sim_Context);
+                p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
 
-               /*
 
-               Updating the visualization happens here
+                /*
+                
+                The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), and therefore not automatically re - initialized to 0s!
+                
+                */
 
-               */
-
-               Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = s_Ray_results->Intensity[direct][I] +
-                                                                              s_Ray_results->Intensity[first][I] +
-                                                                              s_Ray_results->Intensity[second][I] +
-                                                                              s_Ray_results->Intensity[third][I];
-
-               Renderer->texture_indexer += 3;
-
-               s_Sim_Context->File_manager->write_image_data_to_file(s_Ray_results);
+                memset(p_Ray_results->Intensity,      0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
+                memset(p_Ray_results->Flux_NT,        0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Redshift_NT,    0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Source_Coords,  0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
+                memset(p_Ray_results->Three_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
 
             }
 
@@ -148,16 +167,16 @@
         std::cout << '\n' << "Image Generation Finished!";
         std::cout << '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time) << "\n";
 
-        s_Sim_Context->File_manager->close_image_output_files();
+        p_Sim_Context->File_manager->close_image_output_files();
 
     }
 
-    void run_simulation_mode_1(Simulation_Context_type* p_Sim_Context) {
+    void run_simulation_mode_1(Simulation_Context_type* p_Sim_Context, Results_type* p_Ray_results) {
 
 
         /*
 
-        Initialize the rendering engine (the Renderer instance must be static to not blow up the stack - the texture and intensity buffer are inside of it)
+        Initialize the rendering engine (the Renderer instance must be static to not blow up the stack - the texture and intensity buffers are inside of it)
 
         */
 
@@ -171,12 +190,12 @@
         
         */
 
-        Generate_Image(p_Sim_Context, &Renderer);
+        Generate_Image(p_Sim_Context, &Renderer, p_Ray_results);
 
 
     }
 
-    void run_simulation_mode_2(Simulation_Context_type* p_Sim_Context) {
+    void run_simulation_mode_2(Simulation_Context_type* p_Sim_Context, Results_type* p_Ray_results) {
 
         /*
 
@@ -188,6 +207,7 @@
         int Data_number{};
 
         p_Sim_Context->File_manager->get_geodesic_data(J_data, p_theta_data, &Data_number);
+
         /*
 
         Create/Open the logging files
@@ -223,11 +243,30 @@
 
                 */
 
-                Results_type* s_Ray_results = Propagate_ray(p_Sim_Context);
+                Propagate_ray(p_Sim_Context, p_Ray_results);
 
-                p_Sim_Context->File_manager->write_image_data_to_file(s_Ray_results);
+                /*
+                
+                Results logging happens here
+                
+                */
+
+                p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
+
+                /*
+
+                 The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), and therefore not automatically re - initialized to 0s!
+
+                */
+
+                memset(p_Ray_results->Intensity,      0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
+                memset(p_Ray_results->Flux_NT,        0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Redshift_NT,    0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Source_Coords,  0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
+                memset(p_Ray_results->Three_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
 
                 print_progress(photon, Data_number - 1, true);
+
             }
 
             std::cout << '\n';
@@ -236,14 +275,14 @@
         p_Sim_Context->File_manager->close_image_output_files();
     }
 
-    void run_simulation_mode_4(Simulation_Context_type* p_Sim_Context) {
+    void run_simulation_mode_4(Simulation_Context_type* p_Sim_Context, Results_type* p_Ray_results) {
 
         p_Sim_Context->p_Spacetime->get_initial_conditions_from_file(p_Sim_Context->p_Init_Conditions, (double*) &X_INIT, (double*) &Y_INIT, 0);
 
-        Results_type* s_Ray_results = Propagate_ray(p_Sim_Context);
+        Propagate_ray(p_Sim_Context, p_Ray_results);
 
         p_Sim_Context->File_manager->open_log_output_file();
-        p_Sim_Context->File_manager->log_photon_path(s_Ray_results);
+        p_Sim_Context->File_manager->log_photon_path(p_Ray_results);
         p_Sim_Context->File_manager->close_log_output_file();
     }
 

@@ -56,8 +56,8 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                         << "Image Order [-]: "
                                         << Image_order
                                         << "\n"
-                                        << "Observer Radial Position [M]: " << p_Initial_Conditions->init_Pos[e_r] << '\n'
-                                        << "Observer Inclination [Deg]: " << theta_obs * 180 / M_PI << '\n'
+                                        << "Observer Radial Position [M]: " << p_Initial_Conditions->Observer_params.distance << '\n'
+                                        << "Observer Inclination [Deg]: " << p_Initial_Conditions->Observer_params.inclination * 180.0 / M_PI << '\n'
                                         << "Observation Frequency [Hz]: " << OBS_FREQUENCY_CGS << '\n'
                                         << "Active Simulation Mode: " << Active_Sim_Mode
                                         << '\n';
@@ -78,7 +78,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         switch (e_disk_model) {
 
-        case Power_law:
+        case e_Power_law_profile:
 
             Image_Output_files[Image_order] << "Power law (rho ~ 1 / r^2)"
                                             << "\n"
@@ -95,7 +95,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
             break;
 
-        case Exponential_law:
+        case e_Exponential_law_profile:
 
             Image_Output_files[Image_order] << "Exponential law (rho ~ exp(-r^2))"
                                             << "\n"
@@ -111,7 +111,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         switch (e_disk_emission) {
 
-        case Phenomenological_synchotron:
+        case e_Phenomenological_ensamble:
 
             Image_Output_files[Image_order] << "Emission Model: " 
                                             << "Phenomenological"
@@ -131,7 +131,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
             break;
 
-        case Thermal_dist_synchotron:
+        case e_Thermal_ensamble:
 
             Image_Output_files[Image_order] << "Emission Model: "
                                             << "Exact"
@@ -191,7 +191,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             << NUM_RAYS_Y
                                             << '\n';
 
-            Metric_Parameters_type &Parameters = this->p_Initial_Conditions->Metric_Parameters;
+            Metric_parameters_type &Parameters = this->p_Initial_Conditions->Metric_params;
 
             switch (e_metric) {
 

@@ -39,6 +39,8 @@
 #include "Sim_Modes.h"
 #include "Console_printing.h"
 
+#include "Input_parser.h"
+
 
 void static Allocate_Spacetime_Class(Spacetime_enums e_metric, Spacetime_Base_Class** p_Spacetime) {
 
@@ -76,55 +78,23 @@ void static Allocate_Spacetime_Class(Spacetime_enums e_metric, Spacetime_Base_Cl
 
 void static Allocate_GOT_Model_class_instance(Simulation_Context_type* s_Sim_Context) {
 
-    static Generic_Optically_Thin_Model GOT_Model_class_instance = Generic_Optically_Thin_Model();
-    s_Sim_Context->p_GOT_Model = &(GOT_Model_class_instance);
-
+    s_Sim_Context->p_GOT_Model = new Generic_Optically_Thin_Model();
     s_Sim_Context->p_GOT_Model->precompute_electron_pitch_angles();
-
-    // TODO: These need to get loaded from a file...
-
-    s_Sim_Context->p_Init_Conditions->Disk_params = { 0*DISK_N_ELECTRON_SCALE_CGS,
-                                                      DISK_T_ELECTRON_SCALE_CGS,
-                                                      DISK_MAGNETIZATION,
-                                                     { 0.87, 0.0, 0.5 },
-                                                      DISK_OPENING_ANGLE,
-                                                      DISK_R_0,
-                                                      DISK_R_Cutoff,
-                                                      DISK_CUTOFF_SCALE,
-                                                      2,                                                     
-                                                      DISK_HEIGHT_SCALE,
-                                                      DISK_RADIAL_SCALE,
-                                                      DISK_R_0,
-                                                      DISK_R_Cutoff,
-                                                      DISK_CUTOFF_SCALE,
-                                                      1};
-
-    s_Sim_Context->p_Init_Conditions->Hotspot_params = { {HOTSPOT_R_COORD, M_PI_2, -M_PI_2},
-                                                          HOTSPOT_SPREAD,
-                                                          HOTSPOT_N_ELECTRON_SLACE_CGS,
-                                                          HOTSPOT_T_ELECTRON_SCALE_CGS,
-                                                          HOTSPOT_MAGNETIZATION,
-                                                         { 0.0, 0.0, 1.0}};
-
-    s_Sim_Context->p_Init_Conditions->Emission_params = { EMISSION_SCALE_PHENOMENOLOGICAL,
-                                                          DISK_ABSORBTION_COEFF,
-                                                          EMISSION_POWER_LAW,
-                                                          SOURCE_F_POWER_LAW,
-                                                          4.0};
 
     if (ERROR == s_Sim_Context->p_GOT_Model->load_parameters(&s_Sim_Context->p_Init_Conditions->Disk_params, &s_Sim_Context->p_Init_Conditions->Hotspot_params, &s_Sim_Context->p_Init_Conditions->Emission_params)) {
 
-        std::cout << "Could not load emission model parameters!" << "\n";
         exit(ERROR);
+
     }
 }
 
 int main() {
-    
+
     Console_Printer_class Console_Printer;
     Console_Printer.print_ASCII_art();
     Console_Printer.print_sim_parameters();
 
+   
     /*
     
     |============================== Define the Simulation Context struct ==============================|
@@ -136,29 +106,20 @@ int main() {
     // Populate the Spacetime class instance 
     Allocate_Spacetime_Class(e_metric, &s_Sim_Context.p_Spacetime);
 
-    // TODO: Read this from a file...
+    s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
 
-    Initial_conditions_type Init_Conditions{};
-    s_Sim_Context.p_Init_Conditions = &Init_Conditions;
+    parse_simulation_input_XML("C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\FILE.xml", s_Sim_Context.p_Init_Conditions);
 
-    s_Sim_Context.p_Init_Conditions->Metric_Parameters = { WH_REDSHIFT,
-                                                            STOP_AT_THROAT,
-                                                            JNW_GAMMA,
-                                                            GAUSS_BONNET_GAMMA,
-                                                            RBH_PARAM,
-                                                            COMPACTNESS,
-                                                            M_HALO,
-                                                            SPIN };
-
-    s_Sim_Context.p_Spacetime->load_parameters(s_Sim_Context.p_Init_Conditions->Metric_Parameters);
+    s_Sim_Context.p_Spacetime->load_parameters(s_Sim_Context.p_Init_Conditions->Metric_params);
     s_Sim_Context.e_Spacetime = e_metric;
 
-    // Populate the Initial Conditions
-    s_Sim_Context.p_Init_Conditions->init_Pos[e_r]     = r_obs;
-    s_Sim_Context.p_Init_Conditions->init_Pos[e_theta] = theta_obs;
-    s_Sim_Context.p_Init_Conditions->init_Pos[e_phi]   = phi_obs;
+    // Get the observer position and populate the Observer class instance.
+     s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
 
-    Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_metric(s_Sim_Context.p_Init_Conditions->init_Pos);
+    double init_position[3] = {s_Sim_Context.p_Init_Conditions->Observer_params.distance,
+                               s_Sim_Context.p_Init_Conditions->Observer_params.inclination,
+                               s_Sim_Context.p_Init_Conditions->Observer_params.azimuth };
+    Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_metric(init_position);
     
     memcpy(s_Sim_Context.p_Init_Conditions->init_metric, s_init_Metric.Metric, sizeof(s_init_Metric.Metric));
     s_Sim_Context.p_Init_Conditions->init_metric_Redshift_func = s_init_Metric.Lapse_function;
@@ -167,16 +128,22 @@ int main() {
     // Populate the Emission Model class instances
     Allocate_GOT_Model_class_instance(&s_Sim_Context);
 
-    Novikov_Thorne_Model NT_class_instance(r_in, r_out, s_Sim_Context.p_Spacetime);
-    s_Sim_Context.p_NT_model = &NT_class_instance;
-
-    // Populate the Observer class instance
-    Observer_class Observer_class_instance(s_Sim_Context.p_Init_Conditions);
-    s_Sim_Context.p_Observer = &Observer_class_instance;
+    // Allocate the Novikov-Thorne Model class
+     s_Sim_Context.p_NT_model = new Novikov_Thorne_Model(s_Sim_Context.p_Init_Conditions->NT_params, s_Sim_Context.p_Spacetime);
 
     // Populate the File Manager class instance
-    File_manager_class File_manager_instance(s_Sim_Context.p_Init_Conditions, input_file_path, Truncate_files);
-    s_Sim_Context.File_manager = &File_manager_instance;
+    s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions, input_file_path, Truncate_files);
+
+    // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
+    static Results_type s_Ray_results{};
+
+    s_Ray_results.Ray_log_struct.Ray_path_log = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_path_log_number]();
+
+    for (int index = I; index <= STOKES_PARAM_NUM - 1; index++) {
+
+        s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
+
+    }
 
     /*
 
@@ -187,11 +154,11 @@ int main() {
     switch (Active_Sim_Mode) {
    
     case 1:
-         run_simulation_mode_1(&s_Sim_Context);
+         run_simulation_mode_1(&s_Sim_Context, &s_Ray_results);
          break;
    
     case 2:
-         run_simulation_mode_2(&s_Sim_Context);
+         run_simulation_mode_2(&s_Sim_Context, &s_Ray_results);
          break;
    
     case 3:
@@ -203,7 +170,7 @@ int main() {
          break;
    
     case 4:
-         run_simulation_mode_4(&s_Sim_Context);
+         run_simulation_mode_4(&s_Sim_Context, &s_Ray_results);
          break;
    
     default:

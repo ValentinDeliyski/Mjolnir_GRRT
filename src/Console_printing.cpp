@@ -81,7 +81,7 @@ void Console_Printer_class::print_sim_parameters() {
 
     switch (e_disk_model) {
 
-    case Power_law:
+    case e_Power_law_profile:
 
         std::cout << "Disk Opening Angle [tan(angle)]: "
             << DISK_OPENING_ANGLE
@@ -97,7 +97,7 @@ void Console_Printer_class::print_sim_parameters() {
 
         break;
 
-    case Exponential_law:
+    case e_Exponential_law_profile:
 
         std::cout << "Exponential law (rho ~ exp(-r^2))"
             << "\n"
@@ -118,7 +118,7 @@ void Console_Printer_class::print_sim_parameters() {
 
     switch (e_disk_emission) {
 
-    case Phenomenological_synchotron:
+    case e_Phenomenological_ensamble:
 
         std::cout << "Emission Power Law Exponent [-]: "
                   << EMISSION_POWER_LAW
@@ -135,7 +135,7 @@ void Console_Printer_class::print_sim_parameters() {
 
         break;
 
-    case Thermal_dist_synchotron:
+    case e_Thermal_ensamble:
 
         std::cout << "Disk Magnetization [-]: "
                   << DISK_MAGNETIZATION

@@ -172,8 +172,8 @@ int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Init
     double M = this->Mass;
     double a = this->Spin_Param;
 
-    double& r_obs = p_Initial_Conditions->init_Pos[e_r];
-    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
+    double& r_obs = p_Initial_Conditions->Observer_params.distance;
+    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
 
     p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
     p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
@@ -239,13 +239,13 @@ bool Kerr_class::terminate_integration(double State_vector[], double Derivatives
 
     double r_horizon = this->Mass * (1 + sqrt(1 - this->Spin_Param * this->Spin_Param));
 
-    bool hit_horizon = State_vector[e_r] - r_horizon < 1e-5;
+    bool hit_horizon = State_vector[e_r] - r_horizon < 1e-4;
 
     return scatter || hit_horizon;
 
 };
 
-bool Kerr_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
+bool Kerr_class::load_parameters(Metric_parameters_type Metric_Parameters) {
 
     if (!isnan(Metric_Parameters.Spin)) {
 
@@ -256,16 +256,6 @@ bool Kerr_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
     }
 
     return false;
-
-}
-
-Metric_Parameters_type Kerr_class::get_parameters() {
-
-    Metric_Parameters_type Parameters{};
-
-    Parameters.Spin = this->Spin_Param;
-
-    return Parameters;
 
 }
 

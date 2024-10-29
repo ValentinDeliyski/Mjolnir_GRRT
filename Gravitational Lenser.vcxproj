@@ -289,6 +289,7 @@
     <ClInclude Include="Libraries\include\gsl\gsl_version.h" />
     <ClInclude Include="Libraries\include\gsl\gsl_wavelet.h" />
     <ClInclude Include="Libraries\include\gsl\gsl_wavelet2d.h" />
+    <ClInclude Include="Libraries\include\Input_parser.h" />
     <ClInclude Include="Libraries\include\KHR\khrplatform.h" />
     <ClInclude Include="Libraries\include\Radiative_Transfer.h" />
     <ClInclude Include="Libraries\include\Spacetimes.h" />
@@ -303,6 +304,7 @@
     <ClInclude Include="Libraries\include\Lensing.h" />
     <ClInclude Include="Libraries\include\Rendering_Engine.h" />
     <ClInclude Include="Libraries\include\Sim_Modes.h" />
+    <ClInclude Include="Libraries\include\tinyxml2.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Console_printing.cpp" />
@@ -311,6 +313,7 @@
     <ClCompile Include="src\General_GR_functions.cpp" />
     <ClCompile Include="src\General_math_functions.cpp" />
     <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\Input_parser.cpp" />
     <ClCompile Include="src\IO_files.cpp" />
     <ClCompile Include="src\Lensing.cpp" />
     <ClCompile Include="src\Radiative_Transfer.cpp" />
@@ -325,6 +328,7 @@
     <ClCompile Include="src\Spacetimes\Observer.cpp" />
     <ClCompile Include="src\Spacetimes\Regular_Black_Hole.cpp" />
     <ClCompile Include="src\Spacetimes\Wormhole.cpp" />
+    <ClCompile Include="src\tinyxml2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Libraries\shaders\default.frag" />

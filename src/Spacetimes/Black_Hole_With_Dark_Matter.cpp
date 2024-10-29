@@ -169,8 +169,8 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dtheta_metric(double State_
 
 int Black_Hole_w_Dark_Matter_Halo_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
-    double& r_obs = p_Initial_Conditions->init_Pos[e_r];
-    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
+    double& r_obs = p_Initial_Conditions->Observer_params.distance;
+    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
 
     p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
     p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
@@ -245,18 +245,7 @@ bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(double State_vec
 
 };
 
-Metric_Parameters_type Black_Hole_w_Dark_Matter_Halo_class::get_parameters() {
-
-    Metric_Parameters_type Parameters{};
-
-    Parameters.Compactness = this->Compactness;
-    Parameters.Halo_Mass = this->Halo_Mass;
-
-    return Parameters;
-
-}
-
-bool Black_Hole_w_Dark_Matter_Halo_class::load_parameters(Metric_Parameters_type Metric_Parameters) {
+bool Black_Hole_w_Dark_Matter_Halo_class::load_parameters(Metric_parameters_type Metric_Parameters) {
 
     if (!isnan(Metric_Parameters.Compactness) &&
         !isnan(Metric_Parameters.Halo_Mass)) {
