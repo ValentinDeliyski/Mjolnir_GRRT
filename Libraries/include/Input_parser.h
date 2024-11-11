@@ -6,4 +6,4 @@
 #include <string>
 #include <fstream>
 
-Return_Values parse_simulation_input_XML(std::string input_file_path, Initial_conditions_type* Initial_conditions);
+Return_Values parse_simulation_input_XML(const std::string input_file_path, Initial_conditions_type* const Initial_conditions);

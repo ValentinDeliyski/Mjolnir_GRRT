@@ -11,7 +11,7 @@
 #include <vector>
 #include "Lensing.h"
 
-void RK45(double State_Vector[], Step_controller* controller, Simulation_Context_type* p_Sim_context) {
+void RK45(double* const State_Vector, Step_controller* const controller, const Simulation_Context_type* const p_Sim_context) {
 
     /*************************************************************************************************
     |                                                                                                |
@@ -38,7 +38,7 @@ void RK45(double State_Vector[], Step_controller* controller, Simulation_Context
 
     while (iteration <= RK45_size - 1) { //runs trough the EOM evaluations in-between t and t + step
 
-        for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) { //runs trough the state vector components
+        for (int vector_indexer = 0; vector_indexer <= e_State_Number - 2; vector_indexer += 1) { //runs trough the state vector components
 
             inter_State_vector[vector_indexer + iteration * e_State_Number] = State_Vector[vector_indexer];
 
@@ -55,7 +55,7 @@ void RK45(double State_Vector[], Step_controller* controller, Simulation_Context
 
     }
 
-    for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) {
+    for (int vector_indexer = 0; vector_indexer <= e_State_Number - 2; vector_indexer += 1) {
 
         New_State_vector_O5[vector_indexer] = State_Vector[vector_indexer];
         New_State_vector_O4[vector_indexer] = State_Vector[vector_indexer];
@@ -69,6 +69,18 @@ void RK45(double State_Vector[], Step_controller* controller, Simulation_Context
 
         state_error[vector_indexer] = New_State_vector_O5[vector_indexer] - New_State_vector_O4[vector_indexer];
        
+    }
+
+    // The integrator might jump pass surfaces that are singular for the EOM (like the JNW singularity at 2 / gamma)
+    // In this case the whole state vector becomes a NaN. I check for this and update the step with some huge error 
+    // to force the integrator to redo this interation with a smaller step untill it succeeds.
+
+    if (isnan(New_State_vector_O5[e_r])) {
+
+        controller->update_step(std::as_const(State_Vector));
+
+        return;
+
     }
 
     controller->previous_step = controller->step;
@@ -93,18 +105,19 @@ void RK45(double State_Vector[], Step_controller* controller, Simulation_Context
         // Close enough that it requires "manual" scattering, by flipping the p_r sign.
         // Otherwise the photons never reach the turning point and the integration grinds to a halt.
 
-        if (p_Sim_context->e_Spacetime == Naked_Singularity && p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 0.5) {
+        if (p_Sim_context->p_Init_Conditions->Metric_params.e_Spacetime == Janis_Newman_Winicour && p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 0.5) {
 
             if (State_Vector[e_r] - 2 / p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 1e-8) {
 
                 State_Vector[e_p_r] *= -1;
 
             }
+
         }
     }
 }
 
-Step_controller::Step_controller(Integrator_parameters_type Integrator_parameters) {
+Step_controller::Step_controller(const Integrator_parameters_type Integrator_parameters) {
 
     this->Gain_I = Integrator_parameters.Gain_I;
     this->Gain_P = Integrator_parameters.Gain_P;
@@ -129,15 +142,15 @@ Step_controller::Step_controller(Integrator_parameters_type Integrator_parameter
 
 }
 
-void Step_controller::update_step(double const State_Vector[]) {
+void Step_controller::update_step(const double const* State_Vector) {
 
     double const Error_threshold = this->Max_absolute_err + this->Max_absolute_err * my_max(State_Vector, e_State_Number);
 
     if (current_err < Error_threshold)
     {
         this->step = pow(Error_threshold / (current_err  + this->Safety_2), this->Gain_I) *
-               pow(Error_threshold / (prev_err     + this->Safety_2), this->Gain_P) *
-               pow(Error_threshold / (sec_prev_err + this->Safety_2), this->Gain_D) * this->step;
+                     pow(Error_threshold / (prev_err     + this->Safety_2), this->Gain_P) *
+                     pow(Error_threshold / (sec_prev_err + this->Safety_2), this->Gain_D) * this->step;
 
         this->continue_integration = true;
     }

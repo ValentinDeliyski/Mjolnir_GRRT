@@ -29,7 +29,7 @@
 
             /* Metric and its derivatives */
 
-            virtual Metric_type get_metric(double State_vector[]) {
+            virtual Metric_type get_metric(const double* const State_Vector) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -117,7 +117,7 @@
             Metric_type s_dtheta_Metric{};
             Metric_type s_d2r_Metric;
             
-            double Mass = 1.0f;
+            double Mass = 1.0;
             double Spin_Param{};
 
         public:
@@ -127,7 +127,7 @@
 
             /* Metric and its derivatives */
 
-            Metric_type get_metric(double State_vector[]) override;
+            Metric_type get_metric(const double* const State_Vector) override;
             Metric_type get_dr_metric(double State_vector[]) override;
             Metric_type get_dtheta_metric(double State_vector[]) override;
             Metric_type get_d2r_metric(double State_vector[]) override;
@@ -159,11 +159,11 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
-        double Mass = 1.0f;
+        double Mass = 1.0;
         double R_Throat = this->Mass;
 
-        double Spin_Param{};
-        double Redshift_Param{};
+        double Spin_Param;
+        double Redshift_Param;
         bool Stop_at_Throat;
 
     public:
@@ -174,7 +174,7 @@
 
         /* Metric and its derivatives */
 
-        Metric_type get_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
         Metric_type get_dr_metric(double State_vector[]) override;
         Metric_type get_dtheta_metric(double State_vector[]) override;
         Metric_type get_d2r_metric(double State_vector[]) override;
@@ -206,6 +206,7 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
+        double Mass = 1.0;
         double Parameter;
 
     public:
@@ -215,7 +216,7 @@
 
         /* Metric and its derivatives */
 
-        Metric_type get_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
         Metric_type get_dr_metric(double State_vector[]) override;
         Metric_type get_dtheta_metric(double State_vector[]) override;
         Metric_type get_d2r_metric(double State_vector[]) override;
@@ -247,6 +248,7 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
+        double Mass = 1.0;
         double Gamma;
 
     public:
@@ -256,7 +258,7 @@
 
         /* Metric and its derivatives */
 
-        Metric_type get_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
         Metric_type get_dr_metric(double State_vector[]) override;
         Metric_type get_dtheta_metric(double State_vector[]) override;
         Metric_type get_d2r_metric(double State_vector[]) override;
@@ -288,6 +290,7 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
+        double Mass = 1.0;
         double Gamma;
 
     public:
@@ -297,7 +300,7 @@
 
         /* Metric and its derivatives */
 
-        Metric_type get_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
         Metric_type get_dr_metric(double State_vector[]) override;
         Metric_type get_dtheta_metric(double State_vector[]) override;
         Metric_type get_d2r_metric(double State_vector[]) override;
@@ -329,6 +332,7 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
+        double Mass = 1.0;
         double Compactness;
         double Halo_Mass;
 
@@ -338,7 +342,7 @@
 
         /* Metric and its derivatives */
 
-        Metric_type get_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
         Metric_type get_dr_metric(double State_vector[]) override;
         Metric_type get_dtheta_metric(double State_vector[]) override;
 
@@ -373,7 +377,7 @@
 
         Observer_parameters_type get_parameters();
 
-        int get_obs_velocity(double Obs_velocity[4]);
+        Return_Values get_obs_velocity(double Obs_velocity[4]);
 
     };
 

@@ -60,10 +60,10 @@ double* JNW_class::get_Photon_Sphere() {
 };
 
 
-Metric_type JNW_class::get_metric(double State_Vector[]) {
+Metric_type JNW_class::get_metric(const double* const State_Vector) {
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);

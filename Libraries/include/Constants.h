@@ -7,9 +7,8 @@
     #include "Inputs.h"
     #include <string>
     #include <complex>
-
-    const int RK45_size			    = 7;       // Number of integration sub-steps
-    const int MAX_INTEGRATION_COUNT = 1e7; // Realistically the program will never reach this many integration steps, but I prefer this to an infinite loop
+    
+    const int RK45_size	= 7;   // Number of integration sub-steps
 
     Real Coeff_deriv[RK45_size][RK45_size - 1] =
     {
@@ -35,7 +34,6 @@
     */
 
     Real M_SUN_SI = 1.989e30;
-    Real OBJECT_MASS_SI = 4e6 * M_SUN_SI;
 
     Real G_NEWTON_SI = 6.6743e-11;
 
@@ -56,7 +54,6 @@
     */
 
     Real METER_TO_CM = 100;
-    Real MASS_TO_CM  = G_NEWTON_SI * OBJECT_MASS_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
 
     Real M_ELECTRON_CGS = 9.1094e-28;
     Real Q_ELECTRON_CGS = 4.8032e-10;
@@ -71,14 +68,5 @@
     Real OBS_FREQUENCY_CGS = 230e9;
 
     Real CGS_TO_JANSKY = 1e+23;
-
-    /*
-    
-    Shader File Paths
-    
-    */
-
-    const auto vert_shader_path = ".\\Libraries\\shaders\\default.vert";
-    const auto frag_shader_path = ".\\Libraries\\shaders\\default.frag";
 
 #endif

@@ -58,9 +58,9 @@
 
     }
 
-    void static Rendering_function(Rendering_engine* Renderer) {
+    void static Rendering_function(Rendering_engine* Renderer, Initial_conditions_type* p_Init_conditions) {
 
-        Renderer->OpenGL_init();
+        Renderer->OpenGL_init(p_Init_conditions);
         glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);
 
         while (!glfwWindowShouldClose(Renderer->window)) {
@@ -77,7 +77,24 @@
 
     }
 
-    void static Generate_Image(Simulation_Context_type* p_Sim_Context, Rendering_engine* Renderer, Results_type* p_Ray_results) {
+    void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, Rendering_engine* const Renderer, Results_type* const p_Ray_results) {
+
+        /*
+        
+        Referebces to some sim parameters for the sake of readability
+        
+        */
+
+        int& X_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_x;
+        int& Y_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_y;
+
+        double Y_angle_max = atan(p_Sim_Context->p_Init_Conditions->Observer_params.y_max / p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+        double Y_angle_min = atan(p_Sim_Context->p_Init_Conditions->Observer_params.y_min / p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+        double X_angle_max = atan(p_Sim_Context->p_Init_Conditions->Observer_params.x_max / p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+        double X_angle_min = atan(p_Sim_Context->p_Init_Conditions->Observer_params.x_min / p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+
+        double X_scan_step = (X_angle_max - X_angle_min) / (X_resolution - 1);
+        double Y_scan_step = (Y_angle_max - Y_angle_min) / (Y_resolution - 1);
 
         /*
 
@@ -98,13 +115,13 @@
 
         std::cout << '\n' << "Generating image..." << '\n';
 
-        for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
+        for (int V_pixel_num = 0; V_pixel_num <= Y_resolution - 1; V_pixel_num++) {
 
-            print_progress(progress, RESOLUTION - 1, false);
+            print_progress(progress, Y_resolution - 1, false);
 
             progress += 1;
 
-            for (int H_pixel_num = 0; H_pixel_num <= RESOLUTION * H_angle_max / V_angle_max - 1; H_pixel_num++) {
+            for (int H_pixel_num = 0; H_pixel_num <= X_resolution - 1; H_pixel_num++) {
 
                 /*
 
@@ -113,8 +130,8 @@
                 */
 
                 get_intitial_conditions_from_angles(p_Sim_Context->p_Init_Conditions,
-                                                    V_angle_min + V_pixel_num * Scan_Step,
-                                                    H_angle_max - H_pixel_num * Scan_Step);
+                                                    Y_angle_min + V_pixel_num * Y_scan_step,
+                                                    X_angle_max - H_pixel_num * X_scan_step);
                 
                 /*
                 
@@ -152,11 +169,11 @@
                 
                 */
 
-                memset(p_Ray_results->Intensity,      0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
-                memset(p_Ray_results->Flux_NT,        0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
-                memset(p_Ray_results->Redshift_NT,    0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
-                memset(p_Ray_results->Source_Coords,  0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
-                memset(p_Ray_results->Three_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
+                memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
+                memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
+                memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
 
             }
 
@@ -171,7 +188,7 @@
 
     }
 
-    void run_simulation_mode_1(Simulation_Context_type* p_Sim_Context, Results_type* p_Ray_results) {
+    void run_simulation_mode_1(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
 
         /*
@@ -182,7 +199,7 @@
 
         static Rendering_engine Renderer = Rendering_engine();
 
-        std::jthread GUI_Thread(Rendering_function, &Renderer);
+        std::jthread GUI_Thread(Rendering_function, &Renderer, p_Sim_Context->p_Init_Conditions);
 
         /*
         
@@ -195,7 +212,7 @@
 
     }
 
-    void run_simulation_mode_2(Simulation_Context_type* p_Sim_Context, Results_type* p_Ray_results) {
+    void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
         /*
 
@@ -259,11 +276,11 @@
 
                 */
 
-                memset(p_Ray_results->Intensity,      0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
-                memset(p_Ray_results->Flux_NT,        0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
-                memset(p_Ray_results->Redshift_NT,    0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
-                memset(p_Ray_results->Source_Coords,  0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
-                memset(p_Ray_results->Three_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
+                memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
+                memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(ORDER_NUM * 4) * sizeof(double));
+                memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 4) * sizeof(double));
 
                 print_progress(photon, Data_number - 1, true);
 
@@ -275,7 +292,7 @@
         p_Sim_Context->File_manager->close_image_output_files();
     }
 
-    void run_simulation_mode_4(Simulation_Context_type* p_Sim_Context, Results_type* p_Ray_results) {
+    void run_simulation_mode_4(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
         p_Sim_Context->p_Spacetime->get_initial_conditions_from_file(p_Sim_Context->p_Init_Conditions, (double*) &X_INIT, (double*) &Y_INIT, 0);
 

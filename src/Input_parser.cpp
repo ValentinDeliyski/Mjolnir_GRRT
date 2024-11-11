@@ -367,14 +367,17 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the maximum integration count!" << "\n"; return ERROR; }
     Integrator_params->Max_integration_count = std::stod(temp_param_var->GetText());
 
+    // -------------------- Max integration count 
+    temp_param_var = Integrator_element->FirstChildElement("simpson_method_accuracy");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the simpson method accuracy parameter!" << "\n"; return ERROR; }
+    Integrator_params->Simpson_accuracy = std::stod(temp_param_var->GetText());
+
+
     return OK;
 
 }
 
 Return_Values static parse_emission_model_params(tinyxml2::XMLElement* Emission_model_element, Initial_conditions_type* p_Init_conditions) {
-
-    std::ifstream input_params;
-    input_params.open(input_file_path, std::ios::in);
 
     tinyxml2::XMLElement* temp_param_var;
 
@@ -465,12 +468,12 @@ Return_Values static parse_observer_parameters(tinyxml2::XMLElement* Observer_el
     // -------------------- Image resolution Y
     temp_param_var = Observer_element->FirstChildElement("Resolution_y");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse Y resolution!" << "\n"; return ERROR; }
-    Observer_params->resolution_y = std::stod(temp_param_var->GetText());
+    Observer_params->resolution_y = std::stoi(temp_param_var->GetText());
 
     // -------------------- Image resolution X
     temp_param_var = Observer_element->FirstChildElement("Resolution_x");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse X resolution!" << "\n"; return ERROR; }
-    Observer_params->resolution_x = std::stod(temp_param_var->GetText());
+    Observer_params->resolution_x = std::stoi(temp_param_var->GetText());
 
     // -------------------- Observation frequency
     temp_param_var = Observer_element->FirstChildElement("Obs_frequency");
@@ -521,12 +524,16 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
 
     if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Kerr")) {
 
+        Metric_params->e_Spacetime = Kerr;
+
         temp_param_var = Metric_element->FirstChildElement("Spin_parameter");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric spin parameter!" << "\n"; return ERROR; }
         Metric_params->Spin = std::stod(temp_param_var->GetText());
 
     }
     else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Wormhole")) {
+
+        Metric_params->e_Spacetime = Wormhole;
 
         temp_param_var = Metric_element->FirstChildElement("Spin_parameter");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric spin parameter!" << "\n"; return ERROR; }
@@ -547,12 +554,16 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
     }
     else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Janis-Newman-Winicour")) {
 
+        Metric_params->e_Spacetime = Janis_Newman_Winicour;
+
         temp_param_var = Metric_element->FirstChildElement("JNW_gamma");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the Janis-Newman-Winicour metric parameter!" << "\n"; return ERROR; }
         Metric_params->JNW_Gamma_Parameter = std::stod(temp_param_var->GetText());
 
     }
     else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Einstein-Gauss-Bonnet")) {
+
+        Metric_params->e_Spacetime = Einstein_Gauss_Bonnet;
 
         temp_param_var = Metric_element->FirstChildElement("EGB_gamma");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the Einstein-Gauss-Bonnet metric parameter!" << "\n"; return ERROR; }
@@ -561,12 +572,16 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
     }
     else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Regular-Black-Hole")) {
 
+        Metric_params->e_Spacetime = Reg_Black_Hole;
+
         temp_param_var = Metric_element->FirstChildElement("RBH_param");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the regular black hole metric parameter!" << "\n"; return ERROR; }
         Metric_params->RBH_Parameter = std::stod(temp_param_var->GetText());
 
     }
     else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Black-Hole-w-Dark-Matter")) {
+
+        Metric_params->e_Spacetime = BH_w_Dark_Matter;
 
         temp_param_var = Metric_element->FirstChildElement("Halo_compactness");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the dark matter halo compactness!" << "\n"; return ERROR; }
@@ -583,21 +598,66 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
 
 }
 
-Return_Values parse_simulation_input_XML(std::string input_file_path, Initial_conditions_type* p_Initial_conditions) {
+Return_Values static parse_file_paths(tinyxml2::XMLElement* File_paths_element, File_paths_type* File_paths) {
+
+    tinyxml2::XMLElement* temp_param_var;
+
+    // -------------------- Sim mode 2 input file path
+    temp_param_var = File_paths_element->FirstChildElement("Sim_mode_2_input_file_path");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the simulation mode 2 input file path!" << "\n"; return ERROR; }
+    if (temp_param_var->GetText() != nullptr) { File_paths->Sim_mode_2_imput_path = temp_param_var->GetText(); }
+
+    // -------------------- Output file path
+    temp_param_var = File_paths_element->FirstChildElement("Output_file_directory");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the output file directory!" << "\n"; return ERROR; }
+    File_paths->Output_file_directory = temp_param_var->GetText();
+
+    // -------------------- Common file names
+    temp_param_var = File_paths_element->FirstChildElement("Common_file_names");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the common output file name!" << "\n"; return ERROR; }
+    if (temp_param_var->GetText() != nullptr) { File_paths->Common_file_names = temp_param_var->GetText(); }
+
+    // -------------------- Vertex shader path
+    temp_param_var = File_paths_element->FirstChildElement("Vert_shader_path");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the vertex shader path!" << "\n"; return ERROR; }
+    File_paths->Vert_shader_path = temp_param_var->GetText();
+
+    // -------------------- Fragment shader path
+    temp_param_var = File_paths_element->FirstChildElement("Frag_shader_path");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the fragment shader path!" << "\n"; return ERROR; }
+    File_paths->Frag_shader_path = temp_param_var->GetText();
+
+    return OK;
+
+}
+
+Return_Values parse_simulation_input_XML(const std::string input_file_path, Initial_conditions_type* const p_Initial_conditions) {
 
     tinyxml2::XMLDocument xml_doc;
 
     tinyxml2::XMLError e_parse_result = xml_doc.LoadFile(static_cast<const char*>(input_file_path.c_str()));
     if (e_parse_result != tinyxml2::XML_SUCCESS) { return ERROR; }
 
-    tinyxml2::XMLNode* Root_node = xml_doc.FirstChildElement("Simulation_Input");
+    tinyxml2::XMLElement* Root_node = xml_doc.FirstChildElement("Simulation_Input");
     if (Root_node == nullptr) { return ERROR; }
 
-    /* ====================================== Parse the average pitch angle flag ====================================== */
+    p_Initial_conditions->File_paths.Simulation_name = Root_node->Attribute("Simulation_Name");
 
-    tinyxml2::XMLElement* Average_pitch_angle_flag = Root_node->FirstChildElement("Average_emission_pitch_angle");
-    if (Average_pitch_angle_flag == nullptr) { std::cout << "Failed to find the Observer node!" << "\n"; return ERROR; }
-    p_Initial_conditions->Average_electron_pitch_angle = std::stoi(Average_pitch_angle_flag->GetText());
+    /* ====================================== Parse the average pitch angle flag and sample number ====================================== */
+
+    tinyxml2::XMLElement* Average_pitch_angle_flag_element = Root_node->FirstChildElement("Average_emission_pitch_angle");
+    if (Average_pitch_angle_flag_element == nullptr) { std::cout << "Failed to find the pitch angle averaging flag!" << "\n"; return ERROR; }
+    p_Initial_conditions->Average_electron_pitch_angle = std::stoi(Average_pitch_angle_flag_element->GetText());
+
+    tinyxml2::XMLElement* Average_pitch_angle_number_element = Root_node->FirstChildElement("Emission_pitch_angle_samples_to_average");
+    if (Average_pitch_angle_number_element == nullptr) { std::cout << "Failed to find the number of pitch angle samples to average!" << "\n"; return ERROR; }
+    p_Initial_conditions->Emission_pitch_angle_samples_to_average = std::stoi(Average_pitch_angle_number_element->GetText());
+
+    /* ====================================== Parse the central object mass ====================================== */
+
+    tinyxml2::XMLElement* Central_object_mass_element = Root_node->FirstChildElement("Central_object_mass");
+    if (Central_object_mass_element == nullptr) { std::cout << "Failed to find the central object mass!" << "\n"; return ERROR; }
+    p_Initial_conditions->central_object_mass = std::stod(Central_object_mass_element->GetText());
 
     /* ====================================== Parse the observer parameters ====================================== */
 
@@ -640,6 +700,12 @@ Return_Values parse_simulation_input_XML(std::string input_file_path, Initial_co
     tinyxml2::XMLElement* NT_element = Root_node->FirstChildElement("Novikov_Thorne_disk");
     if (NT_element == nullptr) { std::cout << "Failed to find the Hotspot node!" << "\n"; return ERROR; }
     if (OK != parse_NT_params(NT_element, &p_Initial_conditions->NT_params)) { return ERROR; };
+
+    /* ====================================== Parse the file paths ====================================== */
+
+    tinyxml2::XMLElement* File_paths_element = Root_node->FirstChildElement("File_Paths");
+    if (File_paths_element == nullptr) { std::cout << "Failed to find the File paths node!" << "\n"; return ERROR; }
+    if (OK != parse_file_paths(File_paths_element, &p_Initial_conditions->File_paths)) { return ERROR; };
 
     return OK;
 

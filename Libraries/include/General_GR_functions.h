@@ -22,9 +22,7 @@
 
     void get_impact_parameters(Initial_conditions_type* p_Initial_Conditions, double Image_coords[2]);
 
-    double Redshift(double State_Vector[], double U_source[], Observer_class* Observer);
-
-    void get_ZAMO_tetrad(double e_t[4], double e_r[4], double e_theta[4], double e_phi[4], double metric[4][4]);
+    double Redshift(const double* const State_Vector, double* const U_source, Observer_class* const Observer);
 
     void Contravariant_coord_to_ZAMO(double metric[4][4], double Contravariant_Vector[4], double ZAMO_Vector[4]);
 

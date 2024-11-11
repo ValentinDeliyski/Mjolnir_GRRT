@@ -85,6 +85,8 @@
 
     struct Metric_parameters_type {
 
+        Spacetime_enums e_Spacetime;
+
         /* ============ Wormhole Specific Parameters ============ = */
 
         double Redshift_Parameter;
@@ -116,22 +118,22 @@
 
     struct Precomputed_e_pitch_angles {
 
-        double sin_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
-        double cos_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
+        double* sin_electron_pitch_angles;
+        double* cos_electron_pitch_angles;
 
         // Used in the thermal synchotron emission functions
 
-        double one_over_sqrt_sin[NUM_SAMPLES_TO_AVG];
-        double one_over_cbrt_sin[NUM_SAMPLES_TO_AVG];
+        double* one_over_sqrt_sin;
+        double* one_over_cbrt_sin;
 
         // Used in the thermal synchotron Faradey functions
 
-        double one_over_sin_to_1_point_035[NUM_SAMPLES_TO_AVG];
-        double one_over_sin_to_1_point_2_over_2[NUM_SAMPLES_TO_AVG];
+        double* one_over_sin_to_1_point_035;
+        double* one_over_sin_to_1_point_2_over_2;
 
         // Used in the kappa synchotron emission functions
 
-        double one_over_sin_to_7_over_20[NUM_SAMPLES_TO_AVG];
+        double* one_over_sin_to_7_over_20;
     };
 
     struct Thermal_emission_f_arguments {
@@ -181,6 +183,7 @@
         double RK_45_accuracy;
         double Safety_1;
         double Safety_2;
+        double Simpson_accuracy;
         int Max_integration_count;
 
     };
@@ -196,8 +199,8 @@
         double y_min;
         double y_max;
 
-        double resolution_x;
-        double resolution_y;
+        int resolution_x;
+        int resolution_y;
 
         double obs_frequency;
         double cam_rotation_angle;
@@ -214,13 +217,14 @@
 
     };
 
-    struct File_manager_paths_type {
+    struct File_paths_type {
 
         std::string Sim_mode_2_imput_path;
-        std::string Output_file_path;
+        std::string Output_file_directory;
         std::string Common_file_names;
         std::string Vert_shader_path;
         std::string Frag_shader_path;
+        std::string Simulation_name;
 
     };
 
@@ -229,7 +233,8 @@
         double init_metric[4][4];
         double init_metric_Redshift_func;
         double init_metric_Shitft_func;
-        double init_Three_Momentum[3];
+        double init_Three_Momentum[4];
+        double central_object_mass;
 
         Disk_model_parameters_type Disk_params;
         Hotspot_model_parameters_type Hotspot_params;
@@ -238,9 +243,10 @@
         Integrator_parameters_type Integrator_params;
         Observer_parameters_type Observer_params;
         NT_parameters_type NT_params;
-        File_manager_paths_type File_manager_paths;
+        File_paths_type File_paths;
 
         bool Average_electron_pitch_angle;
+        int Emission_pitch_angle_samples_to_average;
 
     };
 
@@ -254,7 +260,6 @@
 
         Initial_conditions_type* p_Init_Conditions;
 
-        Spacetime_enums       e_Spacetime;
         Spacetime_Base_Class* p_Spacetime;
         Observer_class*       p_Observer;
 
@@ -282,8 +287,8 @@
         double Intensity[ORDER_NUM][STOKES_PARAM_NUM]{};
         double Optical_Depth{};
 
-        double Source_Coords[3][ORDER_NUM]{};
-        double Three_Momentum[3][ORDER_NUM]{};
+        double Source_Coords[4][ORDER_NUM]{};
+        double Photon_Momentum[4][ORDER_NUM]{};
 
         double Image_Coords[2]{};
 

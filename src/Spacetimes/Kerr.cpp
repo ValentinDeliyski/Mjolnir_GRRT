@@ -31,13 +31,13 @@ double* Kerr_class::get_Photon_Sphere() {
 
 }
 
-Metric_type Kerr_class::get_metric(double State_Vector[]) {
+Metric_type Kerr_class::get_metric(const double* const State_Vector) {
 
     double M = this->Mass;
     double a = this->Spin_Param;
 
-    double& r     = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r     = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -134,7 +134,7 @@ Metric_type Kerr_class::get_d2r_metric(double State_Vector[]) {
     double M = this->Mass;
     double a = this->Spin_Param;
 
-    double& r = State_Vector[e_r];
+    double& r     = State_Vector[e_r];
     double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
@@ -210,13 +210,17 @@ int Kerr_class::get_EOM(double State_vector[], double Derivatives[]) {
     double delta = r2 - 2 * this->Mass * r + this->Spin_Param * this->Spin_Param;
     double F = P * P - delta * ((J - this->Spin_Param) * (J - this->Spin_Param) + cos2 * (J * J / sin2 - this->Spin_Param * this->Spin_Param));
 
-    double& p_r     = State_vector[e_p_r    ];
+    double& p_r     = State_vector[e_p_r];
     double& p_theta = State_vector[e_p_theta];
+    double& p_t     = State_vector[e_p_t];
 
+
+    *(Derivatives + e_t)     = -1 / delta * (r2 + this->Spin_Param * this->Spin_Param * (1 + 2 * r / rho2 * sin1)) * p_t;
     *(Derivatives + e_r    ) = delta / rho2 * p_r;
     *(Derivatives + e_theta) = 1.0 / rho2 * p_theta;
     *(Derivatives + e_phi  ) = 1.0 / (delta * rho2) * (P * this->Spin_Param + delta * (J / sin2 - this->Spin_Param));
     *(Derivatives + e_p_phi) = 0.0;
+    *(Derivatives + e_p_t)   = 0.0;
 
     double theta_term_1 = -(delta * p_r * p_r + p_theta * p_theta) * this->Spin_Param * this->Spin_Param * cos1 * sin1 / (rho2 * rho2);
     double theta_term_2 = F * this->Spin_Param * this->Spin_Param * cos1 * sin1 / (delta * rho2 * rho2) + (J * J * cos1 / (sin2 * sin1) - this->Spin_Param * this->Spin_Param * cos1 * sin1) / rho2;

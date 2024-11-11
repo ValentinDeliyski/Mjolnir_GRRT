@@ -1,6 +1,7 @@
 #ifndef CONSOLE_PRINTER
     
     #include "Constants.h"
+    #include "Structs.h"
     #include <string>
     #include <iostream>
 
@@ -19,19 +20,6 @@
             "Janis-Newman-Winicour Naked Singularity",
             "Gauss-Bonnet Naked Singularity",
             "Black Hole With A Dark Matter Halo"
-        };
-
-        std::string Emission_model_strings[2] = {
-
-            "Thermally Averaged Synchotron Emission",
-            "Phenomenological Model Of The M87* Emission"
-
-        };
-
-        std::string Disk_model_strings[2] = {
-
-            "Power Law Of The Form: Density ~ 1 / r^2",
-            "Exponential Law Of The Form: Density ~ exp(-r^2 / radial_scale^2)"
 
         };
 
@@ -39,9 +27,8 @@
 
         void print_ASCII_art();
 
-        void print_sim_parameters();
+        void print_sim_parameters(Initial_conditions_type* p_Initial_Conditions);
 
 	};
-
 
 #endif

@@ -42,46 +42,46 @@
 #include "Input_parser.h"
 
 
-void static Allocate_Spacetime_Class(Spacetime_enums e_metric, Spacetime_Base_Class** p_Spacetime) {
+void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
 
     // These do not ever get "delete" called on them, because they need to exist for the entire duration of the program
 
-    switch (e_metric) {
+    switch (p_Sim_context->p_Init_Conditions->Metric_params.e_Spacetime) {
 
     case Kerr:
-        *p_Spacetime = new Kerr_class;
+        p_Sim_context->p_Spacetime = new Kerr_class;
         break;
 
     case Wormhole:      
-        *p_Spacetime = new Wormhole_class;
+        p_Sim_context->p_Spacetime = new Wormhole_class;
         break;
 
     case Reg_Black_Hole:       
-        *p_Spacetime = new RBH_class;
+        p_Sim_context->p_Spacetime = new RBH_class;
         break;
 
-    case Naked_Singularity:       
-        *p_Spacetime = new JNW_class;
+    case Janis_Newman_Winicour:       
+        p_Sim_context->p_Spacetime = new JNW_class;
         break;
 
-    case Gauss_Bonnet:       
-        *p_Spacetime = new Gauss_Bonnet_class;
+    case Einstein_Gauss_Bonnet:       
+        p_Sim_context->p_Spacetime = new Gauss_Bonnet_class;
         break;
 
     case BH_w_Dark_Matter:      
-        *p_Spacetime = new Black_Hole_w_Dark_Matter_Halo_class;
+        p_Sim_context->p_Spacetime = new Black_Hole_w_Dark_Matter_Halo_class;
         break;
 
     }
 
 }
 
-void static Allocate_GOT_Model_class_instance(Simulation_Context_type* s_Sim_Context) {
+void static Allocate_GOT_Model_class_instance(Simulation_Context_type* p_Sim_Context) {
 
-    s_Sim_Context->p_GOT_Model = new Generic_Optically_Thin_Model();
-    s_Sim_Context->p_GOT_Model->precompute_electron_pitch_angles();
+    p_Sim_Context->p_GOT_Model = new Generic_Optically_Thin_Model();
+    p_Sim_Context->p_GOT_Model->precompute_electron_pitch_angles(p_Sim_Context->p_Init_Conditions);
 
-    if (ERROR == s_Sim_Context->p_GOT_Model->load_parameters(&s_Sim_Context->p_Init_Conditions->Disk_params, &s_Sim_Context->p_Init_Conditions->Hotspot_params, &s_Sim_Context->p_Init_Conditions->Emission_params)) {
+    if (ERROR == p_Sim_Context->p_GOT_Model->load_parameters(p_Sim_Context)) {
 
         exit(ERROR);
 
@@ -92,8 +92,6 @@ int main() {
 
     Console_Printer_class Console_Printer;
     Console_Printer.print_ASCII_art();
-    Console_Printer.print_sim_parameters();
-
    
     /*
     
@@ -103,23 +101,24 @@ int main() {
 
     Simulation_Context_type s_Sim_Context{};
 
-    // Populate the Spacetime class instance 
-    Allocate_Spacetime_Class(e_metric, &s_Sim_Context.p_Spacetime);
-
     s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
 
     parse_simulation_input_XML("C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\FILE.xml", s_Sim_Context.p_Init_Conditions);
 
+    // Populate the Spacetime class instance 
+    Allocate_Spacetime_Class(&s_Sim_Context);
+
     s_Sim_Context.p_Spacetime->load_parameters(s_Sim_Context.p_Init_Conditions->Metric_params);
-    s_Sim_Context.e_Spacetime = e_metric;
 
     // Get the observer position and populate the Observer class instance.
      s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
 
-    double init_position[3] = {s_Sim_Context.p_Init_Conditions->Observer_params.distance,
-                               s_Sim_Context.p_Init_Conditions->Observer_params.inclination,
-                               s_Sim_Context.p_Init_Conditions->Observer_params.azimuth };
-    Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_metric(init_position);
+    double init_state[4] = {0,
+                            s_Sim_Context.p_Init_Conditions->Observer_params.distance,
+                            s_Sim_Context.p_Init_Conditions->Observer_params.inclination,
+                            s_Sim_Context.p_Init_Conditions->Observer_params.azimuth };
+
+    Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_metric(init_state);
     
     memcpy(s_Sim_Context.p_Init_Conditions->init_metric, s_init_Metric.Metric, sizeof(s_init_Metric.Metric));
     s_Sim_Context.p_Init_Conditions->init_metric_Redshift_func = s_init_Metric.Lapse_function;
@@ -129,21 +128,23 @@ int main() {
     Allocate_GOT_Model_class_instance(&s_Sim_Context);
 
     // Allocate the Novikov-Thorne Model class
-     s_Sim_Context.p_NT_model = new Novikov_Thorne_Model(s_Sim_Context.p_Init_Conditions->NT_params, s_Sim_Context.p_Spacetime);
+     s_Sim_Context.p_NT_model = new Novikov_Thorne_Model(&s_Sim_Context);
 
     // Populate the File Manager class instance
-    s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions, input_file_path, Truncate_files);
+    s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions, Truncate_files);
 
     // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
     static Results_type s_Ray_results{};
 
-    s_Ray_results.Ray_log_struct.Ray_path_log = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_path_log_number]();
+    s_Ray_results.Ray_log_struct.Ray_path_log = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_State_Number]();
 
     for (int index = I; index <= STOKES_PARAM_NUM - 1; index++) {
 
-        s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
+        s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[2 * s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
 
     }
+
+    Console_Printer.print_sim_parameters(s_Sim_Context.p_Init_Conditions);
 
     /*
 

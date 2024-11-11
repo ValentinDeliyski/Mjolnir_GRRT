@@ -19,13 +19,13 @@
 
             bool renormalize_colormap_flag = false;
 
-            int texture_indexer{};
+            int texture_indexer;
+            int ray_number_x;
+            int ray_number_y;
             
-            float Max_Intensity{};
-            float *Intensity_buffer = (float*)calloc(NUM_RAYS, sizeof(float));
-            float *texture_buffer = (float*)calloc(NUM_RAYS * 3, sizeof(float));;
-
-            float aspect_ratio = (H_angle_max - H_angle_min) / (V_angle_max - V_angle_min);
+            float Max_Intensity;
+            float *Intensity_buffer;
+            float *texture_buffer;
             
 
             const GLuint Vertex_order[6] = { 0, 2, 1, 0, 3, 2 };
@@ -40,7 +40,7 @@
 
             static std::string get_file_contents(const char* filename);
 
-            void OpenGL_init();
+            void OpenGL_init(Initial_conditions_type* p_Init_conditions);
 
             void update_rendering_window();
 

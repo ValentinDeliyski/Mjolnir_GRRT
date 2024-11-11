@@ -6,13 +6,13 @@
 
     enum Spacetime_enums {
 
-        Kerr			  = 0,
-        Wormhole		  = 1,
-        Reg_Black_Hole    = 2,
-        Naked_Singularity = 3,
-        Gauss_Bonnet      = 4,
-        BH_w_Dark_Matter  = 5,
-        SPACETIME_NUMBER  = 6
+        Kerr			      = 0,
+        Wormhole		      = 1,
+        Reg_Black_Hole        = 2,
+        Janis_Newman_Winicour = 3,
+        Einstein_Gauss_Bonnet = 4,
+        BH_w_Dark_Matter      = 5,
+        SPACETIME_NUMBER      = 6
 
     };
 
@@ -35,35 +35,19 @@
 
     enum State_enums {
 
-        e_r = 0,
-        e_theta = 1,
-        e_phi = 2,
-        e_p_phi = 3,
-        e_p_theta = 4,
-        e_p_r = 5,
-        e_State_Number = 6
+        e_t     = 0,
+        e_r     = 1,
+        e_theta = 2,
+        e_phi   = 3,
+    
+        e_p_t     = 4,
+        e_p_r     = 5,
+        e_p_theta = 6,
+        e_p_phi   = 7,
 
-    };
+        e_step    = 8,
 
-    enum Ray_path_log_enums {
-
-        e_path_log_r = 0,
-        e_path_log_theta = 1,
-        e_path_log_phi = 2,
-        e_path_log_p_phi = 3,
-        e_path_log_p_theta = 4,
-        e_path_log_p_r = 5,
-        e_path_log_step = 6,
-        e_path_log_number = 7
-
-    };
-
-    enum Spacetime_coords {
-
-        e_t_coord     = 0,
-        e_r_coord     = 1,
-        e_theta_coord = 2,
-        e_phi_coord   = 3
+        e_State_Number = 9,
 
     };
 

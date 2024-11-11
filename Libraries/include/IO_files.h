@@ -20,10 +20,10 @@
 
 			"Kerr",
 			"Wormhole",
-			"RBH",
-			"JNW",
-			"Gauss_Bonnet",
-			"BH_Dark_Matter_Halo"
+			"Regular_Black_Hole",
+			"Janis_Newman_Winicour",
+			"Einstein_Gauss_Bonnet",
+			"BH_w_Dark_Matter_Halo"
 
 		};
 
@@ -36,7 +36,7 @@
 
 		public:
 
-			File_manager_class(Initial_conditions_type* p_Initial_Conditions, std::string input_file_path, bool truncate);
+			File_manager_class(Initial_conditions_type* p_Initial_Conditions, bool truncate);
 
 			void open_image_output_files(int Sim_mode_2_number);
 

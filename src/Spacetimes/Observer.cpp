@@ -11,7 +11,7 @@ Observer_class::Observer_class(Simulation_Context_type* p_Sim_Context) {
     // Copy the observer parameters into the class variable for the sake of convenience
     memcpy(&this->obs_params, &p_Sim_Context->p_Init_Conditions->Observer_params, sizeof(this->obs_params));
 
-    double obs_position[3] = { this->obs_params.distance, this->obs_params.inclination, this->obs_params.azimuth };
+    double obs_position[4] = {0, this->obs_params.distance, this->obs_params.inclination, this->obs_params.azimuth };
 
     Metric_type s_init_Metric = p_Sim_Context->p_Spacetime->get_metric(obs_position);
     p_Sim_Context->p_Init_Conditions->init_metric_Redshift_func = s_init_Metric.Lapse_function;
@@ -32,7 +32,7 @@ Observer_class::Observer_class(Simulation_Context_type* p_Sim_Context) {
 
 Observer_parameters_type Observer_class::get_parameters() { return this->obs_params; }
 
-int Observer_class::get_obs_velocity(double Obs_velocity[4]) {
+Return_Values Observer_class::get_obs_velocity(double Obs_velocity[4]) {
 
     for (int index = 0; index <= 3; index++) {
 

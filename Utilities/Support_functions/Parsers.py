@@ -12,54 +12,38 @@ class Simulation_Parser():
 
             _ = csvreader.__next__()
 
-            self.metric = str(csvreader.__next__()[1]).split(" ")[1]
+            self.metric = str(csvreader.__next__()[1])[1:]
 
-            _ = csvreader.__next__()
+            match self.metric:
+
+                case "Kerr":
+                    self.Spin = float(csvreader.__next__()[1][1:])
+                case "Wormhole":
+                    self.Spin = float(csvreader.__next__()[1][1:])
+                    self.Redshift_parameter = float(csvreader.__next__()[1][1:])
+                case "Janis_Newman_Winicour":
+                    self.Gamma = float(csvreader.__next__()[1][1:])
+                case "Einstein-Gauss-Bonnet":
+                    self.Gamma = float(csvreader.__next__()[1][1:])
+                case "Regular_Black_Hole":
+                    self.Parameter = float(csvreader.__next__()[1][1:])
+                case "BH_w_Dark_Matter_Halo":
+                    self.Halo_mass = float(csvreader.__next__()[1][1:])
+                    self.Halo_Compactness = float(csvreader.__next__()[1][1:])
+     
+            self.Active_Sim_Mode = int(csvreader.__next__()[1])
+
+            _ = csvreader.__next__() # Image Order
+            _ = csvreader.__next__() # Observer Params 
 
             self.OBS_DISTANCE    = float(csvreader.__next__()[1])
             self.OBS_INCLICATION = float(csvreader.__next__()[1])
+
+            _ = csvreader.__next__() # Observer Azimuth
+
             self.OBS_FREQUENCY   = float(csvreader.__next__()[1])
-            self.Active_Sim_Mode = int(csvreader.__next__()[1])
 
-            if(self.Active_Sim_Mode == 2):
-                self.Photon_Number = int(csvreader.__next__()[1])
-                self.Param_Sweep_Number = int(csvreader.__next__()[1])
-
-            for i in range(1):
-                _ = csvreader.__next__()
-
-            self.disk_profile = str(csvreader.__next__()[1])
-            self.disk_profile = self.disk_profile.split(" ")[1] + " " + self.disk_profile.split(" ")[2]
-            
-            if self.disk_profile == "Power law":
-                self.disk_opening_angle = float(csvreader.__next__()[1])
-                self.R_0 = float(csvreader.__next__()[1])
-                self.R_Cutoff = float(csvreader.__next__()[1])
-                self.R_Cutoff_Scale = float(csvreader.__next__()[1])
-
-            else:
-                self.height_scale   = float(csvreader.__next__()[1])
-                self.radial_scale   = float(csvreader.__next__()[1])
-
-
-            self.emission_model = str(csvreader.__next__()[1])
-
-            if self.emission_model == " Phenomenological":
-
-                for i in range(3):
-                    _ = csvreader.__next__()
-
-                self.Emission_Scale = csvreader.__next__()[1]
-
-                for i in range(7):
-                    _ = csvreader.__next__()
-
-            else:
-
-                for i in range(11):
-                    _ = csvreader.__next__()
-
-            if (self.Active_Sim_Mode != 2):
+            if (self.Active_Sim_Mode == 1):
 
                 self.WINDOW_LIMITS = [float(limit) for limit in csvreader.__next__()[1].split(',')]
                 
@@ -68,8 +52,98 @@ class Simulation_Parser():
                 self.X_PIXEL_COUNT   = int(Resolution_list[1])
                 self.Y_PIXEL_COUNT   = int(Resolution_list[3])
 
-                self.params = csvreader.__next__()
+            _ = csvreader.__next__() # Accretion Disk Parameters Header
+            _ = csvreader.__next__() # Density Model Parameters Header
 
+            # if(self.Active_Sim_Mode == 2):
+            #     self.Photon_Number = int(csvreader.__next__()[1])
+            #     self.Param_Sweep_Number = int(csvreader.__next__()[1])
+
+            self.disk_density_profile = csvreader.__next__()[1][1:]
+            if self.disk_density_profile == "Power law":
+                self.disk_opening_angle = float(csvreader.__next__()[1])
+                self.disk_density_R_0 = float(csvreader.__next__()[1])
+                self.disk_density_R_Cutoff = float(csvreader.__next__()[1])
+                self.disk_density_R_Cutoff_Scale = float(csvreader.__next__()[1])
+
+            else:
+                self.disk_density_exp_height_scale = float(csvreader.__next__()[1])
+                self.disk_density_exp_radial_scale = float(csvreader.__next__()[1])
+
+            self.disk_max_density = float(csvreader.__next__()[1])
+
+            _ = csvreader.__next__() # Temperature Model Parameters Header
+
+            self.disk_temperature_profile = csvreader.__next__()[1][1:]
+            if self.disk_temperature_profile == "Power law":
+               self.disk_temperature_R_0 = float(csvreader.__next__()[1])
+               self.disk_temperature_R_Cutoff = float(csvreader.__next__()[1])
+               self.disk_temperature_R_Cutoff_Scale = float(csvreader.__next__()[1])
+
+            else:
+               self.disk_temperature_exp_height_scale   = float(csvreader.__next__()[1])
+               self.disk_temperature_exp_radial_scale   = float(csvreader.__next__()[1])
+
+            self.disk_max_temperature = float(csvreader.__next__()[1])
+
+            _ = csvreader.__next__() # Disk Synchrotron Emission Model Parameters Header
+
+            self.disk_ensamble = str(csvreader.__next__()[1])
+            if self.disk_ensamble == " Phenomenological":
+                self.emission_power_law    = float(csvreader.__next__()[1])
+                self.aborbtion_coefficient = float(csvreader.__next__()[1])
+                self.source_f_power_law    = float(csvreader.__next__()[1])
+                self.emission_scale        = float(csvreader.__next__()[1])
+
+            self.disk_magnetization = float(csvreader.__next__()[1])
+            self.disk_magnetic_field = csvreader.__next__()[1][1:]
+
+            _ = csvreader.__next__() # Hotspot Parameters Header
+            _ = csvreader.__next__() # Density Model Parameters Header
+
+            self.hotspot_density_profile = csvreader.__next__()[1][1:]
+            if self.hotspot_density_profile == "Gaussian":
+                self.hotspot_density_spread = float(csvreader.__next__()[1])
+
+            self.hotspot_max_density = float(csvreader.__next__()[1])
+
+            _ = csvreader.__next__() # Temperature Model Parameters Header
+
+            self.hotspot_temperature_profile = csvreader.__next__()[1][1:]
+            if self.hotspot_temperature_profile == "Gaussian":
+                self.hotspot_temperature_spread = float(csvreader.__next__()[1])
+
+            self.hotspot_max_temperature = float(csvreader.__next__()[1])
+
+            _ = csvreader.__next__() # Hotspot Synchrotron Emission Model Parameters Header
+
+            self.hotspot_ensamble = csvreader.__next__()[1][1:]
+            if self.hotspot_ensamble == "Kappa":
+                self.kappa = csvreader.__next__()[1][1:]
+            elif self.hotspot_ensamble == "Phenomenological":
+                for i in range(4):
+                    _ = csvreader.__next__()
+            elif self.hotspot_ensamble == "Thermal":
+                _
+
+            self.hotspot_magnetization = float(csvreader.__next__()[1])
+            self.hotspot_magnetic_field = csvreader.__next__()[1][1:]
+
+            _ = csvreader.__next__() # Hotspot Position Header
+
+            self.hotspot_distance    = float(csvreader.__next__()[1])
+            self.hotspot_inclination = float(csvreader.__next__()[1])
+            self.hotspot_azimuth     = float(csvreader.__next__()[1])
+
+            _ = csvreader.__next__() # Novikov - Thorner Model Parameters Header
+
+            try:
+                self.NT_r_in  = float(csvreader.__next__()[1])
+                self.NT_r_out = float(csvreader.__next__()[1])
+            except:
+                _
+            
+            _ = csvreader.__next__() # Simulation Results Header
             self.Legend = csvreader.__next__()
 
             csvreader = csv.reader(file, delimiter = " ")
@@ -77,7 +151,9 @@ class Simulation_Parser():
             if (self.Active_Sim_Mode != 2):
                 Array_size = self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT
             else:
-                Array_size = self.Photon_Number * self.Param_Sweep_Number
+                # TODO: fix this
+
+                Array_size = 1
 
             self.X_coords        = np.zeros(Array_size)
             self.Y_coords        = np.zeros(Array_size)
@@ -137,7 +213,7 @@ class Simulation_Parser():
 
     def get_total_flux(self, obs_pos):
 
-        Pixel_area = (self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT
+        Pixel_area = (self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / self.OBS_DISTANCE**2
 
         return np.sum(self.I_Intensity) * Pixel_area * self.OBS_DISTANCE**2 / obs_pos**2
 
@@ -316,7 +392,7 @@ class Units_class():
 
         self.M_SUN_SI     = 1.989e30
         self.M_M87_BH_SI  = 6.2e9 * self.M_SUN_SI
-        self.M_SGRA_BH_SI = 4.154e6 * self.M_SUN_SI
+        self.M_SGRA_BH_SI = 4.297e6 * self.M_SUN_SI
 
         #==============  Time conversions  ==============#
 
@@ -332,13 +408,16 @@ class Units_class():
         #============== Distance conversions ==============#
 
         self.LY_TO_METER      = self.C_LIGHT_SI * self.YEAR_TO_SEC
+        self.PC_TO_METER      = 3.26156 * self.LY_TO_METER
         self.GR_MASS_TO_METER = self.G_NEWTON_SI / self.C_LIGHT_SI**2
 
         self.M87_DISTANCE_LY = 53.49e6
-        self.M87_DISTANCE_GEOMETRICAL = self.M87_DISTANCE_LY * self.LY_TO_METER / self.GR_MASS_TO_METER / self.M_M87_BH_SI
+        self.M87_DISTANCE_PC = 16.9e6
+        self.M87_DISTANCE_GEOMETRICAL = self.M87_DISTANCE_PC * self.PC_TO_METER / self.GR_MASS_TO_METER / self.M_M87_BH_SI
 
         self.SGRA_DISTANCE_LY = 26673
-        self.SGRA_DISTANCE_GEOMETRICAL = self.SGRA_DISTANCE_LY * self.LY_TO_METER / self.GR_MASS_TO_METER / self.M_SGRA_BH_SI
+        self.SGRA_DISTANCE_PC = 8.277e3
+        self.SGRA_DISTANCE_GEOMETRICAL = self.SGRA_DISTANCE_PC * self.PC_TO_METER / self.GR_MASS_TO_METER / self.M_SGRA_BH_SI
 
         #============== Flux conversions ==============#
 

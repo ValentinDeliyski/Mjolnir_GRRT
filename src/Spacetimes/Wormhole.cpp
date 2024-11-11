@@ -42,10 +42,10 @@ double* Wormhole_class::get_Photon_Sphere() {
 
 }
 
-Metric_type Wormhole_class::get_metric(double State_Vector[]) {
+Metric_type Wormhole_class::get_metric(const double* const State_Vector) {
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -221,7 +221,7 @@ bool Wormhole_class::terminate_integration(double State_vector[], double Derivat
     bool scatter_other_side = State_vector[e_r] < -sqrt(100 * 100 + this->R_Throat * this->R_Throat);
     bool stop_at_throat     = State_vector[e_r] < 1e-5;
 
-    if (STOP_AT_THROAT) {
+    if (this->Stop_at_Throat) {
 
         return scatter || stop_at_throat;
     }

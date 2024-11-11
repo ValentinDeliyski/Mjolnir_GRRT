@@ -92,7 +92,7 @@ double my_max(double const vector[], int const element_number) {
 	}
 	else {
 
-		max = temp_vec[0];
+		max = fabs(vector[0]);
 
 	}
 
@@ -121,10 +121,10 @@ double my_max(double const vector[], int const element_number) {
 	return max;
 }
 
-bool interpolate_crossing(double State_Vector[], 
-						  double Old_State_Vector[], 
-						  double Crossing_coords[], 
-						  double crossing_momenta[]) {
+bool interpolate_crossing(const double* const State_Vector, 
+						  const double* const Old_State_Vector, 
+						  double* const Crossing_coords, 
+						  double* const crossing_momenta) {
 
 	/***********************************************************************************************
 	|                                                                                              |

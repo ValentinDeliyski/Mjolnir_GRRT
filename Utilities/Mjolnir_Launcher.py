@@ -15,7 +15,8 @@ class Integrator():
                  "step_controller_I_gain",
                  "step_controller_P_gain",
                  "step_controller_D_gain", 
-                 "max_integration_count")
+                 "max_integration_count",
+                 "simpson_method_accuracy")
 
 class Disk_model():
 
@@ -107,15 +108,33 @@ class NT_model_params():
 
 class File_paths():
 
-    __slots__ = ("Sim_mode_2_input_file_path", "Output_file_path", "Common_file_names", "Vert_shader_path", "Frag_shader_path")
+    __slots__ = ("Sim_mode_2_input_file_path", "Output_file_directory", "Common_file_names", "Vert_shader_path", "Frag_shader_path")
 
 class Simulation_configurator:
 
-    __slots__ = ("simulation_name", "integrator", "metric_parameters", "disk_model", "hotspot_model", "observer", "emission_models", "NT_model_params", "file_paths", "Average_emission_pitch_angle")
+    __slots__ = ("simulation_name", 
+                 "integrator", 
+                 "metric_parameters", 
+                 "disk_model", 
+                 "hotspot_model", 
+                 "observer", 
+                 "emission_models", 
+                 "NT_model_params", 
+                 "file_paths", 
+                 "average_emission_pitch_angle", 
+                 "emission_pitch_angle_samples_to_average",
+                 "object_mass")
 
-    def __init__(self, Average_emission_pitch_angle: dict = {"Value": 1, "Unit": "[-]"}):
+    def __init__(self, 
+                 Average_emission_pitch_angle: dict = {"Value": 1, "Unit": "[-]"}, 
+                 emission_pitch_angle_samples_to_average: dict = {"Value": 50, "Units": "[-]"},
+                 object_mass: dict = {"Value": 6.2e9, "Unit": "[M_sun]"},
+                 simulation_name: str = "Test_Simulation"):
 
-        self. Average_emission_pitch_angle = Average_emission_pitch_angle
+        self.average_emission_pitch_angle = Average_emission_pitch_angle
+        self.emission_pitch_angle_samples_to_average = emission_pitch_angle_samples_to_average
+        self.simulation_name = simulation_name
+        self.object_mass = object_mass
 
         self._configure_integrator_settings()
         self._configure_observer()
@@ -127,13 +146,14 @@ class Simulation_configurator:
         self._configure_emission_models()
 
     def _configure_integrator_settings(self, Init_stepsize: dict = {"Value": 1e-5, "Unit": "[M]"},
-                                             RK45_accuracy: dict = {"Value": 1e-12, "Unit": "[-]"},
+                                             RK45_accuracy: dict = {"Value": 1e-13, "Unit": "[-]"},
                                              Safety_factor_1: dict = {"Value": 0.8, "Unit": "[-]"},
                                              Safety_factor_2: dict = {"Value": 1e-25, "Unit": "[-]"},
                                              Step_controller_I_gain: dict = {"Value": 0.117, "Unit": "[-]"},
                                              Step_controller_P_gain: dict = {"Value": -0.042, "Unit": "[-]"},
                                              Step_controller_D_gain: dict = {"Value": 0.02, "Unit": "[-]"},
-                                             Max_integration_count: dict = {"Value": 1e7, "Unit": "[-]"},):
+                                             Max_integration_count: dict = {"Value": 1e7, "Unit": "[-]"},
+                                             simpson_method_accuracy: dict = {"Value": 1e-6, "Unit": "[-]"}):
 
         self.integrator = Integrator()
 
@@ -146,6 +166,7 @@ class Simulation_configurator:
         self.integrator.step_controller_P_gain = Step_controller_P_gain
         self.integrator.step_controller_D_gain = Step_controller_D_gain
         self.integrator.max_integration_count  = Max_integration_count
+        self.integrator.simpson_method_accuracy = simpson_method_accuracy
 
     def _configure_observer(self, Distance: dict = {"Value": 1e4, "Unit": "[M]"},
                                   Inclination: dict = {"Value": 160 / 180 * pi, "Unit": "[Rad]"},
@@ -313,7 +334,7 @@ class Simulation_configurator:
 
     def _configure_file_paths(self, Vert_shader_path: str = "C:/Users/Valur/Documents/Repos/Gravitational_Lenser/Libraries/shaders/default.vert",
                                     Frag_shader_path: str = "C:/Users/Valur/Documents/Repos/Gravitational_Lenser/Libraries/shaders/default.frag",
-                                    Output_file_path: str = "C:/Users/Valur/Documents/Repos/Gravitational_Lenser/Sim_Results",
+                                    Output_file_directory: str = "C:/Users/Valur/Documents/Repos/Gravitational_Lenser/Sim_Results",
                                     Common_file_names: str = "",
                                     Sim_mode_2_input_file_path: str = ""):
                             
@@ -322,15 +343,17 @@ class Simulation_configurator:
 
         self.file_paths.Vert_shader_path = Vert_shader_path
         self.file_paths.Frag_shader_path = Frag_shader_path
-        self.file_paths.Output_file_path = Output_file_path
+        self.file_paths.Output_file_directory = Output_file_directory
         self.file_paths.Common_file_names = Common_file_names
         self.file_paths.Sim_mode_2_input_file_path = Sim_mode_2_input_file_path
 
     def generate_simulation_input(self):
 
         Encoding = 'UTF-8'
-        XML_root_node = ET.Element("Simulation_Input", {"Simulation_Name": "INSERT_NAME_HERE"})
-        ET.SubElement(XML_root_node, "Average_emission_pitch_angle", units = "[-]").text = "{}".format(self.Average_emission_pitch_angle["Value"])
+        XML_root_node = ET.Element("Simulation_Input", {"Simulation_Name": self.simulation_name})
+        ET.SubElement(XML_root_node, "Average_emission_pitch_angle", units = "[-]").text = "{}".format(self.average_emission_pitch_angle["Value"])
+        ET.SubElement(XML_root_node, "Emission_pitch_angle_samples_to_average", units = "[-]").text = "{}".format(self.emission_pitch_angle_samples_to_average["Value"])
+        ET.SubElement(XML_root_node, "Central_object_mass", units = self.object_mass["Unit"]).text = "{}".format(self.object_mass["Value"])
 
         # ============ Generate the observer XML section ============ #
 
@@ -516,7 +539,6 @@ class Simulation_configurator:
             Files_attrib = getattr(self.file_paths, Files_attrib_name)
             ET.SubElement(Files_subelement, Files_attrib_name).text = "{}".format(Files_attrib)
 
-
         # ========================================================== #
 
         XML_struct = xml.dom.minidom.parseString(ET.tostring(XML_root_node))
@@ -532,12 +554,46 @@ Units_class_instance = Units_class()
 
 Sim_config = Simulation_configurator()
 
+
+Sim_config.object_mass = {"Value": 6.2e9, "Unit": "[M_sun]"}
+
+# ================================================== Metric ================================================== #
+
+Sim_config.metric_parameters.Metric_type = {"Value": "Kerr", "Unit": "[-]"}
+Sim_config.metric_parameters.Spin = {"Value": 0.94, "Unit": "[M]"}
+
+# ================================================== Observer ================================================== #
+
+Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
+Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
 Sim_config.observer.Distance = {"Value": 1e3, "Unit": "[M]"}
-Sim_config.observer.Inclination = {"Value": 60 * pi / 180, "Unit": "[Rad]"}
-Sim_config.disk_model.Ensamble_type = {"Value": "Phenomenological", "Unit": "[-]"}
-Sim_config.disk_model.Density_profile = {"Value": "Exponential Law", "Unit": "[-]"}
-Sim_config.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
-Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[-]"}
-# Sim_config.disk_model.Temperature_profile = {"Value": "Exponential Law", "Unit": "[-]"}
+Sim_config.observer.Inclination = {"Value": 160 * pi / 180, "Unit": "[Rad]"}
+Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
+
+# ================================================== Disk ================================================== #
+
+Sim_config.disk_model.Temperature_scale_factor = {"Value": 1e11, "Unit": "[K]"}
+Sim_config.disk_model.Density_scale_factor = {"Value": 2e6, "Unit": "[g / cm^3]"}
+
+Sim_config.disk_model.Density_r_cutoff = {"Value": 0, "Unit": "[M]"}
+Sim_config.disk_model.Temperature_r_cutoff = {"Value": 0, "Unit": "[M]"}
+
+Sim_config.disk_model.Density_r_0     = {"Value": 1 + np.sqrt(1 - 0.94**2), "Unit": "[M]"}
+Sim_config.disk_model.Temperature_r_0 = {"Value": 1 + np.sqrt(1 - 0.94**2), "Unit": "[M]"}
+
+Sim_config.disk_model.Opening_angle = {"Value": 1, "Unit": "[tan(angle)]"}
+
+# ================================================== Hotspot ================================================== #
+
+Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g / cm^3]"}
+Sim_config.hotspot_model.Temperature_scale_factor = {"Value": 9.03e10, "Unit": "[K]"}
+Sim_config.hotspot_model.Ensamble_type = {"Value": "Kappa", "Unit": "[-]"}
+Sim_config.hotspot_model.Magnetization = {"Value": 0.01, "Unit": "[-]"}
+Sim_config.emission_models.Kappa = {"Value": 5, "Unit": "[-]"}
+Sim_config.hotspot_model.Distance = {"Value": 9, "Unit": "[M]"}
+
+# ================================================== Novikov - Thorne Disk ================================================== #
+
+Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
 
 Sim_config.generate_simulation_input()

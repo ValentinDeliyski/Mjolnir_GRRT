@@ -8,9 +8,9 @@
 
     public:
 
-        Step_controller(Integrator_parameters_type Integrator_parameters);
+        Step_controller(const Integrator_parameters_type Integrator_parameters);
 
-        void update_step(double const State_Vector[]);
+        void update_step(const double const* State_Vector);
 
         double Gain_I;
         double Gain_P;
@@ -35,8 +35,8 @@
 
     };
 
-    void RK45(double State_Vector[], Step_controller* controller, Simulation_Context_type* p_Sim_context);
+    void RK45(double* const State_Vector, Step_controller* const controller, const Simulation_Context_type* const p_Sim_context);
 
-    void Propagate_ray(Simulation_Context_type* s_Sim_Context, Results_type* Ray_results);
+    void Propagate_ray(const Simulation_Context_type const* s_Sim_Context, Results_type* const Ray_results);
 
 #endif 

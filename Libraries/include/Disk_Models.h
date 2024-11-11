@@ -14,29 +14,29 @@
 
             double r_in;
             double r_out;
+            double flux_integral_accuracy;
+            Spacetime_Base_Class* p_Spacetime;
+            Spacetime_enums e_Spacetime;
 
         public:
 
-            Novikov_Thorne_Model(NT_parameters_type NT_params, Spacetime_Base_Class* Spacetime);
+            Novikov_Thorne_Model(Simulation_Context_type* p_Sim_Context);
 
-            double get_r_in();
-            double get_r_out();
+            double Keplerian_angular_velocity(double r);
 
-            double Keplerian_angular_velocity(double r, Spacetime_Base_Class* Spacetime);
+            double dr_Keplerian_angular_velocity(double r);
 
-            double dr_Keplerian_angular_velocity(double r, Spacetime_Base_Class* Spacetime);
+            double Redshift(double J, double State_Vector[], double r_obs, double theta_obs);
 
-            double Redshift(double J, double State_Vector[], double r_obs, double theta_obs, Spacetime_Base_Class* Spacetime);
+            double disk_Energy(double r);
 
-            double disk_Energy(double r, Spacetime_Base_Class* Spacetime);
+            double disk_Angular_Momentum(double r);
 
-            double disk_Angular_Momentum(double r, Spacetime_Base_Class* Spacetime);
+            double Flux_integrand(double r);
 
-            double Flux_integrand(double r, Spacetime_Base_Class* Spacetime);
+            double solve_Flux_integral(double lower_bound, double upper_bound, double tolerance);
 
-            double solve_Flux_integral(double lower_bound, double upper_bound, double tolerance, Spacetime_Base_Class* Spacetime);
-
-            double get_flux(double r, Spacetime_Base_Class* Spacetime);
+            double get_flux(double r);
 
     };
 
@@ -47,11 +47,15 @@
             Hotspot_model_parameters_type   s_Hotspot_params;
             Emission_model_parameters_type  s_Emission_params;
             Precomputed_e_pitch_angles      s_Precomputed_e_pitch_angles{};
-            double Disk_velocity[4]{};
-            double Disk_Temperature{};
-            double Hotspot_Temperature{};
-            double Disk_density{};
-            double Hotspot_density{};
+
+            int Num_samples_to_avg;
+            bool Include_polarization;
+
+            double Disk_velocity[4];
+            double Disk_Temperature;
+            double Hotspot_Temperature;
+            double Disk_density;
+            double Hotspot_density;
 
 
             // ====================== Thermally Distributed Synchotron Fit Functions ====================== //
@@ -122,68 +126,66 @@
 
             // ====================== Accretion Disk State Functions ====================== //
 
-            double get_disk_temperature(double State_vector[]);
+            double get_disk_temperature(const double* const State_Vector);
 
-            double get_hotspot_temperature(double State_vecotr[]);
+            double get_hotspot_temperature(const double* const State_Vector);
 
-            double* get_disk_velocity(double State_Vector[], Simulation_Context_type* p_Sim_Context);
+            double* get_disk_velocity(const double* const State_Vector, const Simulation_Context_type* const p_Sim_Context);
 
-            double get_disk_density(double State_vector[]);
+            double get_disk_density(const double* const State_Vector);
 
-            double get_hotspot_density(double State_Vector[]);
+            double get_hotspot_density(const double* const State_Vector);
 
-            double get_total_magnetic_field(double B_field[4], 
-                                           double State_Vector[],
-                                           Simulation_Context_type* p_Sim_Context);
+            double get_total_magnetic_field(double* const B_coord_frame,
+                                            const double* const State_Vector,
+                                            const Simulation_Context_type* const p_Sim_Context);
 
             // ======================= Radiative Fransfer Functions ======================= //
 
-            void get_radiative_transfer_functions(double State_Vector[e_State_Number],
-                                                  Simulation_Context_type* p_Sim_Context,
-                                                  double Emission_functions[STOKES_PARAM_NUM],
-                                                  double Absorbtion_functions[STOKES_PARAM_NUM],
-                                                  double Faradey_functions[STOKES_PARAM_NUM]);
+            void get_radiative_transfer_functions(const double* const State_Vector,
+                                                  const Simulation_Context_type* const p_Sim_Context, 
+                                                  double* const Emission_functions,
+                                                  double* const Faradey_functions,
+                                                  double* const Absorbtion_functions);
 
-            void get_thermal_synchotron_transfer_functions(double State_vector[],
-                                                           Simulation_Context_type* p_Sim_Context,
-                                                           double Emission_functions[STOKES_PARAM_NUM],
-                                                           double Faradey_functions[STOKES_PARAM_NUM],
-                                                           double Absorbtion_functions[STOKES_PARAM_NUM],
-                                                           double Density,
-                                                           double Temperature,
-                                                           double* B_field,
-                                                           double B_field_norm);
+            void get_thermal_synchotron_transfer_functions(const double* const State_Vector,
+                                                           const Simulation_Context_type* const p_Sim_Context,
+                                                           double* const Emission_functions,
+                                                           double* const Faradey_functions,
+                                                           double* const Absorbtion_functions,
+                                                           double const Density,
+                                                           double const Temperature,
+                                                           double* const B_field,
+                                                           double const B_field_norm);
 
-            void get_kappa_synchotron_transfer_functions(double State_vector[],
-                                                         Simulation_Context_type* p_Sim_Context,
-                                                         double Emission_functions[STOKES_PARAM_NUM],
-                                                         double Faradey_functions[STOKES_PARAM_NUM],
-                                                         double Absorbtion_functions[STOKES_PARAM_NUM],
-                                                         double Density,
-                                                         double Temperature,
-                                                         double* B_field,
-                                                         double B_field_norm);
+            void get_kappa_synchotron_transfer_functions(const double* const State_Vector,
+                                                         const Simulation_Context_type* const p_Sim_Context,
+                                                         double* const Emission_functions,
+                                                         double* const Faradey_functions,
+                                                         double* const Absorbtion_functions,
+                                                         double const Density,
+                                                         double const Temperature,
+                                                         double* const B_field,
+                                                         double const B_field_norm);
 
-            void get_phenomenological_synchotron_functions(double State_Vector[],
-                                                           Simulation_Context_type* p_Sim_Context, 
-                                                           double Emission_functions[STOKES_PARAM_NUM],
-                                                           double Faradey_functions[STOKES_PARAM_NUM],
-                                                           double Absorbtion_functions[STOKES_PARAM_NUM],
-                                                           double Density);
+            void get_phenomenological_synchotron_functions(const double* const State_Vector,
+                                                           const Simulation_Context_type* const p_Sim_Context, 
+                                                           double* const Emission_functions,
+                                                           double* const Faradey_functions,
+                                                           double* const Absorbtion_functions,
+                                                           const double Density);
 
             // ======================= Electron Pitch Angle Functions ======================= //
 
-            double get_electron_pitch_angle(double B_field_local[4], 
-                                            double State_Vector[], 
-                                            Simulation_Context_type* p_Sim_Context);
+            double get_electron_pitch_angle(double* const B_field_local, 
+                                            const double* const State_Vector, 
+                                            const Simulation_Context_type* const p_Sim_Context);
 
             // =============================== Misc Functions =============================== //
 
-            void precompute_electron_pitch_angles();
+            void precompute_electron_pitch_angles(Initial_conditions_type* p_Init_Conditions);
 
-            int load_parameters(Disk_model_parameters_type* Disk_params,
-                                Hotspot_model_parameters_type* Hotspot_params,
-                                Emission_model_parameters_type* Emission_params);
+            int load_parameters(Simulation_Context_type* p_Sim_Context);
 
     };
 

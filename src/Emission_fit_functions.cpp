@@ -14,7 +14,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchotron_fit_functions(double E
                                                                         Thermal_emission_f_arguments* Emission_args,
                                                                         Thermal_faradey_f_arguments* Faradey_args) {
 
-    if (INCLUDE_POLARIZATION) {
+    if (this->Include_polarization) {
 
         this->get_thermal_synchotron_emission_fit_functions(Dexter_2016, Emission_fucntions, Emission_args->X, Emission_args->sqrt_X, Emission_args->cbrt_X);
         this->get_thermal_synchotron_faradey_fit_functions(Faradey_args->X, Faradey_args->X_to_1_point_2, Faradey_args->X_to_1_point_035, Faradey_functions);
@@ -162,7 +162,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_emission_fit_functions(d
         constexpr double THREE_TO_7_OVER_3 = 12.980246132766677;
 
         double Emission_functions_low[STOKES_PARAM_NUM]{};
-        double Common_factor_low = cbrt_X * sin_emission_angle * (4 * M_PI / THREE_TO_7_OVER_3) * std::tgamma(kappa - 4.0 / 3) / std::tgamma(kappa - 2);
+        double Common_factor_low = cbrt_X * sin_emission_angle * (4 * M_PI / THREE_TO_7_OVER_3) * std::tgamma(kappa - 4.0 / 3) / std::tgamma(kappa - 2.0);
 
         Emission_functions_low[I] = Common_factor_low;
         Emission_functions_low[Q] = -Common_factor_low / 2;
@@ -206,7 +206,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_emission_fit_functions(d
 
         }
 
-       Emission_functions[I] = Emission_functions_high[I];
+       //Emission_functions[I] = Emission_functions_high[I];
 
     }
 
@@ -269,7 +269,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_absorbtion_fit_functions
         // ----------------------------------------------------------------------- High frequency fit ------------------------------------------------------------------------ //
 
         double Common_factor_high = pow(X, -(1 + kappa) / 2) * M_PI * (2 / M_2_SQRTPI) / 3 * (kappa - 2) * (kappa - 1) * kappa / (kappa * T_electron_dim) / (kappa * T_electron_dim) / (kappa * T_electron_dim)
-            * (2 * std::tgamma(2 + kappa / 2) / (2 + kappa) - 1);
+            * (2 * std::tgamma(2 + kappa / 2) / (2 + kappa) - 1.0);
 
         Absorbtion_functions_high[I] = Common_factor_high * (pow(3.0 / kappa, 19.0 / 4) + 3.0 / 5);
         Absorbtion_functions_high[Q] = -Common_factor_high * (441 * pow(kappa, -144.0 / 25) + 11.0 / 20);
@@ -279,18 +279,30 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_absorbtion_fit_functions
         // ------------------------------------------------------------------------ Bridging function ------------------------------------------------------------------------ //
 
         double power_I = pow(-7.0 / 4 + 8.0 / 5 * kappa, -43.0 / 50);
-        Absorbtion_functions[I] = Absorbtion_functions_low[I] * pow(1. + pow(Absorbtion_functions_high[I] / Absorbtion_functions_low[I], -power_I), -1.0 / power_I);
+        if (!isnan(Absorbtion_functions_high[I] / Absorbtion_functions_low[I])) {
+
+            Absorbtion_functions[I] = Absorbtion_functions_low[I] * pow(1. + pow(Absorbtion_functions_high[I] / Absorbtion_functions_low[I], -power_I), -1.0 / power_I);
+
+        }
 
         double power_Q = 7.0 / 5 * pow(kappa, -23.0 / 20);
-        Absorbtion_functions[Q] = Absorbtion_functions_low[Q] * pow(1. + pow(Absorbtion_functions_high[Q] / Absorbtion_functions_low[Q], -power_Q), -1.0 / power_Q);
+        if (!isnan(Absorbtion_functions_high[Q] / Absorbtion_functions_low[Q])) {
+
+            Absorbtion_functions[Q] = Absorbtion_functions_low[Q] * pow(1. + pow(Absorbtion_functions_high[Q] / Absorbtion_functions_low[V], -power_Q), -1.0 / power_Q);
+
+        }
 
         Absorbtion_functions[U] = 0.0;
 
         double power_V = 61.0 / 50 * pow(kappa, -142.0 / 125) + 7.0 / 1000;
-        Absorbtion_functions[V] = Absorbtion_functions_low[V] * pow(1. + pow(Absorbtion_functions_high[V] / Absorbtion_functions_low[V], -power_V), -1.0 / power_V);
+        if (!isnan(Absorbtion_functions_high[V] / Absorbtion_functions_low[V])) {
+
+            Absorbtion_functions[V] = Absorbtion_functions_low[V] * pow(1. + pow(Absorbtion_functions_high[V] / Absorbtion_functions_low[V], -power_V), -1.0 / power_V);
+
+        }
 
     }
 
-   Absorbtion_functions[I] = Absorbtion_functions_high[I];
+   //Absorbtion_functions[I] = Absorbtion_functions_high[I];
 
 }
