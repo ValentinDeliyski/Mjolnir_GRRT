@@ -37,7 +37,7 @@
 
             };
 
-            virtual Metric_type get_dr_metric(double State_vector[]) {
+            virtual Metric_type get_dr_metric(const double* const State_Vector) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -46,7 +46,7 @@
             };
 
 
-            virtual Metric_type get_dtheta_metric(double State_vector[]) {
+            virtual Metric_type get_dtheta_metric(const double* const State_Vector) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -54,7 +54,7 @@
 
             };
 
-            virtual Metric_type get_d2r_metric(double State_vector[]) {
+            virtual Metric_type get_d2r_metric(const double* const State_Vector) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -128,9 +128,9 @@
             /* Metric and its derivatives */
 
             Metric_type get_metric(const double* const State_Vector) override;
-            Metric_type get_dr_metric(double State_vector[]) override;
-            Metric_type get_dtheta_metric(double State_vector[]) override;
-            Metric_type get_d2r_metric(double State_vector[]) override;
+            Metric_type get_dr_metric(const double* const State_Vector) override;
+            Metric_type get_dtheta_metric(const double* const State_Vector) override;
+            Metric_type get_d2r_metric(const double* const State_Vector) override;
 
             /* Initial conditions derived from images */
 
@@ -175,9 +175,9 @@
         /* Metric and its derivatives */
 
         Metric_type get_metric(const double* const State_Vector) override;
-        Metric_type get_dr_metric(double State_vector[]) override;
-        Metric_type get_dtheta_metric(double State_vector[]) override;
-        Metric_type get_d2r_metric(double State_vector[]) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
+        Metric_type get_d2r_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -217,9 +217,9 @@
         /* Metric and its derivatives */
 
         Metric_type get_metric(const double* const State_Vector) override;
-        Metric_type get_dr_metric(double State_vector[]) override;
-        Metric_type get_dtheta_metric(double State_vector[]) override;
-        Metric_type get_d2r_metric(double State_vector[]) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
+        Metric_type get_d2r_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -259,9 +259,9 @@
         /* Metric and its derivatives */
 
         Metric_type get_metric(const double* const State_Vector) override;
-        Metric_type get_dr_metric(double State_vector[]) override;
-        Metric_type get_dtheta_metric(double State_vector[]) override;
-        Metric_type get_d2r_metric(double State_vector[]) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
+        Metric_type get_d2r_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -301,9 +301,9 @@
         /* Metric and its derivatives */
 
         Metric_type get_metric(const double* const State_Vector) override;
-        Metric_type get_dr_metric(double State_vector[]) override;
-        Metric_type get_dtheta_metric(double State_vector[]) override;
-        Metric_type get_d2r_metric(double State_vector[]) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
+        Metric_type get_d2r_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -343,8 +343,8 @@
         /* Metric and its derivatives */
 
         Metric_type get_metric(const double* const State_Vector) override;
-        Metric_type get_dr_metric(double State_vector[]) override;
-        Metric_type get_dtheta_metric(double State_vector[]) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -377,7 +377,7 @@
 
         Observer_parameters_type get_parameters();
 
-        Return_Values get_obs_velocity(double Obs_velocity[4]);
+        double* get_obs_velocity();
 
     };
 

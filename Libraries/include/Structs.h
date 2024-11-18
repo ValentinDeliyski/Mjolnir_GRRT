@@ -11,6 +11,7 @@
         Ensamble_enums Ensamble_type;
         Profile_enums Density_profile_type;
         Profile_enums Temperature_profile_type;
+        Velocity_enums Velocity_profile_type;
 
         double Electron_density_scale;
         double Electron_temperature_scale;
@@ -43,25 +44,69 @@
         double Exp_law_temperature_height_scale;
         double Exp_law_temperature_radial_scale;
 
+    };
+
+    struct Magnetic_fields_type {
+
+        double B_field_plasma_frame[4];
+        double B_field_coord_frame[4];
+        double B_field_plasma_frame_norm;
 
     };
 
     struct Hotspot_model_parameters_type {
 
-        Ensamble_enums Ensamble_type;
-        Profile_enums Density_profile_type;
-        Profile_enums Temperature_profile_type;
+        /* Specifies the statistical ensamble of the hotspot. */
+        Ensamble_enums Ensamble_type; 
 
-        double Position[3];
+        /* Specifies the density profile of the hotspot. The current supported profiles are:
+            - Gaussian
+            - Sphere with a constant Radius  */
+        Profile_enums Density_profile_type; 
 
-        // The hotspot is modelled as a Gaussian with an std = Spread
-        double Density_spread;
-        double Temperature_spread;
+        /* Specifies the temperature profile of the hotspot. The current supported profiles are:
+            - Gaussian
+            - Sphere with a constant Radius */
+        Profile_enums Temperature_profile_type; 
 
-        double Electron_density_scale;
-        double Electron_temperature_scale;
-        double Magnetization;
+        /* Specifies the velocity profile of the hotspot. */
+        Velocity_enums Velocity_profile_type;  
 
+        /* The hotspot potision, specified as [Distance, Polar Angle, Azimuth Angle] */
+        double Position[3]; 
+
+        /* The hotspot is modelled as a localized Gaussian overdensity.
+         * The density, temperature and overall time evolution profiles are specified with
+         * their respective standard deviations.
+         */
+
+         /* Standard deviation of the Gaussian density profile. */
+        double Density_spread;     
+
+        /* Standard deviation of the Gaussian temperature profile. */
+        double Temperature_spread; 
+
+        /* Standard deviation of the Gaussian temporal profile. Setting this to zero ignores the time 
+           evolution of the hotspot profile. */
+        double Temporal_spread;   
+
+        /* Radius of the hotspot. Only affects the Spherical profile. */
+        double Radius; 
+
+        /* Coordinate time of maximum hotspot emission */
+        double Coord_time_at_max; 
+
+        /* The peak density value. */
+        double Electron_density_scale;     
+
+        /* The peak temperature value. */
+        double Electron_temperature_scale; 
+
+        /* The hotspot magnetization value. */
+        double Magnetization;   
+
+        /* The constant magnetic field geometry in the plasma rest frame.
+           The components are specified as [B_r, B_theta, B_phi]. */
         double Mag_field_geometry[3];
 
     };
@@ -176,9 +221,15 @@
 
     struct Integrator_parameters_type {
 
-        double Gain_I;
-        double Gain_P;
-        double Gain_D;
+        Step_controller_type_enums Controller_type;
+
+        double PID_gain_I;
+        double PID_gain_P;
+        double PID_gain_D;
+        double Gustafsson_k1;
+        double Gustafsson_k2;
+        double Max_rel_step_increase;
+        double Min_rel_step_increase;
         double Init_stepzie;
         double RK_45_accuracy;
         double Safety_1;

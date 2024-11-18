@@ -68,12 +68,12 @@ Metric_type Wormhole_class::get_metric(const double* const State_Vector) {
     return this->s_Metric;
 }
 
-Metric_type Wormhole_class::get_dr_metric(double State_Vector[]) {
+Metric_type Wormhole_class::get_dr_metric(const double* const State_Vector) {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -98,10 +98,10 @@ Metric_type Wormhole_class::get_dr_metric(double State_Vector[]) {
     return this->s_dr_Metric;
 }
 
-Metric_type Wormhole_class::get_dtheta_metric(double State_Vector[]) {
+Metric_type Wormhole_class::get_dtheta_metric(const double* const State_Vector) {
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -124,13 +124,13 @@ Metric_type Wormhole_class::get_dtheta_metric(double State_Vector[]) {
     return this->s_Metric;
 }
 
-Metric_type Wormhole_class::get_d2r_metric(double State_Vector[]) {
+Metric_type Wormhole_class::get_d2r_metric(const double* const State_Vector) {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -200,11 +200,13 @@ int Wormhole_class::get_EOM(double State_Vector[], double Derivatives[]) {
     double sin1 = sin(State_Vector[e_theta]);
     double sin2 = sin1 * sin1;
 
+    *(Derivatives + e_t) = -1.0 / N / N * State_Vector[e_p_r];
     *(Derivatives + e_r) = 1.0 / (1 + this->R_Throat / sqrt_r2) * State_Vector[e_p_r];
     *(Derivatives + e_theta) = 1.0 / (sqrt_r2 * sqrt_r2) * State_Vector[e_p_theta];
     *(Derivatives + e_phi) = J / (sqrt_r2 * sqrt_r2 * sin2) + omega * (1 - omega * J) / N2;
     *(Derivatives + e_p_phi) = 0.0;
     *(Derivatives + e_p_theta) = (cos(State_Vector[e_theta]) / sin1) / (sqrt_r2 * sqrt_r2) * J * J / sin2;
+    *(Derivatives + e_p_t) = 0.0;
 
     double term_1 = -1.0 / ((1 + this->R_Throat / sqrt_r2) * (1 + this->R_Throat / sqrt_r2)) * this->R_Throat * State_Vector[e_r] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * State_Vector[e_p_r] * State_Vector[e_p_r] / 2;
     double term_2 = 1.0 / (sqrt_r2 * sqrt_r2 * sqrt_r2) * (State_Vector[e_p_theta] * State_Vector[e_p_theta] + J * J / sin2) * d_ell_r;
@@ -217,7 +219,7 @@ int Wormhole_class::get_EOM(double State_Vector[], double Derivatives[]) {
 
 bool Wormhole_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool scatter            = State_vector[e_r] >  sqrt(100 * 100 + this->R_Throat * this->R_Throat) && Derivatives[0] < 0;
+    bool scatter            = State_vector[e_r] >  sqrt(100 * 100 + this->R_Throat * this->R_Throat) && Derivatives[e_r] < 0;
     bool scatter_other_side = State_vector[e_r] < -sqrt(100 * 100 + this->R_Throat * this->R_Throat);
     bool stop_at_throat     = State_vector[e_r] < 1e-5;
 

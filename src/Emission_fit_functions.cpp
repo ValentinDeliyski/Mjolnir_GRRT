@@ -6,32 +6,44 @@
 
 #include "gsl/gsl_sf_hyperg.h"
 
-/* =============================================== Thermal Synchotron Transfer Functions =============================================== */
+/* =============================================== Thermal synchrotron Transfer Functions =============================================== */
 
 
-void Generic_Optically_Thin_Model::get_thermal_synchotron_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
+void Generic_Optically_Thin_Model::get_thermal_synchrotron_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
                                                                         double Faradey_functions[STOKES_PARAM_NUM],
                                                                         Thermal_emission_f_arguments* Emission_args,
                                                                         Thermal_faradey_f_arguments* Faradey_args) {
 
     if (this->Include_polarization) {
 
-        this->get_thermal_synchotron_emission_fit_functions(Dexter_2016, Emission_fucntions, Emission_args->X, Emission_args->sqrt_X, Emission_args->cbrt_X);
-        this->get_thermal_synchotron_faradey_fit_functions(Faradey_args->X, Faradey_args->X_to_1_point_2, Faradey_args->X_to_1_point_035, Faradey_functions);
+        this->get_thermal_synchrotron_emission_fit_functions(Dexter_2016, Emission_fucntions, Emission_args->X, Emission_args->sqrt_X, Emission_args->cbrt_X);
+        this->get_thermal_synchrotron_faradey_fit_functions(Faradey_args->X, Faradey_args->X_to_1_point_2, Faradey_args->X_to_1_point_035, Faradey_functions);
 
     }
     else {
 
-        this->get_thermal_synchotron_emission_fit_functions(Leung_2011, Emission_fucntions, Emission_args->X, Emission_args->sqrt_X, Emission_args->cbrt_X);
+        this->get_thermal_synchrotron_emission_fit_functions(Leung_2011, Emission_fucntions, Emission_args->X, Emission_args->sqrt_X, Emission_args->cbrt_X);
 
     }
 }
 
-void Generic_Optically_Thin_Model::get_thermal_synchotron_emission_fit_functions(Thermal_Syncotron_fit_selector e_fit_functions,
-                                                                                 double Emission_functions[4],
-                                                                                 double X,
-                                                                                 double sqrt_X,
-                                                                                 double cbrt_X) {
+
+//! Evaluates the thermal sychrotron fit functions.
+/*! Evaluates the thermal sychrotron fit functions (emission and Fatadey), based on two sources:
+*       1) https://www.aanda.org/articles/aa/pdf/2022/11/aa44339-22.pdf for the unpolarized case.
+*       2) https://arxiv.org/pdf/1602.03184.pdf for the polarized case
+*   
+*   \param [in] e_fit_functions - Enum that selects which fit functions to evaluate.
+*   \param [out] Emission_functions - Pointer to the array that holds the fit funct ions.
+*   \param [in] X - Dimentionless parameter that the fit functions depend on.
+*   \param [in] sqrt_X - Square root of X - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \param [in] cbrt_X - Cube root of X - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*/
+void Generic_Optically_Thin_Model::get_thermal_synchrotron_emission_fit_functions(Thermal_Syncotron_fit_selector e_fit_functions,
+                                                                                  double Emission_functions[4],
+                                                                                  double X,
+                                                                                  double sqrt_X,
+                                                                                  double cbrt_X) {
 
     Emission_functions[I] = 0;
     Emission_functions[U] = 0;
@@ -42,18 +54,14 @@ void Generic_Optically_Thin_Model::get_thermal_synchotron_emission_fit_functions
 
     case Leung_2011:
 
-        /*
-
-        The below expressions were originally designed to work with f_s as defined in the paper = 4 / 27 * f_crit. This is annoying for my implementation (I define X = f / f_crit),
-        so I convert the expressions to work with f_crit explicitly.
-
-        Ontop of that the whole function scales linearly with frequency. This is replaced by the variable "X" in the second line (in order to take the redshift into account without passing it in as an argument, because I don't like that).
-        This is then corrected in the caller function, by multiplying with the critical frequency.
-
-        Ref: https://www.aanda.org/articles/aa/pdf/2022/11/aa44339-22.pdf
-
-        */
-
+        /*!< The below expressions were originally designed to work with f_s as defined in the paper = 4 / 27 * f_crit. This is annoying for my implementation (I define X = f / f_crit),
+         *   so I convert the expressions to work with f_crit explicitly.
+         *
+         *   Ontop of that the whole function scales linearly with frequency. This is replaced by the variable "X" in the second line (in order to take the redshift into account without passing it in as an argument, because I don't like that).
+         *   This is then corrected in the caller function, by multiplying with the critical frequency.
+         *   
+         *   Ref: https://www.aanda.org/articles/aa/pdf/2022/11/aa44339-22.pdf
+         */
         if (!isnan(cbrt_X) && !isinf(cbrt_X) && !isnan(X) && !isinf(X) && !isnan(1.0 / cbrt_X) && !isinf(1.0 / cbrt_X)) {
 
             Emission_functions[I] = M_SQRT2 * M_PI * Q_ELECTRON_CGS * Q_ELECTRON_CGS / 3 / C_LIGHT_CGS;
@@ -94,7 +102,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchotron_emission_fit_functions
 
 }
 
-void Generic_Optically_Thin_Model::get_thermal_synchotron_faradey_fit_functions(double X,
+void Generic_Optically_Thin_Model::get_thermal_synchrotron_faradey_fit_functions(double X,
                                                                                 double X_to_1_point_2,
                                                                                 double X_frac,
                                                                                 double faradey_fucntions[STOKES_PARAM_NUM]) {
@@ -121,15 +129,15 @@ void Generic_Optically_Thin_Model::get_thermal_synchotron_faradey_fit_functions(
 
 }
 
-/* ========================================== Kappa Synchotron Transfer Functions ========================================== */
+/* ========================================== Kappa synchrotron Transfer Functions ========================================== */
 
-void Generic_Optically_Thin_Model::get_kappa_synchotron_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
+void Generic_Optically_Thin_Model::get_kappa_synchrotron_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
                                                                       double Faradey_functions[STOKES_PARAM_NUM], 
                                                                       double Absorbtion_fucntions[STOKES_PARAM_NUM],
                                                                       Kappa_transfer_f_arguments* args){
 
-    this->get_kappa_synchotron_emission_fit_functions(Emission_fucntions, args->X, args->sqrt_X, args->cbrt_X, args->X_to_7_over_20, args->kappa, args->sin_emission_angle, args->T_electron_dim);
-    this->get_kappa_synchotron_absorbtion_fit_functions(Absorbtion_fucntions, args->X, args->sqrt_X, args->cbrt_X, args->X_to_7_over_20, args->kappa, args->sin_emission_angle, args->T_electron_dim);
+    this->get_kappa_synchrotron_emission_fit_functions(Emission_fucntions, args->X, args->sqrt_X, args->cbrt_X, args->X_to_7_over_20, args->kappa, args->sin_emission_angle, args->T_electron_dim);
+    this->get_kappa_synchrotron_absorbtion_fit_functions(Absorbtion_fucntions, args->X, args->sqrt_X, args->cbrt_X, args->X_to_7_over_20, args->kappa, args->sin_emission_angle, args->T_electron_dim);
 
     for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
 
@@ -139,7 +147,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_fit_functions(double Emi
 
 }
 
-void Generic_Optically_Thin_Model::get_kappa_synchotron_emission_fit_functions(double Emission_functions[STOKES_PARAM_NUM],
+void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(double Emission_functions[STOKES_PARAM_NUM],
                                                                                double X,
                                                                                double sqrt_X,
                                                                                double cbrt_X,
@@ -212,7 +220,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_emission_fit_functions(d
 
 }
 
-void Generic_Optically_Thin_Model::get_kappa_synchotron_absorbtion_fit_functions(double Absorbtion_functions[STOKES_PARAM_NUM],
+void Generic_Optically_Thin_Model::get_kappa_synchrotron_absorbtion_fit_functions(double Absorbtion_functions[STOKES_PARAM_NUM],
                                                                                  double X,
                                                                                  double sqrt_X,
                                                                                  double cbrt_X,

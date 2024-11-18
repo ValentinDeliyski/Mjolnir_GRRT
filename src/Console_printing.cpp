@@ -300,6 +300,15 @@ void Console_Printer_class::print_sim_parameters(Initial_conditions_type* p_Init
 
         break;
 
+    case e_Spherical_profile:
+
+        std::cout << "Density Profile: Spherical"
+            << "\n"
+            << "Radius [M]: "
+            << p_Initial_Conditions->Hotspot_params.Radius
+            << "\n";
+
+        break;
 
     default:
 
@@ -333,6 +342,14 @@ void Console_Printer_class::print_sim_parameters(Initial_conditions_type* p_Init
 
         break;
 
+    case e_Spherical_profile:
+
+        std::cout << "Density Profile: Spherical"
+            << "\n"
+            << "Radius [M]: "
+            << p_Initial_Conditions->Hotspot_params.Radius
+            << "\n";
+        break;
 
     default:
 
@@ -411,13 +428,13 @@ void Console_Printer_class::print_sim_parameters(Initial_conditions_type* p_Init
         << "\n";
 
     std::cout << "Distance [M]: "
-        << p_Initial_Conditions->Hotspot_params.Position[e_r]
+        << p_Initial_Conditions->Hotspot_params.Position[e_r - 1]
         << "\n"
-        << "Inclination [Rad]: "
-        << p_Initial_Conditions->Hotspot_params.Position[e_theta]
+        << "Inclination [Deg]: "
+        << p_Initial_Conditions->Hotspot_params.Position[e_theta - 1] * 180.0 / M_PI
         << "\n"
-        << "Azimuth [Rad]: "
-        << p_Initial_Conditions->Hotspot_params.Position[e_phi]
+        << "Azimuth [Deg]: "
+        << p_Initial_Conditions->Hotspot_params.Position[e_phi - 1] * 180.0 / M_PI
         << "\n";
 
 

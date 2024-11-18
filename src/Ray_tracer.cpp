@@ -103,7 +103,11 @@ int main() {
 
     s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
 
-    parse_simulation_input_XML("C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\FILE.xml", s_Sim_Context.p_Init_Conditions);
+    if (ERROR == parse_simulation_input_XML("C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\FILE.xml", s_Sim_Context.p_Init_Conditions)){
+    
+        exit(ERROR);
+    
+    }
 
     // Populate the Spacetime class instance 
     Allocate_Spacetime_Class(&s_Sim_Context);
@@ -111,7 +115,7 @@ int main() {
     s_Sim_Context.p_Spacetime->load_parameters(s_Sim_Context.p_Init_Conditions->Metric_params);
 
     // Get the observer position and populate the Observer class instance.
-     s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
+    s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
 
     double init_state[4] = {0,
                             s_Sim_Context.p_Init_Conditions->Observer_params.distance,

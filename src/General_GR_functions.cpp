@@ -33,6 +33,65 @@ double get_eq_induced_metric_det(double metric[4][4]) {
 
 }
 
+double get_4vec_norm(const double* const vector, double metric[4][4], Tensor_type_enums vector_type) {
+
+    double inv_metric[4][4]{}, vec_norm{};
+
+    switch (vector_type)
+    {
+    case Covariant:
+
+        invert_metric(inv_metric, metric);
+
+        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+            for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+                vec_norm += inv_metric[left_idx][right_idx] * vector[left_idx] * vector[right_idx];
+
+            }
+
+        }
+
+        break;
+
+    case Contravariant:
+
+        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+            for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+                vec_norm += metric[left_idx][right_idx] * vector[left_idx] * vector[right_idx];
+
+            }
+
+        }
+
+        break;
+
+    default:
+
+        std::cout << "Unsupported Tensor type - something broke in the get_4vec_norm function!" << "\n";
+
+        exit(ERROR);
+
+        break;
+    }
+
+    return vec_norm;
+
+}
+
+void add_4_vectors(const double* const vec_1, const double* const vec_2,  double* const result) {
+
+    for (int idx = 0; idx <= 3; idx++) {
+
+        result[idx] = vec_1[idx] + vec_2[idx];
+
+    }
+
+}
+
 /* Basis Related Functions */
 
 void Contravariant_coord_to_ZAMO(double metric[4][4], double Contravariant_Vector[4], double ZAMO_Vector[4]) {
@@ -111,15 +170,14 @@ void get_impact_parameters(Initial_conditions_type* p_Initial_Conditions, double
 
 }
 
-double Redshift(const double* const State_Vector, double* const U_source, Observer_class* const Observer) {
+double Redshift(const double* const State_Vector, const double* const U_source, Observer_class* const Observer) {
 
     /******************************************************************************
     |																			  |
     |   @ Description: Computes redshift for for a ray at a point, specified by   |
     |	State_Vector, for an observer, specified by Observer_class				  |
     |																			  |
-    |   @ Inputs:                                                                 |
-    |     * J: Covariant, azimuthal component of the ray / photon 4 - momentum	  |
+    |   @ Inputs:
     |	  * State_Vector: State vector of the ray / photon						  |
     |	  * U_source: Contravariant 4 - velocity of the emmiting medium			  |
     |																			  |
@@ -127,14 +185,12 @@ double Redshift(const double* const State_Vector, double* const U_source, Observ
     |                                                                             |
     ******************************************************************************/
 
-    double U_obs[4]{};
+    double* U_obs = Observer->get_obs_velocity();
 
-    Observer->get_obs_velocity(U_obs);
-
-    double redshift = (U_obs[0] * State_Vector[e_p_t] + U_obs[3] * State_Vector[e_p_phi]) / (U_source[0] * State_Vector[e_p_t] +
-                                                                                             U_source[1] * State_Vector[e_p_r] +
-                                                                                             U_source[2] * State_Vector[e_p_theta] +
-                                                                                             U_source[3] * State_Vector[e_p_phi]);
+    double redshift = (U_obs[e_t] * State_Vector[e_p_t] + U_obs[e_phi] * State_Vector[e_p_phi]) / (U_source[e_t]     * State_Vector[e_p_t] +
+                                                                                                   U_source[e_r]     * State_Vector[e_p_r] +
+                                                                                                   U_source[e_theta] * State_Vector[e_p_theta] +
+                                                                                                   U_source[e_phi]   * State_Vector[e_p_phi]);
 
     return redshift;
 
@@ -207,7 +263,18 @@ int Increment_theta_turning_points(double State_Vector[], double Old_State[]) {
 
 int compute_image_order(int N_theta_turning_points, Initial_conditions_type* p_Initial_Conditions) {
 
-    int order = N_theta_turning_points - bool(p_Initial_Conditions->init_Three_Momentum[e_theta] > 0);
+    int order = N_theta_turning_points;
+
+    if (p_Initial_Conditions->Observer_params.inclination > M_PI_2) {
+
+        order -= bool(p_Initial_Conditions->init_Three_Momentum[e_theta] < 0);
+
+    }
+    else {
+
+        order -= bool(p_Initial_Conditions->init_Three_Momentum[e_theta] > 0);
+
+    }
 
     if (order > 3) {
 

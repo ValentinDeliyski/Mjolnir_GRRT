@@ -54,12 +54,12 @@ Metric_type RBH_class::get_metric(const double* const State_Vector) {
 }
 
 
-Metric_type RBH_class::get_dr_metric(double State_Vector[]) {
+Metric_type RBH_class::get_dr_metric(const double* const State_Vector) {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -81,10 +81,10 @@ Metric_type RBH_class::get_dr_metric(double State_Vector[]) {
     return this->s_dr_Metric;
 }
 
-Metric_type RBH_class::get_dtheta_metric(double State_Vector[]) {
+Metric_type RBH_class::get_dtheta_metric(const double* const State_Vector) {
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
@@ -104,13 +104,13 @@ Metric_type RBH_class::get_dtheta_metric(double State_Vector[]) {
     return this->s_dtheta_Metric;
 }
 
-Metric_type RBH_class::get_d2r_metric(double State_Vector[]) {
+Metric_type RBH_class::get_d2r_metric(const double* const State_Vector) {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -167,6 +167,7 @@ int RBH_class::get_EOM(double State_vector[], double Derivatives[]) {
     double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
+    *(Derivatives + e_p_t    ) = - 1 / (1 - 2 * this->Mass / rho) * State_vector[e_p_t];
     *(Derivatives + e_r      ) = (1 - 2 * this->Mass / rho) * State_vector[e_p_r];
     *(Derivatives + e_theta  ) = 1.0 / (rho * rho) * State_vector[e_p_theta];
     *(Derivatives + e_phi    ) = J / (rho * rho * sin2);

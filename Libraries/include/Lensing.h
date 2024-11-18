@@ -10,11 +10,19 @@
 
         Step_controller(const Integrator_parameters_type Integrator_parameters);
 
-        void update_step(const double const* State_Vector);
+        void update_step(const double* State_Vector);
+
+        Step_controller_type_enums Controller_type;
+
+        double Gustafsson_k_1;
+        double Gustafsson_k_2;
 
         double Gain_I;
         double Gain_P;
         double Gain_D;
+
+        double Max_rel_step_increase;
+        double Min_rel_step_increase;
 
         double step;
         double previous_step;
@@ -37,6 +45,6 @@
 
     void RK45(double* const State_Vector, Step_controller* const controller, const Simulation_Context_type* const p_Sim_context);
 
-    void Propagate_ray(const Simulation_Context_type const* s_Sim_Context, Results_type* const Ray_results);
+    void Propagate_ray(const Simulation_Context_type* s_Sim_Context, Results_type* const Ray_results);
 
 #endif 

@@ -33,8 +33,8 @@ double* Kerr_class::get_Photon_Sphere() {
 
 Metric_type Kerr_class::get_metric(const double* const State_Vector) {
 
-    double M = this->Mass;
-    double a = this->Spin_Param;
+    const double& M = this->Mass;
+    const double& a = this->Spin_Param;
 
     const double& r     = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
@@ -63,13 +63,13 @@ Metric_type Kerr_class::get_metric(const double* const State_Vector) {
 
 };
 
-Metric_type Kerr_class::get_dr_metric(double State_Vector[]) {
+Metric_type Kerr_class::get_dr_metric(const double* const State_Vector) {
 
-    double M = this->Mass;
-    double a = this->Spin_Param;
+    const double& M = this->Mass;
+    const double& a = this->Spin_Param;
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -96,13 +96,13 @@ Metric_type Kerr_class::get_dr_metric(double State_Vector[]) {
     return this->s_dr_Metric;
 }
 
-Metric_type Kerr_class::get_dtheta_metric(double State_Vector[]) {
+Metric_type Kerr_class::get_dtheta_metric(const double* const State_Vector) {
 
-    double M = this->Mass;
-    double a = this->Spin_Param;
+    const double& M = this->Mass;
+    const double& a = this->Spin_Param;
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -129,13 +129,13 @@ Metric_type Kerr_class::get_dtheta_metric(double State_Vector[]) {
     return this->s_dtheta_Metric;
 }
 
-Metric_type Kerr_class::get_d2r_metric(double State_Vector[]) {
+Metric_type Kerr_class::get_d2r_metric(const double* const State_Vector) {
 
-    double M = this->Mass;
-    double a = this->Spin_Param;
+    const double& M = this->Mass;
+    const double& a = this->Spin_Param;
 
-    double& r     = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r     = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -175,6 +175,7 @@ int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Init
     double& r_obs = p_Initial_Conditions->Observer_params.distance;
     double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
 
+    p_Initial_Conditions->init_Three_Momentum[e_t] = -1;
     p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
     p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
 
@@ -213,7 +214,6 @@ int Kerr_class::get_EOM(double State_vector[], double Derivatives[]) {
     double& p_r     = State_vector[e_p_r];
     double& p_theta = State_vector[e_p_theta];
     double& p_t     = State_vector[e_p_t];
-
 
     *(Derivatives + e_t)     = -1 / delta * (r2 + this->Spin_Param * this->Spin_Param * (1 + 2 * r / rho2 * sin1)) * p_t;
     *(Derivatives + e_r    ) = delta / rho2 * p_r;

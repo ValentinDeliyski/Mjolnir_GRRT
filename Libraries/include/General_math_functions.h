@@ -8,7 +8,9 @@
 
 	double vector_norm(double Vector[], int Vector_size);
 
-	double my_max(double const vector[], int const element_number);
+	double get_max_element(const double* const error_state, const int element_number);
+
+	double get_max_relative_error(const double* const error_state, const double* const current_state);
 
 	bool interpolate_crossing(const double* const State_Vector, 
 							  const double* const Old_State_Vector, 

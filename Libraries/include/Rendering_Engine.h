@@ -24,8 +24,8 @@
             int ray_number_y;
             
             float Max_Intensity;
-            float *Intensity_buffer;
-            float *texture_buffer;
+            float* Intensity_buffer;
+            float* texture_buffer;
             
 
             const GLuint Vertex_order[6] = { 0, 2, 1, 0, 3, 2 };

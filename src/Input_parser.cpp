@@ -1,4 +1,4 @@
-#include "Input_parser.h"
+﻿#include "Input_parser.h"
 #include "tinyxml2.h"
 
 Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element, Hotspot_model_parameters_type *Hotspot_params) {
@@ -8,7 +8,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     // -------------------- The ensamble type
 
     temp_param_var = Hotspot_element->FirstChildElement("Ensamble_type");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot ensamble type!" << "\n"; return ERROR; }
     std::string Ensamble_type_string = temp_param_var->GetText();
 
     if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Kappa")) {
@@ -32,7 +32,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     // -------------------- The density profile
 
     temp_param_var = Hotspot_element->FirstChildElement("Density_profile");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the density profile type!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot density profile type!" << "\n"; return ERROR; }
     std::string Density_type_string = temp_param_var->GetText();
 
     if (0 == strcmp(static_cast<const char*>(Density_type_string.c_str()), "Gaussian")) {
@@ -40,12 +40,17 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
         Hotspot_params->Density_profile_type = e_Gaussian_profile;
 
     }
+    else if (0 == strcmp(static_cast<const char*>(Density_type_string.c_str()), "Sphere")) {
+
+        Hotspot_params->Density_profile_type = e_Spherical_profile;
+
+    }
     else { std::cout << "Unsupported density profile type for the hotspot!" << "\n"; return ERROR; }
 
     // -------------------- The temperature profile
 
     temp_param_var = Hotspot_element->FirstChildElement("Temperature_profile");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the temperature profile type!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot temperature profile type!" << "\n"; return ERROR; }
     std::string Temperature_type_string = temp_param_var->GetText();
 
     if (0 == strcmp(static_cast<const char*>(Temperature_type_string.c_str()), "Gaussian")) {
@@ -53,8 +58,29 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
         Hotspot_params->Temperature_profile_type = e_Gaussian_profile;
 
     }
+    else if (0 == strcmp(static_cast<const char*>(Temperature_type_string.c_str()), "Sphere")) {
+
+        Hotspot_params->Temperature_profile_type = e_Spherical_profile;
+
+    }
     else { std::cout << "Unsupported temperature profile type for the hotspot!" << "\n"; return ERROR; }
 
+    // -------------------- The velocity profile
+
+    temp_param_var = Hotspot_element->FirstChildElement("Velocity_profile");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot velocity profile type!" << "\n"; return ERROR; }
+    std::string Velocity_profile_string = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Theta Dependant")) {
+
+        Hotspot_params->Velocity_profile_type = e_Theta_dependant;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) {
+
+        Hotspot_params->Velocity_profile_type = e_Keplarian;
+
+    }else{std::cout << "Unsupported velocity profile type for the hotspot!" << "\n"; return ERROR; }
 
     // -------------------- The density sclae factor
     temp_param_var = Hotspot_element->FirstChildElement("Density_scale_factor");
@@ -84,17 +110,17 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     // -------------------- The distance to the hotspot center
     temp_param_var = Hotspot_element->FirstChildElement("Distance");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the distance to the hotspot center!" << "\n"; return ERROR; }
-    Hotspot_params->Position[e_r] = std::stod(temp_param_var->GetText());
+    Hotspot_params->Position[e_r - 1] = std::stod(temp_param_var->GetText());
 
     // -------------------- The hotspot inclination
     temp_param_var = Hotspot_element->FirstChildElement("Inclination");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot inclination!" << "\n"; return ERROR; }
-    Hotspot_params->Position[e_theta] = std::stod(temp_param_var->GetText());
+    Hotspot_params->Position[e_theta - 1] = std::stod(temp_param_var->GetText());
 
     // -------------------- The hotspot azimuth
     temp_param_var = Hotspot_element->FirstChildElement("Azimuth");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot Azimuth!" << "\n"; return ERROR; }
-    Hotspot_params->Position[e_phi] = std::stod(temp_param_var->GetText());
+    Hotspot_params->Position[e_phi - 1] = std::stod(temp_param_var->GetText());
 
     // -------------------- The magnetization
     temp_param_var = Hotspot_element->FirstChildElement("Magnetization");
@@ -104,11 +130,13 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     /* ================================== The gaussian profile parameters ================================== */
 
     tinyxml2::XMLElement* Gaussian_node = Hotspot_element->FirstChildElement("Gaussian_profile");
-    if (Gaussian_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
+    tinyxml2::XMLElement* Spherical_node = Hotspot_element->FirstChildElement("Spherical_profile");
 
     if (e_Gaussian_profile == Hotspot_params->Density_profile_type) {
 
-        // -------------------- The magnetization
+        if (Gaussian_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
+
+        // -------------------- The Gaussian density standard deviation
         temp_param_var = Gaussian_node->FirstChildElement("Density_spread");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the density Gaussian spread!" << "\n"; return ERROR; }
         Hotspot_params->Density_spread = std::stod(temp_param_var->GetText());
@@ -118,13 +146,36 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     if (e_Gaussian_profile == Hotspot_params->Temperature_profile_type) {
 
-        // -------------------- The magnetization
+        if (Gaussian_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
+
+        // -------------------- The Gaussian temperature standard devivation
         temp_param_var = Gaussian_node->FirstChildElement("Temperature_spread");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the temperature Gaussian spread!" << "\n"; return ERROR; }
         Hotspot_params->Temperature_spread = std::stod(temp_param_var->GetText());
 
 
     }
+
+    if (e_Spherical_profile == Hotspot_params->Temperature_profile_type || e_Spherical_profile == Hotspot_params->Density_profile_type) {
+
+        if (Spherical_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
+
+        // -------------------- The Spherical radius
+        temp_param_var = Spherical_node->FirstChildElement("Radius");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Spherical hotspot radius!" << "\n"; return ERROR; }
+        Hotspot_params->Radius = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The Temporal spread
+    temp_param_var = Hotspot_element->FirstChildElement("Temporal_spread");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the temporal spread!" << "\n"; return ERROR; }
+    Hotspot_params->Temporal_spread = std::stod(temp_param_var->GetText());
+
+    // -------------------- The Coordiante time at max emission
+    temp_param_var = Hotspot_element->FirstChildElement("Coord_time_at_max");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the coordiante time at max emission!" << "\n"; return ERROR; }
+    Hotspot_params->Coord_time_at_max = std::stod(temp_param_var->GetText());
 
     return OK;
 
@@ -142,7 +193,7 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     // -------------------- The ensamble type
 
     temp_param_var = Common_paramaters_element->FirstChildElement("Ensamble_type");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk ensamble type!" << "\n"; return ERROR; }
     std::string Ensamble_type_string = temp_param_var->GetText();
 
     if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Kappa")) {
@@ -165,7 +216,7 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     // -------------------- The density profile
 
     temp_param_var = Common_paramaters_element->FirstChildElement("Density_profile");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the density profile type!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk density profile type!" << "\n"; return ERROR; }
     std::string Profile_type_string = temp_param_var->GetText();
 
     if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Power Law")) {
@@ -184,7 +235,7 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     // -------------------- The temperature profile
 
     temp_param_var = Common_paramaters_element->FirstChildElement("Temperature_profile");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the temperature profile type!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature profile type!" << "\n"; return ERROR; }
 
     Profile_type_string = temp_param_var->GetText();
 
@@ -200,6 +251,25 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     }
     else { std::cout << "Unsupported temperature profile type for the disk!" << "\n"; return ERROR; }
+
+    // -------------------- The velocity profile
+
+    temp_param_var = Common_paramaters_element->FirstChildElement("Velocity_profile");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk velocity profile type!" << "\n"; return ERROR; }
+    std::string Velocity_profile_string = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Theta Dependant")) {
+
+        Disk_params->Velocity_profile_type = e_Theta_dependant;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) {
+
+        Disk_params->Velocity_profile_type = e_Keplarian;
+
+    }
+    else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
+
 
     // -------------------- The disk electron density scale factor
     temp_param_var = Common_paramaters_element->FirstChildElement("Density_scale_factor");
@@ -284,6 +354,8 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     if (e_Power_law_profile == Disk_params->Temperature_profile_type) {
 
+        if (Power_law_profile_element == nullptr) { std::cout << "Failed to find the power law profile element!" << "\n"; return ERROR; }
+
         // -------------------- The temperature radial power law
         temp_param_var = Power_law_profile_element->FirstChildElement("Temperature_radial_power_law");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature radial power law!" << "\n"; return ERROR; }
@@ -306,6 +378,8 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     }
     else if (e_Exponential_law_profile == Disk_params->Density_profile_type) {
+
+        if (Exponential_law_profile_element == nullptr) { std::cout << "Failed to find the exponential law profile element!" << "\n"; return ERROR; }
 
         // -------------------- The temperature height scale
         temp_param_var = Exponential_law_profile_element->FirstChildElement("Temperature_exp_height_scale");
@@ -347,20 +421,40 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller safety parameter 2!" << "\n"; return ERROR; }
     Integrator_params->Safety_2 = std::stod(temp_param_var->GetText());
 
-    // -------------------- Step controller I gain
-    temp_param_var = Integrator_element->FirstChildElement("step_controller_I_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller I gain!" << "\n"; return ERROR; }
-    Integrator_params->Gain_I = std::stod(temp_param_var->GetText());
+    // -------------------- PID controller I gain
+    temp_param_var = Integrator_element->FirstChildElement("PID_controller_I_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the PID controller I gain!" << "\n"; return ERROR; }
+    Integrator_params->PID_gain_I = std::stod(temp_param_var->GetText());
 
-    // -------------------- Step controller P gain
-    temp_param_var = Integrator_element->FirstChildElement("step_controller_P_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller P gain!" << "\n"; return ERROR; }
-    Integrator_params->Gain_P = std::stod(temp_param_var->GetText());
+    // -------------------- PID controller P gain
+    temp_param_var = Integrator_element->FirstChildElement("PID_controller_P_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the PID controller P gain!" << "\n"; return ERROR; }
+    Integrator_params->PID_gain_P = std::stod(temp_param_var->GetText());
 
-    // -------------------- Step controller D gain
-    temp_param_var = Integrator_element->FirstChildElement("step_controller_D_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller D gain!" << "\n"; return ERROR; }
-    Integrator_params->Gain_D = std::stod(temp_param_var->GetText());
+    // -------------------- PID controller D gain
+    temp_param_var = Integrator_element->FirstChildElement("PID_controller_D_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the PID controller D gain!" << "\n"; return ERROR; }
+    Integrator_params->PID_gain_D = std::stod(temp_param_var->GetText());
+
+    // -------------------- Gustafsson controller k_1 gain
+    temp_param_var = Integrator_element->FirstChildElement("Gustafsson_controller_k_1");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the Gustafsson controller k_1 gain!" << "\n"; return ERROR; }
+    Integrator_params->Gustafsson_k1 = std::stod(temp_param_var->GetText());
+
+    // -------------------- Gustafsson controller k_2 gain
+    temp_param_var = Integrator_element->FirstChildElement("Gustafsson_controller_k_2");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the Gustafsson controller k_2 gain!" << "\n"; return ERROR; }
+    Integrator_params->Gustafsson_k2 = std::stod(temp_param_var->GetText());
+
+    // -------------------- Max relative step increase
+    temp_param_var = Integrator_element->FirstChildElement("Max_rel_step_increase");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the max relative step increase!" << "\n"; return ERROR; }
+    Integrator_params->Max_rel_step_increase = std::stod(temp_param_var->GetText());
+
+    // -------------------- Min relative step increase
+    temp_param_var = Integrator_element->FirstChildElement("Min_rel_step_increase");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the min relative step increase!" << "\n"; return ERROR; }
+    Integrator_params->Min_rel_step_increase = std::stod(temp_param_var->GetText());
 
     // -------------------- Max integration count 
     temp_param_var = Integrator_element->FirstChildElement("max_integration_count");
@@ -372,6 +466,28 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the simpson method accuracy parameter!" << "\n"; return ERROR; }
     Integrator_params->Simpson_accuracy = std::stod(temp_param_var->GetText());
 
+    // -------------------- The step controller type
+    temp_param_var = Integrator_element->FirstChildElement("Step_controller_type");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller type!" << "\n"; return ERROR; }
+    std::string Step_controller_type = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "Gustafsson")) {
+
+        Integrator_params->Simpson_accuracy = Gustafsson;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "PID")) {
+
+        Integrator_params->Simpson_accuracy = PID;
+
+    }
+    else {
+
+        std::cout << "Unsupported step controller type!" << "\n";
+
+        return ERROR;
+
+    }
 
     return OK;
 
@@ -503,12 +619,12 @@ Return_Values static parse_NT_params(tinyxml2::XMLElement* NT_element, NT_parame
         // -------------------- Inner disk radius
         temp_param_var = NT_element->FirstChildElement("r_in");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the inner NT disk radius!" << "\n"; return ERROR; }
-        NT_params->r_in = std::stoi(temp_param_var->GetText());
+        NT_params->r_in = std::stod(temp_param_var->GetText());
 
         // -------------------- Outer disk radius
         temp_param_var = NT_element->FirstChildElement("r_out");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the outer NT disk radius!" << "\n"; return ERROR; }
-        NT_params->r_out = std::stoi(temp_param_var->GetText());
+        NT_params->r_out = std::stod(temp_param_var->GetText());
 
     }
 

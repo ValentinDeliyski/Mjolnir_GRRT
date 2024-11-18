@@ -32,14 +32,8 @@ Observer_class::Observer_class(Simulation_Context_type* p_Sim_Context) {
 
 Observer_parameters_type Observer_class::get_parameters() { return this->obs_params; }
 
-Return_Values Observer_class::get_obs_velocity(double Obs_velocity[4]) {
+double* Observer_class::get_obs_velocity() {
 
-    for (int index = 0; index <= 3; index++) {
-
-        Obs_velocity[index] = obs_velocity[index];
-
-    }
-
-    return OK;
+    return this->obs_velocity;
 
 }

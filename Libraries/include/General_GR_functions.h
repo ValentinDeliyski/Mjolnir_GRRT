@@ -6,6 +6,8 @@
 
     #define GENERAL_FUNCTIONS
 
+    #include "Enumerations.h"
+
     struct Initial_conditions_type;
     struct Metric_type;
     class Observer_class;
@@ -18,11 +20,15 @@
 
     double get_eq_induced_metric_det(double metric[4][4]);
 
+    double get_4vec_norm(const double* const vector, double metric[4][4], Tensor_type_enums vector_type);
+
+    void add_4_vectors(const double* const vec_1, const double* const vec_2, double* const result);
+
     void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Conditions, double V_angle, double H_angle);
 
     void get_impact_parameters(Initial_conditions_type* p_Initial_Conditions, double Image_coords[2]);
 
-    double Redshift(const double* const State_Vector, double* const U_source, Observer_class* const Observer);
+    double Redshift(const double* const State_Vector, const double* const U_source, Observer_class* const Observer);
 
     void Contravariant_coord_to_ZAMO(double metric[4][4], double Contravariant_Vector[4], double ZAMO_Vector[4]);
 

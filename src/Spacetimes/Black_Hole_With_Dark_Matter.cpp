@@ -109,11 +109,11 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_metric(const double* const 
 
 }
 
-Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(double State_Vector[]) {
+Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(const double* const State_Vector) {
 
-    double& M = this->Mass;
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& M = this->Mass;
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -147,10 +147,10 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(double State_Vect
 
 }
 
-Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dtheta_metric(double State_Vector[]) {
+Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dtheta_metric(const double* const State_Vector) {
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
@@ -229,6 +229,7 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double State_vector[], double D
     double m    = M + this->Halo_Mass * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
     double dr_m = 2 * (1 - 2 * M / r) * ((1 - 2 * M / r) * (1 - r / (r + A_0)) * r + 2 * M) * this->Halo_Mass / (r + A_0) / (r + A_0);
 
+    *(Derivatives + e_r      ) = -1 / f * State_vector[e_p_t];
     *(Derivatives + e_r      ) = (1 - 2 * m / r) * State_vector[e_p_r];
     *(Derivatives + e_theta  ) = 1. / (r * r) * State_vector[e_p_theta];
     *(Derivatives + e_phi    ) = J / (r * r * sin2);

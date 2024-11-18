@@ -86,12 +86,12 @@ Metric_type JNW_class::get_metric(const double* const State_Vector) {
 
 }
 
-Metric_type JNW_class::get_dr_metric(double State_Vector[]) {
+Metric_type JNW_class::get_dr_metric(const double* const State_Vector) {
 
     Metric_type Metric = this->get_metric(State_Vector);
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -114,10 +114,10 @@ Metric_type JNW_class::get_dr_metric(double State_Vector[]) {
 
 }
 
-Metric_type JNW_class::get_dtheta_metric(double State_Vector[]) {
+Metric_type JNW_class::get_dtheta_metric(const double* const State_Vector) {
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
@@ -137,13 +137,13 @@ Metric_type JNW_class::get_dtheta_metric(double State_Vector[]) {
     return this->s_dtheta_Metric;
 }
 
-Metric_type JNW_class::get_d2r_metric(double State_Vector[]) {
+Metric_type JNW_class::get_d2r_metric(const double* const State_Vector) {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -212,11 +212,13 @@ int JNW_class::get_EOM(double State_vector[], double Derivatives[])
     double pow_gamma = pow(1 - r_singularity / r, this->Gamma);
     double pow_gamma_minus_1 = pow(1 - r_singularity / r, this->Gamma - 1);
 
+    *(Derivatives + e_t      ) = - 1 / pow_gamma * State_vector[e_p_t];
     *(Derivatives + e_r      ) = pow_gamma * State_vector[e_p_r];
     *(Derivatives + e_theta  ) = pow_gamma_minus_1 / (r * r) * State_vector[e_p_theta];
     *(Derivatives + e_phi    ) = pow_gamma_minus_1 / (r * r * sin2) * J;
     *(Derivatives + e_p_phi  ) = 0.0;
     *(Derivatives + e_p_theta) = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
+    *(Derivatives + e_p_t    ) = 0.0;
 
     double r_term_1 = -this->Gamma * r_singularity / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma
                     + State_vector[e_p_r] * State_vector[e_p_r]);

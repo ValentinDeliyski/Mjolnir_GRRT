@@ -10,11 +10,16 @@ class Integrator():
 
     __slots__ = ("init_stepsize",
                  "RK45_accuracy", 
+                 "Step_controller_type",
                  "step_controller_safety_factor_1",
                  "step_controller_safety_factor_2",
-                 "step_controller_I_gain",
-                 "step_controller_P_gain",
-                 "step_controller_D_gain", 
+                 "PID_controller_I_gain",
+                 "PID_controller_P_gain",
+                 "PID_controller_D_gain",
+                 "Max_rel_step_increase",
+                 "Min_rel_step_increase",
+                 "Gustafsson_controller_k_1", 
+                 "Gustafsson_controller_k_2", 
                  "max_integration_count",
                  "simpson_method_accuracy")
 
@@ -23,6 +28,7 @@ class Disk_model():
     __slots__ = ("Ensamble_type",
                  "Density_profile",
                  "Temperature_profile",
+                 "Velocity_profile",
                  "Density_scale_factor",
                  "Temperature_scale_factor",
                  "Mag_field_geometry_X",
@@ -51,13 +57,17 @@ class Hotspot_model():
     __slots__ = ("Ensamble_type",
                  "Density_profile",
                  "Temperature_profile",
+                 "Velocity_profile",
                  "Density_scale_factor",
                  "Temperature_scale_factor",
+                 "Radius",
                  "Mag_field_geometry_X",
                  "Mag_field_geometry_Y",
                  "Mag_field_geometry_Z",
                  "Density_spread",
                  "Temperature_spread",
+                 "Temporal_spread",
+                 "Coord_time_at_max",
                  "Distance",
                  "Inclination",
                  "Azimuth",
@@ -147,11 +157,16 @@ class Simulation_configurator:
 
     def _configure_integrator_settings(self, Init_stepsize: dict = {"Value": 1e-5, "Unit": "[M]"},
                                              RK45_accuracy: dict = {"Value": 1e-13, "Unit": "[-]"},
+                                             Step_controller_type: dict = {"Value": "Gustafsson", "Unit": "[-]"},
                                              Safety_factor_1: dict = {"Value": 0.8, "Unit": "[-]"},
                                              Safety_factor_2: dict = {"Value": 1e-25, "Unit": "[-]"},
+                                             Max_rel_step_increase: dict = {"Value": 20, "Unit": "[-]"},
+                                             Min_rel_step_increase: dict = {"Value": 0.1, "Unit": "[-]"},
                                              Step_controller_I_gain: dict = {"Value": 0.117, "Unit": "[-]"},
                                              Step_controller_P_gain: dict = {"Value": -0.042, "Unit": "[-]"},
                                              Step_controller_D_gain: dict = {"Value": 0.02, "Unit": "[-]"},
+                                             Gustafsson_controller_k_1: dict = {"Value": 0.0734, "Unit": "[-]"},
+                                             Gustafsson_controller_k_2: dict = {"Value": 0.1136, "Unit": "[-]"},
                                              Max_integration_count: dict = {"Value": 1e7, "Unit": "[-]"},
                                              simpson_method_accuracy: dict = {"Value": 1e-6, "Unit": "[-]"}):
 
@@ -160,11 +175,16 @@ class Simulation_configurator:
         self.integrator.init_stepsize = Init_stepsize
         self.integrator.init_stepsize = Init_stepsize
         self.integrator.RK45_accuracy = RK45_accuracy
+        self.integrator.Step_controller_type = Step_controller_type
         self.integrator.step_controller_safety_factor_1 = Safety_factor_1
         self.integrator.step_controller_safety_factor_2 = Safety_factor_2
-        self.integrator.step_controller_I_gain = Step_controller_I_gain
-        self.integrator.step_controller_P_gain = Step_controller_P_gain
-        self.integrator.step_controller_D_gain = Step_controller_D_gain
+        self.integrator.Max_rel_step_increase = Max_rel_step_increase
+        self.integrator.Min_rel_step_increase = Min_rel_step_increase
+        self.integrator.PID_controller_I_gain = Step_controller_I_gain
+        self.integrator.PID_controller_P_gain = Step_controller_P_gain
+        self.integrator.PID_controller_D_gain = Step_controller_D_gain
+        self.integrator.Gustafsson_controller_k_1 = Gustafsson_controller_k_1
+        self.integrator.Gustafsson_controller_k_2 = Gustafsson_controller_k_2
         self.integrator.max_integration_count  = Max_integration_count
         self.integrator.simpson_method_accuracy = simpson_method_accuracy
 
@@ -250,6 +270,7 @@ class Simulation_configurator:
     def _configure_disk_model(self, Ensamble_type: dict = {"Value": "Thermal", "Unit": "[-]"},
                                     Density_profile: dict = {"Value": "Power Law", "Unit": "[-]"},
                                     Temperature_profile: dict = {"Value": "Power Law", "Unit": "[-]"},
+                                    Velocity_profile: dict = {"Value": "Theta Dependant", "Unit": "[-]"},
                                     Density_scale_factor: dict = {"Value": 1e5, "Unit": "[g/cm^3]"},
                                     Temperature_scale_factor: dict = {"Value": 1e11, "Unit": "[K]"},
                                     Mag_field_geometry_X: dict = {"Value": 0.5, "Unit": "[-]"},
@@ -275,6 +296,7 @@ class Simulation_configurator:
         self.disk_model.Ensamble_type       = Ensamble_type
         self.disk_model.Density_profile     = Density_profile
         self.disk_model.Temperature_profile = Temperature_profile
+        self.disk_model.Velocity_profile    = Velocity_profile
 
         self.disk_model.Density_scale_factor     = Density_scale_factor
         self.disk_model.Temperature_scale_factor = Temperature_scale_factor
@@ -303,6 +325,8 @@ class Simulation_configurator:
     def _configure_hotspot_model(self, Ensamble_type: dict = {"Value": "Kappa", "Unit": "[-]"},
                                        Density_profile: dict = {"Value": "Gaussian", "Unit": "[-]"},
                                        Temperature_profile: dict = {"Value": "Gaussian", "Unit": "[-]"},
+                                       Velocity_profile: dict = {"Value": "Theta Dependant", "Unit": "[-]"},
+                                       Radius: dict = {"Value": 1, "Unit": "[M]"},
                                        Density_scale_factor: dict = {"Value": 1e6, "Unit": "[g/cm^3]"},
                                        Temperature_scale_factor: dict = {"Value": 1e11, "Unit": "[K]"},
                                        Mag_field_geometry_X: dict = {"Value": 0.5, "Unit": "[-]"},
@@ -310,6 +334,8 @@ class Simulation_configurator:
                                        Mag_field_geometry_Z: dict = {"Value": 0.87, "Unit": "[-]"},
                                        Density_spread: dict = {"Value": 1.0, "Unit": "[M]"},
                                        Temperature_spread: dict = {"Value": 1.0, "Unit": "[M]"},
+                                       Temporal_spread: dict = {"Value": 85, "Unit": "[GM/c^3]"},
+                                       Coord_time_at_max: dict = {"Value": 1000, "Unit": "[GM/c^3]"},
                                        Distance: dict = {"Value": 8.0, "Unit": "[M]"},
                                        Inclination: dict = {"Value": pi / 2,  "Unit": "[Rad]"},
                                        Azimuth: dict = {"Value": -pi / 2,  "Unit": "[Rad]"},
@@ -317,16 +343,23 @@ class Simulation_configurator:
 
         self.hotspot_model = Hotspot_model()
 
-        self.hotspot_model.Ensamble_type      = Ensamble_type     
-        self.hotspot_model.Density_profile    = Density_profile   
+        self.hotspot_model.Ensamble_type       = Ensamble_type     
+        self.hotspot_model.Density_profile     = Density_profile   
         self.hotspot_model.Temperature_profile = Temperature_profile
-        self.hotspot_model.Density_scale_factor = Density_scale_factor     
-        self.hotspot_model.Temperature_scale_factor  = Temperature_scale_factor 
+        self.hotspot_model.Velocity_profile    = Velocity_profile
+
+        self.hotspot_model.Density_scale_factor     = Density_scale_factor     
+        self.hotspot_model.Temperature_scale_factor = Temperature_scale_factor 
+
         self.hotspot_model.Mag_field_geometry_X = Mag_field_geometry_X
         self.hotspot_model.Mag_field_geometry_Y = Mag_field_geometry_Y
         self.hotspot_model.Mag_field_geometry_Z = Mag_field_geometry_Z
+
         self.hotspot_model.Density_spread     = Density_spread  
-        self.hotspot_model.Temperature_spread = Temperature_spread          
+        self.hotspot_model.Temperature_spread = Temperature_spread
+        self.hotspot_model.Radius             = Radius          
+        self.hotspot_model.Temporal_spread    = Temporal_spread
+        self.hotspot_model.Coord_time_at_max  = Coord_time_at_max
         self.hotspot_model.Distance           = Distance          
         self.hotspot_model.Inclination        = Inclination       
         self.hotspot_model.Azimuth            = Azimuth           
@@ -478,21 +511,60 @@ class Simulation_configurator:
 
         # ============ Generate the hotspot XML section ============ #
 
-        Gaussin_slots = ["Density_spread", "Temperature_spread"]
+        Gaussian_density_slots = ["Density_spread"]
+        Gaussian_temperature_slots = ["Temperature_spread"]
+        
+        Sphere_slots = ["Radius"]
 
-        Common_slots = [slot for slot in self.hotspot_model.__slots__ if slot not in Gaussin_slots]
+        Common_slots = [slot for slot in self.hotspot_model.__slots__ if slot not in Gaussian_density_slots + Gaussian_temperature_slots + Sphere_slots]
         
         Hotspot_subelement = ET.SubElement(XML_root_node, "Hotspot") 
         for Hotspot_attrib_name in Common_slots:
             Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
             ET.SubElement(Hotspot_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
 
-        # ------------- Gaussian profile subsection
-        Gaussian_subelement = ET.SubElement(Hotspot_subelement, "Gaussian_profile") 
-        for Hotspot_attrib_name in Gaussin_slots:
-            Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
-            ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+        match self.hotspot_model.Density_profile["Value"]:
 
+            case "Gaussian":
+                # ------------- Gaussian profile subsection
+                Gaussian_subelement = ET.SubElement(Hotspot_subelement, "Gaussian_profile") 
+                for Hotspot_attrib_name in Gaussian_density_slots:
+                    Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
+                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+
+            case _:
+            
+                # ------------- Spherical profile subsection
+                Spherical_subelement = ET.SubElement(Hotspot_subelement, "Spherical_profile") 
+                for Hotspot_attrib_name in Sphere_slots:
+                    Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
+                    ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+
+        match self.hotspot_model.Temperature_profile["Value"]:
+
+            case "Gaussian":
+                # ------------- Gaussian profile subsection
+                try: 
+                    Gaussian_subelement
+                except:
+                    Gaussian_subelement = ET.SubElement(Hotspot_subelement, "Gaussian_profile") 
+                
+                for Hotspot_attrib_name in Gaussian_temperature_slots:
+                    Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
+                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+
+            case _:
+            
+                # ------------- Spherical profile subsectiontry: 
+                try:
+                    Spherical_subelement
+                except:
+                    Spherical_subelement = ET.SubElement(Hotspot_subelement, "Spherical_profile") 
+                    
+                    for Hotspot_attrib_name in Sphere_slots:
+                        Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
+                        ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+    
         # ============ Generate the emission models XML section ============ #
 
         Emission_subelement = ET.SubElement(XML_root_node, "Emission_models")
@@ -559,29 +631,29 @@ Sim_config.object_mass = {"Value": 6.2e9, "Unit": "[M_sun]"}
 
 # ================================================== Metric ================================================== #
 
-Sim_config.metric_parameters.Metric_type = {"Value": "Kerr", "Unit": "[-]"}
-Sim_config.metric_parameters.Spin = {"Value": 0.94, "Unit": "[M]"}
+Sim_config.metric_parameters.Metric_type = {"Value": "Wormhole", "Unit": "[-]"}
+Sim_config.metric_parameters.Spin = {"Value": 0.0, "Unit": "[M]"}
 
 # ================================================== Observer ================================================== #
 
-Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
-Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
+Sim_config.observer.Resolution_x = {"Value": 2048, "Unit": "[-]"}
+Sim_config.observer.Resolution_y = {"Value": 2048, "Unit": "[-]"}
 Sim_config.observer.Distance = {"Value": 1e3, "Unit": "[M]"}
-Sim_config.observer.Inclination = {"Value": 160 * pi / 180, "Unit": "[Rad]"}
+Sim_config.observer.Inclination = {"Value": 20 * pi / 180, "Unit": "[Rad]"}
 Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
 
 # ================================================== Disk ================================================== #
 
-Sim_config.disk_model.Temperature_scale_factor = {"Value": 1e11, "Unit": "[K]"}
-Sim_config.disk_model.Density_scale_factor = {"Value": 2e6, "Unit": "[g / cm^3]"}
+Sim_config.disk_model.Temperature_scale_factor = {"Value": 5.85e10, "Unit": "[K]"}
+Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g / cm^3]"}
 
-Sim_config.disk_model.Density_r_cutoff = {"Value": 0, "Unit": "[M]"}
-Sim_config.disk_model.Temperature_r_cutoff = {"Value": 0, "Unit": "[M]"}
+Sim_config.disk_model.Density_r_cutoff = {"Value": 4.5, "Unit": "[M]"}
+Sim_config.disk_model.Temperature_r_cutoff = {"Value": 4.5, "Unit": "[M]"}
 
-Sim_config.disk_model.Density_r_0     = {"Value": 1 + np.sqrt(1 - 0.94**2), "Unit": "[M]"}
-Sim_config.disk_model.Temperature_r_0 = {"Value": 1 + np.sqrt(1 - 0.94**2), "Unit": "[M]"}
+Sim_config.disk_model.Density_r_0     = {"Value": 4.5, "Unit": "[M]"}
+Sim_config.disk_model.Temperature_r_0 = {"Value": 4.5, "Unit": "[M]"}
 
-Sim_config.disk_model.Opening_angle = {"Value": 1, "Unit": "[tan(angle)]"}
+Sim_config.disk_model.Opening_angle = {"Value": 0.1, "Unit": "[tan(angle)]"}
 
 # ================================================== Hotspot ================================================== #
 
@@ -591,9 +663,25 @@ Sim_config.hotspot_model.Ensamble_type = {"Value": "Kappa", "Unit": "[-]"}
 Sim_config.hotspot_model.Magnetization = {"Value": 0.01, "Unit": "[-]"}
 Sim_config.emission_models.Kappa = {"Value": 5, "Unit": "[-]"}
 Sim_config.hotspot_model.Distance = {"Value": 9, "Unit": "[M]"}
+Sim_config.hotspot_model.Velocity_profile = {"Value":"Keplarian", "Unit": "[-]"}
 
+Sim_config.hotspot_model.Temperature_profile = {"Value": "Sphere", "Unit": "[-]"}
+Sim_config.hotspot_model.Density_profile = {"Value": "Sphere", "Unit": "[-]"}
+Sim_config.hotspot_model.Radius = {"Value": 1, "Unit": "[M]"}
 # ================================================== Novikov - Thorne Disk ================================================== #
 
+from Support_functions import Spacetimes
+
+Wormhole_class = Spacetimes.Wormhole(r_throat = 1, parameter = 2)
+
 Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
+Sim_config.NT_model_params.r_in = {"Value": 2, "Unit": "[M]"}
+Sim_config.NT_model_params.r_out = {"Value": 25, "Unit": "[M]"}
+# ================================================== Integrator ================================================== #
+
+# Sim_config.integrator.step_controller_I_gain = {"Value": 0.18, "Unit": "[-]"}
+Sim_config.integrator.RK45_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+
+Sim_config.file_paths.Sim_mode_2_input_file_path = "C:/Users/Valur/Documents/University stuff/General Relativity/Polarization/Schwarzschild_Impact_parameters/Direct_image/geodesic_data_20_deg_Sch_r6_500_photons.txt"
 
 Sim_config.generate_simulation_input()

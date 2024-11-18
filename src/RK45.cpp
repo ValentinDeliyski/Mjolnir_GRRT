@@ -72,12 +72,13 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
     }
 
     // The integrator might jump pass surfaces that are singular for the EOM (like the JNW singularity at 2 / gamma)
-    // In this case the whole state vector becomes a NaN. I check for this and update the step with some huge error 
-    // to force the integrator to redo this interation with a smaller step untill it succeeds.
+    // In this case the whole state vector becomes a NaN. I check for this and update the integration step by hand,
+    // then set the continue_integration flag to "false" to force the integrator to redo the current iteration with the new step.
 
     if (isnan(New_State_vector_O5[e_r])) {
 
-        controller->update_step(std::as_const(State_Vector));
+        controller->continue_integration = false;
+        controller->step /= 10.0;
 
         return;
 
@@ -87,7 +88,7 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
     controller->sec_prev_err  = controller->prev_err;
     controller->prev_err      = controller->current_err;
 
-    controller->current_err = my_max(state_error, e_State_Number);
+    controller->current_err = get_max_element(state_error, e_State_Number - 1);
 
     controller->update_step(std::as_const(State_Vector));
 
@@ -119,9 +120,17 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
 
 Step_controller::Step_controller(const Integrator_parameters_type Integrator_parameters) {
 
-    this->Gain_I = Integrator_parameters.Gain_I;
-    this->Gain_P = Integrator_parameters.Gain_P;
-    this->Gain_D = Integrator_parameters.Gain_D;
+    this->Controller_type = Integrator_parameters.Controller_type;
+
+    this->Gustafsson_k_1 = Integrator_parameters.Gustafsson_k1;
+    this->Gustafsson_k_2 = Integrator_parameters.Gustafsson_k2;
+
+    this->Max_rel_step_increase = Integrator_parameters.Max_rel_step_increase;
+    this->Min_rel_step_increase = Integrator_parameters.Min_rel_step_increase;
+
+    this->Gain_I = Integrator_parameters.PID_gain_I;
+    this->Gain_P = Integrator_parameters.PID_gain_P;
+    this->Gain_D = Integrator_parameters.PID_gain_D;
 
     this->step = Integrator_parameters.Init_stepzie;
     this->previous_step = Integrator_parameters.Init_stepzie;
@@ -142,23 +151,45 @@ Step_controller::Step_controller(const Integrator_parameters_type Integrator_par
 
 }
 
-void Step_controller::update_step(const double const* State_Vector) {
+void Step_controller::update_step(const double* const State_Vector) {
 
-    double const Error_threshold = this->Max_absolute_err + this->Max_absolute_err * my_max(State_Vector, e_State_Number);
+    double Rel_step_increase{};
+    
+    double Error_threshold = this->Max_absolute_err * (1 + get_max_element(State_Vector, e_State_Number - 1));
+
+    switch (this->Controller_type) {
+
+    case PID:
+
+        Rel_step_increase = this->Safety_1 * pow(Error_threshold / (current_err + this->Safety_2), this->Gain_I) *
+                                             pow(Error_threshold / (prev_err + this->Safety_2), this->Gain_P) *
+                                             pow(Error_threshold / (sec_prev_err + this->Safety_2), this->Gain_D);
+
+        Rel_step_increase = std::min(this->Max_rel_step_increase, std::max(this->Min_rel_step_increase, Rel_step_increase));
+
+        this->step = Rel_step_increase * this->step;
+
+        break;
+
+    default:
+
+        Rel_step_increase = this->Safety_1 * pow(Error_threshold / (current_err + this->Safety_2), this->Gustafsson_k_1) *
+                                             pow(current_err / (prev_err + this->Safety_2), this->Gustafsson_k_2);
+
+        Rel_step_increase = std::min(this->Max_rel_step_increase, std::max(this->Min_rel_step_increase, Rel_step_increase));
+
+        this->step = Rel_step_increase * this->step;
+
+        break;
+
+    }
 
     if (current_err < Error_threshold)
     {
-        this->step = pow(Error_threshold / (current_err  + this->Safety_2), this->Gain_I) *
-                     pow(Error_threshold / (prev_err     + this->Safety_2), this->Gain_P) *
-                     pow(Error_threshold / (sec_prev_err + this->Safety_2), this->Gain_D) * this->step;
-
         this->continue_integration = true;
     }
     else
     {
-
-        step = this->Safety_1 * this->step * pow(Error_threshold / (current_err + this->Safety_2), 0.25);
-
         this->continue_integration = false;
     }
 }

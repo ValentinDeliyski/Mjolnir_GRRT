@@ -16,6 +16,28 @@
 
     };
 
+    enum Step_controller_type_enums {
+
+        PID = 0,
+        Gustafsson = 1
+
+    };
+
+    enum Tensor_type_enums {
+
+        Covariant = 0,
+        Contravariant = 1
+
+    };
+
+    enum Emission_medium_enums {
+
+        Disk = 0,
+        Hotspot = 1,
+        Jet = 2
+
+    };
+
     enum Ensamble_enums {
 
         e_Thermal_ensamble          = 0,
@@ -29,7 +51,15 @@
 
         e_Power_law_profile       = 0,
         e_Exponential_law_profile = 1,
-        e_Gaussian_profile        = 2
+        e_Gaussian_profile        = 2,
+        e_Spherical_profile       = 3,
+
+    };
+
+    enum Velocity_enums {
+
+        e_Keplarian = 0,
+        e_Theta_dependant = 1
 
     };
 

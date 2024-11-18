@@ -16,6 +16,12 @@
 |                                                  | 
 ***************************************************/
 
+//! Copies over initial conditions from the Simulation Context struct to internal class variables for the sake of convenicence.
+/*! Copies over initial conditions from the Simulation Context struct to internal class variables for the sake of convenicence.
+ * 
+ *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct.
+ *   \return Nothing.
+ */
 Novikov_Thorne_Model::Novikov_Thorne_Model(Simulation_Context_type* p_Sim_Context) {
 
     this->r_in  = p_Sim_Context->p_Init_Conditions->NT_params.r_in;
@@ -26,9 +32,13 @@ Novikov_Thorne_Model::Novikov_Thorne_Model(Simulation_Context_type* p_Sim_Contex
 
 };
 
-double Novikov_Thorne_Model::Keplerian_angular_velocity(double r) {
-
-    double State_Vector[2] = { r, M_PI_2 };
+//! Evaluates the Keplarian angular velocity of the Novikov-Thorne disk model.
+/*! Evaluates the Keplarian angular velocity of the Novikov-Thorne disk model.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The Keplarian angular velocity.
+ */
+double Novikov_Thorne_Model::Keplerian_angular_velocity(const double* const State_Vector) {
 
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_metric(State_Vector);
 
@@ -36,16 +46,20 @@ double Novikov_Thorne_Model::Keplerian_angular_velocity(double r) {
 
 }
 
-double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r) {
-
-    double State_Vector[2] = { r, M_PI_2 };
+//! Evaluates the radial derivative of the Keplarian angular velocity of the Novikov-Thorne disk model.
+/*! Evaluates the radial derivative of the Keplarian angular velocity of the Novikov-Thorne disk model.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The radial derivative of the Keplarian angular velocity.
+ */
+double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(const double* const State_Vector) {
 
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_metric(State_Vector);
     Metric_type s_d2r_Metric = this->p_Spacetime->get_d2r_metric(State_Vector);
 
     double root = sqrt(s_dr_Metric.Metric[0][3] * s_dr_Metric.Metric[0][3] - s_dr_Metric.Metric[0][0] * s_dr_Metric.Metric[3][3]);
 
-    double Kepler = this->Keplerian_angular_velocity(r);
+    double Kepler = this->Keplerian_angular_velocity(State_Vector);
 
     return  - Kepler / s_dr_Metric.Metric[3][3] * s_d2r_Metric.Metric[3][3] + (-s_d2r_Metric.Metric[0][3]
             + 1.0 / root / 2 * (2 * s_dr_Metric.Metric[0][3] * s_d2r_Metric.Metric[0][3] - s_dr_Metric.Metric[0][0] * s_d2r_Metric.Metric[3][3]
@@ -53,16 +67,22 @@ double Novikov_Thorne_Model::dr_Keplerian_angular_velocity(double r) {
 
 }
 
-double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_obs, double theta_obs) {
+//! Evaluates the redshift of the Novikov-Thorne disk model.
+/*! Evaluates the redshift of the Novikov-Thorne disk model.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The redshift.
+ */
+double Novikov_Thorne_Model::Redshift(const double* const State_Vector, double r_obs, double theta_obs) {
 
-    double& r_source = State_Vector[e_r];
-    double& theta_source = State_Vector[e_theta];
+    const double& r_source = State_Vector[e_r];
+    const double& theta_source = State_Vector[e_theta];
 
     /*
     Get the observer 4-velocity
     */
 
-    double State_Vector_obs[2] = { r_obs, theta_obs };
+    double State_Vector_obs[4] = {0, r_obs, theta_obs, 0 };
 
     Metric_type s_Metric_obs = this->p_Spacetime->get_metric(State_Vector_obs);
 
@@ -74,7 +94,7 @@ double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_
 
     Metric_type s_Metric_source = this->p_Spacetime->get_metric(State_Vector);
 
-    double Kepler = this->Keplerian_angular_velocity(r_source);
+    double Kepler = this->Keplerian_angular_velocity(State_Vector);
 
     double Gamma = 1 / sqrt(-s_Metric_source.Metric[0][0] - 2 * s_Metric_source.Metric[0][3] * Kepler - s_Metric_source.Metric[3][3] * Kepler * Kepler);
 
@@ -95,17 +115,21 @@ double Novikov_Thorne_Model::Redshift(double J, double State_Vector[], double r_
 
     double U_source[4] = { Gamma, 0, 0, Gamma * Kepler };
 
-    return  (-U_obs[0] + U_obs[3] * J) / (-U_source[0] + U_source[3] * J);
+    return  (-U_obs[0] + U_obs[3] * State_Vector[e_p_phi]) / (-U_source[0] + U_source[3] * State_Vector[e_p_phi]);
 
 }
 
-double Novikov_Thorne_Model::disk_Energy(double r) {
-
-    double State_Vector[2] = { r, M_PI_2 };
+//! Evaluates the energy of the Novikov-Thorne disk model.
+/*! Evaluates the energy of the Novikov-Thorne disk model.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The energy.
+ */
+double Novikov_Thorne_Model::disk_Energy(const double* const State_Vector) {
 
     Metric_type s_Metric_source = this->p_Spacetime->get_metric(State_Vector);
 
-    double Kepler = this->Keplerian_angular_velocity(r);
+    double Kepler = this->Keplerian_angular_velocity(State_Vector);
 
     double root = sqrt(-s_Metric_source.Metric[0][0] - 2 * s_Metric_source.Metric[0][3] * Kepler - s_Metric_source.Metric[3][3] * Kepler * Kepler);
 
@@ -113,13 +137,17 @@ double Novikov_Thorne_Model::disk_Energy(double r) {
 
 }
 
-double Novikov_Thorne_Model::disk_Angular_Momentum(double r) {
-
-    double State_Vector[2] = { r, M_PI_2 };
+//! Evaluates the angular momentum magnitude of the Novikov-Thorne disk model.
+/*! Evaluates the angular momentum magnitude of the Novikov-Thorne disk model.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The magnitude of the angular momentum.
+ */
+double Novikov_Thorne_Model::disk_Angular_Momentum(const double* const State_Vector) {
 
     Metric_type s_Metric_source = this->p_Spacetime->get_metric(State_Vector);
 
-    double Kepler = this->Keplerian_angular_velocity(r);
+    double Kepler = this->Keplerian_angular_velocity(State_Vector);
 
     double root = sqrt(-s_Metric_source.Metric[0][0] - 2 * s_Metric_source.Metric[0][3] * Kepler - s_Metric_source.Metric[3][3] * Kepler * Kepler);
 
@@ -127,22 +155,26 @@ double Novikov_Thorne_Model::disk_Angular_Momentum(double r) {
 
 }
 
-double Novikov_Thorne_Model::Flux_integrand(double r) {
-
-    double State_Vector[2] = { r, M_PI_2 };
+//! Evaluates the integrand of the integral that appears in the flux expression of the Novikov-Thorne disk model.
+/*! Evaluates the integrand of the integral that appears in the flux expression of the Novikov-Thorne disk model.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The value of the integrand.
+ */
+double Novikov_Thorne_Model::Flux_integrand(const double* const State_Vector) {
 
     Metric_type s_Metric = this->p_Spacetime->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_metric(State_Vector);
 
-    double Kepler = this->Keplerian_angular_velocity(r);
-    double dr_Kepler = this->dr_Keplerian_angular_velocity(r);
+    double Kepler = this->Keplerian_angular_velocity(State_Vector);
+    double dr_Kepler = this->dr_Keplerian_angular_velocity(State_Vector);
 
     double root = sqrt(-s_Metric.Metric[0][0] - 2 * s_Metric.Metric[0][3] * Kepler - s_Metric.Metric[3][3] * Kepler * Kepler);
     double dr_root = (-s_dr_Metric.Metric[0][0] - 2 * (s_dr_Metric.Metric[0][3] * Kepler + s_Metric.Metric[0][3] * dr_Kepler)
         - s_dr_Metric.Metric[3][3] * Kepler * Kepler - 2 * s_Metric.Metric[3][3] * Kepler * dr_Kepler);
 
-    double E = this->disk_Energy(r);
-    double L = this->disk_Angular_Momentum(r);
+    double E = this->disk_Energy(State_Vector);
+    double L = this->disk_Angular_Momentum(State_Vector);
 
     double dr_L = (s_dr_Metric.Metric[3][3] * Kepler + s_Metric.Metric[3][3] * dr_Kepler + s_dr_Metric.Metric[0][3]) / root - L / root / root / 2 * dr_root;
 
@@ -150,18 +182,42 @@ double Novikov_Thorne_Model::Flux_integrand(double r) {
 
 }
 
-double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double upper_bound, double tolerance) {
+//! Evaluates the integral that appears in the flux expression of the Novikov-Thorne disk model.
+/*! Evaluates the integral that appears in the flux expression of the Novikov-Thorne disk model, using the adaptive Simpson method.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The value of the integral term.
+ */
+double Novikov_Thorne_Model::solve_Flux_integral(double r_in, const double* const State_Vector, double tolerance) {
 
-    double mid_point = (lower_bound + upper_bound) / 2;
-    double left_mid_point = (lower_bound + mid_point) / 2;
-    double right_mid_point = (mid_point + upper_bound) / 2;
+    const double& lower_bound = r_in;
+    const double& upper_bound = State_Vector[e_r];
 
-    double F_lower_bound = this->Flux_integrand(lower_bound);
-    double F_mid_point = this->Flux_integrand(mid_point);
-    double F_upper_bound = this->Flux_integrand(upper_bound);
+    double mid_point          = (lower_bound + upper_bound) / 2;
+    double left_of_mid_point  = (lower_bound + mid_point) / 2;
+    double right_of_mid_point = (mid_point + upper_bound) / 2;
 
-    double F_left_mid = this->Flux_integrand(left_mid_point);
-    double F_right_mid = this->Flux_integrand(right_mid_point);
+    double lower_bound_state_vector[4]{};
+    double mid_point_state_vector[4]{};
+    double left_of_mid_point_state_vector[4]{};
+    double right_of_mid_point_state_vector[4]{};
+
+    memcpy(lower_bound_state_vector, State_Vector, 4 * sizeof(double));
+    memcpy(mid_point_state_vector, State_Vector, 4 * sizeof(double));
+    memcpy(left_of_mid_point_state_vector, State_Vector, 4 * sizeof(double));
+    memcpy(right_of_mid_point_state_vector, State_Vector, 4 * sizeof(double));
+
+    lower_bound_state_vector[e_r] = r_in;
+    mid_point_state_vector[e_r] = mid_point;
+    left_of_mid_point_state_vector[e_r] = left_of_mid_point;
+    right_of_mid_point_state_vector[e_r] = right_of_mid_point;
+
+    double F_lower_bound = this->Flux_integrand(lower_bound_state_vector);
+    double F_mid_point   = this->Flux_integrand(mid_point_state_vector);
+    double F_upper_bound = this->Flux_integrand(State_Vector);
+
+    double F_left_mid = this->Flux_integrand(left_of_mid_point_state_vector);
+    double F_right_mid = this->Flux_integrand(right_of_mid_point_state_vector);
 
     double S_left = (mid_point - lower_bound) / 6 * (F_lower_bound + 4 * F_left_mid + F_mid_point);
     double S_right = (upper_bound - mid_point) / 6 * (F_mid_point + 4 * F_right_mid + F_upper_bound);
@@ -192,8 +248,8 @@ double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double uppe
     }
     else {
 
-        double L_value = this->solve_Flux_integral(lower_bound, mid_point, tolerance / 2);
-        double R_value = this->solve_Flux_integral(mid_point, upper_bound, tolerance / 2);
+        double L_value = this->solve_Flux_integral(lower_bound, mid_point_state_vector, tolerance / 2);
+        double R_value = this->solve_Flux_integral(mid_point, State_Vector, tolerance / 2);
 
         integral = L_value + R_value;
 
@@ -202,22 +258,26 @@ double Novikov_Thorne_Model::solve_Flux_integral(double lower_bound, double uppe
     return integral;
 }
 
-double Novikov_Thorne_Model::get_flux(double r) {
-
-    double State_Vector[2] = { r, M_PI_2 };
+//! Evaluates the flux of the Novikov-Thorne disk model
+/*! Evaluates the flux of the Novikov-Thorne disk model
+ * 
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The Novikov-Thorne flux in [M_dot / M^2].
+ */
+double Novikov_Thorne_Model::get_flux(const double* const State_Vector) {
 
     Metric_type s_Metric = this->p_Spacetime->get_metric(State_Vector);
 
     double metric_det = get_eq_induced_metric_det(s_Metric.Metric);
-    double E_disk = disk_Energy(r);
-    double L_disk = disk_Angular_Momentum(r);
+    double E_disk = disk_Energy(State_Vector);
+    double L_disk = disk_Angular_Momentum(State_Vector);
 
-    double Kepler = Keplerian_angular_velocity(r);
-    double dr_Kepler = dr_Keplerian_angular_velocity(r);
+    double Kepler = Keplerian_angular_velocity(State_Vector);
+    double dr_Kepler = dr_Keplerian_angular_velocity(State_Vector);
 
     double Flux_coeff = -dr_Kepler / ((E_disk - Kepler * L_disk) * (E_disk - Kepler * L_disk)) / (4 * M_PI * sqrt(-metric_det));
 
-    double Flux_integral = solve_Flux_integral(this->r_in, r, this->flux_integral_accuracy);
+    double Flux_integral = solve_Flux_integral(this->r_in, State_Vector, this->flux_integral_accuracy);
 
     return Flux_coeff * Flux_integral;
 
@@ -231,15 +291,21 @@ double Novikov_Thorne_Model::get_flux(double r) {
 
 /* ==================================================== Temperature Functions ===================================================== */
 
+//! Computes the background accretion disk temperature
+/*! Computes the background accretion disk at temperature the current photon position.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The temperature in [K].
+ */
 double Generic_Optically_Thin_Model::get_disk_temperature(const double* const State_Vector) {
 
 
-    const double& r      = State_Vector[e_r];
-    double& T_scale      = this->s_Disk_params.Electron_temperature_scale;
-    double& R_0          = this->s_Disk_params.Power_law_temperature_R_0;
-    double& r_cutoff     = this->s_Disk_params.Power_law_temperature_R_cutoff;
-    double& Cutoff_scale = this->s_Disk_params.Power_law_temperature_cutoff_scale;
-    double& Power_law    = this->s_Disk_params.Power_law_temperature_radial_power_law;
+    const double& r            = State_Vector[e_r];
+    const double& T_scale      = this->s_Disk_params.Electron_temperature_scale;
+    const double& R_0          = this->s_Disk_params.Power_law_temperature_R_0;
+    const double& r_cutoff     = this->s_Disk_params.Power_law_temperature_R_cutoff;
+    const double& Cutoff_scale = this->s_Disk_params.Power_law_temperature_cutoff_scale;
+    const double& Power_law    = this->s_Disk_params.Power_law_temperature_radial_power_law;
 
     double Radial_Cutoff{};
 
@@ -261,152 +327,203 @@ double Generic_Optically_Thin_Model::get_disk_temperature(const double* const St
 
     }
 
-    this->Disk_Temperature = T_scale * Disk_temperature_profile;
+    double Disk_Temperature = T_scale * Disk_temperature_profile;
 
-    return this->Disk_Temperature;
+    return Disk_Temperature;
 
 }
 
+//! Computes the hotspot temperature
+/*! Computes the hotspot at temperature the current photon position.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The temperature in [K].
+ */
 double Generic_Optically_Thin_Model::get_hotspot_temperature(const double* const State_Vector) {
 
-    double& Hotspot_r     = this->s_Hotspot_params.Position[e_r - 1];
-    double& Hotspot_theta = this->s_Hotspot_params.Position[e_theta - 1];
-    double& Hotspot_phi   = this->s_Hotspot_params.Position[e_phi - 1];
-
-    double& Hotspot_spread    = this->s_Hotspot_params.Temperature_spread;
+    const double& Hotspot_r      = this->s_Hotspot_params.Position[e_r - 1];
+    const double& Hotspot_theta  = this->s_Hotspot_params.Position[e_theta - 1];
+    const double& Hotspot_phi    = this->s_Hotspot_params.Position[e_phi - 1];
+    const double& Spatial_spread = this->s_Hotspot_params.Temperature_spread;
 
     const double& photon_r = State_Vector[e_r];
 
     // I these this more than once, so I precompute them
-    double sin_theta = sin(State_Vector[e_theta]);
+    double sin_photon_theta  = sin(State_Vector[e_theta]);
     double sin_hotspot_theta = sin(Hotspot_theta);
 
     double x_center = Hotspot_r * sin_hotspot_theta * cos(Hotspot_phi);
     double y_center = Hotspot_r * sin_hotspot_theta * sin(Hotspot_phi);
     double z_center = Hotspot_r * cos(Hotspot_theta);
 
-    double x_photon = photon_r * sin_theta * cos(State_Vector[e_phi]);
-    double y_photon = photon_r * sin_theta * sin(State_Vector[e_phi]);
+    double x_photon = photon_r * sin_photon_theta * cos(State_Vector[e_phi]);
+    double y_photon = photon_r * sin_photon_theta * sin(State_Vector[e_phi]);
     double z_photon = photon_r * cos(State_Vector[e_theta]);
 
-    double exponent_argument = - (x_center - x_photon) * (x_center - x_photon) / Hotspot_spread / Hotspot_spread / 2
-                               - (y_center - y_photon) * (y_center - y_photon) / Hotspot_spread / Hotspot_spread / 2
-                               - (z_center - z_photon) * (z_center - z_photon) / Hotspot_spread / Hotspot_spread / 2;
+    double squred_distance_to_hotspot_center = (x_center - x_photon) * (x_center - x_photon) 
+                                             + (y_center - y_photon) * (y_center - y_photon) 
+                                             + (z_center - z_photon) * (z_center - z_photon);
 
-    double Hotspot_temperature_profile = exp(exponent_argument);
+    double Spatial_profile{};
 
-    if (isnan(Hotspot_temperature_profile) || isinf(Hotspot_temperature_profile) || Hotspot_temperature_profile < 0) {
+    switch (this->s_Hotspot_params.Temperature_profile_type) {
 
-        std::cout << "Invalid hotspot temperature profile: " << Hotspot_temperature_profile << "\n";
+    case e_Gaussian_profile:
+
+        Spatial_profile = exp(-squred_distance_to_hotspot_center / Spatial_spread / Spatial_spread / 2);
+        break;
+
+    default:
+
+        if (squred_distance_to_hotspot_center < this->s_Hotspot_params.Radius * this->s_Hotspot_params.Radius) {
+
+            Spatial_profile = 1;
+
+        }
+        break;
+    }
+
+    double Temporal_profile = 1.0, Temporal_argument{};
+
+    double& t_ref = this->s_Hotspot_params.Coord_time_at_max;
+    double& t_sigma = this->s_Hotspot_params.Temporal_spread;
+
+    if (0 != this->s_Hotspot_params.Temporal_spread) {
+
+        Temporal_profile = exp(-(-State_Vector[e_t] - t_ref) * (-State_Vector[e_t] - t_ref) / t_sigma / t_sigma / 2);
+
+    }
+
+    double Hotspot_Temperature = this->s_Hotspot_params.Electron_temperature_scale * Spatial_profile * Temporal_profile;
+    
+    if (isnan(Hotspot_Temperature) || isinf(Hotspot_Temperature) || Hotspot_Temperature < 0) {
+
+        std::cout << "Invalid hotspot temperature profile: " << Hotspot_Temperature << "\n";
 
         exit(ERROR);
 
     }
 
-
-    if (-exponent_argument * 2 <= 1) {
-
-        this->Hotspot_Temperature = this->s_Hotspot_params.Electron_temperature_scale;
-
-    }
-    else {
-
-        this->Hotspot_Temperature = 0;
-
-    }
-
-    //this->Hotspot_Temperature = this->s_Hotspot_params.Electron_temperature_scale * Hotspot_temperature_profile;
-
-    return this->Hotspot_Temperature;
+    return Hotspot_Temperature;
 
 }
 
 /* ====================================================== Velocity Functions ====================================================== */
 
-double* Generic_Optically_Thin_Model::get_disk_velocity(const double* const State_Vector, const Simulation_Context_type* const p_Sim_Context) {
+//! Computes the emission medium's plasma 4-velocity
+/*! Computes the emission medium's plasma 4-velocity
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to call the metric function
+ *   \param [in] Velocity_profile - Enum for the type of velocity profile
+ *   \return Pointer to the 4-velocity vector
+ */
+double* Generic_Optically_Thin_Model::get_plasma_velocity(const double* const State_Vector, const Simulation_Context_type* const p_Sim_Context, Velocity_enums const Velocity_profile) {
 
-    const double& r_source = State_Vector[e_r];
+    /* === Initialize some variables === */
+    double Omega{}, rho{}, ell{}, u_t{}, u_phi{}, Normalization{}, inv_metric[4][4]{};
+    static double Plasma_velocity[4]{};
+
+    const double& r_source     = State_Vector[e_r];
     const double& theta_source = State_Vector[e_theta];
 
     Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
 
-    double rho = r_source * sin(theta_source);
+    switch (Velocity_profile) {
 
-    double sqrt_rho = sqrt(rho);
-    double ell = sqrt_rho * sqrt_rho * sqrt_rho / (1 + rho);
+    case e_Keplarian:
 
-    if (Janis_Newman_Winicour == p_Sim_Context->p_Init_Conditions->Metric_params.e_Spacetime) {
+        Omega = sqrt(1 / r_source / r_source / r_source);
+        Normalization = 1 / (-s_Metric.Metric[e_t][e_t] - 2 * s_Metric.Metric[e_t][e_phi] * Omega - s_Metric.Metric[e_phi][e_phi] * Omega * Omega);
 
-        double gamma = p_Sim_Context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter;
-        double r_singularity = 2. / gamma;
+        if (Normalization < 0) {
 
-        ell *= pow(1. - r_singularity / r_source, gamma);
+            return NULL;
+
+        }
+
+        Plasma_velocity[e_t] = sqrt(Normalization);
+        Plasma_velocity[e_r] = 0.0;
+        Plasma_velocity[e_theta] = 0.0;
+        Plasma_velocity[e_phi] = Plasma_velocity[e_t] * Omega;
+
+        break;
+
+    default:
+
+        rho = r_source * sin(theta_source);
+        ell = sqrt(rho * rho * rho) / (1 + rho);
+
+        if (Janis_Newman_Winicour == p_Sim_Context->p_Init_Conditions->Metric_params.e_Spacetime) {
+
+            double& gamma = p_Sim_Context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter;
+            double r_singularity = 2. / gamma;
+
+            ell *= pow(1. - r_singularity / r_source, gamma);
+
+        }
+        else if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_params.e_Spacetime) {
+
+
+            ell *= (1 - p_Sim_Context->p_Init_Conditions->Metric_params.R_throat / r_source);
+
+        }
+
+        invert_metric(inv_metric, s_Metric.Metric);
+
+        u_t = -1.0 / sqrt(-(inv_metric[0][0] - 2 * inv_metric[0][3] * ell + inv_metric[3][3] * ell * ell));
+        u_phi = -u_t * ell;
+
+        /* Convert U_source to contravariant components */
+
+        Plasma_velocity[e_t] = inv_metric[0][0] * u_t + inv_metric[0][3] * u_phi;
+        Plasma_velocity[e_r] = 0.0;
+        Plasma_velocity[e_theta] = 0.0;
+        Plasma_velocity[e_phi] = inv_metric[3][3] * u_phi + inv_metric[3][0] * u_t;
+
+        break;
 
     }
-    else if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_params.e_Spacetime) {
 
-
-        ell *= (1 - p_Sim_Context->p_Init_Conditions->Metric_params.R_throat / r_source);
-
-    }
-
-    double u_t{}, u_phi{};
-
-    double inv_metric[4][4]{};
-
-    invert_metric(inv_metric, s_Metric.Metric);
-
-    u_t = -1.0 / sqrt(-(inv_metric[0][0] - 2 * inv_metric[0][3] * ell + inv_metric[3][3] * ell * ell));
-    u_phi = -u_t * ell;
-
-    /*
-
-    Convert U_source to contravariant components
-
-    */
-
-    double Omega = sqrt(1 / r_source / r_source / r_source);
-
-    this->Disk_velocity[e_t] = inv_metric[0][0] * u_t + inv_metric[0][3] * u_phi;
-    //this->Disk_velocity[e_t] = sqrt(1 / (-s_Metric.Metric[e_t_coord][e_t_coord] - s_Metric.Metric[e_phi_coord][e_phi_coord] * Omega * Omega));
-    this->Disk_velocity[e_r] = 0.0;
-    this->Disk_velocity[e_theta] = 0.0;
-    //this->Disk_velocity[e_phi] = this->Disk_velocity[e_t_coord] * Omega;
-    this->Disk_velocity[e_phi] = inv_metric[3][3] * u_phi + inv_metric[3][0] * u_t;
-
-    if (isnan(this->Disk_velocity[e_t]) ||
-        isinf(this->Disk_velocity[e_t]) ||
-        isnan(this->Disk_velocity[e_phi]) ||
-        isinf(this->Disk_velocity[e_phi])) {
+    if (isnan(Plasma_velocity[e_t]) ||
+        isinf(Plasma_velocity[e_t]) ||
+        isnan(Plasma_velocity[e_phi]) ||
+        isinf(Plasma_velocity[e_phi])) {
 
         std::cout << "Invalid disk 4-velocity: "
             << "["
-            << this->Disk_velocity[e_t]
+            << Plasma_velocity[e_t]
             << ", "
-            << this->Disk_velocity[e_r]
+            << Plasma_velocity[e_r]
             << ", "
-            << this->Disk_velocity[e_theta]
+            << Plasma_velocity[e_theta]
             << ", "
-            << this->Disk_velocity[e_phi]
+            << Plasma_velocity[e_phi]
             << "]\n";
 
         exit(ERROR);
 
     }
 
-    return this->Disk_velocity;
+    return Plasma_velocity;
 
 }
 
 /* ======================================================= Density Functions ====================================================== */
 
+//! Computes the hotspot density
+/*! Computes the hotspot density at the current photon position.
+ *
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The density in [g/cm^3].
+ */
 double Generic_Optically_Thin_Model::get_hotspot_density(const double* const State_Vector) {
 
     double& Hotspot_r     = this->s_Hotspot_params.Position[e_r - 1];
     double& Hotspot_theta = this->s_Hotspot_params.Position[e_theta - 1];
     double& Hotspot_phi   = this->s_Hotspot_params.Position[e_phi - 1];
 
-    double& Hotspot_spread = this->s_Hotspot_params.Density_spread;
+    double& Spatial_spread = this->s_Hotspot_params.Density_spread;
 
     const double& photon_r = State_Vector[e_r];
 
@@ -422,37 +539,60 @@ double Generic_Optically_Thin_Model::get_hotspot_density(const double* const Sta
     double y_photon = photon_r * sin_theta * sin(State_Vector[e_phi]);
     double z_photon = photon_r * cos(State_Vector[e_theta]);
 
-    double exponent_argument = -(x_center - x_photon) * (x_center - x_photon) / Hotspot_spread / Hotspot_spread / 2.
-                               -(y_center - y_photon) * (y_center - y_photon) / Hotspot_spread / Hotspot_spread / 2. 
-                               -(z_center - z_photon) * (z_center - z_photon) / Hotspot_spread / Hotspot_spread / 2.;
+    double squred_distance_to_hotspot_center = (x_center - x_photon) * (x_center - x_photon)
+                                             + (y_center - y_photon) * (y_center - y_photon)
+                                             + (z_center - z_photon) * (z_center - z_photon);
 
-    double Hotspot_density_profile = exp(exponent_argument);
-  
-    if (isnan(Hotspot_density_profile) ||
-        isinf(Hotspot_density_profile) ||
-              Hotspot_density_profile < 0) {
+    double Spatial_profile{};
 
-        std::cout << "Invalid hotspot density profile: " << Hotspot_density_profile << "\n";
+    switch (this->s_Hotspot_params.Density_profile_type) {
+
+    case e_Gaussian_profile:
+
+        Spatial_profile = exp(-squred_distance_to_hotspot_center / Spatial_spread / Spatial_spread / 2);
+        break;
+
+    default:
+
+        if (squred_distance_to_hotspot_center < this->s_Hotspot_params.Radius * this->s_Hotspot_params.Radius) {
+
+            Spatial_profile = 1;
+
+        }
+        break;
+    }
+
+    double Temporal_profile = 1.0, Temporal_argument{};
+
+    double& t_ref   = this->s_Hotspot_params.Coord_time_at_max;
+    double& t_sigma = this->s_Hotspot_params.Temporal_spread;
+
+    if (0 != this->s_Hotspot_params.Temporal_spread) {
+
+        Temporal_profile = exp(-(-State_Vector[e_t] - t_ref) * (-State_Vector[e_t] - t_ref) / t_sigma / t_sigma / 2);
+
+    }
+
+    double Hotspot_Density = this->s_Hotspot_params.Electron_density_scale * Spatial_profile * Temporal_profile;
+
+    if (isnan(Hotspot_Density) || isinf(Hotspot_Density) || Hotspot_Density < 0) {
+
+        std::cout << "Invalid hotspot density profile: " << Hotspot_Density << "\n";
 
         exit(ERROR);
 
     }
 
-    if (-exponent_argument * 2 <= 1) {
-
-        this->Hotspot_density = this->s_Hotspot_params.Electron_density_scale;
-
-    }
-    else {
-
-        this->Hotspot_density = 0;
-
-    }
-
-    return this->Hotspot_density;
+    return Hotspot_Density;
 
 }
 
+//! Computes the background accretion disk density
+/*! Computes the background accretion disk density at the current photon position.
+ * 
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \return The density in [g/cm^3].
+ */
 double Generic_Optically_Thin_Model::get_disk_density(const double* const State_Vector) {
 
     const double& r  = State_Vector[e_r];
@@ -505,97 +645,52 @@ double Generic_Optically_Thin_Model::get_disk_density(const double* const State_
 
     }
 
-    if (isnan(Disk_density) ||
-        isinf(Disk_density) ||
-              Disk_density < 0) {
+    double Disk_Density = this->s_Disk_params.Electron_density_scale * Disk_density_profile;
 
-        std::cout << "Invalid disk density profile: " << Disk_density << "\n";
+    if (isnan(Disk_Density) || isinf(Disk_Density) || Disk_Density < 0) {
+
+        std::cout << "Invalid disk density profile: " << Disk_Density << "\n";
 
         exit(ERROR);
 
     }
 
-    this->Disk_density = this->s_Disk_params.Electron_density_scale * Disk_density_profile;
-
-    return this->Disk_density;
+    return Disk_Density;
 
 }
 
 /* =================================================== Disk Magnetic Field Functions =================================================== */
 
-double Generic_Optically_Thin_Model::get_total_magnetic_field(double* const B_coord_frame,
-                                                              const double* const State_Vector,
-                                                              const Simulation_Context_type* const p_Sim_Context) {
+//! Computes the magnetic field 4-vector in the coordinate and plasma frames.
+/*! Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity) in the following frames:
+ *      1) That of a static observer (with 4-velocity n_mu = {1, 0, 0, 0} ) - a.e. the coordinate frame.
+ *      2) The plasma rest frame.
+ *
+ *    NOTE: The magnitude of the magnetic field in these frames is different, because its not concerved under Lorentz boosts.
+ *          In the plasma frame I set the geometry of the field, then scale it by B_Plasma_norm_CGS.
+ *
+ *    NOTE: The magnitudes of the magnetic fields in these frames are given in Gauss.
+ * 
+ *   \param [out] Magnetic_fields - Struct that holds the magnetic field 4-vector in the two frames.
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+ *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to call the metric function for dot products.
+ *   \param [in] Density - The current emission medium density - used to compute the field magnitude in the plasma frame.
+ *   \param [in] Magnetization - The current emission medium magnetization - used to compute the field magnitude in the plasma frame.
+ *   \return Nothing.
+ */
+void Generic_Optically_Thin_Model::get_magnetic_field(Magnetic_fields_type* const Magnetic_fields,
+                                                      const double* const State_Vector,
+                                                      const Simulation_Context_type* const p_Sim_Context,
+                                                      const double* const Plasma_Velocity,
+                                                      const double Density,
+                                                      const double Magnetization)  {
 
-    /*
-    
-    Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity), called B_coord_frame,
-    in the basis of a static observer (with 4-velocity n_mu = {1, 0, 0, 0} ). 
-    Returns the magnitude of the magnetic field in the plasma frame.
+    Magnetic_fields->B_field_plasma_frame_norm = sqrt(Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Density * M_PROTON_CGS * 4 * M_PI);
 
-    NOTE: The magnitude of the magnetic field in these frames is different, because its not concerved under Lorentz boosts.
-    In the plasma frame I set the geometry of the field, then scale it by X_B_Plasma_norm_CGS.
-    
-    NOTE: B_coord_frame is measured by a static observer, so:
-    1) B_coord_frame is effectively in the coordinate basis (not any ZAMO!) - this means one cannot directly apply Lorentz boosts to it.
-
-    2) The magnetic field norm in here is considered to be in CGS
-
-    */
-
-    double Disk_density    = this->get_disk_density(State_Vector);
-    double Hotspot_density = this->get_hotspot_density(State_Vector);
-
-    double Disk_B_plasma_frame_norm_CGS    = sqrt(this->s_Disk_params.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Disk_density * M_PROTON_CGS * 4 * M_PI);
-    double Hotspot_B_plasma_frame_norm_CGS = sqrt(this->s_Hotspot_params.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Hotspot_density * M_PROTON_CGS * 4 * M_PI); 
-
-    double Disk_B_plasma_frame[4] = {                               0.0, 
-                                     Disk_B_plasma_frame_norm_CGS * this->s_Disk_params.Mag_field_geometry[0],
-                                     Disk_B_plasma_frame_norm_CGS * this->s_Disk_params.Mag_field_geometry[1],
-                                     Disk_B_plasma_frame_norm_CGS * this->s_Disk_params.Mag_field_geometry[2] };
-
-    double Hotspot_B_plasma_frame[4] = {                                  0.0,
-                                        Hotspot_B_plasma_frame_norm_CGS * this->s_Hotspot_params.Mag_field_geometry[0],
-                                        Hotspot_B_plasma_frame_norm_CGS * this->s_Hotspot_params.Mag_field_geometry[1],
-                                        Hotspot_B_plasma_frame_norm_CGS * this->s_Hotspot_params.Mag_field_geometry[2] };
-
-    /*
-    
-    Compute the the resultant magnetic field (the "background" disk field + the hotspot one) in the plasma frame.
-    
-    */
-
-    double Interpolated_B_plasma_frame[4]{};
-    double Interpolated_B_plasma_frame_norm_CGS{};
-
-    for (int index = 1; index <= 3; index++) {
-
-        /*
-        
-        Here I interpolate between the "background" disk field and the hotspot one, based on the electron density.
-        
-        */
-
-        if (!isnan(Disk_density + Hotspot_density)) {
-
-            Interpolated_B_plasma_frame[index] = (Disk_density * Disk_B_plasma_frame[index] + Hotspot_density * Hotspot_B_plasma_frame[index]) / (Disk_density + Hotspot_density);
-
-        }
-        else {
-
-            Interpolated_B_plasma_frame[index] = Disk_B_plasma_frame[index];
-
-        }
-
-        Interpolated_B_plasma_frame_norm_CGS += Interpolated_B_plasma_frame[index] * Interpolated_B_plasma_frame[index];
-
-    }
-
-    Interpolated_B_plasma_frame_norm_CGS = sqrt(Interpolated_B_plasma_frame_norm_CGS);
-
-    // Get the plasma velocity, so we can map the magnetic field back to the coordinate frame
-
-    double* Plasma_velocity = this->get_disk_velocity(State_Vector, p_Sim_Context);
+    double Disk_B_plasma_frame[4] = { 0.0,
+                                     Magnetic_fields->B_field_plasma_frame_norm * this->s_Disk_params.Mag_field_geometry[0],
+                                     Magnetic_fields->B_field_plasma_frame_norm * this->s_Disk_params.Mag_field_geometry[1],
+                                     Magnetic_fields->B_field_plasma_frame_norm * this->s_Disk_params.Mag_field_geometry[2] };
 
     /* 
 
@@ -612,42 +707,42 @@ double Generic_Optically_Thin_Model::get_total_magnetic_field(double* const B_co
 
         for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
-            B_coord_frame[e_t] += s_Metric.Metric[left_idx][right_idx] * Plasma_velocity[left_idx] * Interpolated_B_plasma_frame[right_idx];
-
+            Magnetic_fields->B_field_coord_frame[e_t] += s_Metric.Metric[left_idx][right_idx] * Plasma_Velocity[left_idx] * Disk_B_plasma_frame[right_idx];
         }
 
     }
 
     for (int index = 1; index <= 3; index++) {
 
-        B_coord_frame[index] = (Interpolated_B_plasma_frame[index] + B_coord_frame[e_t] * Plasma_velocity[index]) / Plasma_velocity[e_t];
-            
+        Magnetic_fields->B_field_coord_frame[index] = (Disk_B_plasma_frame[index] + Magnetic_fields->B_field_coord_frame[e_t] * Plasma_Velocity[index]) / Plasma_Velocity[e_t];
+       
     }
 
-    double Omega = Plasma_velocity[e_phi] / Plasma_velocity[e_t];
-    double A = 1. / sqrt(-(s_Metric.Metric[e_t][e_t] + Omega * Omega * s_Metric.Metric[e_phi][e_phi]));
+    //double Omega = Plasma_velocity[e_phi] / Plasma_velocity[e_t];
+    //double A = 1. / sqrt(-(s_Metric.Metric[e_t][e_t] + Omega * Omega * s_Metric.Metric[e_phi][e_phi]));
 
     //B_coord_frame[e_t_coord] = A * sqrt(-s_Metric.Metric[e_phi_coord][e_phi_coord] / s_Metric.Metric[e_t_coord][e_t_coord]) * Omega;
     //B_coord_frame[e_r_coord] = 0;
     //B_coord_frame[e_theta_coord] = 0;
     //B_coord_frame[e_phi_coord] = A / sqrt(-s_Metric.Metric[e_phi_coord][e_phi_coord] / s_Metric.Metric[e_t_coord][e_t_coord]);
 
-    return Interpolated_B_plasma_frame_norm_CGS;
-
 }
 
-double Generic_Optically_Thin_Model::get_electron_pitch_angle(double* const B_field_local, 
+//! Computes the angle between the magnetic field and photon momentum 3-vectors in the plasma frame.
+/*! Computes the angle between the magnetic field and photon momentum 3-vectors in the plasma frame. There is a neat invariant way 
+ *   to do this by just operating on coordinate basis 4-vector using the projection tensor for an observer with 4-velocity = Plasma_velocity  .
+ *
+ *   \param [in] B_field_coord_frame - The magnetic field in the coordinate frame.
+ *   \param [in] Plasma_velocity - The plasma velocity 4-vector.
+ *   \param [in] State_Vector - Current photon state vector - used to get the photon momentum 4-vector.
+ *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to call the metric function for dot products.
+ *   \return Cosine of the angle between the magnetic field and photon momentum 3-vectors in the plasma frame.
+ */
+double Generic_Optically_Thin_Model::get_electron_pitch_angle(const double* const B_field_coord_frame, 
+                                                              const double* const Plasma_velocity,
                                                               const double* const State_Vector, 
                                                               const Simulation_Context_type* const p_Sim_Context) {
 
-    /*
-    
-    Computes the angle between the photon wave-3-vector and the magnetic field, measured by a comoving (with the plasma) observer.
-    There is a neat invariant way to compute this directly from the coordinate basis 4-vectors.
-    
-    */
-
-    double* Plasma_velocity = this->get_disk_velocity(State_Vector, p_Sim_Context);
     double Wave_vec_dot_Plasma_vec = State_Vector[e_p_t]     * Plasma_velocity[e_t] +
                                      State_Vector[e_p_r]     * Plasma_velocity[e_r] +
                                      State_Vector[e_p_theta] * Plasma_velocity[e_theta] +
@@ -663,21 +758,23 @@ double Generic_Optically_Thin_Model::get_electron_pitch_angle(double* const B_fi
     
     */
 
+    double test{};
+
     for (int left_idx = 0; left_idx <= 3; left_idx++) {
 
         for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
-            B_field_norm_squared   += s_Metric.Metric[left_idx][right_idx] * B_field_local[left_idx] * B_field_local[right_idx];
-            B_field_dot_Plasma_vel += s_Metric.Metric[left_idx][right_idx] * B_field_local[left_idx] * Plasma_velocity[right_idx];
+            B_field_norm_squared   += s_Metric.Metric[left_idx][right_idx] * B_field_coord_frame[left_idx] * B_field_coord_frame[right_idx];
+            B_field_dot_Plasma_vel += s_Metric.Metric[left_idx][right_idx] * B_field_coord_frame[left_idx] * Plasma_velocity[right_idx];
 
         }
 
     }
 
-    double Wave_vec_dot_B_field = State_Vector[e_p_t]     * B_field_local[e_t] +
-                                  State_Vector[e_p_r]     * B_field_local[e_r] +
-                                  State_Vector[e_p_theta] * B_field_local[e_theta] +
-                                  State_Vector[e_p_phi]   * B_field_local[e_phi];
+    double Wave_vec_dot_B_field = State_Vector[e_p_t]     * B_field_coord_frame[e_t] +
+                                  State_Vector[e_p_r]     * B_field_coord_frame[e_r] +
+                                  State_Vector[e_p_theta] * B_field_coord_frame[e_theta] +
+                                  State_Vector[e_p_phi]   * B_field_coord_frame[e_phi];
 
     double cos_angle = 1.0; 
 
@@ -700,9 +797,23 @@ double Generic_Optically_Thin_Model::get_electron_pitch_angle(double* const B_fi
 
 }
 
-/* =============================================== Thermal Synchotron Transfer Functions =============================================== */
+/* =============================================== Thermal synchrotron Transfer Functions =============================================== */
 
-void Generic_Optically_Thin_Model::evaluate_thermal_synchotron_transfer_functions(double Density,
+//! Evaluates the thermal ensamble polarized synchrotron emission and Faradey functions.
+/*! Evaluates the thermal ensamble polarized synchrotron emission and Faradey functions.
+ *
+ *   \param [in] Density - The current emission medium density in [g/cm^3].
+ *   \param [in] T_electron_dim - The current emission medium dimentionless temperature.
+ *   \param [in] f_cyclo - The current cyclotron frequency in [Hz].
+ *   \param [in] sin_pitch_angle - The sine of the angle between the magnetic field and the photon momentum 3-vector in the plasma frame.
+ *   \param [in] cos_pitch_angle - The cosine of the angle between the magnetic field and the photon momentum 3-vector in the plasma frame.
+ *   \param [out] Emission_functions - Vector to hold the emission functions.
+ *   \param [out] Faradey_functions - Vector to hold the Faradey functions.
+ *   \param [in] Emission_args - Sturct to hold the arguments for evaluating the emission fit functions @see get_thermal_synchrotron_fit_functions.
+ *   \param [in] Faradey_args - Struct to hold the aruments for evaluating the Faradey fit function @see get_thermal_synchrotron_fit_functions.
+ *   \return Nothing.
+ */
+void Generic_Optically_Thin_Model::evaluate_thermal_synchrotron_transfer_functions(double Density,
                                                                                   double T_electron_dim,
                                                                                   double f_cyclo,
                                                                                   double sin_pitch_angle,
@@ -735,7 +846,7 @@ void Generic_Optically_Thin_Model::evaluate_thermal_synchotron_transfer_function
     /* All the functions are normalized by a Bessel function, so I check if I can divide by it */
     if (!isinf(1e10 / K2_Bessel)) {
 
-        this->get_thermal_synchotron_fit_functions(Emission_functions, Faradey_functions, &Emission_args, &Faradey_args);
+        this->get_thermal_synchrotron_fit_functions(Emission_functions, Faradey_functions, &Emission_args, &Faradey_args);
 
         /* ================================================ The emission functions ================================================ */
 
@@ -762,27 +873,65 @@ void Generic_Optically_Thin_Model::evaluate_thermal_synchotron_transfer_function
 
 }
 
-void Generic_Optically_Thin_Model::get_thermal_synchotron_transfer_functions(const double* const State_Vector,
+
+//! Computes the necessary variables for evaluating the thermal ensamble polarized synchrotron transfer functions.
+/*! Computes the necessary variables (cyclotron frequency, emission angles and so on) for evaluating the thermal ensamble polarized
+ *   synchrotron transfer functions, based on the current photon position.
+ *
+ *   \param [in] State_Vector - The current photon state vector.
+ *   \param [in] Plasma_velocity - The current emission medium plasma velocity.
+ *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to access the initial conditions.
+ *   \param [out] Emission_functions - Vector to hold the emission functions.
+ *   \param [out] Faradey_functions - Vector to hold the Faradey functions.
+ *   \param [out] Absorbtion_functions - Vector to hold the absorbtion functions.
+ *   \param [in] Density - The current density of the emission medium.
+ *   \param [in] Temperature - The current temperrature of the emission medium.
+ *   \param [in] B_field_coord_frame - The magnetic field 4-vector in the coordinate frame.
+ *   \param [in] B_field_plasma_frame_norm - The norm of the magnetic field in the plasma frame.
+ *   \return Nothing.
+ */
+void Generic_Optically_Thin_Model::get_thermal_synchrotron_transfer_functions(const double* const State_Vector,
+                                                                             const double* const Plasma_velocity,
                                                                              const Simulation_Context_type* const p_Sim_Context,
                                                                              double* const Emission_functions,
                                                                              double* const Faradey_functions,
                                                                              double* const Absorbtion_functions,
                                                                              double  const Density,
                                                                              double  const Temperature,
-                                                                             double* const B_field,
-                                                                             double  const B_field_norm) {
+                                                                             double* const B_field_coord_frame,
+                                                                             double  const B_field_plasma_frame_norm) {
+
+    /* === Zero out the transfer functions just in case === */
+    for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+
+        Emission_functions[stokes_index] = 0.0;
+        Faradey_functions[stokes_index] = 0.0;
+        Absorbtion_functions[stokes_index] = 0.0;
+
+    }
+
+    if (NULL == Plasma_velocity) {
+
+        return;
+
+    }
+
+    double redshift = Redshift(State_Vector, Plasma_velocity, p_Sim_Context->p_Observer);
+
+    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) {
+
+        return;
+
+    }
 
     /* Observation Frequency */
-    double& const obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
+    double const obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
     /* Dimentionless Electron Temperature */
     double const T_electron_dim = BOLTZMANN_CONST_CGS * Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
 
-    /* Redshit */
-    double const redshift = Redshift(State_Vector, this->get_disk_velocity(State_Vector, p_Sim_Context), p_Sim_Context->p_Observer);
-
     /* Cyclotron Frequency */
-    double const f_cyclo = Q_ELECTRON_CGS * B_field_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    double const f_cyclo = Q_ELECTRON_CGS * B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
 
     /* The "averaged" critical frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
     double const f_crit_no_sin = 3. / 2 * f_cyclo * T_electron_dim * T_electron_dim;
@@ -842,7 +991,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchotron_transfer_functions(con
             double temp_emission_functions[STOKES_PARAM_NUM]{};
             double temp_faradey_functions[STOKES_PARAM_NUM]{};
 
-            this->evaluate_thermal_synchotron_transfer_functions(Density, T_electron_dim, f_cyclo, sin_pitch_angle, cos_pitch_angle, temp_emission_functions, temp_faradey_functions, Emission_args_ang_corrected, Faradey_args_ang_corrected);
+            this->evaluate_thermal_synchrotron_transfer_functions(Density, T_electron_dim, f_cyclo, sin_pitch_angle, cos_pitch_angle, temp_emission_functions, temp_faradey_functions, Emission_args_ang_corrected, Faradey_args_ang_corrected);
 
             // The U component is 0 by definition
             Emission_functions[I] += temp_emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
@@ -862,7 +1011,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchotron_transfer_functions(con
 
         /* The magnetic field is the one measured by a comoving with the plasma observer, but expressed in the cooridante frame */
         
-        double pitch_angle = get_electron_pitch_angle(B_field, State_Vector, p_Sim_Context);
+        double pitch_angle = get_electron_pitch_angle(B_field_coord_frame, Plasma_velocity, State_Vector, p_Sim_Context);
         double sin_pitch_angle = sin(pitch_angle);
 
         double one_over_sqrt_sin = 1.0 / sqrt(sin_pitch_angle);
@@ -881,13 +1030,13 @@ void Generic_Optically_Thin_Model::get_thermal_synchotron_transfer_functions(con
         Faradey_args_ang_corrected.X_to_1_point_2   = Faradey_args_ang_uncorrected.X_to_1_point_2 * pow(sin_pitch_angle, 1.2);
         Faradey_args_ang_corrected.frequency        = obs_frequency / redshift;
 
-        this->evaluate_thermal_synchotron_transfer_functions(Density, T_electron_dim, f_cyclo, sin_pitch_angle, cos(pitch_angle), Emission_functions, Faradey_functions, Emission_args_ang_corrected, Faradey_args_ang_corrected);
+        this->evaluate_thermal_synchrotron_transfer_functions(Density, T_electron_dim, f_cyclo, sin_pitch_angle, cos(pitch_angle), Emission_functions, Faradey_functions, Emission_args_ang_corrected, Faradey_args_ang_corrected);
 
     }
 
     /* ================================================ The absorbtion functions ================================================ */
 
-    double Planck_function_CGS = get_planck_function_CGS(obs_frequency / redshift, this->get_disk_temperature(State_Vector));
+    double Planck_function_CGS = get_planck_function_CGS(obs_frequency / redshift, Temperature);
 
     if (Planck_function_CGS > std::numeric_limits<double>::min()) {
 
@@ -906,11 +1055,32 @@ void Generic_Optically_Thin_Model::get_thermal_synchotron_transfer_functions(con
         }
 
     }
+
+    /* Account for the relativistic doppler effet via the redshift */
+
+    for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
+
+        Emission_functions[stokes_idx] *= redshift * redshift;
+        Faradey_functions[stokes_idx] /= redshift;
+        Absorbtion_functions[stokes_idx] /= redshift;
+    }
+
 }
 
-/* ========================================== Kappa Synchotron Transfer Functions ========================================== */
+/* ========================================== Kappa synchrotron Transfer Functions ========================================== */
 
-void Generic_Optically_Thin_Model::evaluate_kappa_synchotron_transfer_functions(double Density,
+//! Evaluates the kappa ensamble polarized synchrotron emission and Faradey functions.
+/*! Evaluates the kappa ensamble polarized synchrotron emission and Faradey functions.
+ *
+ *   \param [in] Density - The current emission medium density in [g/cm^3].
+ *   \param [in] f_cyclo - The current cyclotron frequency in [Hz].
+ *   \param [out] Emission_functions - Vector to hold the emission functions.
+ *   \param [out] Faradey_functions - Vector to hold the Faradey functions.
+ *   \param [out] Absorbtion_functions - Vector to hold the absorbtion functions.
+ *   \param [in] Transfer_args - Sturct to hold the arguments for evaluating the emission fit functions @see get_kappa_synchrotron_fit_functions.
+ *   \return Nothing.
+ */
+void Generic_Optically_Thin_Model::evaluate_kappa_synchrotron_transfer_functions(double Density,
                                                                                 double f_cyclo,
                                                                                 double Emission_functions[STOKES_PARAM_NUM],
                                                                                 double Faradey_functions[STOKES_PARAM_NUM],
@@ -932,7 +1102,7 @@ void Generic_Optically_Thin_Model::evaluate_kappa_synchotron_transfer_functions(
 
     }
 
-    this->get_kappa_synchotron_fit_functions(Emission_functions, Faradey_functions, Absorbtion_functions, &Transfer_args);
+    this->get_kappa_synchrotron_fit_functions(Emission_functions, Faradey_functions, Absorbtion_functions, &Transfer_args);
 
     Emission_functions[I] *= Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * f_cyclo; 
     Emission_functions[Q] *= Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * f_cyclo; 
@@ -948,18 +1118,34 @@ void Generic_Optically_Thin_Model::evaluate_kappa_synchotron_transfer_functions(
 
 }
 
-
-void Generic_Optically_Thin_Model::get_kappa_synchotron_transfer_functions(const double* const State_Vector,
+//! Computes the necessary variables for evaluating the kappa ensamble polarized synchrotron transfer functions.
+/*! Computes the necessary variables (cyclotron frequency, emission angles and so on) for evaluating the kappa ensamble polarized
+ *   synchrotron transfer functions, based on the current photon position.
+ *
+ *   \param [in] State_Vector - The current photon state vector.
+ *   \param [in] Plasma_velocity - The current emission medium plasma velocity.
+ *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to access the initial conditions.
+ *   \param [out] Emission_functions - Vector to hold the emission functions.
+ *   \param [out] Faradey_functions - Vector to hold the Faradey functions.
+ *   \param [out] Absorbtion_functions - Vector to hold the absorbtion functions.
+ *   \param [in] Density - The current density of the emission medium.
+ *   \param [in] Temperature - The current temperrature of the emission medium.
+ *   \param [in] B_field_coord_frame - The magnetic field 4-vector in the coordinate frame.
+ *   \param [in] B_field_plasma_frame_norm - The norm of the magnetic field in the plasma frame.
+ *   \return Nothing.
+ */
+void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(const double* const State_Vector,
+                                                                           const double* const Plasma_velocity,
                                                                            const Simulation_Context_type* const p_Sim_Context,
                                                                            double* const Emission_functions,
                                                                            double* const Faradey_functions,
                                                                            double* const Absorbtion_functions,
                                                                            double  const Density,
                                                                            double  const Temperature,
-                                                                           double* const B_field,
-                                                                           double  const B_field_norm){
+                                                                           double* const B_field_coord_frame,
+                                                                           double  const B_field_plasma_frame_norm){
 
-    /* === The transfer functions arrays needs to be manually cleared, because this function only adds to it. === */
+    /* === Zero out the transfer functions just in case === */
     for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) { 
 
         Emission_functions[stokes_index] = 0.0; 
@@ -968,18 +1154,28 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_transfer_functions(const
 
     }
 
-    /* Observation frequency */
+    if (NULL == Plasma_velocity) {
 
+        return;
+
+    }
+
+    const double redshift = Redshift(State_Vector, Plasma_velocity, p_Sim_Context->p_Observer);
+
+    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) {
+
+        return;
+
+    }
+
+    /* Observation frequency */
     double& obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
     /* Dimentionless Electron Temperature */
     double T_electron_dim = BOLTZMANN_CONST_CGS * Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
 
-    /* Redshit */
-    double redshift = Redshift(State_Vector, this->get_disk_velocity(State_Vector, p_Sim_Context), p_Sim_Context->p_Observer);
-
     /* Cyclotron Frequency */
-    double f_cyclo = Q_ELECTRON_CGS * B_field_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    double f_cyclo = Q_ELECTRON_CGS * B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
 
     /* The "averaged" critical frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
     double f_k_no_sin = f_cyclo * (this->s_Emission_params.Kappa * T_electron_dim) * (this->s_Emission_params.Kappa * T_electron_dim);
@@ -1032,7 +1228,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_transfer_functions(const
             double temp_faradey_functions[STOKES_PARAM_NUM]{};
             double temp_absorbtion_functions[STOKES_PARAM_NUM]{};
 
-            this->evaluate_kappa_synchotron_transfer_functions(Density, f_cyclo, temp_emission_functions, temp_faradey_functions, temp_absorbtion_functions, Transfer_args_ang_corrected);
+            this->evaluate_kappa_synchrotron_transfer_functions(Density, f_cyclo, temp_emission_functions, temp_faradey_functions, temp_absorbtion_functions, Transfer_args_ang_corrected);
 
             // The U component is 0 by definition
             Emission_functions[I] += temp_emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
@@ -1052,7 +1248,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_transfer_functions(const
 
         /* The magnetic field is the one measured by a comoving with the plasma observer, but expressed in the cooridante frame */
 
-        double pitch_angle = get_electron_pitch_angle(B_field, State_Vector, p_Sim_Context);
+        double pitch_angle = get_electron_pitch_angle(B_field_coord_frame, Plasma_velocity, State_Vector, p_Sim_Context);
         double sin_pitch_angle = sin(pitch_angle);
 
         double one_over_sqrt_sin    = 1. / sqrt(sin_pitch_angle);
@@ -1071,28 +1267,61 @@ void Generic_Optically_Thin_Model::get_kappa_synchotron_transfer_functions(const
         Transfer_args_ang_corrected.sqrt_X = Transfer_args_uncorrected.sqrt_X * one_over_sqrt_sin;
         Transfer_args_ang_corrected.cbrt_X = Transfer_args_uncorrected.cbrt_X * one_over_cbrt_sin;
         Transfer_args_ang_corrected.X_to_7_over_20 = Transfer_args_uncorrected.X_to_7_over_20 * one_over_7_to_20_sin;
-        this->evaluate_kappa_synchotron_transfer_functions(Density, f_cyclo, Emission_functions, Faradey_functions, Absorbtion_functions, Transfer_args_ang_corrected);
+        this->evaluate_kappa_synchrotron_transfer_functions(Density, f_cyclo, Emission_functions, Faradey_functions, Absorbtion_functions, Transfer_args_ang_corrected);
 
+    }
+
+    /* Account for the relativistic doppler effet via the redshift */
+
+    for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
+
+        Emission_functions[stokes_idx] *= redshift * redshift;
+        Faradey_functions[stokes_idx] /= redshift;
+        Absorbtion_functions[stokes_idx] /= redshift;
     }
 
 }
 
-/* ========================================== Phenomenological Synchotron Transfer Functions ========================================== */
+/* ========================================== Phenomenological synchrotron Transfer Functions ========================================== */
 
-void Generic_Optically_Thin_Model::get_phenomenological_synchotron_functions(const double* const State_Vector,
+//! Evaluates the phonomenological synchrotron transfer functions.
+/*! Evaluates the phonomenological synchrotron transfer functions.
+ *
+ *   \param [in] State_Vector - The current photon state vector
+ *   \param [in] Plasma_velocity - The current emission medium plasma velocity.
+ *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to access the initial conditions.
+ *   \param [out] Emission_functions - Vector to hold the emission functions.
+ *   \param [out] Faradey_functions - Vector to hold the Faradey functions.
+ *   \param [out] Absorbtion_functions - Vector to hold the absorbtion functions.
+ *   \param [in] Density - The current density of the emission medium.
+ *   \return Nothing.
+ */
+void Generic_Optically_Thin_Model::get_phenomenological_synchrotron_functions(const double* const State_Vector,
+                                                                             const double* const Plasma_Veclocity,
                                                                              const Simulation_Context_type* const p_Sim_Context, 
                                                                              double* const Emission_functions,
                                                                              double* const Faradey_functions,
                                                                              double* const Absorbtion_functions,
                                                                              const double Density) {
 
+    if (NULL == Plasma_Veclocity) {
+
+        return;
+
+    }
+
+    double redshift = Redshift(State_Vector, Plasma_Veclocity, p_Sim_Context->p_Observer);
+
+    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) {
+
+        return;
+
+    }
+
     double& emission_power_law = this->s_Emission_params.Phenomenological_emission_power_law;
     double& source_f_power_law = this->s_Emission_params.Phenomenological_source_f_power_law;
     double& emission_coeff     = this->s_Emission_params.Phenomenological_emission_coeff;
     double& abs_coeff          = this->s_Emission_params.Phenomenological_absorbtion_coeff;
-
-    double* U_source_coord = this->get_disk_velocity(State_Vector, p_Sim_Context);
-    double redshift        = Redshift(State_Vector, U_source_coord, p_Sim_Context->p_Observer);
 
     Emission_functions[I] = emission_coeff * Density / this->s_Disk_params.Electron_density_scale * pow(redshift, emission_power_law);
     Emission_functions[Q] = 0.0;
@@ -1109,15 +1338,36 @@ void Generic_Optically_Thin_Model::get_phenomenological_synchotron_functions(con
     Faradey_functions[U] = 0.0;
     Faradey_functions[V] = 0.0;
 
+    /* Account for the relativistic doppler effet via the redshift */
+
+    for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
+
+        Emission_functions[stokes_idx] *= redshift * redshift;
+        Faradey_functions[stokes_idx] /= redshift;
+        Absorbtion_functions[stokes_idx] /= redshift;
+    }
+
 }
 
 /* ============================================ Main "Selector" For The Transfer Functions ============================================ */
 
+//! Main "Selector" For The Transfer Functions.
+/*! Calculates the density, temperature, magnetic field and 4-velocity of the chosen emission medium and calls the respective transfer functions evaluation.
+ *
+ *   \param [in] State_Vector - The current photon state vector.
+ *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to access the initial conditions.
+ *   \param [out] Emission_functions - Vector to hold the emission functions.
+ *   \param [out] Faradey_functions - Vector to hold the Faradey functions.
+ *   \param [out] Absorbtion_functions - Vector to hold the absorbtion functions.
+ *   \param [in] Emission_medium - Enum that specifies which emission medium to evaluate.
+ *   \return Nothing.
+ */
 void Generic_Optically_Thin_Model::get_radiative_transfer_functions(const double* const State_Vector,
                                                                     const Simulation_Context_type* const p_Sim_Context, 
                                                                     double* const Emission_functions,
                                                                     double* const Faradey_functions,
-                                                                    double* const Absorbtion_functions) {
+                                                                    double* const Absorbtion_functions,
+                                                                    Emission_medium_enums Emission_medium) {
 
     for (int index = I; index <= STOKES_PARAM_NUM - 1; index++) {
 
@@ -1127,97 +1377,82 @@ void Generic_Optically_Thin_Model::get_radiative_transfer_functions(const double
 
     }
 
-    /* Disk Electron Density in CGS */
-    double Disk_density = this->get_disk_density(State_Vector);
+    Magnetic_fields_type Magnetic_fields{};
+    Ensamble_enums Ensamble_type{};
 
-    /* Disk Electron Temperature */
-    double Disk_temp = this->get_disk_temperature(State_Vector);
+    double Density{}, Temperature{}, B_field_norm_plasma_frame{}, Magnetization{};
+    double* Plasma_Velocity{};
+    double* B_field_coord_frame{};
 
-    /* Hotspot Electron Density in CGS */
-    double Hotspot_density = this->get_hotspot_density(State_Vector);
+    switch (Emission_medium) {
 
-    /* Hotspot Electron Temperature */
-    double Hotspot_temp = this->get_hotspot_temperature(State_Vector);
+    case Disk:
 
-    double Interpolation_param = Disk_density / (Disk_density + Hotspot_density);
+        Density         = this->get_disk_density(State_Vector);
+        Temperature     = this->get_disk_temperature(State_Vector);
+        Plasma_Velocity = this->get_plasma_velocity(State_Vector, p_Sim_Context, this->s_Disk_params.Velocity_profile_type);
+        Ensamble_type   = p_Sim_Context->p_Init_Conditions->Disk_params.Ensamble_type;
+        Magnetization   = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
 
+        this->get_magnetic_field(&Magnetic_fields, State_Vector, p_Sim_Context, Plasma_Velocity, Density, Magnetization);
 
-    /* 
-    
-    Total Magnetic Field (hotspot + "background" disk), measured by a comoving with the plasma observer, projected back onto a static observer (a.e. in the coordinate basis)
-    
-    */
+        break;
 
-    double B_field_local[4]{};
-    double B_norm_CGS = this->get_total_magnetic_field(B_field_local, State_Vector, p_Sim_Context);
+    case Hotspot:
 
-    double Disk_emission_functions[STOKES_PARAM_NUM]{};
-    double Disk_faradey_functions[STOKES_PARAM_NUM]{};
-    double Disk_absorbtion_functions[STOKES_PARAM_NUM]{};
+        Density         = this->get_hotspot_density(State_Vector);
+        Temperature     = this->get_hotspot_temperature(State_Vector);
+        Plasma_Velocity = this->get_plasma_velocity(State_Vector, p_Sim_Context, this->s_Hotspot_params.Velocity_profile_type);
+        Ensamble_type   = p_Sim_Context->p_Init_Conditions->Hotspot_params.Ensamble_type;
+        Magnetization   = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;
 
-    if (0.0 != p_Sim_Context->p_Init_Conditions->Disk_params.Electron_density_scale) {
+        this->get_magnetic_field(&Magnetic_fields, State_Vector, p_Sim_Context, Plasma_Velocity, Density, Magnetization);
 
-        switch (p_Sim_Context->p_Init_Conditions->Disk_params.Ensamble_type) {
+        break;
 
-        case(e_Phenomenological_ensamble):
+    default:
 
-            this->get_phenomenological_synchotron_functions(State_Vector, p_Sim_Context, Disk_emission_functions, Disk_faradey_functions, Disk_absorbtion_functions, Interpolation_param * Disk_density);
-            break;
+        std::cout << "Unsupported emissison medium - something broke in the get_radiative_transfer_functions function!" << "\n";
 
-        case(e_Kappa_ensamble):
+        exit(ERROR);
 
-            this->get_kappa_synchotron_transfer_functions(State_Vector, p_Sim_Context, Disk_emission_functions, Disk_faradey_functions, Disk_absorbtion_functions,
-                Interpolation_param * Disk_density, Interpolation_param * Disk_temp, B_field_local, B_norm_CGS);
-            break;
-
-        default:
-
-            this->get_thermal_synchotron_transfer_functions(State_Vector, p_Sim_Context, Disk_emission_functions, Disk_faradey_functions, Disk_absorbtion_functions,
-                Interpolation_param * Disk_density, Interpolation_param * Disk_temp, B_field_local, B_norm_CGS);
-            break;
-        }
-    }
-
-    double Hotspot_emission_functions[STOKES_PARAM_NUM]{};
-    double Hotspot_faradey_functions[STOKES_PARAM_NUM]{};
-    double Hotspot_absorbtion_functions[STOKES_PARAM_NUM]{};
-
-    if (0.0 != p_Sim_Context->p_GOT_Model->s_Hotspot_params.Electron_density_scale) {
-
-        switch (p_Sim_Context->p_Init_Conditions->Hotspot_params.Ensamble_type) {
-
-        case(e_Phenomenological_ensamble):
-
-            this->get_phenomenological_synchotron_functions(State_Vector, p_Sim_Context, Hotspot_emission_functions, Hotspot_faradey_functions, Hotspot_absorbtion_functions, (1. - Interpolation_param) * Hotspot_density);
-            break;
-
-        case(e_Kappa_ensamble):
-
-            this->get_kappa_synchotron_transfer_functions(State_Vector, p_Sim_Context, Hotspot_emission_functions, Hotspot_faradey_functions, Hotspot_absorbtion_functions,
-                                                          (1. - Interpolation_param) * Hotspot_density, (1. - Interpolation_param) * Hotspot_temp, B_field_local, B_norm_CGS);
-            break;
-
-        default:
-
-            this->get_thermal_synchotron_transfer_functions(State_Vector, p_Sim_Context, Hotspot_emission_functions, Hotspot_faradey_functions, Hotspot_absorbtion_functions,
-                                                            (1. - Interpolation_param) * Hotspot_density, (1. - Interpolation_param) * Hotspot_temp, B_field_local, B_norm_CGS);
-            break;
-        }
+        break;
 
     }
 
-    for (int index = I; index <= STOKES_PARAM_NUM - 1; index++) {
+    B_field_coord_frame       = Magnetic_fields.B_field_coord_frame;
+    B_field_norm_plasma_frame = Magnetic_fields.B_field_plasma_frame_norm;
 
-        Emission_functions[index]   = Disk_emission_functions[index] + Hotspot_emission_functions[index];
-        Faradey_functions[index]    = Disk_faradey_functions[index] + Hotspot_faradey_functions[index];
-        Absorbtion_functions[index] = Disk_absorbtion_functions[index] + Hotspot_absorbtion_functions[index];
+    switch (Ensamble_type) {
 
+    case(e_Phenomenological_ensamble):
+
+        this->get_phenomenological_synchrotron_functions(State_Vector, Plasma_Velocity, p_Sim_Context, Emission_functions, Faradey_functions, Absorbtion_functions, Density);
+        break;
+
+    case(e_Kappa_ensamble):
+
+        this->get_kappa_synchrotron_transfer_functions(State_Vector, Plasma_Velocity, p_Sim_Context, Emission_functions, Faradey_functions, Absorbtion_functions,
+                                                      Density, Temperature, B_field_coord_frame, B_field_norm_plasma_frame);
+        break;
+
+    default:
+
+        this->get_thermal_synchrotron_transfer_functions(State_Vector, Plasma_Velocity, p_Sim_Context, Emission_functions, Faradey_functions, Absorbtion_functions,
+                                                       Density, Temperature, B_field_coord_frame, B_field_norm_plasma_frame);
+        break;
     }
-
+  
 }
 
 /* ========================================================== Misc Functions ========================================================== */
 
+//! Precomputes the electron pitch angles and their weird powers to use in averaging.
+/*! Precomputes the electron pitch angles and their weird powers to use in averaging.
+ *
+ *   \param [in] p_Init_Conditions - Pointer to the struct that holds the initial conditions - used to determine how much memory to allocate.
+ *   \return Nothing.
+ */
 void Generic_Optically_Thin_Model::precompute_electron_pitch_angles(Initial_conditions_type* p_Init_Conditions) {
 
     // ====================================================== Allocate memory for the arrays ====================================================== //
@@ -1243,17 +1478,17 @@ void Generic_Optically_Thin_Model::precompute_electron_pitch_angles(Initial_cond
 
         if (this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index] != 0) {
 
-            // Used in the thermal synchotron emission functions
+            // Used in the thermal synchrotron emission functions
 
             this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[index] = 1. / sqrt(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index]);
             this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[index] = 1. / cbrt(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index]);
 
-            // Used in the thermal synchotron Faradey functions
+            // Used in the thermal synchrotron Faradey functions
 
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 1.035);
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 1.2 / 2);
 
-            // Used in the kappa synchotron emission functions
+            // Used in the kappa synchrotron emission functions
 
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_7_over_20[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 7. / 20);
 
@@ -1261,6 +1496,13 @@ void Generic_Optically_Thin_Model::precompute_electron_pitch_angles(Initial_cond
     }
 }
 
+
+//!  Copies over the initial data from the Simulation Context struct to internal class variables for the sake of convenience
+/*!< Copies over the initial data from the Simulation Context struct to internal class variables for the sake of convenience
+ *
+ *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct.
+ *   \return Nothing.
+ */
 int Generic_Optically_Thin_Model::load_parameters(Simulation_Context_type* p_Sim_Context) {
 
     this->Num_samples_to_avg = p_Sim_Context->p_Init_Conditions->Emission_pitch_angle_samples_to_average;
@@ -1306,6 +1548,14 @@ int Generic_Optically_Thin_Model::load_parameters(Simulation_Context_type* p_Sim
 
 }
 
+
+//! Evaluates the Planck function in the frequency domain in CGS units
+/*! Evaluates the Planck function in the frequency domain in CGS units
+ *
+ *   \param [in] Frequency - Emission frequency in [Hz].
+ *   \param [in] Temperature - Emission medium temperature in [K].
+ *   \return The value of the Planck function in CGS.
+ */
 double get_planck_function_CGS(double Frequency, double Temperature) {
 
     return 2 * PLANCK_CONSTANT_CGS * Frequency * Frequency * Frequency / C_LIGHT_CGS / C_LIGHT_CGS / (exp(PLANCK_CONSTANT_CGS * Frequency / BOLTZMANN_CONST_CGS / Temperature) - 1.);

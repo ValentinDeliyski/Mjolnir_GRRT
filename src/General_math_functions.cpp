@@ -64,7 +64,7 @@ int mat_vec_multiply_4D(double const Matrix[4][4], double const Vector[4], doubl
 
 };
 
-double my_max(double const vector[], int const element_number) {
+double get_max_element(const double* const vector, int const element_number) {
 
 	/*****************************************************************************
 	|                                                                            |
@@ -79,7 +79,7 @@ double my_max(double const vector[], int const element_number) {
 
 	int index_max = element_number;
 
-	double* temp_vec = (double*) calloc(element_number, sizeof(double));
+	double* temp_vec = (double*)calloc(index_max + 1, sizeof(double));
 	double max{};
 
 	if (NULL == temp_vec) {
@@ -92,11 +92,11 @@ double my_max(double const vector[], int const element_number) {
 	}
 	else {
 
-		max = fabs(vector[0]);
+		max = fabs(vector[1]);
 
 	}
 
-	for (int index = 0; index <= index_max - 1; index += 1) {
+	for (int index = 1; index <= index_max; index += 1) {
 
 		temp_vec[index] = vector[index];
 
@@ -107,7 +107,7 @@ double my_max(double const vector[], int const element_number) {
 
 	}
 
-	for (int index = 1; index <= index_max - 1; index += 1) {
+	for (int index = 2; index <= index_max; index += 1) {
 
 		if (temp_vec[index] > max) {
 
@@ -119,6 +119,40 @@ double my_max(double const vector[], int const element_number) {
 	free(temp_vec);
 
 	return max;
+}
+
+double get_max_relative_error(const double* const error_state, const double* const current_state) {
+
+	/*****************************************************************************
+	|                                                                            |
+	|   @ Description: Returns the largest by absolute value element of vector   |
+	|                                                                            |
+	|   @ Inputs:                                                                |
+	|     * vector: Pointer to the input array									 |
+	|																			 |
+	|   @ Ouput: The largest (unsigned) element of vector by absolute value 	 |
+	|                                                                            |
+	*****************************************************************************/
+
+	double max_rel_error{};
+
+	max_rel_error = fabs(error_state[e_r] / current_state[e_r]);
+
+	for (int index = 0; index <= e_State_Number - 2; index += 1) {
+
+		double test2 = current_state[index] + 1e-40;
+		double test1 = error_state[index];
+
+		double temp_error = fabs(error_state[index] / (current_state[index]));
+
+		if (temp_error > max_rel_error && !isinf(temp_error)) {
+
+			max_rel_error = temp_error;
+
+		}
+	}
+
+	return max_rel_error;
 }
 
 bool interpolate_crossing(const double* const State_Vector, 
@@ -166,7 +200,7 @@ bool interpolate_crossing(const double* const State_Vector,
 
 	double crossing_param = -const_term[2] / gradient[2];
 
-	for (int index = 0; index < 3; index++) {
+	for (int index = 0; index <= 2; index++) {
 
 		Crossing_coords[index] = gradient[index] * crossing_param + const_term[index];
 
@@ -180,9 +214,9 @@ bool interpolate_crossing(const double* const State_Vector,
 
 	double momentum_param = (M_PI_2 - Old_State_Vector[e_theta]) / (State_Vector[e_theta] - Old_State_Vector[e_theta]);
 
-	for (int index = e_r; index <= e_theta; index++) {
+	for (int index = e_t; index <= e_phi; index++) {
 
-		crossing_momenta[index] = momentum_param * State_Vector[e_p_r - index] + (1 - momentum_param) * Old_State_Vector[e_p_r - index];
+		crossing_momenta[index] = momentum_param * State_Vector[e_p_t + index] + (1 - momentum_param) * Old_State_Vector[e_p_t + index];
 	}
 	
 	return true;

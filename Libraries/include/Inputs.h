@@ -19,7 +19,7 @@
     // Sim Mode 2 Configuration //
 
     const int PARAM_SWEEP_NUMBER = 1;
-    Real INIT_PARAM_VALUE        = 0.001;
+    Real INIT_PARAM_VALUE        = 0.000;
     Real FINAL_PARAM_VALUE       = 1;
 
     const Metric_Parameter_Selector PARAM_TYPE = WH_Redshift;

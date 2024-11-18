@@ -326,6 +326,15 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             
             break;
 
+        case e_Spherical_profile:
+
+            Image_Output_files[Image_order] << "Density Profile: Spherical"
+                                            << "\n"
+                                            << "Radius [M]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Radius
+                                            << "\n";            
+
+            break;
 
         default:
 
@@ -359,6 +368,15 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                             
             break;
 
+        case e_Spherical_profile:
+
+            Image_Output_files[Image_order] << "Temperature Profile: Spherical"
+                                            << "\n"
+                                            << "Radius [M]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Radius
+                                            << "\n";
+
+            break;
 
         default:
 
@@ -436,13 +454,13 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                         << "\n";
 
         Image_Output_files[Image_order] << "Distance [M]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_r]
+                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_r - 1]
                                         << "\n"
-                                        << "Inclination [Rad]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_theta]
+                                        << "Inclination [Deg]: "
+                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_theta - 1] * 180.0 / M_PI
                                         << "\n"
-                                        << "Azimuth [Rad]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_phi]
+                                        << "Azimuth [Deg]: "
+                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_phi - 1] * 180.0 / M_PI
                                         << "\n";
 
 
@@ -679,6 +697,7 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
                                             << " "
                                             << s_Ray_results->Photon_Momentum[e_phi][Image_order]
                                             << " ";
+
                 switch (this->p_Initial_Conditions->Metric_params.e_Spacetime) {
 
                 case Kerr:
