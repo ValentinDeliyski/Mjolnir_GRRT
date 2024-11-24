@@ -283,7 +283,7 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
 
 }
 
-void run_simulation_mode_4(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
+void run_simulation_mode_3(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
     double& X_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_X_init;
     double& Y_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_Y_init;

@@ -18,7 +18,8 @@
 |                                                                                                   |
 |    @ Supported Disk Models                                                                        |
 |      * Novikov-Thorne                                                                             |
-|      * Generic Optically Thin Disk With Arbitrary Density, Emission and Absorbtion Profiles       |
+|      * Generic Optically Thin Disk With Arbitrary (up to what is actually implemented :) )        |
+|        Density, Emission and Absorbtion Profiles                                                  |
 |                                                                                                   |
 ****************************************************************************************************/
 
