@@ -4,10 +4,11 @@ import numpy as np
 from scipy.stats import beta
 from scipy.integrate import quad
 from scipy.interpolate import CubicSpline, interp1d
-
+import matplotlib
 import matplotlib.pyplot as plt
 
 from Support_functions.Spacetimes import *
+from Support_functions.Shadows import *
 
 class Analytical_ray_tracer():
 
@@ -29,6 +30,7 @@ class Analytical_ray_tracer():
         self.Image_Spline = []
 
         self.Max_Image_order = MAX_IAMGE_ORDER
+        self.Image_order = []
 
         #---- ENUMS ----#
 
@@ -78,7 +80,7 @@ class Analytical_ray_tracer():
             direct_impact_params = (beta.cdf(distribution_range, density_parameter, density_parameter) * impact_param_photon_sphere).tolist()
 
         else:
-            direct_impact_params = (beta.cdf(distribution_range, density_parameter, density_parameter) * impact_param_source).tolist()
+            direct_impact_params = (beta.cdf(distribution_range, density_parameter, density_parameter / 2) * impact_param_source).tolist()
 
         for impact_param in direct_impact_params:
 
@@ -108,12 +110,16 @@ class Analytical_ray_tracer():
 
                 # NOTE: In the presence of a photon sphere, the turning points will be between it and the source
 
+                higher_order_impact_params = np.zeros(self.Granularity)
+
                 higher_order_turning_points = self.r_source + (beta.cdf(distribution_range, density_parameter, density_parameter)) * (self.Spacetime.photon_sphere() - self.r_source)
                 metrics_at_turning_points   = self.Spacetime.metric(higher_order_turning_points, np.pi / 2)
 
                 #-------- Calculate the impact parameters for the correspoinding turning points --------#
 
-                higher_order_impact_params  = np.sqrt(-metrics_at_turning_points[3] / metrics_at_turning_points[0])
+                for index, metric  in enumerate(metrics_at_turning_points):
+
+                    higher_order_impact_params[index] = np.sqrt(-metric[3] / metric[0])
 
             #-------- Solve the integrals that involve turning points --------#
 
@@ -140,15 +146,6 @@ class Analytical_ray_tracer():
             self.raw_Impact_params[self.INDIRECT].extend(higher_order_impact_params)
 
             print("Finished computing higher order photon paths!")
-
-        # else:
-        #     # self.Impact_Azimuth_spline.append(None)
-        #     self.raw_Impact_params.extend(direct_impact_params)
-
-        #-------- Convert the lists of results to numpy arrays --------#
-
-        self.raw_Impact_params = np.array(self.raw_Impact_params)
-        self.raw_Azimuths      = np.array(self.raw_Azimuths)
 
     def create_spline(self):
 
@@ -216,6 +213,8 @@ class Analytical_ray_tracer():
 
         np.seterr(all = "ignore")
 
+        metric = self.Spacetime.metric(self.r_obs, np.pi / 2)
+
         Solution_condition = np.arcsin(1 / np.tan(self.Interpolated_Azimuths) / np.tan(self.inclincation))
         Image_count = 0
         start_index = 0
@@ -244,7 +243,8 @@ class Analytical_ray_tracer():
                     if end_index - start_index > 20:
 
                         self.raw_Image_angular_coords.append( Solution_condition[ start_index:end_index ] ) 
-                        self.raw_Image_radial_coords.append( np.array(self.Interpolated_Impact_params[ start_index:end_index ]) )
+                        self.raw_Image_radial_coords.append( np.sqrt( np.array(self.Interpolated_Impact_params[ start_index:end_index ])**2 / metric[1] ))
+                        self.Image_order.append(int(self.Interpolated_Azimuths[int((start_index + end_index) / 2)] / np.pi))
 
                         theta_sorted, r_sorted = zip(* sorted(zip(self.raw_Image_angular_coords[Image_count], self.raw_Image_radial_coords[Image_count])) )
                         theta_sorted = np.array(theta_sorted) + np.linspace(0, 1e-10, len(theta_sorted))
@@ -254,49 +254,90 @@ class Analytical_ray_tracer():
 
         print("Number of images constructed: ", Image_count)
 
-def plot_splined_data(figure_num, Splines):
+    def plot_splined_data(self, subfigure_spline, Splines):
 
-    color_index = 0
-    figure_spline = plt.figure(figure_num)
-    subfigure_spline = figure_spline.add_subplot(111)
+        color_index = 0
 
-    for Spline in np.flip(Splines):  
+        for Spline_number, Spline in enumerate(Splines):  
 
-        Angular_coords_spline = np.linspace(-np.pi / 2, np.pi / 2, 200)
+            Angular_coords_spline = np.linspace(-np.pi / 2, np.pi / 2, 200)
 
-        #---------- Plot the Splined results ----------#
+            #---------- Plot the Splined results ----------#
 
-        Radial_coords_spline = Spline(Angular_coords_spline)
+            Radial_coords_spline = Spline(Angular_coords_spline)
 
-        x_coords_spline =  Radial_coords_spline * np.cos(Angular_coords_spline)
-        y_coords_spline = -Radial_coords_spline * np.sin(Angular_coords_spline)
+            x_coords_spline =  Radial_coords_spline * np.cos(Angular_coords_spline)
+            y_coords_spline = -Radial_coords_spline * np.sin(Angular_coords_spline)
 
-        x_coords_spline = np.append( np.append(-x_coords_spline, np.flip(x_coords_spline)), -x_coords_spline[0] ) 
-        y_coords_spline = np.append( np.append( y_coords_spline, np.flip(y_coords_spline)),  y_coords_spline[0] )
+            x_coords_spline = np.append( np.append(-x_coords_spline, np.flip(x_coords_spline)), -x_coords_spline[0] ) 
+            y_coords_spline = np.append( np.append( y_coords_spline, np.flip(y_coords_spline)),  y_coords_spline[0] )
 
-        subfigure_spline.plot(x_coords_spline, y_coords_spline, color = COLOR_CYCLE[color_index])
+            subfigure_spline.plot(x_coords_spline, y_coords_spline, color = COLOR_CYCLE[color_index])
 
-        color_index = (color_index + 1) % len(COLOR_CYCLE)
+            color_index = (color_index + 1) % len(COLOR_CYCLE)
 
-    subfigure_spline.set_title(r'Images of the r = 6M orbit')
-    subfigure_spline.set_xlabel(r'x [M]')
-    subfigure_spline.set_ylabel(r'y [M]')
-    subfigure_spline.set_aspect(1)
+            if Spline_number == 0:
 
-def plot_raw_data(figure_num, Radial_coords_raw, Angular_coords_raw):
+                Angular_coords_spline = np.linspace(-np.pi / 2, np.pi / 2, 250)
 
-    color_index = 0
-    figure_raw = plt.figure(figure_num)
-    subfigure_raw = figure_raw.add_subplot(111)
+                Angular_coords_spline = Angular_coords_spline + abs(Angular_coords_spline[0] - Angular_coords_spline[1]) / 2
 
-    try:
+                #---------- Plot the Splined results ----------#
 
-        for Image_order, _ in enumerate(Radial_coords_raw):
+                Radial_coords_spline = Spline(Angular_coords_spline)
 
-            #---------- Plot the raw results ----------#
+                x_coords_spline =  Radial_coords_spline * np.cos(Angular_coords_spline)
+                y_coords_spline = -Radial_coords_spline * np.sin(Angular_coords_spline)
 
-            x_coords_raw =  Radial_coords_raw[Image_order] * np.cos(Angular_coords_raw[Image_order])
-            y_coords_raw = -Radial_coords_raw[Image_order] * np.sin(Angular_coords_raw[Image_order])
+                x_coords_spline = np.append(-x_coords_spline, np.flip(x_coords_spline))
+                y_coords_spline = np.append( y_coords_spline, np.flip(y_coords_spline))
+
+                Coord_angle = np.arctan2(y_coords_spline, x_coords_spline)
+                Coord_angle[Coord_angle < 0] = Coord_angle[Coord_angle < 0] + 2 * np.pi
+                                            
+                sort_idx = Coord_angle.argsort()
+
+                x_coords_spline = x_coords_spline[sort_idx]
+                y_coords_spline = y_coords_spline[sort_idx]
+
+                with open("Schwarzschild_r{}_{}deg_500_photons_direct.csv".format(r_s, round(inclination_obs * 180 / np.pi)), 'w') as my_file:
+                          np.savetxt(my_file,  np.array([x_coords_spline, y_coords_spline]).T, fmt = '%0.4e')
+
+                subfigure_spline.plot(x_coords_spline, y_coords_spline, "ro")
+
+                return x_coords_spline, y_coords_spline
+            
+        subfigure_spline.set_title(r'Splined Results')
+        subfigure_spline.set_xlabel(r'x [M]')
+        subfigure_spline.set_ylabel(r'y [M]')
+        subfigure_spline.set_aspect(1)
+
+        
+
+    def plot_raw_data(self, subfigure_raw, Radial_coords_raw, Angular_coords_raw, Fontsize: int = 24, xlim: list = [-8, 8] , ylim: list = [-8, 8]):
+
+        color_index = 0
+
+        try:
+
+            for Image_number, _ in enumerate(Radial_coords_raw):
+
+                #---------- Plot the raw results ----------#
+
+                x_coords_raw =  Radial_coords_raw[Image_number] * np.cos(Angular_coords_raw[Image_number])
+                y_coords_raw = -Radial_coords_raw[Image_number] * np.sin(Angular_coords_raw[Image_number])
+
+                x_coords_raw = np.append( np.append(-x_coords_raw, np.flip(x_coords_raw)), -x_coords_raw[0] ) 
+                y_coords_raw = np.append( np.append( y_coords_raw, np.flip(y_coords_raw)),  y_coords_raw[0] )
+
+                subfigure_raw.plot(x_coords_raw, y_coords_raw, color = COLOR_CYCLE[self.Image_order[Image_number] % 3])
+
+                color_index = (color_index + 1) % len(COLOR_CYCLE)
+        
+        except:
+
+            x_coords_raw =  Radial_coords_raw * np.cos(Angular_coords_raw)
+            y_coords_raw = -Radial_coords_raw * np.sin(Angular_coords_raw)
 
             x_coords_raw = np.append( np.append(-x_coords_raw, np.flip(x_coords_raw)), -x_coords_raw[0] ) 
             y_coords_raw = np.append( np.append( y_coords_raw, np.flip(y_coords_raw)),  y_coords_raw[0] )
@@ -304,37 +345,28 @@ def plot_raw_data(figure_num, Radial_coords_raw, Angular_coords_raw):
             subfigure_raw.plot(x_coords_raw, y_coords_raw, color = COLOR_CYCLE[color_index])
 
             color_index = (color_index + 1) % len(COLOR_CYCLE)
-    
-    except:
 
-        x_coords_raw =  Radial_coords_raw * np.cos(Angular_coords_raw)
-        y_coords_raw = -Radial_coords_raw * np.sin(Angular_coords_raw)
+        # subfigure_raw.set_title(r'Direct Results From The Integration')
+        subfigure_raw.set_xlabel(r'x [M]', fontsize = Fontsize)
+        subfigure_raw.set_ylabel(r'y [M]', fontsize = Fontsize)
+        subfigure_raw.set_aspect(1)
 
-        x_coords_raw = np.append( np.append(-x_coords_raw, np.flip(x_coords_raw)), -x_coords_raw[0] ) 
-        y_coords_raw = np.append( np.append( y_coords_raw, np.flip(y_coords_raw)),  y_coords_raw[0] )
+        subfigure_raw.set_xlim(xlim)
+        subfigure_raw.set_ylim(ylim)    
 
-        subfigure_raw.plot(x_coords_raw, y_coords_raw, color = COLOR_CYCLE[color_index])
+        subfigure_raw.tick_params(axis='x', labelsize = Fontsize)
+        subfigure_raw.tick_params(axis='y', labelsize = Fontsize)
 
-        color_index = (color_index + 1) % len(COLOR_CYCLE)
 
-    subfigure_raw.set_title(r'Direct Results From The Integration')
-    subfigure_raw.set_xlabel(r'x [M]')
-    subfigure_raw.set_ylabel(r'y [M]')
-    subfigure_raw.set_aspect(1)
-
-def plot_angle_impact_param_grapth(figure_num, Splined_Impact_params, Splined_Azimuths, Inclination):
-
-    fig    = plt.figure(figure_num)
-    subfig = fig.add_subplot(111)
+def plot_angle_impact_param_grapth(subfig, Splined_Impact_params, Splined_Azimuths, Inclination, MAX_IAMGE_ORDER, shade_orders: bool = True, Fontsize: int = 20):
 
     branch_split_index   = np.asarray(Splined_Impact_params == np.max(Splined_Impact_params)).nonzero()[0][0]
     figure_maximum_index = np.asarray(Splined_Azimuths      == np.max(Splined_Azimuths)).nonzero()[0][0]
-    max_image_order      = np.min( [int(np.max(Splined_Azimuths) / np.pi + 1), 20] )
 
     #----------- Plot the line trough the maximum -----------#
 
     x     = Splined_Impact_params[figure_maximum_index]
-    y_max = max_image_order * np.pi
+    y_max = (MAX_IAMGE_ORDER + 1) * np.pi
     y_min = 0
 
     subfig.plot([x, x], [y_min, y_max], linestyle = "--", color = "black")
@@ -343,61 +375,76 @@ def plot_angle_impact_param_grapth(figure_num, Splined_Impact_params, Splined_Az
 
     subfig.plot(Splined_Impact_params, Splined_Azimuths)
 
-    #----------- Plot the point where the two curve branches meet  -----------#
+    if shade_orders:
 
-    subfig.plot(Splined_Impact_params[branch_split_index], Splined_Azimuths[branch_split_index], 'ro', color = "red")
+        #----------- Plot the point where the two curve branches meet  -----------#
 
-    #----------- Plot the fill-in for different image orders -----------#
+        subfig.plot(Splined_Impact_params[branch_split_index], Splined_Azimuths[branch_split_index], 'ro', color = "red")
+        subfig.text(1.05 * Splined_Impact_params[branch_split_index], Splined_Azimuths[branch_split_index], r'$P$', ha='left', va='bottom',
+                                        transform_rotates_text=True, rotation='horizontal', rotation_mode='anchor', fontsize = 16)
 
-    FILL_COLOR_CYCLE = ["bisque", "lightskyblue", "lightsteelblue"]
-    color_index      = 0
 
-    image_angles      = np.linspace(-np.pi, np.pi, 1000)
-    solution_interval = -np.arccos(np.sin(image_angles) * np.tan(Inclination) / np.sqrt(np.sin(image_angles)**2 * np.tan(Inclination)**2 + 1)) + np.pi
+        #----------- Plot the fill-in for different image orders -----------#
 
-    solution_start = np.min(solution_interval)
-    solution_end   = np.max(solution_interval)
+        FILL_COLOR_CYCLE = ["bisque", "lightskyblue", "lightsteelblue"]
+        color_index      = 0
 
-    params = {"ytick.color" : "black",
-              "xtick.color" : "black",
-              "axes.labelcolor" : "black",
-              "axes.edgecolor" : "black",
-              "text.usetex" : True,
-              "font.family" : "serif",
-              "font.serif" : ["Computer Modern Serif"]}
-    plt.rcParams.update(params)
+        image_angles      = np.linspace(-np.pi, np.pi, 1000)
+        solution_interval = -np.arccos(np.sin(image_angles) * np.tan(Inclination) / np.sqrt(np.sin(image_angles)**2 * np.tan(Inclination)**2 + 1)) + np.pi
 
-    for order in range(max_image_order):
+        solution_start = np.min(solution_interval)
+        solution_end   = np.max(solution_interval)
 
-        x = [0, 1.1 * np.max(Splined_Impact_params)]
+        for order in range(MAX_IAMGE_ORDER + 1):
 
-        y_lower = [solution_start + order * np.pi, solution_start + order * np.pi]
-        y_upper = [solution_end   + order * np.pi, solution_end   + order * np.pi]
+            x = [0, 1.1 * np.max(Splined_Impact_params)]
 
-        subfig.plot(x, y_lower, color = "black", linestyle = ":")
-        subfig.plot(x, y_upper, color = "black", linestyle = ":")
-        subfig.fill_between(x, y_lower, y_upper, color = FILL_COLOR_CYCLE[color_index], alpha = 0.2)
-        
-        color_index = (color_index + 1) % 3
+            y_lower = [solution_start + order * np.pi, solution_start + order * np.pi]
+            y_upper = [solution_end   + order * np.pi, solution_end   + order * np.pi]
 
-        subfig.text(x = 0.8 * np.max(Splined_Impact_params),
-                    y = (y_upper[0] + y_lower[0]) / 2, 
-                    s = '$k = {}$'.format(order),
-                    fontstyle = 'italic')
+            color_index = int((y_lower[0] + y_upper[0]) / 2 / np.pi) % 3
 
-    subfig.set_ylim([0, max_image_order * np.pi])
+            subfig.plot(x, y_lower, color = "black", linestyle = ":")
+            subfig.text(0.85 * np.max(Splined_Impact_params), y_lower[0] + 0.25, r'$\Delta\phi_\text{{min}}^{{(n = {})}}$'.format(order), ha='left', va='bottom',
+                                    transform_rotates_text=True, rotation='horizontal', rotation_mode='anchor', fontsize = 16)
+
+            subfig.plot(x, y_upper, color = "black", linestyle = ":")
+
+            if order != 0:
+                subfig.text(0.85 * np.max(Splined_Impact_params), y_upper[0] - 0.85, r'$\Delta\phi_\text{{max}}^{{(n = {})}}$'.format(order), ha='left', va='bottom',
+                                        transform_rotates_text=True, rotation='horizontal', rotation_mode='anchor', fontsize = 16)
+            else:
+                subfig.text(0.05 * np.max(Splined_Impact_params), y_upper[0] - 0.85, r'$\Delta\phi_\text{{max}}^{{(n = {})}}$'.format(order), ha='left', va='bottom',
+                                        transform_rotates_text=True, rotation='horizontal', rotation_mode='anchor', fontsize = 16)
+
+
+            subfig.fill_between(x, y_lower, y_upper, color = COLOR_CYCLE[color_index], alpha = 0.2)
+            
+            # color_index = (color_index + 1) % 3
+
+            # subfig.text(x = 0.8 * np.max(Splined_Impact_params),
+            #             y = (y_upper[0] + y_lower[0]) / 2, 
+            #             s = '$k = {}$'.format(order),
+            #             fontstyle = 'italic')
+
+    subfig.set_ylim([0, (MAX_IAMGE_ORDER + 1) * np.pi])
     subfig.set_xlim([0, 1.1 * np.max(Splined_Impact_params)])
+    
+    subfig.tick_params(axis='x', labelsize=Fontsize)
+    subfig.tick_params(axis='y', labelsize=Fontsize)
 
-    subfig.set_xlabel(r'$\xi,\,[M]$')
-    subfig.set_ylabel(r'$\Delta\phi,\,[rad]$')
+    subfig.set_xlabel(r'$\xi,\,[M]$', fontsize = Fontsize)
+    subfig.set_ylabel(r'$\Delta\phi,\,[rad]$', fontsize = Fontsize)
 
-    aspect_ratio = 2 * np.max(Splined_Impact_params) / (max_image_order * np.pi)
+    aspect_ratio = 2 * np.max(Splined_Impact_params) / ((MAX_IAMGE_ORDER + 1) * np.pi)
 
     subfig.set_aspect(aspect_ratio)
 
 if __name__ == "__main__":
 
-    COLOR_CYCLE = ["blue", "red", "black"]
+    cmap = matplotlib.colormaps['plasma']
+
+    COLOR_CYCLE = [cmap(0), cmap(100), cmap(200)]
 
     #------    Constants      -------#
 
@@ -405,14 +452,19 @@ if __name__ == "__main__":
 
     #------ Metric Parameters -------#
 
-    WH_THROAT = 1    # [ M ]
-    WH_ALPHA  = 0.2  # [ - ]
-        
+    WH_THROAT = 1  # [ M ]
+    WH_ALPHA  = 0.1  # [ - ]
+
+    r_min = []
+    r_max = []
+  
+    WH_ALPHA = 2
+
     RBH_PARAM = 1    # [ - ]
 
     JNW_PARAM = 0.48  # [ - ]
 
-    GAUSS_BONET_PARAM = 1.15 # [ - ]
+    GAUSS_BONET_PARAM = 1.5 # [ - ]
 
     #------      Metrics      -------#
 
@@ -423,41 +475,73 @@ if __name__ == "__main__":
     GBNS = Gaus_Bonnet_Naked_Singularity(parameter = GAUSS_BONET_PARAM)
 
     Spacetime_dict ={"Schwarzshild":       SCH, 
-                     "Wormhole":            WH,
-                     "Regular Black Hole": RBH,
-                     "Naked Singularity":  JNW,
-                     "Gauss - Bonnet"    : GBNS}
+                        "Wormhole":            WH,
+                        "Regular Black Hole": RBH,
+                        "Naked Singularity":  JNW,
+                        "Gauss - Bonnet"    : GBNS}
 
-    Active_spacetime = "Naked Singularity"
+    Active_spacetime = "Wormhole"
 
     #----- Observer / Source  -------#
 
-    r_obs = 1e3                         # [ M ]
-    inclination_obs = 70 * DEG_TO_RAD   # [ rad ]
+    r_obs = 1e3                        # [ M ]
+    inclination_obs = 20 * DEG_TO_RAD   # [ rad ]
 
-    ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
-                                       Granularity = 1000, 
-                                       r_source = 6, 
-                                       r_obs = r_obs, 
-                                       inclination = inclination_obs, 
-                                       MAX_IAMGE_ORDER = 10)
+    Impact_Param_Figure = plt.figure(1)
+    Impact_Param_Plot = Impact_Param_Figure.add_subplot(111)
+    Impact_Param_Figure.set_figwidth(6)
+    Impact_Param_Figure.set_figheight(12)
 
-    ray_tracer.propagate_rays()
-    ray_tracer.create_spline()
-    ray_tracer.construct_images()
- 
-    
-    plot_splined_data(figure_num = 1, 
-                          Splines = ray_tracer.Image_Spline)
+    Image_Figure = plt.figure(2)
+    Image_Plot   = Image_Figure.add_subplot(111)
+
+    # add_Kerr_Shadow(0.0001, r_obs, inclination_obs, Image_Plot)
+    Shadow = Wormhole_Shadow(0.001, 2, r_obs, inclination_obs, 1000000)
+    Shadow.generate_shadow(Image_Plot, linestyle = "--")
+
+    Image_Figure.set_figwidth(12)
+    Image_Figure.set_figheight(12)
+
+    orbit_radii = [-6, -500]
+
+    for r_s in orbit_radii:
+
+        ray_tracer = Analytical_ray_tracer(Spacetime = Spacetime_dict[Active_spacetime], 
+                                            Granularity = 1000, 
+                                            r_source = r_s, 
+                                            r_obs = r_obs, 
+                                            inclination = inclination_obs, 
+                                            MAX_IAMGE_ORDER = 2)
+
+        ray_tracer.propagate_rays()
+        ray_tracer.create_spline()
+        ray_tracer.construct_images()
         
-    
-    plot_raw_data(figure_num = 2, 
-                      Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
-                      Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
+        # x_coords_spline, y_coords_spline = ray_tracer.plot_splined_data(subfigure_spline = Plot_3, 
+                                                                            # Splines = ray_tracer.Image_Spline)
+                
+        ray_tracer.plot_raw_data(subfigure_raw      = Image_Plot, 
+                                 Radial_coords_raw  = ray_tracer.raw_Image_radial_coords, 
+                                 Angular_coords_raw = ray_tracer.raw_Image_angular_coords)
 
-    plot_angle_impact_param_grapth(figure_num = 3,
-                                   Splined_Impact_params = ray_tracer.Interpolated_Impact_params, 
-                                   Splined_Azimuths      = ray_tracer.Interpolated_Azimuths,
-                                   Inclination           = inclination_obs)
+        plot_angle_impact_param_grapth(subfig             = Impact_Param_Plot,
+                                    Splined_Impact_params = ray_tracer.Interpolated_Impact_params, 
+                                    Splined_Azimuths      = ray_tracer.Interpolated_Azimuths,
+                                    Inclination           = inclination_obs,
+                                    MAX_IAMGE_ORDER       = 2,
+                                    shade_orders          = r_s == max(orbit_radii))
+
+
+            # r_image = np.sqrt(x_coords_spline**2 + y_coords_spline**2)
+
+            # with open("JNW_r_{}_gamma_{}_{}_deg_indirect.csv".format(r_s, round(JNW_PARAM,2), (inclination_obs * 180 / np.pi)),  'w') as my_file:
+            #            np.savetxt(my_file,  r_image.T, fmt = '%0.4e')
+                
+        Image_Figure.savefig("test2.png", bbox_inches = 'tight')
+        Impact_Param_Figure.savefig("test.png", bbox_inches = 'tight')
+
 
     plt.show()
+
+    
+        

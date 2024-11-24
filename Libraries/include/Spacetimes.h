@@ -1,13 +1,10 @@
 #pragma once
+#define _USE_MATH_DEFINES
+#include "Structs.h"
+#include <iostream>
+#include <cmath>
 
-#ifndef SPACETIMES
-    
-    #define SPACETIMES
-
-    #include <iostream>
-    #include "Structs.h"
-
-    class Spacetime_Base_Class {
+class Spacetime_Base_Class {
 
         public:
 
@@ -29,7 +26,7 @@
 
             /* Metric and its derivatives */
 
-            virtual Metric_type get_metric(double State_vector[]) {
+            virtual Metric_type get_metric(const double* const State_Vector) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -37,7 +34,7 @@
 
             };
 
-            virtual Metric_type get_dr_metric(double State_vector[]) {
+            virtual Metric_type get_dr_metric(const double* const State_Vector) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -46,7 +43,7 @@
             };
 
 
-            virtual Metric_type get_dtheta_metric(double State_vector[]) {
+            virtual Metric_type get_dtheta_metric(const double* const State_Vector) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -54,7 +51,7 @@
 
             };
 
-            virtual Metric_type get_d2r_metric(double State_vector[]) {
+            virtual Metric_type get_d2r_metric(const double* const State_Vector) {
 
                 std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -92,16 +89,33 @@
             
             };
 
+            virtual bool load_parameters(Metric_parameters_type Metric_Parameters) {
+            
+                std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+
+                return true;
+            
+            };
+
+            virtual void update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
+            
+                std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+            
+            };
+
     };
 
-    class Kerr_class : public Spacetime_Base_Class {
+class Kerr_class : public Spacetime_Base_Class {
 
         private:
 
-            Metric_type s_Metric;
-            Metric_type s_dr_Metric;
+            Metric_type s_Metric{};
+            Metric_type s_dr_Metric{};
             Metric_type s_dtheta_Metric{};
-            Metric_type s_d2r_Metric;
+            Metric_type s_d2r_Metric{};
+            
+            double Mass = 1.0;
+            double Spin_Param{};
 
         public:
 
@@ -110,17 +124,10 @@
 
             /* Metric and its derivatives */
 
-            int update_metric(double State_vector[]);
-            Metric_type get_metric(double State_vector[]) override;
-
-            int update_dr_metric(double State_vector[]);
-            Metric_type get_dr_metric(double State_vector[]) override;
-
-            int update_dtheta_metric(double State_vector[]);
-            Metric_type get_dtheta_metric(double State_vector[]) override;
-
-            int update_d2r_metric(double State_vector[]);
-            Metric_type get_d2r_metric(double State_vector[]) override;
+            Metric_type get_metric(const double* const State_Vector) override;
+            Metric_type get_dr_metric(const double* const State_Vector) override;
+            Metric_type get_dtheta_metric(const double* const State_Vector) override;
+            Metric_type get_d2r_metric(const double* const State_Vector) override;
 
             /* Initial conditions derived from images */
 
@@ -134,9 +141,13 @@
 
             bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
+            bool load_parameters(Metric_parameters_type Metric_Parameters);
+
+            void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
+
     };
 
-    class Wormhole_class : public Spacetime_Base_Class {
+class Wormhole_class : public Spacetime_Base_Class {
 
     private:
 
@@ -144,6 +155,13 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
+
+        double Mass = 1.0;
+        double R_Throat = this->Mass;
+
+        double Spin_Param{};
+        double Redshift_Param{};
+        bool Stop_at_Throat{};
 
     public:
 
@@ -153,17 +171,10 @@
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
-        Metric_type get_dtheta_metric(double State_vector[]) override;
-
-        int update_d2r_metric(double State_vector[]);
-        Metric_type get_d2r_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
+        Metric_type get_d2r_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -177,9 +188,13 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
+
     };
 
-    class RBH_class : public Spacetime_Base_Class {
+class RBH_class : public Spacetime_Base_Class {
 
     private:
 
@@ -188,6 +203,9 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
+        double Mass = 1.0;
+        double Parameter;
+
     public:
 
         double* get_ISCO();
@@ -195,17 +213,10 @@
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
-        Metric_type get_dtheta_metric(double State_vector[]) override;
-
-        int update_d2r_metric(double State_vector[]);
-        Metric_type get_d2r_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
+        Metric_type get_d2r_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -219,9 +230,13 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
+
     };
 
-    class JNW_class : public Spacetime_Base_Class {
+class JNW_class : public Spacetime_Base_Class {
 
     private:
 
@@ -230,6 +245,9 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
+        double Mass = 1.0;
+        double Gamma;
+
     public:
 
         double* get_ISCO();
@@ -237,17 +255,10 @@
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
-        Metric_type get_dtheta_metric(double State_vector[]) override;
-
-        int update_d2r_metric(double State_vector[]);
-        Metric_type get_d2r_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
+        Metric_type get_d2r_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -261,9 +272,13 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
+
     };
 
-    class Gauss_Bonnet_class : public Spacetime_Base_Class {
+class Gauss_Bonnet_class : public Spacetime_Base_Class {
 
     private:
 
@@ -271,6 +286,9 @@
         Metric_type s_dr_Metric{};
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
+
+        double Mass = 1.0;
+        double Gamma;
 
     public:
 
@@ -279,17 +297,10 @@
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
-        Metric_type get_dtheta_metric(double State_vector[]) override;
-
-        int update_d2r_metric(double State_vector[]);
-        Metric_type get_d2r_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
+        Metric_type get_d2r_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -303,9 +314,13 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
+
     };
 
-    class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
+class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
 
     private:
 
@@ -314,20 +329,19 @@
         Metric_type s_dtheta_Metric{};
         Metric_type s_d2r_Metric{};
 
+        double Mass = 1.0;
+        double Compactness;
+        double Halo_Mass;
+
     public:
 
         double* get_ISCO();
 
         /* Metric and its derivatives */
 
-        int update_metric(double State_vector[]);
-        Metric_type get_metric(double State_vector[]) override;
-
-        int update_dr_metric(double State_vector[]);
-        Metric_type get_dr_metric(double State_vector[]) override;
-
-        int update_dtheta_metric(double State_vector[]);
-        Metric_type get_dtheta_metric(double State_vector[]) override;
+        Metric_type get_metric(const double* const State_Vector) override;
+        Metric_type get_dr_metric(const double* const State_Vector) override;
+        Metric_type get_dtheta_metric(const double* const State_Vector) override;
 
         /* Initial conditions derived from images */
 
@@ -341,27 +355,25 @@
 
         bool terminate_integration(double State_vector[], double Derivatives[]) override;
 
+        bool load_parameters(Metric_parameters_type Metric_Parameters);
+
+        void update_parameters(double Param_value, Metric_Parameter_Selector Parameter);
+
     };
 
-    class Observer_class {
+class Observer_class {
 
     private:
 
-        double r_obs;
-        double theta_obs;
-        double phi_obs;
+        Observer_parameters_type obs_params;
         double obs_velocity[4];
 
     public:
 
-        Observer_class(double r, double theta, double phi);
+        Observer_class(Simulation_Context_type* p_Sim_Context);
 
-        double get_r_obs();
-        double get_theta_obs();
-        double get_phi_obs();
+        Observer_parameters_type get_parameters();
 
-        int get_obs_velocity(double Obs_velocity[4]);
+        double* get_obs_velocity();
 
     };
-
-#endif

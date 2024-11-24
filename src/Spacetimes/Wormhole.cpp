@@ -1,25 +1,19 @@
-#pragma once
-
-#include <cmath>
-
-#include "Structs.h"
 #include "Spacetimes.h"
-#include "Constants.h"
 
 double* Wormhole_class::get_ISCO() {
 
-    double M = MASS;
+    double M = this->Mass;
 
     static double r_ISCO[2]{};
 
-    if (SPIN < 0.016) {
+    if (this->Spin_Param < 0.016) {
 
-        r_ISCO[Inner] = 2 * M * (sqrt(4. / 9 * (6 * WH_REDSHIFT + 1)) * cosh(1. / 3 * acosh((1 + 9 * WH_REDSHIFT + 27. / 2 * WH_REDSHIFT * WH_REDSHIFT) / pow(6 * WH_REDSHIFT + 1, 3. / 2))) + 1. / 3);
+        r_ISCO[Inner] = 2 * M * (sqrt(4. / 9 * (6 * this->Redshift_Param + 1)) * cosh(1. / 3 * acosh((1 + 9 * this->Redshift_Param + 27. / 2 * this->Redshift_Param * this->Redshift_Param) / pow(6 * this->Redshift_Param + 1, 3. / 2))) + 1. / 3);
         r_ISCO[Outer] = r_ISCO[Inner];
     }
     else {
 
-        r_ISCO[Inner] = WH_R_THROAT;
+        r_ISCO[Inner] = this->R_Throat;
         r_ISCO[Outer] = r_ISCO[Inner];
 
     }
@@ -30,94 +24,86 @@ double* Wormhole_class::get_ISCO() {
 
 double* Wormhole_class::get_Photon_Sphere() {
 
-    double M = MASS;
-    double a = SPIN;
+    double M = this->Mass;
+    double a = this->Spin_Param;
 
     static double photon_orbit[2]{};
 
-    photon_orbit[Inner] = M / 2 * (1 + sqrt(1 + 8 * WH_REDSHIFT));
+    photon_orbit[Inner] = M / 2 * (1 + sqrt(1 + 8 * this->Redshift_Param));
     photon_orbit[Outer] = photon_orbit[Inner];
 
     return photon_orbit;
 
 }
 
-int Wormhole_class::update_metric(double State_Vector[]) {
+Metric_type Wormhole_class::get_metric(const double* const State_Vector) {
 
-    double& r   = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    double exponent = -MASS / r - WH_REDSHIFT * MASS * MASS / r2;
+    double exponent = -this->Mass / r - this->Redshift_Param * this->Mass * this->Mass / r2;
+
+    memset(&this->s_Metric, 0, sizeof(this->s_Metric));
 
     this->s_Metric.Lapse_function = exp(exponent);
-    this->s_Metric.Shift_function = 2 * SPIN * MASS * MASS / r2 / r;
+    this->s_Metric.Shift_function = 2 * this->Spin_Param * this->Mass * this->Mass / r2 / r;
 
-    this->s_Metric.Metric[0][0] = -this->s_Metric.Lapse_function * this->s_Metric.Lapse_function + 
-                                   r2 * this->s_Metric.Shift_function * this->s_Metric.Shift_function * sin_theta * sin_theta;
+    this->s_Metric.Metric[0][0] = -this->s_Metric.Lapse_function * this->s_Metric.Lapse_function +
+        r2 * this->s_Metric.Shift_function * this->s_Metric.Shift_function * sin_theta * sin_theta;
     this->s_Metric.Metric[0][3] = -r2 * sin_theta * sin_theta * this->s_Metric.Shift_function;
     this->s_Metric.Metric[3][0] = this->s_Metric.Metric[0][3];
-    this->s_Metric.Metric[1][1] = 1 + WH_R_THROAT / r;
+    this->s_Metric.Metric[1][1] = 1 / (1 - this->R_Throat / r);
     this->s_Metric.Metric[2][2] = r2;
     this->s_Metric.Metric[3][3] = r2 * sin_theta * sin_theta;
-
-    return OK;
-}
-
-Metric_type Wormhole_class::get_metric(double State_vector[]) {
-
-    this->update_metric(State_vector);
 
     return this->s_Metric;
 }
 
-int Wormhole_class::update_dr_metric(double State_Vector[]) {
+Metric_type Wormhole_class::get_dr_metric(const double* const State_Vector) {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
 
-    double& r   = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    this->s_dr_Metric.Lapse_function = this->s_Metric.Lapse_function * (1 / r2 + 2 * WH_REDSHIFT / (r2 * r));
+    memset(&this->s_dr_Metric, 0, sizeof(this->s_dr_Metric));
+
+    this->s_dr_Metric.Lapse_function = this->s_Metric.Lapse_function * (1 / r2 + 2 * this->Redshift_Param / (r2 * r));
     this->s_dr_Metric.Shift_function = -3 * this->s_Metric.Shift_function / r;
 
-    double& N        = this->s_Metric.Lapse_function;
-    double& dr_N     = this->s_dr_Metric.Lapse_function;
-    double& omega    = this->s_Metric.Shift_function;
+    double& N = this->s_Metric.Lapse_function;
+    double& dr_N = this->s_dr_Metric.Lapse_function;
+    double& omega = this->s_Metric.Shift_function;
     double& dr_omega = this->s_dr_Metric.Shift_function;
 
     this->s_dr_Metric.Metric[0][0] = -2 * N * dr_N + 2 * r * omega * (omega + r * dr_omega) * sin_theta * sin_theta;
     this->s_dr_Metric.Metric[0][3] = -r * (2 * omega + r * dr_omega) * sin_theta * sin_theta;
     this->s_dr_Metric.Metric[3][0] = this->s_dtheta_Metric.Metric[0][3];
-    this->s_dr_Metric.Metric[1][1] = -1. / ((1 - WH_R_THROAT / r) * (1 - WH_R_THROAT / r)) * (WH_R_THROAT / r2);
+    this->s_dr_Metric.Metric[1][1] = -1. / ((1 - this->R_Throat / r) * (1 - this->R_Throat / r)) * (this->R_Throat / r2);
     this->s_dr_Metric.Metric[2][2] = 2 * r;
     this->s_dr_Metric.Metric[3][3] = 2 * r * sin_theta * sin_theta;
-
-    return OK;
-}
-
-Metric_type Wormhole_class::get_dr_metric(double State_vector[]) {
-
-    this->update_dr_metric(State_vector);
 
     return this->s_dr_Metric;
 }
 
-int Wormhole_class::update_dtheta_metric(double State_Vector[]) {
+Metric_type Wormhole_class::get_dtheta_metric(const double* const State_Vector) {
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    double exponent = -MASS / r - WH_REDSHIFT * MASS * MASS / r2;
+    double exponent = -this->Mass / r - this->Redshift_Param * this->Mass * this->Mass / r2;
+
+    memset(&this->s_dtheta_Metric, 0, sizeof(this->s_dtheta_Metric));
 
     this->s_dtheta_Metric.Lapse_function = 0.0;
     this->s_dtheta_Metric.Shift_function = 0.0;
@@ -129,49 +115,38 @@ int Wormhole_class::update_dtheta_metric(double State_Vector[]) {
     this->s_dtheta_Metric.Metric[2][2] = 0.0;
     this->s_dtheta_Metric.Metric[3][3] = 2 * r2 * sin_theta * cos_theta;
 
-    return OK;
-}
-
-Metric_type Wormhole_class::get_dtheta_metric(double State_vector[]) {
-
-    this->update_metric(State_vector);
-
     return this->s_Metric;
 }
 
-int Wormhole_class::update_d2r_metric(double State_Vector[]) {
+Metric_type Wormhole_class::get_d2r_metric(const double* const State_Vector) {
 
-    Metric_type s_Metric    = this->get_metric(State_Vector);
+    Metric_type s_Metric = this->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
 
-    double& r = State_Vector[e_r];
-    double& theta = State_Vector[e_theta];
+    const double& r = State_Vector[e_r];
+    const double& theta = State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    double& N        = this->s_Metric.Lapse_function;
-    double& dr_N     = this->s_dr_Metric.Lapse_function;
-    double& omega    = this->s_Metric.Shift_function;
+    double& N = this->s_Metric.Lapse_function;
+    double& dr_N = this->s_dr_Metric.Lapse_function;
+    double& omega = this->s_Metric.Shift_function;
     double& dr_omega = this->s_dr_Metric.Shift_function;
 
-    this->s_d2r_Metric.Lapse_function = dr_N * (1 / r2 + 2 * WH_REDSHIFT / (r2 * r)) - N * (2. / (r2 * r) + 6 * WH_REDSHIFT / (r2 * r2));
+    memset(&this->s_d2r_Metric, 0, sizeof(this->s_d2r_Metric));
+
+    this->s_d2r_Metric.Lapse_function = dr_N * (1 / r2 + 2 * this->Redshift_Param / (r2 * r)) - N * (2. / (r2 * r) + 6 * this->Redshift_Param / (r2 * r2));
     this->s_d2r_Metric.Shift_function = -3 * dr_omega / r + 3 * omega / r2;
 
-    this->s_d2r_Metric.Metric[0][0] = -2 * dr_N * dr_N - 2 * N * this->s_d2r_Metric.Lapse_function + 2 * ((omega + r * dr_omega) * (omega + r * dr_omega) + 
-                                      r * omega * (dr_omega + dr_omega + r * this->s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
-     this->s_d2r_Metric.Metric[0][3] = -(2 * omega + r * dr_omega + r * (3 * dr_omega + r * this->s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
-     this->s_d2r_Metric.Metric[3][0] = this->s_d2r_Metric.Metric[0][3];
-     this->s_d2r_Metric.Metric[1][1] = 2 / ((1 - WH_R_THROAT / r) * (1 - WH_R_THROAT / r)) * ((WH_R_THROAT / r2) * (WH_R_THROAT / r2) / (1 - WH_R_THROAT / r) + WH_R_THROAT / (r2 * r));
-     this->s_d2r_Metric.Metric[2][2] = 2.0;
-     this->s_d2r_Metric.Metric[3][3] = 2 * sin_theta * sin_theta;
+    this->s_d2r_Metric.Metric[0][0] = -2 * dr_N * dr_N - 2 * N * this->s_d2r_Metric.Lapse_function + 2 * ((omega + r * dr_omega) * (omega + r * dr_omega) +
+        r * omega * (dr_omega + dr_omega + r * this->s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
+    this->s_d2r_Metric.Metric[0][3] = -(2 * omega + r * dr_omega + r * (3 * dr_omega + r * this->s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
+    this->s_d2r_Metric.Metric[3][0] = this->s_d2r_Metric.Metric[0][3];
+    this->s_d2r_Metric.Metric[1][1] = 2 / ((1 - this->R_Throat / r) * (1 - this->R_Throat / r)) * ((this->R_Throat / r2) * (this->R_Throat / r2) / (1 - this->R_Throat / r) + this->R_Throat / (r2 * r));
+    this->s_d2r_Metric.Metric[2][2] = 2.0;
+    this->s_d2r_Metric.Metric[3][3] = 2 * sin_theta * sin_theta;
 
-    return OK;
-}
-
-Metric_type Wormhole_class::get_d2r_metric(double State_vector[]) {
-
-    this->update_d2r_metric(State_vector);
 
     return this->s_d2r_Metric;
 }
@@ -179,8 +154,8 @@ Metric_type Wormhole_class::get_d2r_metric(double State_vector[]) {
 int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
 
-    double& r_obs = p_Initial_Conditions->init_Pos[e_r];
-    double& theta_obs = p_Initial_Conditions->init_Pos[e_theta];
+    double& r_obs = p_Initial_Conditions->Observer_params.distance;
+    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
 
     p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
     p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
@@ -202,30 +177,32 @@ int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_
 
 int Wormhole_class::get_EOM(double State_Vector[], double Derivatives[]) {
 
-    double sqrt_r2 = sqrt(State_Vector[e_r] * State_Vector[e_r] + WH_R_THROAT * WH_R_THROAT);
+    double sqrt_r2 = sqrt(State_Vector[e_r] * State_Vector[e_r] + this->R_Throat * this->R_Throat);
     double d_ell_r = State_Vector[e_r] / sqrt_r2;
 
     double& J = State_Vector[e_p_phi];
 
-    double omega = 2 * SPIN * MASS * MASS / sqrt_r2 / sqrt_r2 / sqrt_r2;
+    double omega = 2 * this->Spin_Param * this->Mass * this->Mass / sqrt_r2 / sqrt_r2 / sqrt_r2;
     double d_ell_omega = -3 * omega / sqrt_r2 * d_ell_r;
 
-    double exponent = -1 / sqrt_r2 - WH_REDSHIFT / (sqrt_r2 * sqrt_r2);
-    double N = exp(-MASS / sqrt_r2 - WH_REDSHIFT * MASS * MASS / sqrt_r2 / sqrt_r2);
-    double d_ell_N = N * (1 / (sqrt_r2 * sqrt_r2) + 2 * WH_REDSHIFT / (sqrt_r2 * sqrt_r2 * sqrt_r2)) * d_ell_r;
+    double exponent = -1 / sqrt_r2 - this->Redshift_Param / (sqrt_r2 * sqrt_r2);
+    double N = exp(-this->Mass / sqrt_r2 - this->Redshift_Param * this->Mass * this->Mass / sqrt_r2 / sqrt_r2);
+    double d_ell_N = N * (1 / (sqrt_r2 * sqrt_r2) + 2 * this->Redshift_Param / (sqrt_r2 * sqrt_r2 * sqrt_r2)) * d_ell_r;
 
     double N2 = N * N;
 
     double sin1 = sin(State_Vector[e_theta]);
     double sin2 = sin1 * sin1;
 
-    *(Derivatives + e_r) = 1.0 / (1 + WH_R_THROAT / sqrt_r2) * State_Vector[e_p_r];
+    *(Derivatives + e_t) = -1.0 / N / N * State_Vector[e_p_r];
+    *(Derivatives + e_r) = 1.0 / (1 + this->R_Throat / sqrt_r2) * State_Vector[e_p_r];
     *(Derivatives + e_theta) = 1.0 / (sqrt_r2 * sqrt_r2) * State_Vector[e_p_theta];
     *(Derivatives + e_phi) = J / (sqrt_r2 * sqrt_r2 * sin2) + omega * (1 - omega * J) / N2;
     *(Derivatives + e_p_phi) = 0.0;
     *(Derivatives + e_p_theta) = (cos(State_Vector[e_theta]) / sin1) / (sqrt_r2 * sqrt_r2) * J * J / sin2;
+    *(Derivatives + e_p_t) = 0.0;
 
-    double term_1 = -1.0 / ((1 + WH_R_THROAT / sqrt_r2) * (1 + WH_R_THROAT / sqrt_r2)) * WH_R_THROAT * State_Vector[e_r] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * State_Vector[e_p_r] * State_Vector[e_p_r] / 2;
+    double term_1 = -1.0 / ((1 + this->R_Throat / sqrt_r2) * (1 + this->R_Throat / sqrt_r2)) * this->R_Throat * State_Vector[e_r] / (sqrt_r2 * sqrt_r2 * sqrt_r2) * State_Vector[e_p_r] * State_Vector[e_p_r] / 2;
     double term_2 = 1.0 / (sqrt_r2 * sqrt_r2 * sqrt_r2) * (State_Vector[e_p_theta] * State_Vector[e_p_theta] + J * J / sin2) * d_ell_r;
     double term_3 = -(1.0 / (N2 * N) * d_ell_N * ((1 - omega * J) * (1 - omega * J)) - 1.0 / N2 * (-d_ell_omega * (1 - omega * J) * J));
 
@@ -236,11 +213,11 @@ int Wormhole_class::get_EOM(double State_Vector[], double Derivatives[]) {
 
 bool Wormhole_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool scatter            = State_vector[e_r] >  sqrt(100 * 100 + WH_R_THROAT * WH_R_THROAT) && Derivatives[0] < 0;
-    bool scatter_other_side = State_vector[e_r] < -sqrt(100 * 100 + WH_R_THROAT * WH_R_THROAT);
+    bool scatter            = State_vector[e_r] >  sqrt(100 * 100 + this->R_Throat * this->R_Throat) && Derivatives[e_r] < 0;
+    bool scatter_other_side = State_vector[e_r] < -sqrt(100 * 100 + this->R_Throat * this->R_Throat);
     bool stop_at_throat     = State_vector[e_r] < 1e-5;
 
-    if (STOP_AT_THROAT) {
+    if (this->Stop_at_Throat) {
 
         return scatter || stop_at_throat;
     }
@@ -250,3 +227,46 @@ bool Wormhole_class::terminate_integration(double State_vector[], double Derivat
 
     }
 };
+
+bool Wormhole_class::load_parameters(Metric_parameters_type Metric_Parameters) {
+
+    if (!isnan(Metric_Parameters.Spin) &&
+        !isnan(Metric_Parameters.Redshift_Parameter)) {
+
+        this->Spin_Param = Metric_Parameters.Spin;
+        this->Redshift_Param = Metric_Parameters.Redshift_Parameter;
+        this->Stop_at_Throat = Metric_Parameters.Stop_At_Throat;
+
+        return true;
+
+    }
+
+    return false;
+
+}
+
+void Wormhole_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
+
+
+    if (Spin != Parameter && WH_Redshift != Parameter) {
+
+        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'this->Spin_Param' or 'this->Redshift_Param'! Defaulting to 'this->Redshift_Param'..." << "\n";
+
+        this->Redshift_Param = Param_value;
+
+        return;
+
+    }
+
+    if (Spin == Parameter) {
+
+        this->Spin_Param = Param_value;
+
+    }
+    else {
+
+        this->Redshift_Param = Param_value;
+
+    }
+
+}

@@ -1,18 +1,9 @@
-#pragma once
+struct Simulation_Context_type;
 
-#ifndef SIM_MODES
+void run_simulation_mode_1(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results);
 
-	#define SIM_MODES
+void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results);
 
-	struct Initial_conditions_type;
+void run_simulation_mode_3(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results);
 
-	void run_simulation_mode_1(Initial_conditions_type* s_Initial_Conditions);
-
-	void run_simulation_mode_2(Initial_conditions_type* s_Initial_Conditions);
-
-	void run_simulation_mode_3(Initial_conditions_type* s_Initial_Conditions);
-
-	void run_simulation_mode_4(Initial_conditions_type* s_Initial_Conditions);
-
-#endif
 

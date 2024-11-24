@@ -16,7 +16,10 @@ class Schwarzschild:
         g_thth   = r ** 2
         g_phiphi = g_thth * np.sin(theta)**2
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
 
     def photon_sphere(self):
 
@@ -43,8 +46,10 @@ class Regular_Black_Hole:
         g_thth   = r_eff ** 2
         g_phiphi = g_thth * np.sin(theta)**2
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
-
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
     def photon_sphere(self):
 
         return np.sqrt( (3 * self.MASS)**2 - self.PARAMETER**2 )
@@ -62,28 +67,46 @@ class Wormhole:
         self.HAS_PHOTON_SPHERE = True
         self.HAS_R_OF_B = False
 
-    def metric(self, r_global, theta) -> np.array:
+    def metric(self, r, theta, use_global_coords: bool = True) -> np.array:
 
-        #------------------------------------------------------------------------#
-        #                                                                        #
-        #   Metric uses global coordinates - the range of ell is [-inf, + inf]   #
-        #                                                                        #
-        #------------------------------------------------------------------------#
 
-        r = np.sqrt(r_global**2 + self.R_THROAT**2)
+        if use_global_coords:
+                
+            """
+            The metric uses global coordinates - the range of ell is [-inf, + inf] 
+            
+            """
 
-        g_tt = -np.exp(-2 * self.MASS/ r - 2 * self.PARAMETER * (self.MASS / r)**2)
-        g_rr = 1 + self.R_THROAT / r
-        g_thth   = r_global**2 + self.R_THROAT**2
-        g_phiphi = g_thth * np.sin(theta)**2
+            ell = r
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
+            r = np.sqrt(ell**2 + self.R_THROAT**2)
 
-    def photon_sphere(self):
+            g_tt = -np.exp(-2 * self.MASS/ r - 2 * self.PARAMETER * (self.MASS / r)**2)
+            g_rr = 1 + self.R_THROAT / r
+            g_thth   = r**2
+            g_phiphi = g_thth * np.sin(theta)**2
+
+        else:
+
+            g_tt = -np.exp(-2 * self.MASS/ r - 2 * self.PARAMETER * (self.MASS / r)**2)
+            g_rr = 1 / (1 - self.R_THROAT / r)
+            g_thth   = r**2
+            g_phiphi = g_thth * np.sin(theta)**2
+
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
+
+    def photon_sphere(self, use_global_coords: bool = True):
 
         r_ph = self.MASS / 2 * (1 + np.sqrt(1 + 8 * self.PARAMETER))
 
-        return np.sqrt(r_ph**2 - self.R_THROAT**2)
+        if use_global_coords:
+            return np.sqrt(r_ph**2 - self.R_THROAT**2)
+        
+        else:
+            return r_ph
 
     def ISCO(self):
 
@@ -109,15 +132,16 @@ class JNW_Naked_Singularity:
 
         g_tt = -pow(1 - r_singularity / r, self.PARAMETER)
 
-        if g_tt != 0:
-            g_rr = - 1 / g_tt
-        else:
-            g_rr = np.inf
-
+        g_rr = - 1 / g_tt
+        
+     
         g_thth   = r**2 * pow(1 - r_singularity / r, 1 - self.PARAMETER) 
         g_phiphi = g_thth * np.sin(theta)**2
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
 
     def photon_sphere(self):
 
@@ -165,7 +189,9 @@ class JNW_Naked_Singularity:
 
             # Calculate the impact parameters for the correspoinding turning points
 
-            higher_order_impact_params  = np.sqrt(-metrics_at_turning_points[3] / metrics_at_turning_points[0])
+            test = -metrics_at_turning_points.T[3] / metrics_at_turning_points.T[0]
+
+            higher_order_impact_params  = np.sqrt(-metrics_at_turning_points.T[3] / metrics_at_turning_points.T[0])
 
         else:
 
@@ -235,7 +261,10 @@ class Gaus_Bonnet_Naked_Singularity:
         g_thth = r**2
         g_phiphi = g_thth * np.sin(theta)**2
 
-        return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        if type(r) != np.ndarray:
+            return np.array([g_tt, g_rr, g_thth, g_phiphi])
+        else:
+            return np.column_stack([g_tt, g_rr, g_thth, g_phiphi])
     
     def photon_sphere(self):
 
@@ -272,8 +301,9 @@ class Gaus_Bonnet_Naked_Singularity:
         #-------- Calculate the impact parameters for the correspoinding turning points --------#
         
         higher_order_turning_points = []
+        higher_order_impact_params_to_return = []
 
-        for impact_param in higher_order_impact_params:
+        for index, impact_param in enumerate(higher_order_impact_params):
 
             a = (impact_param**2 / 2 / self.PARAMETER - 1)**2 - impact_param**4 / 4 / self.PARAMETER**2
             b = 0
@@ -287,6 +317,10 @@ class Gaus_Bonnet_Naked_Singularity:
             roots = roots[np.abs(np.imag(roots)) < 1e-14]
             roots = np.real(roots)
             roots = roots[roots > 0]
+            # roots = roots[roots < self.photon_sphere()]
+
+            if self.PARAMETER <= 1 and max(roots) < self.photon_sphere():
+                continue
 
             if len(roots) == 0:
                 higher_order_turning_points.append(1e-10)      
@@ -295,4 +329,6 @@ class Gaus_Bonnet_Naked_Singularity:
             else:
                 higher_order_turning_points.append(np.min(roots))
 
-        return higher_order_impact_params, higher_order_turning_points
+            higher_order_impact_params_to_return.append(impact_param)
+
+        return higher_order_impact_params_to_return, higher_order_turning_points

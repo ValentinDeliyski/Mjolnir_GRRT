@@ -1,130 +1,352 @@
 #pragma once
+#include "Enumerations.h"
+#include <string>
 
-#ifndef STRUCTS
+struct Disk_model_parameters_type {
 
-    #define STRUCTS
-    #include "Constants.h"
-    #include <vector>
+    Ensamble_enums Ensamble_type;
+    Profile_enums Density_profile_type;
+    Profile_enums Temperature_profile_type;
+    Velocity_enums Velocity_profile_type;
 
-    struct Disk_model_parameters {
+    double Electron_density_scale;
+    double Electron_temperature_scale;
+    double Magnetization;
 
-        /* --- Hotspot Parameters --- */
+    double Mag_field_geometry[3];
 
-        double Hotspot_position[3];
-        double Hotspot_spread;
-        double Hotspot_scale;
+    /* ----------- Power law density profile parameters ----------- */
 
-        /* --- Density Parameters --- */
+    double Power_law_disk_opening_angle;
+    double Power_law_density_R_0;
+    double Power_law_density_R_cutoff;
+    double Power_law_density_cutoff_scale;
+    double Power_law_density_radial_power_law;
 
-        double Density_scale;
+    /* -------- Exponential law density profile parameters ------- */
 
-        /* Power Law Profile Parameters */
+    double Exp_law_density_height_scale;
+    double Exp_law_density_radial_scale;
 
-        double Disk_opening_angle;
-        double Disk_cutoff_scale;
-        double Disk_r_cutoff;
-        double Power_law_radial_scale;
+    /* --------- Power law temperature profile parameters -------- */
 
-        /* Exponential Law Profile Parameters */
+    double Power_law_temperature_R_0;
+    double Power_law_temperature_R_cutoff;
+    double Power_law_temperature_cutoff_scale;
+    double Power_law_temperature_radial_power_law;
 
-        double Exp_law_height_scale;
-        double Exp_law_radial_scale;
+    /* -------- Exponential law temperature profile parameters ------- */
 
-        /* Temperature Parameters */
+    double Exp_law_temperature_height_scale;
+    double Exp_law_temperature_radial_scale;
 
-        double Temperature_scale;
+};
 
-        /* Magnetic Field Parameters */
+struct Magnetic_fields_type {
 
-        double Magnetization;
+    double B_field_plasma_frame[4];
+    double B_field_coord_frame[4];
+    double B_field_plasma_frame_norm;
 
-    };
+};
 
-    struct Emission_law_parameters {
+struct Hotspot_model_parameters_type {
 
-        /* Phenomenological emission model parameters */
+    /* Specifies the statistical ensamble of the hotspot. */
+    Ensamble_enums Ensamble_type; 
 
-        double Emission_scale;
-        double Absorbtion_coeff;    
-        double Emission_power_law;  // emission   ~ pow( redshity, EMISSION_POWER_LAW )
-        double Source_f_power_law;  // absorbtion ~ pow( redshity, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
-        
-    };
+    /* Specifies the density profile of the hotspot. The current supported profiles are:
+        - Gaussian
+        - Sphere with a constant Radius  */
+    Profile_enums Density_profile_type; 
 
-    struct Precomputed_e_pitch_angles {
+    /* Specifies the temperature profile of the hotspot. The current supported profiles are:
+        - Gaussian
+        - Sphere with a constant Radius */
+    Profile_enums Temperature_profile_type; 
 
-        double sin_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
-        double cos_electron_pitch_angles[NUM_SAMPLES_TO_AVG]{};
-        double one_over_sqrt_sin[NUM_SAMPLES_TO_AVG];
-        double one_over_cbrt_sin[NUM_SAMPLES_TO_AVG];
-        double one_over_sin_to_1_point_035[NUM_SAMPLES_TO_AVG];
-        double one_over_sin_to_1_point_2_over_2[NUM_SAMPLES_TO_AVG];
-    };
+    /* Specifies the velocity profile of the hotspot. */
+    Velocity_enums Velocity_profile_type;  
 
-    struct Emission_functions_arguments {
+    /* The hotspot potision, specified as [Distance, Polar Angle, Azimuth Angle] */
+    double Position[3]; 
 
-        double X_emission;
-        double X_1_2_emission;
-        double X_1_3_emission;
-        double X_faradey;
-        double X_to_1_point_035_faradey;
-        double X_to_1_point_2_faradey;
+    /* The hotspot is modelled as a localized Gaussian overdensity.
+     * The density, temperature and overall time evolution profiles are specified with
+     * their respective standard deviations.
+     */
 
-    };
+     /* Standard deviation of the Gaussian density profile. */
+    double Density_spread;     
 
-    struct Metric_type {
+    /* Standard deviation of the Gaussian temperature profile. */
+    double Temperature_spread; 
 
-        double Metric[4][4];
-        double Lapse_function;
-        double Shift_function;
+    /* Standard deviation of the Gaussian temporal profile. Setting this to zero ignores the time 
+       evolution of the hotspot profile. */
+    double Temporal_spread;   
 
-    };
+    /* Radius of the hotspot. Only affects the Spherical profile. */
+    double Radius; 
 
-    class Spacetime_Base_Class;
-    class Optically_Thin_Toroidal_Model;
-    class Novikov_Thorne_Model;
+    /* Coordinate time of maximum hotspot emission */
+    double Coord_time_at_max; 
 
-    struct Initial_conditions_type {
+    /* The peak density value. */
+    double Electron_density_scale;     
 
-        double init_metric[4][4];
-        double init_metric_Redshift_func;
-        double init_metric_Shitft_func;
+    /* The peak temperature value. */
+    double Electron_temperature_scale; 
 
-        double init_Pos[3];
-        double init_Three_Momentum[3];
+    /* The hotspot magnetization value. */
+    double Magnetization;   
 
-        Spacetime_Base_Class* Spacetimes[SPACETIME_NUMBER];
-        Optically_Thin_Toroidal_Model* OTT_model;
-        Novikov_Thorne_Model* NT_model;
+    /* The constant magnetic field geometry in the plasma rest frame.
+       The components are specified as [B_r, B_theta, B_phi]. */
+    double Mag_field_geometry[3];
 
-    };
+};
 
-    struct s_Ray_log_type {
+struct Emission_model_parameters_type {
 
-        double Ray_path_log[MAX_INTEGRATION_COUNT * e_path_log_number];
-        double Ray_emission_log[MAX_INTEGRATION_COUNT * 2][STOKES_PARAM_NUM];
-        int Log_offset{};
-        int Log_length{};
+    // --------------- Thermal Synchotron Model --------------- //
+    // It is fully determined by the electron density and temperature
 
-    };
+    // ----------- Phenomenological Synchotron Model ---------- //
 
-    struct Results_type {
+    double Phenomenological_emission_coeff;
+    double Phenomenological_absorbtion_coeff;
+    double Phenomenological_emission_power_law;  // emission   ~ pow( redshift, EMISSION_POWER_LAW )
+    double Phenomenological_source_f_power_law;  // absorbtion ~ pow( redshift, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
 
-        double Flux_NT[ORDER_NUM]{};
-        double Redshift_NT[ORDER_NUM]{};
+    // ---------------- Kappa Synchotron Model ---------------- //
 
-        double Intensity[ORDER_NUM][STOKES_PARAM_NUM]{};
-        double Optical_Depth{};
+    double Kappa;
+};
 
-        double Source_Coords[3][ORDER_NUM]{};
-        double Three_Momentum[3][ORDER_NUM]{};
+struct Metric_parameters_type {
 
-        double Image_Coords[2]{};
+    Spacetime_enums e_Spacetime;
 
-        s_Ray_log_type Ray_log_struct;
+    /* ============ Wormhole Specific Parameters ============ = */
 
-        double Parameters[SPACETIME_NUMBER]{};
+    double Redshift_Parameter;
+    double R_throat;
+    bool Stop_At_Throat;
 
-    };
+    /* ============ Janis-Newman-Winicour Specific Parameters ============ = */
 
-#endif
+    double JNW_Gamma_Parameter;
+    
+    /* ============ Gauss-Bonnet Specific Parameters ============ = */
+
+    double GB_Gamma_Parameter;
+
+    /* ============ Regular Black Hole Specific Parameters ============ = */
+
+    double RBH_Parameter;
+
+    /* ============ Black Hole w Dark Matter Halo Specific Parameters ============ = */
+
+    double Compactness;
+    double Halo_Mass;
+
+    /* ============ Generic Parameters ============ = */
+
+    double Spin; // Only affects Kerr and the Wormhole
+
+};
+
+struct Precomputed_e_pitch_angles {
+
+    double* sin_electron_pitch_angles;
+    double* cos_electron_pitch_angles;
+
+    // Used in the thermal synchotron emission functions
+
+    double* one_over_sqrt_sin;
+    double* one_over_cbrt_sin;
+
+    // Used in the thermal synchotron Faradey functions
+
+    double* one_over_sin_to_1_point_035;
+    double* one_over_sin_to_1_point_2_over_2;
+
+    // Used in the kappa synchotron emission functions
+
+    double* one_over_sin_to_7_over_20;
+};
+
+struct Thermal_emission_f_arguments {
+
+    double X;
+    double sqrt_X;
+    double cbrt_X;
+    double frequency;
+
+};
+
+struct Thermal_faradey_f_arguments {
+
+    double X;
+    double X_to_1_point_035;
+    double X_to_1_point_2;
+    double frequency;
+
+};
+
+struct Kappa_transfer_f_arguments {
+
+    double X;
+    double sqrt_X;
+    double cbrt_X;
+    double X_to_7_over_20;
+    double kappa;
+    double sin_emission_angle;
+    double T_electron_dim;
+
+};
+
+struct Metric_type {
+
+    double Metric[4][4];
+    double Lapse_function;
+    double Shift_function;
+
+};
+
+struct Integrator_parameters_type {
+
+    Step_controller_type_enums Controller_type;
+
+    double PID_gain_I;
+    double PID_gain_P;
+    double PID_gain_D;
+    double Gustafsson_k1;
+    double Gustafsson_k2;
+    double Max_rel_step_increase;
+    double Min_rel_step_increase;
+    double Init_stepzie;
+    double RK_45_accuracy;
+    double Safety_1;
+    double Safety_2;
+    double Simpson_accuracy;
+    int Max_integration_count;
+
+};
+
+struct Observer_parameters_type {
+
+    double distance;
+    double inclination;
+    double azimuth;
+
+    double x_min;
+    double x_max;
+    double y_min;
+    double y_max;
+
+    int resolution_x;
+    int resolution_y;
+
+    double obs_frequency;
+    double cam_rotation_angle;
+
+    bool include_polarization;
+
+};
+
+struct NT_parameters_type {
+
+    double r_in;
+    double r_out;
+    bool evaluate_NT_disk;
+
+};
+
+struct File_manager_parameters {
+
+    std::string Sim_mode_2_imput_path;
+    std::string Output_file_directory;
+    std::string Common_file_names;
+    std::string Vert_shader_path;
+    std::string Frag_shader_path;
+    std::string Simulation_name;
+    bool Truncate_files;
+
+};
+
+struct Initial_conditions_type {
+
+    int Simulation_mode;
+    int Sim_mode_2_param_value_number;
+    int Emission_pitch_angle_samples_to_average;
+    bool Average_electron_pitch_angle;
+    double Sim_mode_3_X_init;
+    double Sim_mode_3_Y_init;
+
+    double init_metric[4][4];
+    double init_metric_Redshift_func;
+    double init_metric_Shitft_func;
+    double init_Three_Momentum[4];
+    double central_object_mass;
+
+    Disk_model_parameters_type Disk_params;
+    Hotspot_model_parameters_type Hotspot_params;
+    Emission_model_parameters_type Emission_params;
+    Metric_parameters_type Metric_params;
+    Integrator_parameters_type Integrator_params;
+    Observer_parameters_type Observer_params;
+    NT_parameters_type NT_params;
+    File_manager_parameters File_manager_params;
+
+
+};
+
+class Spacetime_Base_Class;
+class Generic_Optically_Thin_Model;
+class Novikov_Thorne_Model;
+class Observer_class;
+class File_manager_class;
+
+struct Simulation_Context_type {
+
+    Initial_conditions_type* p_Init_Conditions;
+
+    Spacetime_Base_Class* p_Spacetime;
+    Observer_class*       p_Observer;
+
+    Generic_Optically_Thin_Model* p_GOT_Model;
+    Novikov_Thorne_Model* p_NT_model;
+
+    File_manager_class* File_manager;
+
+};
+
+struct s_Ray_log_type {
+
+    double *Ray_path_log;
+    double *Ray_emission_log[4];
+    int Log_offset;
+    int Log_length;
+
+};
+
+struct Results_type {
+
+    double Flux_NT[ORDER_NUM]{};
+    double Redshift_NT[ORDER_NUM]{};
+
+    double Intensity[ORDER_NUM][STOKES_PARAM_NUM]{};
+    double Optical_Depth{};
+
+    double Source_Coords[4][ORDER_NUM]{};
+    double Photon_Momentum[4][ORDER_NUM]{};
+
+    double Image_Coords[2]{};
+
+    s_Ray_log_type Ray_log_struct;
+
+    Metric_parameters_type Parameters{};
+
+};

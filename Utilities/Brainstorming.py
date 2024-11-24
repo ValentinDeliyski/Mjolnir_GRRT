@@ -1,73 +1,133 @@
-import numpy as np
-from scipy.optimize import root_scalar
-
 import matplotlib.pyplot as plt
+import matplotlib
+import numpy as np
+from scipy.optimize import brentq
 
-r_ISCO = np.zeros((5000,5000))
-M_index = 0
-fig1 = plt.figure()
-fig1 = fig1.add_subplot(111)
-# fig2 = plt.figure()
-# fig2 = fig2.add_subplot(111)
+def JNW_ms_orbit_condition(r: float, gamma: float) -> float:
 
-COLORS = ["b", "k"]
+    b = 2 / gamma
 
-for M in [1e2, 1e4]:
+    if r < b:
+        return 100
 
-    compactness_list = np.linspace(1e-4, 1e-0, 5000)
+    return (1 - gamma) * (1 - b / r)**gamma * b + 2 * (1 - b / r)**(gamma + 1) * r + (2 * gamma + 1) * b - 2 * r
 
-    i = 0
+def get_JNW_ISCO(gamma: float, direction: int) -> float:
 
-    for compactness in compactness_list:
+    return 1 / gamma * (3 * gamma + 1 + direction * np.sqrt(5 * gamma**2 - 1))
 
-        a_0 = M / compactness
+def get_JNW_r_ph(gamma: float) -> float:
 
-        def f(r):
+    b = 2 / gamma
 
-            ksi = 2 * a_0 - M + 4
-            Y = np.sqrt(M / ksi) * (2 * np.arctan((r + a_0 + M) / np.sqrt(M * ksi)) - np.pi)
+    return (2 * gamma + 1) * b / 2
 
-            return (1 - 2 / r) * np.exp(Y)
+gamma_range = np.linspace(1 / np.sqrt(5) + 1e-10, 1, 10000)
 
-        def dr_f(r):
+r_ms = []
+r_ph = []
+r_ISCO_outer = []
+r_ISCO_inner = []
+gamma_plot_r_ms = []
+gamma_plot_r_ph = []
+gamma_plot_r_ISCO_inner = []
 
-            ksi = 2 * a_0 - M + 4
-            Y = np.sqrt(M / ksi) * (2 * np.arctan((r + a_0 + M) / np.sqrt(M * ksi)) - np.pi)
-            dr_Y = 2 / ksi / (1 + (r + a_0 + M)**2 / M / ksi) 
+for gamma in gamma_range:
 
-            return 2 / r**2 * np.exp(Y) + f(r) * dr_Y
+    r_ISCO_outer.append(get_JNW_ISCO(gamma, 1))
 
-        def d2r_f(r):
+    solution = get_JNW_ISCO(gamma, -1)
 
-            ksi = 2 * a_0 - M + 4
-            Y = np.sqrt(M / ksi) * (2 * np.arctan((r + a_0 + M) / np.sqrt(M * ksi)) - np.pi)
-            dr_Y = 2 / ksi / (1 + (r + a_0 + M)**2 / M / ksi) 
-            d2r_Y = - 2 / ksi / (1 + (r + a_0 + M)**2 / M / ksi)**2 * 2 * (r + a_0 + M) / M / ksi
+    if solution > 2 / gamma:
+        r_ISCO_inner.append(solution)
+        gamma_plot_r_ISCO_inner.append(gamma)
 
-            return 2 / r**2 * np.exp(Y) * dr_Y - 4 / r**3 * np.exp(Y) + dr_f(r) * dr_Y + f(r) * d2r_Y
-        
-        def Isco_condition(r):
+    solution = get_JNW_r_ph(gamma)
 
-            return d2r_f(r) + 3 * dr_f(r) / r - 2 * dr_f(r)**2 / f(r)
+    if solution > 2 / gamma:
+        gamma_plot_r_ph.append(gamma)
+        r_ph.append(solution)
 
-        r_ISCO[M_index][i] = root_scalar(Isco_condition, x0 = 6, x1 = 5).root
+    try:
+        solution = brentq(JNW_ms_orbit_condition, args = gamma, a = 4, b = 10, xtol= 1e-10)
 
-        i = i + 1
+        if solution > (2 / gamma) + 1e-10:
+            r_ms.append(solution)
+            gamma_plot_r_ms.append(gamma)
 
-    fit = np.polyfit(compactness_list, r_ISCO[M_index], 10)
-    poly = np.poly1d(fit)
+    except:
+        continue
 
-    fit_plot = []
+cmap = matplotlib.colormaps['plasma']
 
-    for x in compactness_list:
-        fit_plot.append(poly(x))
+# ================================================================================================================================================= #
 
-    fig1.plot(compactness_list, fit_plot, COLORS[M_index])
-    fig1.plot(compactness_list, r_ISCO[M_index],'r')
-    print(fit)
+gamma_plot_r_ISCO_inner.insert(0, gamma_range[0])
+r_ISCO_inner.insert(0, r_ISCO_outer[0])
 
-    M_index = M_index + 1
+dx    = gamma_plot_r_ISCO_inner[int(len(r_ISCO_inner) / 4)] - gamma_plot_r_ISCO_inner[int(len(r_ISCO_inner) / 4 - 1)]
+dy    = r_ISCO_inner[int(len(r_ISCO_inner) / 4)] - r_ISCO_inner[int(len(r_ISCO_inner) / 4 - 1)]
+angle = np.rad2deg(np.arctan2(dy, dx))
 
-print(poly(0.5))
+plt.text(gamma_plot_r_ISCO_inner[int(len(r_ISCO_inner) / 4)], r_ISCO_inner[int(len(r_ISCO_inner) / 4)] + 0.1, r'$r_-$', ha='left', va='bottom',
+         transform_rotates_text=True, rotation=angle, rotation_mode='anchor')
+
+plt.plot(gamma_plot_r_ISCO_inner, r_ISCO_inner, color = "black")
+
+plt.plot(gamma_plot_r_ISCO_inner[-1], r_ISCO_inner[-1], "o", color = "red")
+
+# ================================================================================================================================================= #
+
+dx    = gamma_range[int(len(r_ISCO_outer) / 2)] - gamma_range[int(len(r_ISCO_outer) / 2 - 1)]
+dy    = r_ISCO_outer[int(len(r_ISCO_outer) / 2)] - r_ISCO_outer[int(len(r_ISCO_outer) / 2 - 1)]
+angle = np.rad2deg(np.arctan2(dy, dx))
+
+plt.text(gamma_range[int(len(r_ISCO_outer) / 2)], r_ISCO_outer[int(len(r_ISCO_outer) / 2)], r'$r_+$', ha='left', va='bottom',
+         transform_rotates_text=True, rotation=angle, rotation_mode='anchor')
+
+plt.plot(gamma_range, r_ISCO_outer, color = "black")
+
+plt.plot(gamma_range[0], r_ISCO_outer[0], "o", color = "red")
+
+# ================================================================================================================================================= #
+
+dx    = gamma_range[int(len(r_ISCO_outer) / 2)]
+angle = np.rad2deg(np.arctan2(-2, gamma_range[int(len(r_ISCO_outer) / 2)] ** 2))
+
+plt.text(gamma_range[int(len(r_ISCO_outer) / 2)], 2 / gamma_range[int(len(r_ISCO_outer) / 2)], r'$r_{\text{cs}}$', ha='left', va='bottom',
+         transform_rotates_text=True, rotation=angle, rotation_mode='anchor')
+
+plt.plot(gamma_range, 2 / gamma_range, "--", color = 'red')
+
+# ================================================================================================================================================= #
+
+dx    = gamma_plot_r_ms[int(len(r_ms) / 1.5)] - gamma_plot_r_ms[int(len(r_ms) / 1.5 - 1)]
+dy    = r_ms[int(len(r_ms) / 1.5)] - r_ms[int(len(r_ms) / 1.5 - 1)]
+angle = np.rad2deg(np.arctan2(dy, dx))
+
+plt.text(gamma_range[int(len(r_ISCO_outer) / 2)], r_ms[int(len(r_ms) / 1.5)] + 0.15, r'$r_\text{ms}$', ha='left', va='bottom',
+         transform_rotates_text=True, rotation=angle, rotation_mode='anchor')
+
+plt.plot(gamma_plot_r_ms, r_ms)
+
+plt.plot(gamma_plot_r_ms[0], r_ms[0], "o", color = "blue")
+
+# ================================================================================================================================================= #
+
+dx    = gamma_plot_r_ph[int(len(r_ms) / 1.5)] - gamma_plot_r_ph[int(len(r_ms) / 1.5 - 1)]
+dy    = r_ph[int(len(r_ms) / 1.5)] - r_ph[int(len(r_ms) / 1.5 - 1)]
+angle = np.rad2deg(np.arctan2(dy, dx))
+
+plt.text(gamma_range[int(len(r_ISCO_outer) / 2)], r_ph[int(len(r_ph) / 1.5)] + 0.16, r'$r_\text{ph}$', ha='left', va='bottom',
+         transform_rotates_text=True, rotation=angle, rotation_mode='anchor')
+
+plt.plot(gamma_plot_r_ph, r_ph)
+
+plt.plot(gamma_plot_r_ph[0], r_ph[0], "o", color = "red")
+
+plt.xlabel(r"$\gamma\,[-]$", fontsize = 16)
+plt.ylabel(r"$r_\text{mb},\, [M]$", fontsize = 16)
+
+plt.xlim([1 / np.sqrt(5) - 0.01, 1])
 
 plt.show()

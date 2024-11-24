@@ -6,61 +6,78 @@
 
     enum Spacetime_enums {
 
-        Kerr			  = 0,
-        Wormhole		  = 1,
-        Reg_Black_Hole    = 2,
-        Naked_Singularity = 3,
-        Gauss_Bonnet      = 4,
-        BH_w_Dark_Matter  = 5,
-        SPACETIME_NUMBER  = 6
+        Kerr			      = 0,
+        Wormhole		      = 1,
+        Reg_Black_Hole        = 2,
+        Janis_Newman_Winicour = 3,
+        Einstein_Gauss_Bonnet = 4,
+        BH_w_Dark_Matter      = 5,
+        SPACETIME_NUMBER      = 6
 
     };
 
-    enum Emission_model_enums {
+    enum Step_controller_type_enums {
 
-        Synchotron_exact            = 0,
-        Synchotron_phenomenological = 1
+        PID = 0,
+        Gustafsson = 1
 
     };
 
-    enum Disk_density_model_enums {
+    enum Tensor_type_enums {
 
-        Power_law       = 0,
-        Exponential_law = 1
+        Covariant = 0,
+        Contravariant = 1
+
+    };
+
+    enum Emission_medium_enums {
+
+        Disk = 0,
+        Hotspot = 1,
+        Jet = 2
+
+    };
+
+    enum Ensamble_enums {
+
+        e_Thermal_ensamble          = 0,
+        e_Power_law_ensamble        = 1,
+        e_Kappa_ensamble            = 2,
+        e_Phenomenological_ensamble = 3,
+
+    };
+
+    enum Profile_enums {
+
+        e_Power_law_profile       = 0,
+        e_Exponential_law_profile = 1,
+        e_Gaussian_profile        = 2,
+        e_Spherical_profile       = 3,
+
+    };
+
+    enum Velocity_enums {
+
+        e_Keplarian = 0,
+        e_Theta_dependant = 1
 
     };
 
     enum State_enums {
 
-        e_r = 0,
-        e_theta = 1,
-        e_phi = 2,
-        e_p_phi = 3,
-        e_p_theta = 4,
-        e_p_r = 5,
-        e_State_Number = 6
+        e_t     = 0,
+        e_r     = 1,
+        e_theta = 2,
+        e_phi   = 3,
+    
+        e_p_t     = 4,
+        e_p_r     = 5,
+        e_p_theta = 6,
+        e_p_phi   = 7,
 
-    };
+        e_step    = 8,
 
-    enum Ray_path_log_enums {
-
-        e_path_log_r = 0,
-        e_path_log_theta = 1,
-        e_path_log_phi = 2,
-        e_path_log_p_phi = 3,
-        e_path_log_p_theta = 4,
-        e_path_log_p_r = 5,
-        e_path_log_step = 6,
-        e_path_log_number = 7
-
-    };
-
-    enum Spacetime_coords {
-
-        e_t_coord     = 0,
-        e_r_coord     = 1,
-        e_theta_coord = 2,
-        e_phi_coord   = 3
+        e_State_Number = 9,
 
     };
 
@@ -89,14 +106,6 @@
 
     };
 
-    enum Disk_Model{
-
-        Novikov_Thorne          = 0,
-        Optically_Thin_Toroidal = 1,
-        DISK_MODEL_NUM          = 2
-
-    };
-
     enum Orbit_select{
 
         Inner = 0,
@@ -112,7 +121,7 @@
 
     };
 
-    enum Sync_emission_fit_functions {
+    enum Thermal_Syncotron_fit_selector {
 
         Leung_2011  = 0,
         Dexter_2016 = 1
@@ -137,12 +146,15 @@
 
     };
 
-    enum Metric_Evaluation_Bitmask {
+    enum Metric_Parameter_Selector {
 
-        Metric = 0,
-        dr_Metric = 1,
-        dtheta_Metric = 2,
-        d2r_Metric = 3,
+        Spin = 0,
+        WH_Redshift = 1,
+        JNW_Gamma = 2,
+        GB_Gamma = 3,
+        RBH_Param = 4,
+        BH_w_DM_Halo_Compactness = 5,
+        BH_w_DM_Halo_M_Halo = 6
 
     };
 

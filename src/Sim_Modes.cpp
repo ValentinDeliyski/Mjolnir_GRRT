@@ -1,83 +1,103 @@
 #pragma once
+#include "IO_files.h"
+#include "Constants.h"
+#include "General_GR_functions.h"
+#include "Rendering_Engine.h"
+#include "Disk_models.h"
+#include "Lensing.h"
+#include <thread>
+#include "Spacetimes.h"
 
-#ifndef SIM_MODES
+#include <iostream>
 
-    #define SIM_MODES
+void static print_progress(int current, int max, bool lens_from_file) {
 
-    #include "IO_files.h"
-    #include "Constants.h"
-    #include "General_GR_functions.h"
-    #include "Rendering_Engine.h"
-    #include "Disk_models.h"
-    #include "Lensing.h"
-    #include <thread>
-    #include "Spacetimes.h"
+    int current_digits = 1;
 
-    #include <iostream>
+    if (current != 0) {
 
-    extern File_manager_class File_manager;
-
-    void static print_progress(int current, int max, bool lens_from_file) {
-
-        int current_digits = 1;
-
-        if (current != 0) {
-
-            current_digits = floor(log10f(current) + 1);
-
-        }
-
-        int max_digits = floor(log10f(max) + 1);
-
-        if (current == 0) {
-
-            if (lens_from_file) {
-
-                std::cout << "Number Of Rays Cast: ";
-
-            }
-            else {
-
-                std::cout << "Number Of Lines Scanned: ";
-
-            }
-
-            for (int i = 0; i <= max_digits + current_digits; i += 1) {
-
-                std::cout << "0";
-
-            }
-
-        }
-
-        for (int i = 0; i <= max_digits + current_digits + 1; i += 1) {
-
-            std::cout << "\b";
-
-        }
-
-        std::cout << current + 1 << "/" << max + 1 << " ";
+        current_digits = floor(log10(current) + 1);
 
     }
 
-    void static Rendering_function(Rendering_engine* Renderer) {
+    int max_digits = floor(log10(max) + 1);
 
-        Renderer->OpenGL_init();
-        glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);
+    if (current == 0) {
 
-        while (!glfwWindowShouldClose(Renderer->window)) {
+        if (lens_from_file) {
 
-            Renderer->renormalize_colormap();
+            std::cout << "Number Of Rays Cast: ";
 
-            Renderer->update_rendering_window();
+        }
+        else {
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            std::cout << "Number Of Lines Scanned: ";
+
+        }
+
+        for (int i = 0; i <= max_digits + current_digits; i += 1) {
+
+            std::cout << "0";
 
         }
 
     }
 
-    void static Generate_Image(Initial_conditions_type* s_Initial_Conditions, Rendering_engine* Renderer) {
+    for (int i = 0; i <= max_digits + current_digits + 1; i += 1) {
+
+        std::cout << "\b";
+
+    }
+
+    std::cout << current + 1 << "/" << max + 1 << " ";
+
+}
+
+void static Rendering_function(Rendering_engine* Renderer, Initial_conditions_type* p_Init_conditions) {
+
+    Renderer->OpenGL_init(p_Init_conditions);
+    glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);
+
+    while (!glfwWindowShouldClose(Renderer->window)) {
+
+        Renderer->renormalize_colormap();
+
+        Renderer->update_rendering_window();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    }
+
+}
+
+void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, Rendering_engine* const Renderer, Results_type* const p_Ray_results) {
+        
+        /*
+        
+        Referebces to some sim parameters for the sake of readability
+        
+        */
+
+        int& X_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_x;
+        int& Y_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_y;
+
+        double Y_angle_max = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.y_max, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+        double Y_angle_min = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.y_min, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+        double X_angle_max = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.x_max, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+        double X_angle_min = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.x_min, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+
+        // Having a non-even resolution means that for a symmetric observation window, there will be a vertical line of pixels that coorespond 
+        // to photons with zero azimuthal angular momentum. In that case the behavior of the theta and phi coordinates swap, and theta becomes unbounded.
+        // This causes sin(theta) to take on negative values, which breaks the radiative transfer. In such cases I offset the observation window slightly
+        // to cirmumvent this little hickup.
+        if (p_Sim_Context->p_Init_Conditions->Observer_params.resolution_x % 2 != 0) {
+
+            X_angle_max += X_angle_max * 1e-5;
+
+        }
+
+        double X_scan_step = (X_angle_max - X_angle_min) / (X_resolution - 1);
+        double Y_scan_step = (Y_angle_max - Y_angle_min) / (Y_resolution - 1);
 
         /*
 
@@ -85,7 +105,7 @@
 
         */
 
-        File_manager.open_image_output_files();
+        p_Sim_Context->File_manager->open_image_output_files();
 
         /*
 
@@ -98,13 +118,13 @@
 
         std::cout << '\n' << "Generating image..." << '\n';
 
-        for (int V_pixel_num = 0; V_pixel_num <= RESOLUTION - 1; V_pixel_num++) {
+        for (int V_pixel_num = 0; V_pixel_num <= Y_resolution - 1; V_pixel_num++) {
 
-            print_progress(progress, RESOLUTION - 1, false);
+            print_progress(progress, Y_resolution - 1, false);
 
             progress += 1;
 
-            for (int H_pixel_num = 0; H_pixel_num <= RESOLUTION - 1; H_pixel_num++) {
+            for (int H_pixel_num = 0; H_pixel_num <= X_resolution - 1; H_pixel_num++) {
 
                 /*
 
@@ -112,32 +132,51 @@
 
                 */
 
-                get_intitial_conditions_from_angles(s_Initial_Conditions, 
-                                                    V_angle_min + V_pixel_num * Scan_Step,
-                                                    H_angle_max - H_pixel_num * Scan_Step);
+                get_intitial_conditions_from_angles(p_Sim_Context->p_Init_Conditions,
+                                                    Y_angle_min + V_pixel_num * Y_scan_step,
+                                                    X_angle_max - H_pixel_num * X_scan_step);
+                
+                /*
+                
+                Ray propagation happens here
+                
+                */
+                
+                Propagate_ray(p_Sim_Context, p_Ray_results);
+                
+                /*
+                
+                Updating the visualization happens here
+                
+                */
 
-               /*
+                Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Intensity[direct][I] +
+                                                                                 p_Ray_results->Intensity[first][I] +
+                                                                                 p_Ray_results->Intensity[second][I] +
+                                                                                 p_Ray_results->Intensity[third][I];
 
-               Ray propagation happens here
+                Renderer->texture_indexer += 3;
 
-               */
+                /*
+                
+                Results logging happens here
+                
+                */
 
-               Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
+                p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
 
-               /*
 
-               Updating the visualization happens here
+                /*
+                
+                The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), and therefore not automatically re - initialized to 0s!
+                
+                */
 
-               */
-
-               Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = s_Ray_results->Intensity[direct][I] +
-                                                                              s_Ray_results->Intensity[first][I] +
-                                                                              s_Ray_results->Intensity[second][I] +
-                                                                              s_Ray_results->Intensity[third][I];
-
-               Renderer->texture_indexer += 3;
-
-               File_manager.write_image_data_to_file(s_Ray_results);
+                memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
+                memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+                memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
+                memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
 
             }
 
@@ -148,22 +187,20 @@
         std::cout << '\n' << "Image Generation Finished!";
         std::cout << '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time) << "\n";
 
-        File_manager.close_image_output_files();
+        p_Sim_Context->File_manager->close_image_output_files();
 
     }
 
-    void run_simulation_mode_1(Initial_conditions_type* s_Initial_Conditions) {
-
-
+void run_simulation_mode_1(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
+       
         /*
 
-        Initialize the rendering engine (the Renderer instance must be static to not blow up the stack - the texture and intensity buffer are inside of it)
+        Initialize the rendering engine (the Renderer instance must be static to not blow up the stack - the texture and intensity buffers are inside of it)
 
         */
 
         static Rendering_engine Renderer = Rendering_engine();
-
-        std::jthread GUI_Thread(Rendering_function, &Renderer);
+        std::jthread GUI_Thread(Rendering_function, &Renderer, p_Sim_Context->p_Init_Conditions);
 
         /*
         
@@ -171,122 +208,94 @@
         
         */
 
-        Generate_Image(s_Initial_Conditions, &Renderer);
+        Generate_Image(p_Sim_Context, &Renderer, p_Ray_results);
 
+        GUI_Thread.request_stop();
+        Renderer.Free_memory();
 
     }
 
-    void run_simulation_mode_2(Initial_conditions_type* s_Initial_Conditions) {
-        
-        /*
+void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
-        Create/Open the logging files
+    /*
 
-        */
+    Read the initial conditions from file
 
-        File_manager.open_image_output_files();
+    */
 
-        /*
+    double p_phi_data[500]{}, p_theta_data[500]{};
 
-        Read the initial conditions from file
+    p_Sim_Context->File_manager->get_geodesic_data(p_phi_data, p_theta_data);
 
-        */
+    /*
 
-        double J_data[500]{}, p_theta_data[500]{};
-        int Data_number{};
+    Create/Open the logging files
 
-        File_manager.get_geodesic_data(J_data, p_theta_data, &Data_number);
+    */
 
-        for (int photon = 0; photon <= Data_number; photon += 1) {
+    p_Sim_Context->File_manager->open_image_output_files();
 
-            /*
-
-            This function polulates the initial momentum inside the s_Initial_Conditions struct
-
-            */
-
-            s_Initial_Conditions->Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, J_data, p_theta_data, photon);
-
-            /*
-            
-            Ray propagation happens here
-            
-            */
-
-            Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
-
-            File_manager.write_image_data_to_file(s_Ray_results);
-
-            print_progress(photon, Data_number, true);
-        }
-
-        std::cout << '\n';
-
-        File_manager.close_image_output_files();
-    }
-    
-    void run_simulation_mode_3(Initial_conditions_type* s_Initial_Conditions) {
+    for (int photon = 0; photon <= p_Sim_Context->File_manager->sim_mode_2_ray_number - 1; photon += 1) {
 
         /*
 
-        Initialize the rendering engine (the Renderer instance must be static to not blow up the stack - the texture and intensity buffer are inside of it)
+        This function polulates the initial momentum inside the s_Initial_Conditions struct
 
         */
 
-        static Rendering_engine Renderer = Rendering_engine();
+        p_Sim_Context->p_Spacetime->get_initial_conditions_from_file(p_Sim_Context->p_Init_Conditions, p_phi_data, p_theta_data, photon);
 
-        std::jthread GUI_Thread(Rendering_function, &Renderer);
+        /*
 
-        auto start_time = std::chrono::high_resolution_clock::now();
+        Ray propagation happens here
+
+        */
+
+        Propagate_ray(p_Sim_Context, p_Ray_results);
 
         /*
         
-        Perform HOTSPOT_ANIMATION_NUMBER number of simulations in order to make an animation of the hotspot
+        Results logging happens here
         
         */
 
-        std::cout << '\n' << "Simulation Loop Starts..." << '\n';
-        std::cout << "=============================================================================================================================================" << '\n';
+        p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
 
-        for (int hotspot_number = 0; hotspot_number <= HOTSPOT_ANIMATION_NUMBER - 1; hotspot_number++) {
+        /*
 
-            s_Initial_Conditions->OTT_model->update_hotspot_position(hotspot_number);
+         The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), and therefore not automatically re - initialized to 0s!
 
-            Generate_Image(s_Initial_Conditions, &Renderer);
+        */
 
-            /*
+        memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
+        memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+        memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
+        memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(ORDER_NUM * 4) * sizeof(double));
+        memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 4) * sizeof(double));
 
-            Zero out the image (but not the last one), so the subsequent run does not draw ontop of the previous
-
-            */
-
-            if (hotspot_number < HOTSPOT_ANIMATION_NUMBER - 1) {
-
-                memset(Renderer.texture_buffer, 0, sizeof(Renderer.texture_buffer));
-
-            }
-
-            Renderer.texture_indexer = 0;
-        }
-
-        auto end_time = std::chrono::high_resolution_clock::now();
-                                                                                  
-        std::cout << '\n' << "=============================================================================================================================================" << '\n';
-        std::cout << "Simulation Loop Finished!" << '\n';
-        std::cout << "Total Simulation Loop time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time);
+        print_progress(photon, p_Sim_Context->File_manager->sim_mode_2_ray_number - 1, true);
 
     }
 
-    void run_simulation_mode_4(Initial_conditions_type* s_Initial_Conditions) {
+    std::cout << '\n';
 
-        s_Initial_Conditions->Spacetimes[e_metric]->get_initial_conditions_from_file(s_Initial_Conditions, (double*) &X_INIT, (double*) &Y_INIT, 0);
+    p_Sim_Context->File_manager->close_image_output_files();
 
-        Results_type* s_Ray_results = Propagate_ray(s_Initial_Conditions);
+}
 
-        File_manager.open_log_output_file();
-        File_manager.log_photon_path(s_Ray_results);
-        File_manager.close_log_output_file();
-    }
+void run_simulation_mode_3(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
-#endif
+    double& X_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_X_init;
+    double& Y_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_Y_init;
+
+    p_Sim_Context->p_Spacetime->get_initial_conditions_from_file(p_Sim_Context->p_Init_Conditions, (double*) &X_init, (double*) &Y_init, 0);
+
+    Propagate_ray(p_Sim_Context, p_Ray_results);
+
+    p_Sim_Context->File_manager->open_log_output_file();
+    p_Sim_Context->File_manager->write_simulation_metadata();
+    p_Sim_Context->File_manager->log_photon_path(p_Ray_results);
+    p_Sim_Context->File_manager->close_log_output_file();
+}
+
 

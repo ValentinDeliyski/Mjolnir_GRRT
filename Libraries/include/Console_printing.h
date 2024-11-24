@@ -1,47 +1,32 @@
-#ifndef CONSOLE_PRINTER
-    
-    #include "Constants.h"
-    #include <string>
-    #include <iostream>
+#pragma once
+#define _USE_MATH_DEFINES
+#include "Enumerations.h"
+#include "Spacetimes.h"
+#include "Constants.h"
+#include "Structs.h"
+#include <iostream>
+#include <string>
+#include <cmath>
 
-	#define CONSOLE_PRINTER
+class Console_Printer_class {
 
+private:
 
-    class Console_Printer_class {
+    std::string Metric_strings[SPACETIME_NUMBER] = {
 
-    private:
+        "Kerr Black Hole",
+        "Teo Wormhole",
+        "Regular Black Hole",
+        "Janis-Newman-Winicour Naked Singularity",
+        "Gauss-Bonnet Naked Singularity",
+        "Black Hole With A Dark Matter Halo"
 
-        std::string Metric_strings[SPACETIME_NUMBER] = {
+    };
 
-            "Kerr Black Hole",
-            "Teo Wormhole",
-            "Regular Black Hole",
-            "Janis-Newman-Winicour Naked Singularity",
-            "Gauss-Bonnet Naked Singularity",
-            "Black Hole With A Dark Matter Halo"
-        };
+public:
 
-        std::string Emission_model_strings[2] = {
+    void print_ASCII_art();
 
-            "Thermally Averaged Synchotron Emission",
-            "Phenomenological Model Of The M87* Emission"
+    void print_sim_parameters(Initial_conditions_type* p_Initial_Conditions);;
 
-        };
-
-        std::string Disk_model_strings[2] = {
-
-            "Power Law Of The Form: Density ~ 1 / r^2",
-            "Exponential Law Of The Form: Density ~ exp(-r^2 / radial_scale^2)"
-
-        };
-
-    public:
-
-        void print_ASCII_art();
-
-        void print_sim_parameters();
-
-	};
-
-
-#endif
+};
