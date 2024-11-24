@@ -1,48 +1,42 @@
-#pragma once
-
-#include "Enumerations.h"
-#include "Constants.h"
-#include "Spacetimes.h"
-#include "Disk_Models.h"
-#include "General_GR_functions.h"
-#include "General_math_functions.h"
-
-#include <cmath>
-#include <vector>
 #include "Lensing.h"
 
+//! Runs one iteration of the Dormond - Prince adaptive integrator.
+/*! Runs one iteration of the Dormond - Prince adaptive integrator, and updates the State Vector and Step Controller instance accordingly.
+*
+*   \param [out] State_Vector - Pointer to the array that holds the photon State Vector.
+*   \param [out] Controller - Pointer to the Step Controller class instance.
+*   \param [in] p_Sim_context - Pointer to the Simulation Context struct.
+*   \return Nothing
+*/
 void RK45(double* const State_Vector, Step_controller* const controller, const Simulation_Context_type* const p_Sim_context) {
 
-    /*************************************************************************************************
-    |                                                                                                |
-    |   @ Description: Perfomrs one iteration of numerical integration, using the Dormand - Prince   |
-    |     method, then updates the photon State Vector and the Step Controller properties.           |
-    |                                                                                                |
-    |   @ Inputs:                                                                                    |
-    |     * State_Vector: Pointer to an array that holds the photon State Vector to be updated       |
-    |     * Derivatives: Pointer to an array that holds the evaluation of the E.O.M.                 |
-    |     * controller: Pointer to class instance of the integrator step controller                  |
-    |                                                                                                |
-    |   @ Ouput: None                                                                                |
-    |                                                                                                |
-    *************************************************************************************************/
-
+    // Initialize the iteration counter
     int iteration = 0;
 
+    // Initialize the state errors.
     double state_error[e_State_Number]{};
     double state_rel_err[e_State_Number]{};
-    double New_State_vector_O5[e_State_Number]{};
-    double New_State_vector_O4[e_State_Number]{};
+
+    // Initialize the array that holds the intermediate EOM RHS evaluations.
     double Derivatives[RK45_size * e_State_Number]{};
+
+    // Initialize the array that holds the intermediate State Vectors.
     double inter_State_vector[RK45_size * e_State_Number]{};
 
-    while (iteration <= RK45_size - 1) { //runs trough the EOM evaluations in-between t and t + step
+    // Initialize the array that holds the two new solutions that the DP54 method computes.
+    double New_State_vector_O5[e_State_Number]{};
+    double New_State_vector_O4[e_State_Number]{};
 
-        for (int vector_indexer = 0; vector_indexer <= e_State_Number - 2; vector_indexer += 1) { //runs trough the state vector components
+    // Runs trough the EOM evaluations in-between t and t + step.
+    while (iteration <= RK45_size - 1) { 
+
+        // Runs trough the state vector components.
+        for (int vector_indexer = 0; vector_indexer <= e_State_Number - 2; vector_indexer += 1) { 
 
             inter_State_vector[vector_indexer + iteration * e_State_Number] = State_Vector[vector_indexer];
 
-            for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) { //runs trough tough the Dormand-Prince coeficients matrix and adds on the contributions from the derivatives at the points between t and t + step;
+            // Runs trough tough the Dormand-Prince coeficients matrix and adds on the contributions from the derivatives at the points between t and t + step.
+            for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) { 
 
                 inter_State_vector[vector_indexer + iteration * e_State_Number] += -controller->step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
 
@@ -55,6 +49,7 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
 
     }
 
+    // Compute the new state vectors.
     for (int vector_indexer = 0; vector_indexer <= e_State_Number - 2; vector_indexer += 1) {
 
         New_State_vector_O5[vector_indexer] = State_Vector[vector_indexer];
@@ -73,8 +68,7 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
 
     // The integrator might jump pass surfaces that are singular for the EOM (like the JNW singularity at 2 / gamma)
     // In this case the whole state vector becomes a NaN. I check for this and update the integration step by hand,
-    // then set the continue_integration flag to "false" to force the integrator to redo the current iteration with the new step.
-
+    // then set the continue_integration flag to "false" to force the integrator to redo the current iteration with a smaller step.
     if (isnan(New_State_vector_O5[e_r])) {
 
         controller->continue_integration = false;
@@ -84,16 +78,18 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
 
     }
 
+    // Update the state errors
     controller->previous_step = controller->step;
     controller->sec_prev_err  = controller->prev_err;
     controller->prev_err      = controller->current_err;
+    controller->current_err   = get_max_element(state_error, e_State_Number - 1);
 
-    controller->current_err = get_max_element(state_error, e_State_Number - 1);
-
+    // Update the controller step
     controller->update_step(std::as_const(State_Vector));
 
     if (controller->continue_integration) {
 
+        // Update the state vector
         for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) {
 
             State_Vector[vector_indexer] = New_State_vector_O5[vector_indexer];
@@ -105,7 +101,6 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
         // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
         // Close enough that it requires "manual" scattering, by flipping the p_r sign.
         // Otherwise the photons never reach the turning point and the integration grinds to a halt.
-
         if (p_Sim_context->p_Init_Conditions->Metric_params.e_Spacetime == Janis_Newman_Winicour && p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 0.5) {
 
             if (State_Vector[e_r] - 2 / p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 1e-8) {
@@ -151,6 +146,15 @@ Step_controller::Step_controller(const Integrator_parameters_type Integrator_par
 
 }
 
+//! Updates the integration step, based on the previous State Error estimates, and the current State Vector.
+/*! Updates the integration step, based on the previous State Error estimates, and the current State Vector.
+ *   Currently the following step controllers are implemented. The reference is https://arxiv.org/pdf/1806.08693:
+ *      1) PID controller
+ *      2) Gustafsson controller
+ *
+ *   \param [in] State_Vector - Pointer to the array that holds the photon State Vector.
+ *   \return Nothing
+ */
 void Step_controller::update_step(const double* const State_Vector) {
 
     double Rel_step_increase{};

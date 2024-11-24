@@ -459,7 +459,7 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     // -------------------- Max integration count 
     temp_param_var = Integrator_element->FirstChildElement("max_integration_count");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the maximum integration count!" << "\n"; return ERROR; }
-    Integrator_params->Max_integration_count = std::stod(temp_param_var->GetText());
+    Integrator_params->Max_integration_count = std::stoi(temp_param_var->GetText());
 
     // -------------------- Max integration count 
     temp_param_var = Integrator_element->FirstChildElement("simpson_method_accuracy");
@@ -714,34 +714,39 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
 
 }
 
-Return_Values static parse_file_paths(tinyxml2::XMLElement* File_paths_element, File_paths_type* File_paths) {
+Return_Values static parse_file_manager_params(tinyxml2::XMLElement* File_manager_element, File_manager_parameters* File_manager_params) {
 
     tinyxml2::XMLElement* temp_param_var;
 
     // -------------------- Sim mode 2 input file path
-    temp_param_var = File_paths_element->FirstChildElement("Sim_mode_2_input_file_path");
+    temp_param_var = File_manager_element->FirstChildElement("Sim_mode_2_input_file_path");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the simulation mode 2 input file path!" << "\n"; return ERROR; }
-    if (temp_param_var->GetText() != nullptr) { File_paths->Sim_mode_2_imput_path = temp_param_var->GetText(); }
+    if (temp_param_var->GetText() != nullptr) { File_manager_params->Sim_mode_2_imput_path = temp_param_var->GetText(); }
 
     // -------------------- Output file path
-    temp_param_var = File_paths_element->FirstChildElement("Output_file_directory");
+    temp_param_var = File_manager_element->FirstChildElement("Output_file_directory");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the output file directory!" << "\n"; return ERROR; }
-    File_paths->Output_file_directory = temp_param_var->GetText();
+    File_manager_params->Output_file_directory = temp_param_var->GetText();
 
     // -------------------- Common file names
-    temp_param_var = File_paths_element->FirstChildElement("Common_file_names");
+    temp_param_var = File_manager_element->FirstChildElement("Common_file_names");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the common output file name!" << "\n"; return ERROR; }
-    if (temp_param_var->GetText() != nullptr) { File_paths->Common_file_names = temp_param_var->GetText(); }
+    if (temp_param_var->GetText() != nullptr) { File_manager_params->Common_file_names = temp_param_var->GetText(); }
 
     // -------------------- Vertex shader path
-    temp_param_var = File_paths_element->FirstChildElement("Vert_shader_path");
+    temp_param_var = File_manager_element->FirstChildElement("Vert_shader_path");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the vertex shader path!" << "\n"; return ERROR; }
-    File_paths->Vert_shader_path = temp_param_var->GetText();
+    File_manager_params->Vert_shader_path = temp_param_var->GetText();
 
     // -------------------- Fragment shader path
-    temp_param_var = File_paths_element->FirstChildElement("Frag_shader_path");
+    temp_param_var = File_manager_element->FirstChildElement("Frag_shader_path");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the fragment shader path!" << "\n"; return ERROR; }
-    File_paths->Frag_shader_path = temp_param_var->GetText();
+    File_manager_params->Frag_shader_path = temp_param_var->GetText();
+
+    // -------------------- Truncate files flag
+    temp_param_var = File_manager_element->FirstChildElement("Truncate_files");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the Truncate Files flag!" << "\n"; return ERROR; }
+    File_manager_params->Truncate_files = std::stoi(temp_param_var->GetText());
 
     return OK;
 
@@ -757,7 +762,7 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     tinyxml2::XMLElement* Root_node = xml_doc.FirstChildElement("Simulation_Input");
     if (Root_node == nullptr) { return ERROR; }
 
-    p_Initial_conditions->File_paths.Simulation_name = Root_node->Attribute("Simulation_Name");
+    p_Initial_conditions->File_manager_params.Simulation_name = Root_node->Attribute("Simulation_Name");
 
     /* ====================================== Parse the average pitch angle flag and sample number ====================================== */
 
@@ -768,6 +773,24 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     tinyxml2::XMLElement* Average_pitch_angle_number_element = Root_node->FirstChildElement("Emission_pitch_angle_samples_to_average");
     if (Average_pitch_angle_number_element == nullptr) { std::cout << "Failed to find the number of pitch angle samples to average!" << "\n"; return ERROR; }
     p_Initial_conditions->Emission_pitch_angle_samples_to_average = std::stoi(Average_pitch_angle_number_element->GetText());
+
+    /* ====================================== Parse the simulation mode specific settings ====================================== */
+
+    tinyxml2::XMLElement* Simulation_mode_element = Root_node->FirstChildElement("Simulation_mode");
+    if (Simulation_mode_element == nullptr) { std::cout << "Failed to find the simulation mode!" << "\n"; return ERROR; }
+    p_Initial_conditions->Simulation_mode = std::stoi(Simulation_mode_element->GetText());
+
+    tinyxml2::XMLElement* Sim_mode_2_param_number_element = Root_node->FirstChildElement("Sim_mode_2_param_value_number");
+    if (Sim_mode_2_param_number_element == nullptr) { std::cout << "Failed to find the simulation mode 2 number of metric parameter values!" << "\n"; return ERROR; }
+    p_Initial_conditions->Sim_mode_2_param_value_number = std::stoi(Sim_mode_2_param_number_element->GetText());
+
+    tinyxml2::XMLElement* Sim_mode_3_X_init = Root_node->FirstChildElement("Sim_mode_3_X_init");
+    if (Sim_mode_3_X_init == nullptr) { std::cout << "Failed to find sim mode 3 X init!" << "\n"; return ERROR; }
+    p_Initial_conditions->Sim_mode_3_X_init = std::stod(Sim_mode_3_X_init->GetText());
+
+    tinyxml2::XMLElement* Sim_mode_3_Y_init = Root_node->FirstChildElement("Sim_mode_3_Y_init");
+    if (Sim_mode_3_Y_init == nullptr) { std::cout << "Failed to find sim mode 3 Y init!" << "\n"; return ERROR; }
+    p_Initial_conditions->Sim_mode_3_Y_init = std::stod(Sim_mode_3_Y_init->GetText());
 
     /* ====================================== Parse the central object mass ====================================== */
 
@@ -819,9 +842,9 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
 
     /* ====================================== Parse the file paths ====================================== */
 
-    tinyxml2::XMLElement* File_paths_element = Root_node->FirstChildElement("File_Paths");
-    if (File_paths_element == nullptr) { std::cout << "Failed to find the File paths node!" << "\n"; return ERROR; }
-    if (OK != parse_file_paths(File_paths_element, &p_Initial_conditions->File_paths)) { return ERROR; };
+    tinyxml2::XMLElement* File_manager_element = Root_node->FirstChildElement("File_Manager");
+    if (File_manager_element == nullptr) { std::cout << "Failed to find the File paths node!" << "\n"; return ERROR; }
+    if (OK != parse_file_manager_params(File_manager_element, &p_Initial_conditions->File_manager_params)) { return ERROR; };
 
     return OK;
 

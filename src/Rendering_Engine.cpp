@@ -18,15 +18,15 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
 
     // Calculate the aspect ratio of the rendering window
 
-    double Y_angle_max = atan(p_Init_Conditions->Observer_params.y_max / p_Init_Conditions->Observer_params.distance);
-    double Y_angle_min = atan(p_Init_Conditions->Observer_params.y_min / p_Init_Conditions->Observer_params.distance);
-    double X_angle_max = atan(p_Init_Conditions->Observer_params.x_max / p_Init_Conditions->Observer_params.distance);
-    double X_angle_min = atan(p_Init_Conditions->Observer_params.x_min / p_Init_Conditions->Observer_params.distance);
+    float Y_angle_max = atan2(p_Init_Conditions->Observer_params.y_max, p_Init_Conditions->Observer_params.distance);
+    float Y_angle_min = atan2(p_Init_Conditions->Observer_params.y_min, p_Init_Conditions->Observer_params.distance);
+    float X_angle_max = atan2(p_Init_Conditions->Observer_params.x_max, p_Init_Conditions->Observer_params.distance);
+    float X_angle_min = atan2(p_Init_Conditions->Observer_params.x_min, p_Init_Conditions->Observer_params.distance);
 
     float aspect_ratio = (X_angle_max - X_angle_min) / (Y_angle_max - Y_angle_min);
 
     // Initialize GLFW
-    glfwInit();
+    glfwInit();   
 
     // Tell GLFW what version of OpenGL we are using -> OpenGL 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -66,8 +66,8 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     Vertex_array.Linkattrib(Vertex_buffer, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     // Generates a Shader object using the shaders defualt.vert and default.frag
-    Shader shaderProgram(static_cast<const char*>(p_Init_Conditions->File_paths.Vert_shader_path.c_str()), 
-                         static_cast<const char*>(p_Init_Conditions->File_paths.Frag_shader_path.c_str()));
+    Shader shaderProgram(static_cast<const char*>(p_Init_Conditions->File_manager_params.Vert_shader_path.c_str()),
+                         static_cast<const char*>(p_Init_Conditions->File_manager_params.Frag_shader_path.c_str()));
 
     shaderProgram.Activate();
 
@@ -332,7 +332,7 @@ GLuint Rendering_engine::init_texture() {
     return texture;
 }
 
-std::string Rendering_engine::get_file_contents(const char* filename)
+std::string Rendering_engine::get_file_contents(const char* filename, std::string file_type)
 {
     std::ifstream in(filename, std::ios::binary);
 
@@ -345,15 +345,23 @@ std::string Rendering_engine::get_file_contents(const char* filename)
         in.read(&contents[0], contents.size());
         in.close();
         return(contents);
+
     }
-    throw(errno);
+    else {
+
+        std::cout << "ERROR! Could not parse the " << file_type << ". Check the file path.\n";
+
+        exit(ERROR);
+
+    }
+ 
 }
 
 Rendering_engine::Shader::Shader(const char* vertexFile, const char* fragmentFile)
 {
 
-    std::string vertexCode = get_file_contents(vertexFile);
-    std::string fragmentCode = get_file_contents(fragmentFile);
+    std::string vertexCode = get_file_contents(vertexFile, "Vertex Shader");
+    std::string fragmentCode = get_file_contents(fragmentFile, "Fragment Shader");
 
     const char* vertexSource = vertexCode.c_str();
     const char* fragmentSource = fragmentCode.c_str();

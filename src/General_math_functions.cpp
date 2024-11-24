@@ -1,23 +1,13 @@
-#define _USE_MATH_DEFINES
+#include "General_math_functions.h"
 
-#include "Disk_Models.h"
-#include "Enumerations.h"
-#include "inputs.h"
-#include <cmath>
-
-double vector_norm(double Vector[], int Vector_size) {
-
-	/**********************************************************************
-	|                                                                     |
-	|   @ Description: Computes the Euclidian norm of the vector Vector   |
-	|                                                                     |
-	|   @ Inputs:                                                         |
-	|	  * Vector: Pointer to the vector, whose norm we will find		  |
-	|	  * Vector_size: The dimention of the vector					  |
-	|																	  |
-	|   @ Ouput: Euclidian norm of the vector							  |
-	|                                                                     |
-	**********************************************************************/
+//! Computes the Euclidian norm of a vector.
+/*! Computes the Euclidian norm of the vector "Vector", with "Vector_size" number of elements
+ *
+ *   \param [in] Vector - Pointer to the vector.
+ *   \param [in] Vector_size - The number of elements in the vector.
+ *   \return The Euclidian norm of the vector "Vector".
+ */
+double vector_norm(const double* const Vector, const int Vector_size) {
 
 	double norm{};
 
@@ -33,117 +23,74 @@ double vector_norm(double Vector[], int Vector_size) {
 
 };
 
-int mat_vec_multiply_4D(double const Matrix[4][4], double const Vector[4], double result[4]) {
-
-	/******************************************************************************
-	|                                                                             |
-	|   @ Description: Multiplies the 4D vector Vector by the 4x4 matrix Matrix   |
-	|                                                                             |
-	|   @ Inputs:                                                                 |
-	|     * Matrix: Pointer to the input matrix we are multiplying by			  |
-	|	  * Vector: Pointer to the vector to be multiplied						  |
-	|	  * Result: Pointer to the vector, which stores the result of the		  |
-	|	  multiplication														  |
-	|																			  |
-	|   @ Ouput: None															  |
-	|                                                                             |
-	******************************************************************************/
+//! Main Multiplies a 4D vector by a 4x4 matrix
+/*! Multiplies the 4D vector "Vector" by the 4x4 matrix "Matrix", and stores the result in the vector "Result"
+ *
+ *   \param [in] Matrix - The 4x4 matrix, represented as a 2D array.
+ *   \param [in] Vector - The 4D vector to be multiplied by the matxi "Matrix".
+ *   \param [out] Result - The result of the multiplication.
+ *   \return Nothing.
+ */
+void mat_vec_multiply_4D(double const Matrix[4][4], const double* const Vector, double* const Result) {
 
 	for (int row = 0; row <= 3; row += 1) {
 
-		result[row] = 0.0;
+		Result[row] = 0.0;
 
 		for (int column = 0; column <= 3; column += 1) {
 
-			result[row] += Matrix[row][column] * Vector[column];
+			Result[row] += Matrix[row][column] * Vector[column];
 
 		}
 	}
-
-	return OK;
 
 };
 
-double get_max_element(const double* const vector, int const element_number) {
+//! Returns the largest by absolute value element of a vector
+/*! Returns the largest by absolute value element the vector "Vector". This is really intended to be used in 
+ *	the step controller for the Dormond-Prince integrator, so the 0-th element of the vector is ignored 
+ *	(it corresponds to the coordinate time of the ray, and becomes large in the emitting region - this throws off
+ *   the adaptive step calculation).
+ *
+ *   \param [in] Vector - Pointer to the vector.
+ *   \param [in] Element_number - The number of elements in the vector.
+ *   \return The unsigned maximum by absolute value element.
+ */
+double get_max_element(const double* const Vector, int const Element_number) {
 
-	/*****************************************************************************
-	|                                                                            |
-	|   @ Description: Returns the largest by absolute value element of vector   |
-	|                                                                            |
-	|   @ Inputs:                                                                |
-	|     * vector: Pointer to the input array									 |
-	|																			 |
-	|   @ Ouput: The largest (unsigned) element of vector by absolute value 	 |
-	|                                                                            |
-	*****************************************************************************/
+	double max = fabs(Vector[e_r]);
+	double max_candidate = 0;
 
-	int index_max = element_number;
+	for (int index = e_theta; index <= Element_number; index += 1) {
 
-	double* temp_vec = (double*)calloc(index_max + 1, sizeof(double));
-	double max{};
+		max_candidate = fabs(Vector[index]);
 
-	if (NULL == temp_vec) {
-
-		// Putting this check here (which should never pass), so I don't get
-		// compiler warnings about dereferencing a null pointer
-
-		exit(ERROR);
-
-	}
-	else {
-
-		max = fabs(vector[1]);
-
-	}
-
-	for (int index = 1; index <= index_max; index += 1) {
-
-		temp_vec[index] = vector[index];
-
-		if (temp_vec[index] < 0) {
-
-			temp_vec[index] = -1.0 * temp_vec[index];
+		if (max_candidate > max) {
+			
+			max = max_candidate;
+		
 		}
 
 	}
-
-	for (int index = 2; index <= index_max; index += 1) {
-
-		if (temp_vec[index] > max) {
-
-			max = temp_vec[index];
-
-		}
-	}
-
-	free(temp_vec);
 
 	return max;
 }
 
-double get_max_relative_error(const double* const error_state, const double* const current_state) {
+//! Returns the largest by absolute value element of relative state error.
+/*! Returns the largest by absolute value element of relative state error. This is intended to be used in
+ *	the step controller for the Dormond-Prince integrator.
+ *
+ *   \param [in] error_state - Pointer to the state error vector.
+ *   \param [in] current_state - Pointer to the state vector.
+ *   \return The unsigned maximum by absolute value relative state error.
+ */
+double get_max_relative_error(const double* const Error_state, const double* const Current_state) {
 
-	/*****************************************************************************
-	|                                                                            |
-	|   @ Description: Returns the largest by absolute value element of vector   |
-	|                                                                            |
-	|   @ Inputs:                                                                |
-	|     * vector: Pointer to the input array									 |
-	|																			 |
-	|   @ Ouput: The largest (unsigned) element of vector by absolute value 	 |
-	|                                                                            |
-	*****************************************************************************/
+	double max_rel_error = fabs(Error_state[e_t] / Current_state[e_t]);
 
-	double max_rel_error{};
+	for (int index = e_r; index <= e_State_Number - 2; index += 1) {
 
-	max_rel_error = fabs(error_state[e_r] / current_state[e_r]);
-
-	for (int index = 0; index <= e_State_Number - 2; index += 1) {
-
-		double test2 = current_state[index] + 1e-40;
-		double test1 = error_state[index];
-
-		double temp_error = fabs(error_state[index] / (current_state[index]));
+		double temp_error = fabs(Error_state[index] / (Current_state[index]));
 
 		if (temp_error > max_rel_error && !isinf(temp_error)) {
 
@@ -155,27 +102,26 @@ double get_max_relative_error(const double* const error_state, const double* con
 	return max_rel_error;
 }
 
+//! Interpolates the coordinates and three-momentum of the ray, at which it crosses the equator.
+/*! Interpolates the coordinates and three-momentum of the ray, at which it crosses the equator.
+ *
+ *   \param [in] State_Vector - Pointer to the current state vector.
+ *   \param [in] Old_State_Vector - Pointer to the previous state vector.
+ *	 \param [out] Crossing_coords - Pointer to the three-vector that holds the coordinates of the crossing point.
+ *	 \param [out] Crossing_coords - Pointer to the three-vector that holds the three-momentum of the ray at the crossing point.
+ *   \return A boolian flag for weather the equator has been crossed or not.
+ */
 bool interpolate_crossing(const double* const State_Vector, 
 						  const double* const Old_State_Vector, 
 						  double* const Crossing_coords, 
-						  double* const crossing_momenta) {
+						  double* const Crossing_momenta) {
 
-	/***********************************************************************************************
-	|                                                                                              |
-	|   @ Description: Interpolates the equatorial crossing point from two state vecrors -	       |
-	|	One at z < 0 and the other at z > 0														   |
-	|                                                                                              |
-	|   @ Inputs:                                                                                  |
-	|     * State_Vector: Pointer to the current state vector									   |
-	|     * Old_State_Vector: Pointer to the old state vector									   |
-	|     * Crossing_coords: Pointer to the interpolated x, y coordinates of equatorial crossing   |
-	|                                                                                              |
-	|   @ Ouput: Boolean: Weather the equatorial crossing point is within the NT disk              |
-	|                                                                                              |
-	***********************************************************************************************/
-
-	if (cos(State_Vector[e_theta]) * cos(Old_State_Vector[e_theta]) > 0)
+	// Check weather the equator has been crossed
+	if ((State_Vector[e_theta] - M_PI_2) * (Old_State_Vector[e_theta] - M_PI_2) > 0)
 	{
+
+		memset(Crossing_coords, 0, 3 * sizeof(double));
+		memset(Crossing_momenta, 0, 3 * sizeof(double));
 
 		return false;
 
@@ -216,30 +162,42 @@ bool interpolate_crossing(const double* const State_Vector,
 
 	for (int index = e_t; index <= e_phi; index++) {
 
-		crossing_momenta[index] = momentum_param * State_Vector[e_p_t + index] + (1 - momentum_param) * Old_State_Vector[e_p_t + index];
+		Crossing_momenta[index] = momentum_param * State_Vector[e_p_t + index] + (1 - momentum_param) * Old_State_Vector[e_p_t + index];
 	}
 	
 	return true;
 }
 
-double dot_product(double vector_1[3], double vector_2[3]) {
+//! Computes a simple Eucliduan dot product between two vectors with element numbers "Vector_size".
+/*! Computes a simple Eucliduan dot product between two vectors with element numbers "Vector_size".
+ *
+ *   \param [in] vector_1 - Pointer to the first vector.
+ *   \param [in] vector_2 - Pointer to the second vector.
+ *	 \param [in] Vector_size - The number of elements in each vector.
+ *   \return The dot product between the two vectors.
+ */
+double dot_product(const double* const Vector_1, const double* const Vector_2, int Vector_size) {
 
-	/************************************************************************************
-	|                                                                                   |
-	|   @ Description: Computes a simple dot product between two Euclidian 3D vectors   |
-	|                                                                                   |
-	|   @ Inputs:                                                                       |
-	|     * vector_1: Pointer to the first vector										|
-	|     * vector_2: Pointer to the second												|
-	|																					|
-	|   @ Ouput: The dot product between vector_1 and vector_2		                    |
-	|                                                                                   |
-	************************************************************************************/
+	double result{};
 
-	return vector_1[0] * vector_2[0] + vector_1[1] * vector_2[1] + vector_1[2] * vector_2[2];
+	for (int index = 0; index <= Vector_size - 1; index++) {
+
+		result += Vector_1[index] * Vector_2[index];
+
+	}
+
+	return  result;
 
 }
 
+//! Converts vector from spherical coordinates to cartesian.
+/*! Converts vector, stored in an array pointed to by "Spherical_Coords", from spherical coordinates to cartesian, and stores 
+ *  the results in the vector, pointed to by "Cartesian_Coords".
+ *
+ *   \param [in] Spherical_Coords - Pointer to the vector expressed in spherical coordinates.
+ *   \param [in] Cartesian_Coords - Pointer to the vector expressed in carrtesian coordinates.
+ *   \return Nothing.
+ */
 void convert_spherical_to_cartesian(double* Spherical_Coords, double* Cartesian_Coords) {
 
 	double sin_theta = sin(Spherical_Coords[e_theta]);
@@ -254,6 +212,14 @@ void convert_spherical_to_cartesian(double* Spherical_Coords, double* Cartesian_
 
 }
 
+//! Converts vector from spherical coordinates to cartesian.
+/*! Converts vector, stored in an array pointed to by "Cartesian_Coords", from cartesian coordinates to spherical, and stores
+ *  the results in the vector, pointed to by "Spherical_Coords".
+ *
+ *   \param [in] Cartesian_Coords - Pointer to the vector expressed in carrtesian coordinates.
+ *   \param [in] Spherical_Coords - Pointer to the vector expressed in spherical coordinates.
+ *   \return Nothing.
+ */
 void convert_cartesian_to_spherical(double* Cartesian_Coords, double* Spherical_Coords) {
 
 	Spherical_Coords[e_r]  = Cartesian_Coords[x] * Cartesian_Coords[x];
@@ -264,5 +230,23 @@ void convert_cartesian_to_spherical(double* Cartesian_Coords, double* Spherical_
 	Spherical_Coords[e_theta] = acos(Cartesian_Coords[z] / Spherical_Coords[e_r]);
 
 	Spherical_Coords[e_phi] = atan2(Cartesian_Coords[y], Cartesian_Coords[x]);
+
+}
+
+//! Adds two 4-vectors.
+/*! Adds two 4-vectors.
+ *
+ *   \param [in] Vec_1 - Pointer to the first vector.
+ *   \param [in] Vec_2 - Pointer to the second vector.
+ *	 \param [out] Result - Pointer to the result vector
+ *   \return Nothing.
+ */
+void add_4_vectors(const double* const Vec_1, const double* const Vec_2, double* const Result) {
+
+	for (int idx = 0; idx <= 3; idx++) {
+
+		Result[idx] = Vec_1[idx] + Vec_1[idx];
+
+	}
 
 }

@@ -1,10 +1,4 @@
-#pragma once
-
-#include <cmath>
-
-#include "Structs.h"
 #include "Spacetimes.h"
-#include "Constants.h"
 
 Observer_class::Observer_class(Simulation_Context_type* p_Sim_Context) {
 

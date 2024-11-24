@@ -1,13 +1,10 @@
 #pragma once
+#define _USE_MATH_DEFINES
+#include "Structs.h"
+#include <iostream>
+#include <cmath>
 
-#ifndef SPACETIMES
-    
-    #define SPACETIMES
-
-    #include <iostream>
-    #include "Structs.h"
-
-    class Spacetime_Base_Class {
+class Spacetime_Base_Class {
 
         public:
 
@@ -108,14 +105,14 @@
 
     };
 
-    class Kerr_class : public Spacetime_Base_Class {
+class Kerr_class : public Spacetime_Base_Class {
 
         private:
 
-            Metric_type s_Metric;
-            Metric_type s_dr_Metric;
+            Metric_type s_Metric{};
+            Metric_type s_dr_Metric{};
             Metric_type s_dtheta_Metric{};
-            Metric_type s_d2r_Metric;
+            Metric_type s_d2r_Metric{};
             
             double Mass = 1.0;
             double Spin_Param{};
@@ -150,7 +147,7 @@
 
     };
 
-    class Wormhole_class : public Spacetime_Base_Class {
+class Wormhole_class : public Spacetime_Base_Class {
 
     private:
 
@@ -162,9 +159,9 @@
         double Mass = 1.0;
         double R_Throat = this->Mass;
 
-        double Spin_Param;
-        double Redshift_Param;
-        bool Stop_at_Throat;
+        double Spin_Param{};
+        double Redshift_Param{};
+        bool Stop_at_Throat{};
 
     public:
 
@@ -197,7 +194,7 @@
 
     };
 
-    class RBH_class : public Spacetime_Base_Class {
+class RBH_class : public Spacetime_Base_Class {
 
     private:
 
@@ -239,7 +236,7 @@
 
     };
 
-    class JNW_class : public Spacetime_Base_Class {
+class JNW_class : public Spacetime_Base_Class {
 
     private:
 
@@ -281,7 +278,7 @@
 
     };
 
-    class Gauss_Bonnet_class : public Spacetime_Base_Class {
+class Gauss_Bonnet_class : public Spacetime_Base_Class {
 
     private:
 
@@ -323,7 +320,7 @@
 
     };
 
-    class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
+class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
 
     private:
 
@@ -364,7 +361,7 @@
 
     };
 
-    class Observer_class {
+class Observer_class {
 
     private:
 
@@ -380,5 +377,3 @@
         double* get_obs_velocity();
 
     };
-
-#endif

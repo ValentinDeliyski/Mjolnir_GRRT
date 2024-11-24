@@ -1,6 +1,4 @@
 ﻿#include "Console_printing.h"
-#include "Enumerations.h"
-#include "Spacetimes.h"
 
 void Console_Printer_class::print_ASCII_art() {
 
@@ -67,10 +65,7 @@ void Console_Printer_class::print_sim_parameters(Initial_conditions_type* p_Init
         break;
     }
 
-
-
-    std::cout << "Active Simulation Mode: " << Active_Sim_Mode << '\n';
-
+    std::cout << "Active Simulation Mode: " << p_Initial_Conditions->Simulation_mode << '\n';
 
     std::cout << "------------------------------------------------------- Observer Parameters -------------------------------------------------------" << "\n"
         << "Observer Distance [M]: " << p_Initial_Conditions->Observer_params.distance << '\n'
@@ -78,7 +73,7 @@ void Console_Printer_class::print_sim_parameters(Initial_conditions_type* p_Init
         << "Observer Azimuth [Deg]: " << p_Initial_Conditions->Observer_params.azimuth * 180.0 / M_PI << '\n'
         << "Observation Frequency [Hz]: " << p_Initial_Conditions->Observer_params.obs_frequency << '\n';
 
-    switch (Active_Sim_Mode) {
+    switch (p_Initial_Conditions->Simulation_mode) {
 
     case 1:
 
@@ -98,7 +93,7 @@ void Console_Printer_class::print_sim_parameters(Initial_conditions_type* p_Init
     case 2:
 
         std::cout << "Number Of Photons Per Param Value: " << "" << '\n'
-                    << "Number Of Param Values: " << PARAM_SWEEP_NUMBER << '\n';
+                  << "Number Of Param Values: " << p_Initial_Conditions->Sim_mode_2_param_value_number << '\n';
 
         break;
 

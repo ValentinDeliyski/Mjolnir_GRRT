@@ -1,7 +1,5 @@
 #pragma once
-
 #define _USE_MATH_DEFINES
-
 #include "IO_files.h"
 #include "Constants.h"
 #include "Disk_models.h"
@@ -9,31 +7,32 @@
 #include <filesystem>
 #include <iostream>
 
-File_manager_class::File_manager_class(Initial_conditions_type *p_Initial_Conditions, bool truncate) {
+File_manager_class::File_manager_class(Initial_conditions_type *p_Initial_Conditions) {
 
-    this->p_Initial_Conditions       = p_Initial_Conditions;
-    this->Input_file_path_sim_mode_2 = p_Initial_Conditions->File_paths.Sim_mode_2_imput_path;
-    this->Truncate_files             = truncate;
+    this->p_Initial_Conditions  = p_Initial_Conditions;
+    this->Truncate_files        = p_Initial_Conditions->File_manager_params.Truncate_files;
+    this->sim_mode_2_ray_number = 0;
 }
 
-void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[], int* Data_number) {
+void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[]) {
 
     std::ifstream geodesic_data;
     std::string line;
 
+
     double J_input{};
     double P_input{};
 
-    geodesic_data.open(Input_file_path_sim_mode_2, std::ios::in);
+    geodesic_data.open(this->p_Initial_Conditions->File_manager_params.Sim_mode_2_imput_path, std::ios::in);
 
     while (true) {
 
         if (geodesic_data >> J_input >> P_input) {
 
-            J_data[*Data_number] = J_input;
-            p_theta_data[*Data_number] = P_input;
+            J_data[this->sim_mode_2_ray_number] = J_input;
+            p_theta_data[this->sim_mode_2_ray_number] = P_input;
             
-            *Data_number += 1;
+            this->sim_mode_2_ray_number += 1;
         }
 
         if (geodesic_data.eof()) {
@@ -45,11 +44,30 @@ void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[
     geodesic_data.close();
 }
 
-void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
+void File_manager_class::write_simulation_metadata() {
 
-    for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
+    std::ofstream* Output_file;
+    int Output_file_number = ORDER_NUM;
 
-        Image_Output_files[Image_order] << "============================================================ SIMULATION METADATA ============================================================"
+    switch (this->p_Initial_Conditions->Simulation_mode){
+
+    case 3:
+
+        Output_file = &this->Log_Output_File;
+        Output_file_number = 1;
+
+        break;
+
+    default:
+
+        Output_file = this->Image_Output_files;
+
+        break;
+    }
+
+    for (int Image_order = direct; Image_order <= Output_file_number - 1; Image_order += 1) {
+
+        *(Output_file + Image_order) << "============================================================ SIMULATION METADATA ============================================================"
                                         << "\n"
                                         << "Spacetime: "
                                         << this->Base_File_Names[this->p_Initial_Conditions->Metric_params.e_Spacetime]
@@ -61,54 +79,58 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case Kerr:
 
-            Image_Output_files[Image_order] << "Spin Parameter [M]: " << Parameters.Spin << '\n';
+            *(Output_file + Image_order) << "Spin Parameter [M]: " << Parameters.Spin << '\n';
             break;
 
         case Wormhole:
 
-            Image_Output_files[Image_order] << "Spin Parameter [M]: " << Parameters.Spin << "\n"
+            *(Output_file + Image_order) << "Spin Parameter [M]: " << Parameters.Spin << "\n"
                                             << "Redshift Parameter [-]: " << Parameters.Redshift_Parameter << '\n';
             break;
 
         case Reg_Black_Hole:
 
-            Image_Output_files[Image_order] << "Parameter [M]: " << Parameters.RBH_Parameter << '\n';
+            *(Output_file + Image_order) << "Parameter [M]: " << Parameters.RBH_Parameter << '\n';
             break;
 
         case Janis_Newman_Winicour:
 
-            Image_Output_files[Image_order] << "Gamma [-]: " << Parameters.JNW_Gamma_Parameter << '\n';
+            *(Output_file + Image_order) << "Gamma [-]: " << Parameters.JNW_Gamma_Parameter << '\n';
             break;
 
         case Einstein_Gauss_Bonnet:
 
-            Image_Output_files[Image_order] << "Gamma [M^2]: " << Parameters.GB_Gamma_Parameter << '\n';
+            *(Output_file + Image_order) << "Gamma [M^2]: " << Parameters.GB_Gamma_Parameter << '\n';
             break;
 
         case BH_w_Dark_Matter:
 
-            Image_Output_files[Image_order] << "Halo Mass [M]: " << Parameters.Halo_Mass << '\n'
+            *(Output_file + Image_order) << "Halo Mass [M]: " << Parameters.Halo_Mass << '\n'
                                             << "Halo Compactness [-]: " << Parameters.Compactness << '\n';
             break;
         }
 
         
 
-        Image_Output_files[Image_order] << "Active Simulation Mode: " << Active_Sim_Mode << '\n'
-                                        << "Image Order [-]: " << Image_order << "\n";
+        *(Output_file + Image_order) << "Active Simulation Mode: " << p_Initial_Conditions->Simulation_mode << '\n';
 
+        if (this->p_Initial_Conditions->Simulation_mode != 3) {
+
+            *(Output_file + Image_order) << "Image Order [-]: " << Image_order << "\n";
+
+        }             
      
-        Image_Output_files[Image_order] << "------------------------------------------------------- Observer Parameters -------------------------------------------------------" << "\n"
+        *(Output_file + Image_order) << "------------------------------------------------------- Observer Parameters -------------------------------------------------------" << "\n"
                                         << "Observer Distance [M]: " << p_Initial_Conditions->Observer_params.distance << '\n'
                                         << "Observer Inclination [Deg]: " << p_Initial_Conditions->Observer_params.inclination * 180.0 / M_PI << '\n'
                                         << "Observer Azimuth [Deg]: " << p_Initial_Conditions->Observer_params.azimuth * 180.0 / M_PI << '\n'
                                         << "Observation Frequency [Hz]: " << p_Initial_Conditions->Observer_params.obs_frequency << '\n';
 
-        switch (Active_Sim_Mode) {
+        switch (p_Initial_Conditions->Simulation_mode) {
 
         case 1:
 
-            Image_Output_files[Image_order] << "Observation Window Dimentions (-X,+X,-Y,+Y) [M]: "
+            *(Output_file + Image_order) << "Observation Window Dimentions (-X,+X,-Y,+Y) [M]: "
                                             << this->p_Initial_Conditions->Observer_params.x_min << ","
                                             << this->p_Initial_Conditions->Observer_params.x_max << ","
                                             << this->p_Initial_Conditions->Observer_params.y_min << ","
@@ -123,19 +145,27 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case 2:
 
-            Image_Output_files[Image_order] << "Number Of Photons Per Param Value: " << Sim_mode_2_number << '\n'
-                                            << "Number Of Param Values: " << PARAM_SWEEP_NUMBER << '\n';
+            *(Output_file + Image_order) << "Number Of Photons Per Param Value: " << this->sim_mode_2_ray_number << '\n'
+                                            << "Number Of Param Values: " << p_Initial_Conditions->Sim_mode_2_param_value_number << '\n';
 
             break;
 
+        case 3:
+
+            *(Output_file + Image_order) << "X_init [M] = " << this->p_Initial_Conditions->Sim_mode_3_X_init << "\n" 
+                                         << "Y_init [M] = " << this->p_Initial_Conditions->Sim_mode_3_Y_init << "\n";
+
+            break;
+
+
         default:
 
-            Image_Output_files[Image_order] << "Unsupported simulation mode!" << "\n";
+            *(Output_file + Image_order) << "Unsupported simulation mode!" << "\n";
 
         }
 
 
-        Image_Output_files[Image_order] << "------------------------------------------------------- Accretion Disk Parameters -------------------------------------------------------"
+        *(Output_file + Image_order) << "------------------------------------------------------- Accretion Disk Parameters -------------------------------------------------------"
                                         << "\n"
                                         << "--------------------------- Density Model Parameters"
                                         << "\n";
@@ -150,7 +180,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case e_Power_law_profile:
 
-            Image_Output_files[Image_order] << "Density Profile: Power law"
+            *(Output_file + Image_order) << "Density Profile: Power law"
                                             << "\n"
                                             << "Disk Opening Angle [tan(angle)]: "
                                             << this->p_Initial_Conditions->Disk_params.Power_law_disk_opening_angle
@@ -170,7 +200,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case e_Exponential_law_profile:
 
-            Image_Output_files[Image_order] << "Density Profile: Exponential law"
+            *(Output_file + Image_order) << "Density Profile: Exponential law"
                                             << "\n"
                                             << "Density Height Scale [M]: "
                                             << this->p_Initial_Conditions->Disk_params.Exp_law_density_height_scale
@@ -183,13 +213,13 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         default:
 
-            Image_Output_files[Image_order] << "Unsupported Density Profile!" << "\n";
+            *(Output_file + Image_order) << "Unsupported Density Profile!" << "\n";
 
             break;
 
         }
 
-        Image_Output_files[Image_order] << "Maximum Density [g / cm^3]: "
+        *(Output_file + Image_order) << "Maximum Density [g / cm^3]: "
                                         << this->p_Initial_Conditions->Disk_params.Electron_density_scale
                                         << "\n";
    
@@ -199,14 +229,14 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
         
         */
 
-        Image_Output_files[Image_order] << "--------------------------- Temperature Model Parameters"
+        *(Output_file + Image_order) << "--------------------------- Temperature Model Parameters"
                                         << "\n";
 
         switch (this->p_Initial_Conditions->Disk_params.Temperature_profile_type) {
 
         case e_Power_law_profile:
 
-            Image_Output_files[Image_order] << "Temperature Profile: Power law"
+            *(Output_file + Image_order) << "Temperature Profile: Power law"
                                             << "\n"
                                             << "Temperature R_0 [M]: "
                                             << this->p_Initial_Conditions->Disk_params.Power_law_temperature_R_0
@@ -220,7 +250,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case e_Exponential_law_profile:
 
-            Image_Output_files[Image_order] << "Temperature Profile: Exponential law"
+            *(Output_file + Image_order) << "Temperature Profile: Exponential law"
                                             << "\n"
                                             << "Temperature Height Scale [M]: "
                                             << this->p_Initial_Conditions->Disk_params.Exp_law_temperature_height_scale
@@ -233,12 +263,12 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         default:
 
-            Image_Output_files[Image_order] << "Unsupported Temperature Profile!" << "\n";
+            *(Output_file + Image_order) << "Unsupported Temperature Profile!" << "\n";
 
             break;
         }
 
-        Image_Output_files[Image_order] << "Maximum Temperature [K]: "
+        *(Output_file + Image_order) << "Maximum Temperature [K]: "
                                         << this->p_Initial_Conditions->Disk_params.Electron_temperature_scale
                                         << "\n";
 
@@ -248,14 +278,14 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
         
         */
 
-        Image_Output_files[Image_order] << "--------------------------- Disk Synchrotron Emission Model Parameters"
+        *(Output_file + Image_order) << "--------------------------- Disk Synchrotron Emission Model Parameters"
                                         << "\n";
 
         switch (this->p_Initial_Conditions->Disk_params.Ensamble_type) {
 
         case e_Phenomenological_ensamble:
 
-            Image_Output_files[Image_order] << "Disk Ensamble: Phenomenological"
+            *(Output_file + Image_order) << "Disk Ensamble: Phenomenological"
                                             << "\n"
                                             << "Emission Power Law Exponent [-]: "
                                             << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_power_law
@@ -274,13 +304,13 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case e_Thermal_ensamble:
 
-            Image_Output_files[Image_order] << "Disk Ensamble: Thermal"
+            *(Output_file + Image_order) << "Disk Ensamble: Thermal"
                                             << "\n";
 
             break;
 
         case e_Kappa_ensamble:
-            Image_Output_files[Image_order] << "Disk Ensamble: Kappa"
+            *(Output_file + Image_order) << "Disk Ensamble: Kappa"
                                             << "\n"
                                             << "Kappa value [-]: "
                                             << this->p_Initial_Conditions->Emission_params.Kappa
@@ -290,12 +320,12 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         default:
 
-            Image_Output_files[Image_order] << "Unsupported Ensamble!" << "\n";
+            *(Output_file + Image_order) << "Unsupported Ensamble!" << "\n";
 
             break;
         }
 
-        Image_Output_files[Image_order] << "Disk Magnetization [-]: "
+        *(Output_file + Image_order) << "Disk Magnetization [-]: "
                                         << this->p_Initial_Conditions->Disk_params.Magnetization << "\n"
                                         << "Disk Magnetic Field Geometry [-]: "
                                         << "[" << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[0] << " "
@@ -309,7 +339,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
         
         */
 
-        Image_Output_files[Image_order] << "------------------------------------------------------- Hotspot Parameters -------------------------------------------------------"
+        *(Output_file + Image_order) << "------------------------------------------------------- Hotspot Parameters -------------------------------------------------------"
                                         << "\n" 
                                         << "--------------------------- Density Model Parameters"
                                         << "\n";
@@ -318,7 +348,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case e_Gaussian_profile:
 
-            Image_Output_files[Image_order] << "Density Profile: Gaussian"
+            *(Output_file + Image_order) << "Density Profile: Gaussian"
                                             << "\n"
                                             << "Spread [M]: "
                                             << this->p_Initial_Conditions->Hotspot_params.Density_spread
@@ -328,7 +358,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case e_Spherical_profile:
 
-            Image_Output_files[Image_order] << "Density Profile: Spherical"
+            *(Output_file + Image_order) << "Density Profile: Spherical"
                                             << "\n"
                                             << "Radius [M]: "
                                             << this->p_Initial_Conditions->Hotspot_params.Radius
@@ -338,12 +368,12 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         default:
 
-            Image_Output_files[Image_order] << "Unsupported Density Profile!" << "\n";
+            *(Output_file + Image_order) << "Unsupported Density Profile!" << "\n";
 
             break;
         }
 
-        Image_Output_files[Image_order] << "Maximum Density [g / cm^3]: "
+        *(Output_file + Image_order) << "Maximum Density [g / cm^3]: "
                                         << this->p_Initial_Conditions->Hotspot_params.Electron_density_scale
                                         << "\n";
 
@@ -353,14 +383,14 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         */
 
-        Image_Output_files[Image_order] << "--------------------------- Temperature Model Parameters"
+        *(Output_file + Image_order) << "--------------------------- Temperature Model Parameters"
                                         << "\n";
 
         switch (this->p_Initial_Conditions->Hotspot_params.Temperature_profile_type) {
 
         case e_Gaussian_profile:
 
-            Image_Output_files[Image_order] << "Temperature Profile : Gaussian"
+            *(Output_file + Image_order) << "Temperature Profile : Gaussian"
                                             << "\n"
                                             << "Spread [M]: "
                                             << this->p_Initial_Conditions->Hotspot_params.Temperature_spread
@@ -370,7 +400,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case e_Spherical_profile:
 
-            Image_Output_files[Image_order] << "Temperature Profile: Spherical"
+            *(Output_file + Image_order) << "Temperature Profile: Spherical"
                                             << "\n"
                                             << "Radius [M]: "
                                             << this->p_Initial_Conditions->Hotspot_params.Radius
@@ -380,12 +410,12 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         default:
 
-            Image_Output_files[Image_order] << "Unsupported Temperature Profile!" << "\n";
+            *(Output_file + Image_order) << "Unsupported Temperature Profile!" << "\n";
 
             break;
         }
 
-        Image_Output_files[Image_order] << "Maximum Temperature [K]: "
+        *(Output_file + Image_order) << "Maximum Temperature [K]: "
                                         << this->p_Initial_Conditions->Hotspot_params.Electron_temperature_scale
                                         << "\n";
 
@@ -395,14 +425,14 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
         
         */
 
-        Image_Output_files[Image_order] << "--------------------------- Hotspot Synchrotron Emission Model Parameters"
+        *(Output_file + Image_order) << "--------------------------- Hotspot Synchrotron Emission Model Parameters"
                                         << "\n";
 
         switch (this->p_Initial_Conditions->Hotspot_params.Ensamble_type) {
 
         case e_Phenomenological_ensamble:
 
-            Image_Output_files[Image_order] << "Hotspot Ensamble: Phenomenological"
+            *(Output_file + Image_order) << "Hotspot Ensamble: Phenomenological"
                                             << "\n"
                                             << "Emission Power Law Exponent [-]: "
                                             << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_power_law
@@ -421,13 +451,13 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         case e_Thermal_ensamble:
 
-            Image_Output_files[Image_order] << "Hotspot Ensamble: Thermal"
+            *(Output_file + Image_order) << "Hotspot Ensamble: Thermal"
                                             << "\n";
 
             break;
 
         case e_Kappa_ensamble:
-            Image_Output_files[Image_order] << "Hotspot Ensamble: Kappa"
+            *(Output_file + Image_order) << "Hotspot Ensamble: Kappa"
                                             << "\n"
                                             << "Kappa value [-]: "
                                             << this->p_Initial_Conditions->Emission_params.Kappa
@@ -437,12 +467,12 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         default:
 
-            Image_Output_files[Image_order] << "Unsupported Ensamble!" << "\n";
+            *(Output_file + Image_order) << "Unsupported Ensamble!" << "\n";
 
             break;
         }
 
-        Image_Output_files[Image_order] << "Hotspot Magnetization [-]: "
+        *(Output_file + Image_order) << "Hotspot Magnetization [-]: "
                                         << this->p_Initial_Conditions->Disk_params.Magnetization << "\n"
                                         << "Hotspot Magnetic Field Geometry [-]: "
                                         << "[" << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[0] << " "
@@ -450,10 +480,10 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                         << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[2] << "]"
                                         << "\n";
 
-        Image_Output_files[Image_order] << "--------------------------- Hotspot Position"
+        *(Output_file + Image_order) << "--------------------------- Hotspot Position"
                                         << "\n";
 
-        Image_Output_files[Image_order] << "Distance [M]: "
+        *(Output_file + Image_order) << "Distance [M]: "
                                         << this->p_Initial_Conditions->Hotspot_params.Position[e_r - 1]
                                         << "\n"
                                         << "Inclination [Deg]: "
@@ -464,7 +494,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
                                         << "\n";
 
 
-        Image_Output_files[Image_order] << "------------------------------------------------------- Novikov - Thorne Model Parameters -------------------------------------------------------"
+        *(Output_file + Image_order) << "------------------------------------------------------- Novikov - Thorne Model Parameters -------------------------------------------------------"
                                         << "\n";
 
         /*
@@ -475,7 +505,7 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
 
         if (this->p_Initial_Conditions->NT_params.evaluate_NT_disk){
 
-            Image_Output_files[Image_order] << "Inner Disk Radius [M]: "
+            *(Output_file + Image_order) << "Inner Disk Radius [M]: "
                                             << this->p_Initial_Conditions->NT_params.r_in
                                             << "\n"
                                             << "Outer Disk Radius [M]: "
@@ -484,92 +514,122 @@ void File_manager_class::write_simulation_metadata(int Sim_mode_2_number) {
         }
         else {
 
-            Image_Output_files[Image_order] << "Novikov - Thorne Disk Evaluation Is Disabled." << "\n";
+            *(Output_file + Image_order) << "Novikov - Thorne Disk Evaluation Is Disabled." << "\n";
 
         }
 
-        Image_Output_files[Image_order] << "------------------------------------------------------- Simulation Results -------------------------------------------------------"
+        *(Output_file + Image_order) << "------------------------------------------------------- Simulation Results -------------------------------------------------------"
                                         << "\n";
 
 
-        Image_Output_files[Image_order] << "Image X Coord [M],"
-                                        << " "
-                                        << "Image Y Coord [M],"
-                                        << " "
-                                        << "Novikov-Thorne Disk Redshift [-],"
-                                        << " "
-                                        << "Novikov-Thorne Flux [M^-2],"
-                                        << " "
-                                        << "Synchotron Intensity I [Jy/sRad],"
-                                        << " "
-                                        << "Synchotron Intensity Q [Jy/sRad],"
-                                        << " "
-                                        << "Synchotron Intensity U [Jy/sRad],"
-                                        << " "
-                                        << "Synchotron Intensity V [Jy/sRad]";
+        if (p_Initial_Conditions->Simulation_mode != 3) {
 
-            if (Active_Sim_Mode == 2) {
+            *(Output_file + Image_order) << "Image X Coord [M],"
+                                            << " "
+                                            << "Image Y Coord [M],"
+                                            << " "
+                                            << "Novikov-Thorne Disk Redshift [-],"
+                                            << " "
+                                            << "Novikov-Thorne Flux [M_dot/M^2],"
+                                            << " "
+                                            << "Synchotron Intensity I [Jy/sRad],"
+                                            << " "
+                                            << "Synchotron Intensity Q [Jy/sRad],"
+                                            << " "
+                                            << "Synchotron Intensity U [Jy/sRad],"
+                                            << " "
+                                            << "Synchotron Intensity V [Jy/sRad]";
 
-                Image_Output_files[Image_order] << ", Source r Coord [M],"
-                                                << " "
-                                                << "Source phi Coord [Rad],"
-                                                << " " 
-                                                << "Radial Momentum (covariant),"
-                                                << " "
-                                                << "Theta Momentum (covariant),"
-                                                << " "
-                                                << "Phi Momentum (covariant),"
-                                                << " ";
+            if (p_Initial_Conditions->Simulation_mode == 2) {
+
+                *(Output_file + Image_order) << ", Source r Coord [M],"
+                    << " "
+                    << "Source phi Coord [Rad],"
+                    << " "
+                    << "Radial Momentum (covariant),"
+                    << " "
+                    << "Theta Momentum (covariant),"
+                    << " "
+                    << "Phi Momentum (covariant),"
+                    << " ";
 
                 switch (this->p_Initial_Conditions->Metric_params.e_Spacetime) {
 
                 case Kerr:
 
-                    Image_Output_files[Image_order] << "Spin Parameter";
+                    *(Output_file + Image_order) << "Spin Parameter";
                     break;
 
                 case Wormhole:
 
-                    Image_Output_files[Image_order] << "Spin Parameter,"
+                    *(Output_file + Image_order) << "Spin Parameter,"
                         << " "
                         << "Redshift Parameter";
                     break;
 
                 case Reg_Black_Hole:
 
-                    Image_Output_files[Image_order] << "Parameter";
+                    *(Output_file + Image_order) << "Parameter";
                     break;
 
                 case Janis_Newman_Winicour:
 
-                    Image_Output_files[Image_order] << "Gamma";
+                    *(Output_file + Image_order) << "Gamma";
                     break;
 
                 case Einstein_Gauss_Bonnet:
 
-                    Image_Output_files[Image_order] << "Gamma";
+                    *(Output_file + Image_order) << "Gamma";
                     break;
 
                 case BH_w_Dark_Matter:
 
-                    Image_Output_files[Image_order] << "Halo Mass,"
-                                                    << " " 
-                                                    << "Halo Compactness";
+                    *(Output_file + Image_order) << "Halo Mass,"
+                        << " "
+                        << "Halo Compactness";
                     break;
                 }
             }
 
-            Image_Output_files[Image_order] << '\n';
+        }else{
+
+           *(Output_file + Image_order) << "t_coord [M],"
+                                                << " "
+                                                << "r_coord [M],"
+                                                << " "
+                                                << "theta_coord [rad],"
+                                                << " "
+                                                << "phi_coord [rad],"
+                                                << " "
+                                                << "p_t [-],"
+                                                << " "
+                                                << "p_r [-],"
+                                                << " "
+                                                << "p_theta [rad/M],"
+                                                << " "
+                                                << "p_phi [rad/M],"
+                                                << " "
+                                                << "Integration Step [M]"
+                                                << " "
+                                                << "Synchotron Intensity I [Jy/sRad],"
+                                                << " "
+                                                << "Synchotron Intensity Q [Jy/sRad],"
+                                                << " "
+                                                << "Synchotron Intensity U [Jy/sRad],"
+                                                << " "
+                                                << "Synchotron Intensity V [Jy/sRad]";
+
+        }
+
+        *(Output_file + Image_order) << '\n';
     }
 }
 
-void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
-
-    const int File_number = SPACETIME_NUMBER;
+void File_manager_class::open_image_output_files() {
 
     // Create the path to the main results directory
 
-    std::string Output_directory_path = this->p_Initial_Conditions->File_paths.Output_file_directory + "/" + this->p_Initial_Conditions->File_paths.Simulation_name;
+    std::string Output_directory_path = this->p_Initial_Conditions->File_manager_params.Output_file_directory + "/" + this->p_Initial_Conditions->File_manager_params.Simulation_name;
     std::error_code error_code;
 
     if (!std::filesystem::exists(Output_directory_path)) {
@@ -589,12 +649,10 @@ void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
     std::filesystem::path dir(Output_directory_path);
 
     // Init the std::path variables where we will store the names of the output files
-    std::filesystem::path Image_file_names[File_number];
-    std::filesystem::path Momenta_file_names[File_number];
+    std::filesystem::path Image_file_names[ORDER_NUM];
 
     // Init the std::path variables of the full file paths
     std::filesystem::path Image_full_path[ORDER_NUM]{};
-    std::filesystem::path Momenta_full_path[ORDER_NUM]{};
 
     // Specify the output file extention
     std::filesystem::path file_extention(".txt");
@@ -602,7 +660,7 @@ void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
     // Set weather we truncate the file upon opening or not
     auto open_type = std::ios::app;
 
-    if (Truncate_files) {
+    if (this->Truncate_files) {
 
         open_type = std::ios::trunc;
 
@@ -612,7 +670,7 @@ void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
     
     for (int File_Index = 0; File_Index <= ORDER_NUM - 1; File_Index += 1) {
 
-        if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_paths.Common_file_names.c_str()), "")) {
+        if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
             Image_file_names[File_Index] = this->Base_File_Names[this->p_Initial_Conditions->Metric_params.e_Spacetime]
                                          + "_n"
@@ -621,7 +679,7 @@ void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
         }
         else {
 
-            Image_file_names[File_Index] = this->p_Initial_Conditions->File_paths.Common_file_names
+            Image_file_names[File_Index] = this->p_Initial_Conditions->File_manager_params.Common_file_names
                                          + "_n"
                                          + std::to_string(File_Index);
 
@@ -631,7 +689,7 @@ void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
         Image_full_path[File_Index] = dir / Image_file_names[File_Index];
        
 
-        Image_Output_files[File_Index].open(Image_full_path[File_Index], open_type);
+        this->Image_Output_files[File_Index].open(Image_full_path[File_Index], open_type);
 
     }
 
@@ -639,7 +697,7 @@ void File_manager_class::open_image_output_files(int Sim_mode_2_number) {
     if (this->Truncate_files) {
 
         // If we are truncating the file, we should write the metadata to it
-        File_manager_class::write_simulation_metadata(Sim_mode_2_number);
+        this->write_simulation_metadata();
 
     }
 
@@ -661,7 +719,6 @@ void File_manager_class::open_log_output_file() {
      
     Log_Output_File.open(Log_File_full_path, open_type);
 
-    File_manager_class::write_simulation_metadata(int(0));
 }
 
 void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
@@ -684,7 +741,7 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
                                         << " "
                                         << s_Ray_results->Intensity[Image_order][V] * CGS_TO_JANSKY;
 
-        if (Active_Sim_Mode == 2) {
+        if (p_Initial_Conditions->Simulation_mode == 2) {
 
             Image_Output_files[Image_order] << " "
                                             << s_Ray_results->Source_Coords[e_r][Image_order]
@@ -736,16 +793,22 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
 void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
-    //for (int log_index = 0; log_index <= s_Ray_results->Ray_log.size() - 1; log_index++) {
+    for (int log_index = 0; log_index <= s_Ray_results->Ray_log_struct.Log_length - 1; log_index++) {
 
-    //    for (int state_index = e_r; state_index <= e_State_Number - 1; state_index++) {
+        for (int state_index = 0; state_index <= e_State_Number - 1; state_index++) {
 
-    //        Log_Output_File << s_Ray_results->Ray_log[log_index][state_index] << " ";
-    //      
-    //    }
+            Log_Output_File << s_Ray_results->Ray_log_struct.Ray_path_log[state_index + log_index * e_State_Number] << " ";
+          
+        }
 
-    //    Log_Output_File << '\n';
-    //}
+        for (int stokes_index = I; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+
+            Log_Output_File << s_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][0 + 2 * log_index] << " ";
+
+        }
+
+        Log_Output_File << '\n';
+    }
    
 };
 

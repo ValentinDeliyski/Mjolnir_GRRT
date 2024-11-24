@@ -116,9 +116,9 @@ class NT_model_params():
                  "r_out", 
                  "Evaluate_NT_disk")
 
-class File_paths():
+class File_manager():
 
-    __slots__ = ("Sim_mode_2_input_file_path", "Output_file_directory", "Common_file_names", "Vert_shader_path", "Frag_shader_path")
+    __slots__ = ("Sim_mode_2_input_file_path", "Output_file_directory", "Common_file_names", "Vert_shader_path", "Frag_shader_path", "Truncate_files")
 
 class Simulation_configurator:
 
@@ -130,28 +130,40 @@ class Simulation_configurator:
                  "observer", 
                  "emission_models", 
                  "NT_model_params", 
-                 "file_paths", 
+                 "file_manager", 
                  "average_emission_pitch_angle", 
                  "emission_pitch_angle_samples_to_average",
-                 "object_mass")
+                 "object_mass",
+                 "simulation_mode",
+                 "sim_mode_2_param_value_number",
+                 "sim_mode_3_X_init",
+                 "sim_mode_3_Y_init")
 
     def __init__(self, 
                  Average_emission_pitch_angle: dict = {"Value": 1, "Unit": "[-]"}, 
                  emission_pitch_angle_samples_to_average: dict = {"Value": 50, "Units": "[-]"},
                  object_mass: dict = {"Value": 6.2e9, "Unit": "[M_sun]"},
-                 simulation_name: str = "Test_Simulation"):
+                 simulation_name: dict = {"Value": "Test_Simulation", "Unit": "[-]"},
+                 simulation_mode: dict = {"Value": 1, "Unit": "[-]"}, 
+                 sim_mode_2_param_value_number: dict = {"Value": 1, "Unit": "[-]"},
+                 sim_mode_3_X_init: dict = {"Value": 1, "Unit": "[M]"},
+                 sim_mode_3_Y_init: dict = {"Value": 1, "Unit": "[M]"}):
 
         self.average_emission_pitch_angle = Average_emission_pitch_angle
         self.emission_pitch_angle_samples_to_average = emission_pitch_angle_samples_to_average
         self.simulation_name = simulation_name
         self.object_mass = object_mass
+        self.simulation_mode = simulation_mode
+        self.sim_mode_2_param_value_number = sim_mode_2_param_value_number
+        self.sim_mode_3_X_init = sim_mode_3_X_init
+        self.sim_mode_3_Y_init = sim_mode_3_Y_init
 
         self._configure_integrator_settings()
         self._configure_observer()
         self._configure_NT_model()
         self._configure_disk_model()
         self._configure_hotspot_model()
-        self._configure_file_paths()
+        self._configure_file_manager()
         self._configure_metric_parameters()
         self._configure_emission_models()
 
@@ -365,28 +377,34 @@ class Simulation_configurator:
         self.hotspot_model.Azimuth            = Azimuth           
         self.hotspot_model.Magnetization      = Magnetization     
 
-    def _configure_file_paths(self, Vert_shader_path: str = "C:/Users/Valur/Documents/Repos/Gravitational_Lenser/Libraries/shaders/default.vert",
-                                    Frag_shader_path: str = "C:/Users/Valur/Documents/Repos/Gravitational_Lenser/Libraries/shaders/default.frag",
-                                    Output_file_directory: str = "C:/Users/Valur/Documents/Repos/Gravitational_Lenser/Sim_Results",
-                                    Common_file_names: str = "",
-                                    Sim_mode_2_input_file_path: str = ""):
+    def _configure_file_manager(self, Vert_shader_path: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Libraries/shaders/default.vert",
+                                      Frag_shader_path: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Libraries/shaders/default.frag",
+                                      Output_file_directory: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Sim_Results",
+                                      Common_file_names: str = "",
+                                      Sim_mode_2_input_file_path: str = "",
+                                      Truncate_files: bool = 1):
                             
 
-        self.file_paths = File_paths()
+        self.file_manager = File_manager()
 
-        self.file_paths.Vert_shader_path = Vert_shader_path
-        self.file_paths.Frag_shader_path = Frag_shader_path
-        self.file_paths.Output_file_directory = Output_file_directory
-        self.file_paths.Common_file_names = Common_file_names
-        self.file_paths.Sim_mode_2_input_file_path = Sim_mode_2_input_file_path
+        self.file_manager.Vert_shader_path = Vert_shader_path
+        self.file_manager.Frag_shader_path = Frag_shader_path
+        self.file_manager.Output_file_directory = Output_file_directory
+        self.file_manager.Common_file_names = Common_file_names
+        self.file_manager.Sim_mode_2_input_file_path = Sim_mode_2_input_file_path
+        self.file_manager.Truncate_files = Truncate_files
 
     def generate_simulation_input(self):
 
         Encoding = 'UTF-8'
-        XML_root_node = ET.Element("Simulation_Input", {"Simulation_Name": self.simulation_name})
+        XML_root_node = ET.Element("Simulation_Input", {"Simulation_Name": self.simulation_name["Value"]})
+        ET.SubElement(XML_root_node, "Simulation_mode", units = self.simulation_mode["Unit"]).text = "{}".format(self.simulation_mode["Value"])
         ET.SubElement(XML_root_node, "Average_emission_pitch_angle", units = "[-]").text = "{}".format(self.average_emission_pitch_angle["Value"])
         ET.SubElement(XML_root_node, "Emission_pitch_angle_samples_to_average", units = "[-]").text = "{}".format(self.emission_pitch_angle_samples_to_average["Value"])
         ET.SubElement(XML_root_node, "Central_object_mass", units = self.object_mass["Unit"]).text = "{}".format(self.object_mass["Value"])
+        ET.SubElement(XML_root_node, "Sim_mode_2_param_value_number", units = self.sim_mode_2_param_value_number["Unit"]).text = "{}".format(self.sim_mode_2_param_value_number["Value"])
+        ET.SubElement(XML_root_node, "Sim_mode_3_X_init", units = self.sim_mode_3_X_init["Unit"]).text = "{}".format(self.sim_mode_3_X_init["Value"])
+        ET.SubElement(XML_root_node, "Sim_mode_3_Y_init", units = self.sim_mode_3_Y_init["Unit"]).text = "{}".format(self.sim_mode_3_Y_init["Value"])
 
         # ============ Generate the observer XML section ============ #
 
@@ -606,9 +624,9 @@ class Simulation_configurator:
 
         # ============ Generate the file paths XML section ============ #
 
-        Files_subelement = ET.SubElement(XML_root_node, "File_Paths")
-        for Files_attrib_name in self.file_paths.__slots__:
-            Files_attrib = getattr(self.file_paths, Files_attrib_name)
+        Files_subelement = ET.SubElement(XML_root_node, "File_Manager")
+        for Files_attrib_name in self.file_manager.__slots__:
+            Files_attrib = getattr(self.file_manager, Files_attrib_name)
             ET.SubElement(Files_subelement, Files_attrib_name).text = "{}".format(Files_attrib)
 
         # ========================================================== #
@@ -626,24 +644,25 @@ Units_class_instance = Units_class()
 
 Sim_config = Simulation_configurator()
 
-
-Sim_config.object_mass = {"Value": 6.2e9, "Unit": "[M_sun]"}
+Sim_config.object_mass = {"Value": 4.2e6, "Unit": "[M_sun]"}
 
 # ================================================== Metric ================================================== #
 
 Sim_config.metric_parameters.Metric_type = {"Value": "Wormhole", "Unit": "[-]"}
-Sim_config.metric_parameters.Spin = {"Value": 0.0, "Unit": "[M]"}
+Sim_config.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
 
 # ================================================== Observer ================================================== #
 
-Sim_config.observer.Resolution_x = {"Value": 2048, "Unit": "[-]"}
-Sim_config.observer.Resolution_y = {"Value": 2048, "Unit": "[-]"}
-Sim_config.observer.Distance = {"Value": 1e3, "Unit": "[M]"}
-Sim_config.observer.Inclination = {"Value": 20 * pi / 180, "Unit": "[Rad]"}
+Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
+Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
+Sim_config.observer.Distance = {"Value": 1e4, "Unit": "[M]"}
+Sim_config.observer.Inclination = {"Value": 80 * pi / 180, "Unit": "[Rad]"}
 Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
 
 # ================================================== Disk ================================================== #
-
+Sim_config.disk_model.Ensamble_type = {"Value": "Phenomenological", "Unit": "[-]"}
+Sim_config.disk_model.Density_profile = {"Value": "Exponential Law", "Unit": "[-]"}
+Sim_config.disk_model.Temperature_profile = {"Value": "Exponential Law", "Unit": "[-]"}
 Sim_config.disk_model.Temperature_scale_factor = {"Value": 5.85e10, "Unit": "[K]"}
 Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g / cm^3]"}
 
@@ -674,14 +693,25 @@ from Support_functions import Spacetimes
 
 Wormhole_class = Spacetimes.Wormhole(r_throat = 1, parameter = 2)
 
-Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
-Sim_config.NT_model_params.r_in = {"Value": 2, "Unit": "[M]"}
-Sim_config.NT_model_params.r_out = {"Value": 25, "Unit": "[M]"}
+Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 1, "Unit": "[-]"}
+Sim_config.NT_model_params.r_in = {"Value": 6, "Unit": "[M]"}
+Sim_config.NT_model_params.r_out = {"Value": 30, "Unit": "[M]"}
 # ================================================== Integrator ================================================== #
 
 # Sim_config.integrator.step_controller_I_gain = {"Value": 0.18, "Unit": "[-]"}
 Sim_config.integrator.RK45_accuracy = {"Value": 1e-12, "Unit": "[-]"}
 
-Sim_config.file_paths.Sim_mode_2_input_file_path = "C:/Users/Valur/Documents/University stuff/General Relativity/Polarization/Schwarzschild_Impact_parameters/Direct_image/geodesic_data_20_deg_Sch_r6_500_photons.txt"
+Sim_config.file_manager.Sim_mode_2_input_file_path = "C:/Users/Valur/Documents/University stuff/General Relativity/Polarization/Schwarzschild_Impact_parameters/Direct_image/geodesic_data_20_deg_Sch_r6_500_photons.txt"
 
 Sim_config.generate_simulation_input()
+
+
+import subprocess
+filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\FILE.xml"
+args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename
+
+# for i in range(19):
+
+subprocess.call(args, shell=True)
+
+print("kek")

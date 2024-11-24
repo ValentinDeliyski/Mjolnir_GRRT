@@ -19,13 +19,13 @@
 
             bool renormalize_colormap_flag = false;
 
-            int texture_indexer;
-            int ray_number_x;
-            int ray_number_y;
+            int texture_indexer{};
+            int ray_number_x{};
+            int ray_number_y{};
             
-            float Max_Intensity;
-            float* Intensity_buffer;
-            float* texture_buffer;
+            float Max_Intensity{};
+            float* Intensity_buffer{};
+            float* texture_buffer{};
             
 
             const GLuint Vertex_order[6] = { 0, 2, 1, 0, 3, 2 };
@@ -38,7 +38,7 @@
                       0.5f, -0.5f,		  1.0f, 0.0f,     // Lower right corner
             };
 
-            static std::string get_file_contents(const char* filename);
+            static std::string get_file_contents(const char* filename, std::string file_type);
 
             void OpenGL_init(Initial_conditions_type* p_Init_conditions);
 

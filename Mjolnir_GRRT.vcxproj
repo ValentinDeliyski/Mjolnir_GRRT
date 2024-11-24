@@ -299,7 +299,6 @@
     <ClInclude Include="Libraries\include\Enumerations.h" />
     <ClInclude Include="Libraries\include\General_GR_functions.h" />
     <ClInclude Include="Libraries\include\General_math_functions.h" />
-    <ClInclude Include="Libraries\include\Inputs.h" />
     <ClInclude Include="Libraries\include\IO_files.h" />
     <ClInclude Include="Libraries\include\Lensing.h" />
     <ClInclude Include="Libraries\include\Rendering_Engine.h" />
@@ -317,7 +316,7 @@
     <ClCompile Include="src\IO_files.cpp" />
     <ClCompile Include="src\Lensing.cpp" />
     <ClCompile Include="src\Radiative_Transfer.cpp" />
-    <ClCompile Include="src\Ray_tracer.cpp" />
+    <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Rendering_Engine.cpp" />
     <ClCompile Include="src\RK45.cpp" />
     <ClCompile Include="src\Sim_Modes.cpp" />
@@ -340,6 +339,7 @@
     <ProjectGuid>{1e2d4c44-9f37-4a04-a91e-e972fd849d7d}</ProjectGuid>
     <RootNamespace>GravitationalLenser</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Mjolnir_GRRT</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

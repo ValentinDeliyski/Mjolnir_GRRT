@@ -88,11 +88,26 @@ void static Allocate_GOT_Model_class_instance(Simulation_Context_type* p_Sim_Con
     }
 }
 
-int main() {
+int main(int argument_count, char** cmd_line_args) {
 
     Console_Printer_class Console_Printer;
     Console_Printer.print_ASCII_art();
-   
+
+    std::string Input_file_path{};
+    if (argument_count == 3 && 0 == strcmp(cmd_line_args[1], "-in")) {
+
+        Input_file_path = cmd_line_args[2];
+
+    }
+    else {
+
+        std::cout << "To run Mjolnir, use the following call structure:" << "\n";
+        std::cout << "Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__" << "\n";
+
+        exit(ERROR);
+
+    }
+
     /*
     
     |============================== Define the Simulation Context struct ==============================|
@@ -103,7 +118,7 @@ int main() {
 
     s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
 
-    if (ERROR == parse_simulation_input_XML("C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Utilities\\FILE.xml", s_Sim_Context.p_Init_Conditions)){
+    if (ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)){
     
         exit(ERROR);
     
@@ -135,7 +150,7 @@ int main() {
      s_Sim_Context.p_NT_model = new Novikov_Thorne_Model(&s_Sim_Context);
 
     // Populate the File Manager class instance
-    s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions, Truncate_files);
+    s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions);
 
     // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
     static Results_type s_Ray_results{};
@@ -156,7 +171,7 @@ int main() {
 
     */
 
-    switch (Active_Sim_Mode) {
+    switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
    
     case 1:
          run_simulation_mode_1(&s_Sim_Context, &s_Ray_results);
@@ -165,17 +180,9 @@ int main() {
     case 2:
          run_simulation_mode_2(&s_Sim_Context, &s_Ray_results);
          break;
-   
-    case 3:
-   
-         // With the python wrapper this wont need to exist anymore (yay)
 
-         //run_simulation_mode_3(s_Sim_Context);
-   
-         break;
-   
-    case 4:
-         run_simulation_mode_4(&s_Sim_Context, &s_Ray_results);
+    case 3:
+         run_simulation_mode_3(&s_Sim_Context, &s_Ray_results);
          break;
    
     default:

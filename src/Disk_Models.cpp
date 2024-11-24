@@ -1,14 +1,4 @@
-#pragma once
-
-#define _USE_MATH_DEFINES
-
-#include "General_math_functions.h"
-#include "General_GR_functions.h"
 #include "Disk_Models.h"
-#include "Spacetimes.h"
-#include "Constants.h"
-
-#include "gsl/gsl_sf_hyperg.h"
 
 /***************************************************
 |                                                  |
@@ -185,6 +175,7 @@ double Novikov_Thorne_Model::Flux_integrand(const double* const State_Vector) {
 //! Evaluates the integral that appears in the flux expression of the Novikov-Thorne disk model.
 /*! Evaluates the integral that appears in the flux expression of the Novikov-Thorne disk model, using the adaptive Simpson method.
  *
+ *   \param [in] r_in - The lower bound for the integral in units [M]
  *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
  *   \return The value of the integral term.
  */
@@ -262,7 +253,7 @@ double Novikov_Thorne_Model::solve_Flux_integral(double r_in, const double* cons
 /*! Evaluates the flux of the Novikov-Thorne disk model
  * 
  *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
- *   \return The Novikov-Thorne flux in [M_dot / M^2].
+ *   \return The Novikov-Thorne flux in units [M_dot / M^2].
  */
 double Novikov_Thorne_Model::get_flux(const double* const State_Vector) {
 
@@ -327,9 +318,7 @@ double Generic_Optically_Thin_Model::get_disk_temperature(const double* const St
 
     }
 
-    double Disk_Temperature = T_scale * Disk_temperature_profile;
-
-    return Disk_Temperature;
+    return T_scale * Disk_temperature_profile;
 
 }
 
@@ -407,8 +396,6 @@ double Generic_Optically_Thin_Model::get_hotspot_temperature(const double* const
     return Hotspot_Temperature;
 
 }
-
-/* ====================================================== Velocity Functions ====================================================== */
 
 //! Computes the emission medium's plasma 4-velocity
 /*! Computes the emission medium's plasma 4-velocity
@@ -508,8 +495,6 @@ double* Generic_Optically_Thin_Model::get_plasma_velocity(const double* const St
     return Plasma_velocity;
 
 }
-
-/* ======================================================= Density Functions ====================================================== */
 
 //! Computes the hotspot density
 /*! Computes the hotspot density at the current photon position.
@@ -659,8 +644,6 @@ double Generic_Optically_Thin_Model::get_disk_density(const double* const State_
 
 }
 
-/* =================================================== Disk Magnetic Field Functions =================================================== */
-
 //! Computes the magnetic field 4-vector in the coordinate and plasma frames.
 /*! Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity) in the following frames:
  *      1) That of a static observer (with 4-velocity n_mu = {1, 0, 0, 0} ) - a.e. the coordinate frame.
@@ -803,7 +786,7 @@ double Generic_Optically_Thin_Model::get_electron_pitch_angle(const double* cons
 /*! Evaluates the thermal ensamble polarized synchrotron emission and Faradey functions.
  *
  *   \param [in] Density - The current emission medium density in [g/cm^3].
- *   \param [in] T_electron_dim - The current emission medium dimentionless temperature.
+ *   \param [in] T_electron_dim - The current emission medium dimensionless temperature.
  *   \param [in] f_cyclo - The current cyclotron frequency in [Hz].
  *   \param [in] sin_pitch_angle - The sine of the angle between the magnetic field and the photon momentum 3-vector in the plasma frame.
  *   \param [in] cos_pitch_angle - The cosine of the angle between the magnetic field and the photon momentum 3-vector in the plasma frame.
@@ -891,15 +874,15 @@ void Generic_Optically_Thin_Model::evaluate_thermal_synchrotron_transfer_functio
  *   \return Nothing.
  */
 void Generic_Optically_Thin_Model::get_thermal_synchrotron_transfer_functions(const double* const State_Vector,
-                                                                             const double* const Plasma_velocity,
-                                                                             const Simulation_Context_type* const p_Sim_Context,
-                                                                             double* const Emission_functions,
-                                                                             double* const Faradey_functions,
-                                                                             double* const Absorbtion_functions,
-                                                                             double  const Density,
-                                                                             double  const Temperature,
-                                                                             double* const B_field_coord_frame,
-                                                                             double  const B_field_plasma_frame_norm) {
+                                                                              const double* const Plasma_velocity,
+                                                                              const Simulation_Context_type* const p_Sim_Context,
+                                                                              double* const Emission_functions,
+                                                                              double* const Faradey_functions,
+                                                                              double* const Absorbtion_functions,
+                                                                              double  const Density,
+                                                                              double  const Temperature,
+                                                                              const double* const B_field_coord_frame,
+                                                                              double  const B_field_plasma_frame_norm) {
 
     /* === Zero out the transfer functions just in case === */
     for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
@@ -916,7 +899,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_transfer_functions(co
 
     }
 
-    double redshift = Redshift(State_Vector, Plasma_velocity, p_Sim_Context->p_Observer);
+    double redshift = get_redshift(State_Vector, Plasma_velocity, p_Sim_Context->p_Observer);
 
     if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) {
 
@@ -927,7 +910,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_transfer_functions(co
     /* Observation Frequency */
     double const obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
-    /* Dimentionless Electron Temperature */
+    /* Dimensionless Electron Temperature */
     double const T_electron_dim = BOLTZMANN_CONST_CGS * Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
 
     /* Cyclotron Frequency */
@@ -939,7 +922,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_transfer_functions(co
     Thermal_emission_f_arguments Emission_args_ang_uncorrected{};
     Thermal_faradey_f_arguments Faradey_args_ang_uncorrected{};
 
-    /* Both the emission and faradey function expressions are in terms of an dimentionless variable X, but the definitions for X are different */
+    /* Both the emission and faradey function expressions are in terms of an dimensionless variable X, but the definitions for X are different */
     Emission_args_ang_uncorrected = {1e100,  // X
                                      1e100,  // sqrt_X
                                      1e100,  // cbrt_X
@@ -1122,16 +1105,16 @@ void Generic_Optically_Thin_Model::evaluate_kappa_synchrotron_transfer_functions
 /*! Computes the necessary variables (cyclotron frequency, emission angles and so on) for evaluating the kappa ensamble polarized
  *   synchrotron transfer functions, based on the current photon position.
  *
- *   \param [in] State_Vector - The current photon state vector.
- *   \param [in] Plasma_velocity - The current emission medium plasma velocity.
+ *   \param [in] State_Vector - The current photon state vector in geometric units.
+ *   \param [in] Plasma_velocity - The current emission medium plasma velocity in geometric units.
  *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to access the initial conditions.
- *   \param [out] Emission_functions - Vector to hold the emission functions.
- *   \param [out] Faradey_functions - Vector to hold the Faradey functions.
- *   \param [out] Absorbtion_functions - Vector to hold the absorbtion functions.
- *   \param [in] Density - The current density of the emission medium.
- *   \param [in] Temperature - The current temperrature of the emission medium.
- *   \param [in] B_field_coord_frame - The magnetic field 4-vector in the coordinate frame.
- *   \param [in] B_field_plasma_frame_norm - The norm of the magnetic field in the plasma frame.
+ *   \param [out] Emission_functions - Vector to hold the emission functions in CGS units.
+ *   \param [out] Faradey_functions - Vector to hold the Faradey functions in CGS units.
+ *   \param [out] Absorbtion_functions - Vector to hold the absorbtion functions in CGS units.
+ *   \param [in] Density - The current density of the emission medium in units [g/cm^3].
+ *   \param [in] Temperature - The current temperrature of the emission medium in units [K].
+ *   \param [in] B_field_coord_frame - The magnetic field 4-vector in the coordinate frame in units [G].
+ *   \param [in] B_field_plasma_frame_norm - The norm of the magnetic field in the plasma frame in units [G].
  *   \return Nothing.
  */
 void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(const double* const State_Vector,
@@ -1160,7 +1143,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(cons
 
     }
 
-    const double redshift = Redshift(State_Vector, Plasma_velocity, p_Sim_Context->p_Observer);
+    const double redshift = get_redshift(State_Vector, Plasma_velocity, p_Sim_Context->p_Observer);
 
     if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) {
 
@@ -1171,7 +1154,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(cons
     /* Observation frequency */
     double& obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
-    /* Dimentionless Electron Temperature */
+    /* Dimensionless Electron Temperature */
     double T_electron_dim = BOLTZMANN_CONST_CGS * Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
 
     /* Cyclotron Frequency */
@@ -1310,7 +1293,7 @@ void Generic_Optically_Thin_Model::get_phenomenological_synchrotron_functions(co
 
     }
 
-    double redshift = Redshift(State_Vector, Plasma_Veclocity, p_Sim_Context->p_Observer);
+    double redshift = get_redshift(State_Vector, Plasma_Veclocity, p_Sim_Context->p_Observer);
 
     if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) {
 
@@ -1496,9 +1479,8 @@ void Generic_Optically_Thin_Model::precompute_electron_pitch_angles(Initial_cond
     }
 }
 
-
 //!  Copies over the initial data from the Simulation Context struct to internal class variables for the sake of convenience
-/*!< Copies over the initial data from the Simulation Context struct to internal class variables for the sake of convenience
+/*!  Copies over the initial data from the Simulation Context struct to internal class variables for the sake of convenience
  *
  *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct.
  *   \return Nothing.
@@ -1547,7 +1529,6 @@ int Generic_Optically_Thin_Model::load_parameters(Simulation_Context_type* p_Sim
     return OK;
 
 }
-
 
 //! Evaluates the Planck function in the frequency domain in CGS units
 /*! Evaluates the Planck function in the frequency domain in CGS units

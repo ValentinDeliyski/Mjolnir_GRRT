@@ -8,7 +8,15 @@
 
 /* =============================================== Thermal synchrotron Transfer Functions =============================================== */
 
-
+//! Selects the approprite thermal synchrotron fit functions to evaluate, based on the "Include_polarization" flag.
+/*! Selects the approprite thermal synchrotron fit functions to evaluate, based on the "Include_polarization" flag.
+*
+*   \param [out] Emission_fucntions - ointer to the array that holds the emission fit functions
+*   \param [out] Faradey_functions - Pointer to the array that holds the Faradey fit functions.
+*   \param [in] Emission_args - Pointer to the struct that holds the arguments, necessary to evaluate the thermal synchrotron emission fit functions.
+*   \param [in] Faradey_args - Pointer to the struct that holds the arguments, necessary to evaluate the thermal synchrotron Faradey fit functions.
+*   \return Nothing
+*/
 void Generic_Optically_Thin_Model::get_thermal_synchrotron_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
                                                                         double Faradey_functions[STOKES_PARAM_NUM],
                                                                         Thermal_emission_f_arguments* Emission_args,
@@ -28,16 +36,17 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_fit_functions(double 
 }
 
 
-//! Evaluates the thermal sychrotron fit functions.
-/*! Evaluates the thermal sychrotron fit functions (emission and Fatadey), based on two sources:
+//! Evaluates the thermal sychrotron emission fit functions.
+/*! Evaluates the thermal sychrotron emission fit functions, based on two sources:
 *       1) https://www.aanda.org/articles/aa/pdf/2022/11/aa44339-22.pdf for the unpolarized case.
 *       2) https://arxiv.org/pdf/1602.03184.pdf for the polarized case
 *   
 *   \param [in] e_fit_functions - Enum that selects which fit functions to evaluate.
-*   \param [out] Emission_functions - Pointer to the array that holds the fit funct ions.
-*   \param [in] X - Dimentionless parameter that the fit functions depend on.
+*   \param [out] Emission_functions - Pointer to the array that holds the fit functions.
+*   \param [in] X - Dimensionless parameter that the fit functions depend on.
 *   \param [in] sqrt_X - Square root of X - computed ouside this function because it saves clock cycles when averaging over pitch angles.
 *   \param [in] cbrt_X - Cube root of X - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \return Nothing
 */
 void Generic_Optically_Thin_Model::get_thermal_synchrotron_emission_fit_functions(Thermal_Syncotron_fit_selector e_fit_functions,
                                                                                   double Emission_functions[4],
@@ -102,17 +111,27 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_emission_fit_function
 
 }
 
-void Generic_Optically_Thin_Model::get_thermal_synchrotron_faradey_fit_functions(double X,
-                                                                                double X_to_1_point_2,
-                                                                                double X_frac,
-                                                                                double faradey_fucntions[STOKES_PARAM_NUM]) {
+//! Evaluates the thermal sychrotron Faradey fit functions.
+/*! Evaluates the thermal sychrotron Faradey fit functions, based on this source: https://arxiv.org/pdf/1602.03184.pdf
+*
+*   \param [in] e_fit_functions - Enum that selects which fit functions to evaluate.
+*   \param [in] X - Dimensionless parameter that the fit functions depend on.
+*   \param [in] X_to_1_point_2 - pow(X,1.2) - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \param [in] X_frac - pow(X,1.035) - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \param [out] Faradey_fucntions - Pointer to the array that holds the evaluated Faradey functions.
+*   \return Nothing
+*/
+void Generic_Optically_Thin_Model::get_thermal_synchrotron_faradey_fit_functions(double const X,
+                                                                                 double const X_to_1_point_2,
+                                                                                 double const X_frac,
+                                                                                 double* const Faradey_fucntions) {
 
     /* The reference for this implementation is from Appendix B2 of https://arxiv.org/pdf/1602.03184.pdf */
 
-    faradey_fucntions[I] = 0.0f; // This is zero by definition
-    faradey_fucntions[U] = 0.0f; // This is zero by definition
-    faradey_fucntions[Q] = 0.0f;
-    faradey_fucntions[V] = 0.0f;
+    Faradey_fucntions[I] = 0.0f; // This is zero by definition
+    Faradey_fucntions[U] = 0.0f; // This is zero by definition
+    Faradey_fucntions[Q] = 0.0f;
+    Faradey_fucntions[V] = 0.0f;
 
     constexpr double TWO_TO_MINUS_ONE_THIRD = 0.7937005259840997373758528196361;
     constexpr double THREE_TO_23_OVER_6 = 67.44733739;
@@ -121,9 +140,9 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_faradey_fit_functions
 
     if (!isnan(X) && !isinf(X) && !isinf(exp_term)) {
 
-        faradey_fucntions[Q] = 2.011 * exp(-X_frac / 4.7) - cos(X / 2) * exp(-X_to_1_point_2 / 2.73) - 0.011 * exp_term
+        Faradey_fucntions[Q] = 2.011 * exp(-X_frac / 4.7) - cos(X / 2) * exp(-X_to_1_point_2 / 2.73) - 0.011 * exp_term
             + (0.011 * exp_term - TWO_TO_MINUS_ONE_THIRD / THREE_TO_23_OVER_6 * 1e4 * M_PI * pow(X, -8.0 / 3)) / 2 * (1 + tanh(10 * log(X / 120)));
-        faradey_fucntions[V] = 1.0 - 0.11 * log(1.0 + 0.035 * X);
+        Faradey_fucntions[V] = 1.0 - 0.11 * log(1.0 + 0.035 * X);
 
     }
 
@@ -131,10 +150,20 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_faradey_fit_functions
 
 /* ========================================== Kappa synchrotron Transfer Functions ========================================== */
 
-void Generic_Optically_Thin_Model::get_kappa_synchrotron_fit_functions(double Emission_fucntions[STOKES_PARAM_NUM],
-                                                                      double Faradey_functions[STOKES_PARAM_NUM], 
-                                                                      double Absorbtion_fucntions[STOKES_PARAM_NUM],
-                                                                      Kappa_transfer_f_arguments* args){
+//! Selects the approprite kappa synchrotron fit functions to evaluate, based on the "Include_polarization" flag.
+/*! Selects the approprite kappa synchrotron fit functions to evaluate, based on the "Include_polarization" flag.
+*   NOTE: Currently Faradey functions are not implemented, so this functions just acts as a wrapper.
+*
+*   \param [out] Emission_fucntions - Pointer to the array that holds the emission fit functions
+*   \param [out] Faradey_functions - Pointer to the array that holds the Faradey fit functions.
+*   \param [out] Absorbtion_fucntions - Pointer to the array that holds the absorbtion fit functions.
+*   \param [in] args - Pointer to the struct that holds the arguments, necessary to evaluate the kappa synchrotron fit functions.
+*   \return Nothing
+*/
+void Generic_Optically_Thin_Model::get_kappa_synchrotron_fit_functions(double* const Emission_fucntions,
+                                                                       double* const Faradey_functions, 
+                                                                       double* const Absorbtion_fucntions,
+                                                                       const Kappa_transfer_f_arguments* const args){
 
     this->get_kappa_synchrotron_emission_fit_functions(Emission_fucntions, args->X, args->sqrt_X, args->cbrt_X, args->X_to_7_over_20, args->kappa, args->sin_emission_angle, args->T_electron_dim);
     this->get_kappa_synchrotron_absorbtion_fit_functions(Absorbtion_fucntions, args->X, args->sqrt_X, args->cbrt_X, args->X_to_7_over_20, args->kappa, args->sin_emission_angle, args->T_electron_dim);
@@ -147,14 +176,28 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_fit_functions(double Em
 
 }
 
-void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(double Emission_functions[STOKES_PARAM_NUM],
-                                                                               double X,
-                                                                               double sqrt_X,
-                                                                               double cbrt_X,
-                                                                               double X_to_7_over_20,
-                                                                               double kappa,
-                                                                               double sin_emission_angle,
-                                                                               double T_electron_dim) {
+
+//! Evaluates the kappa sychrotron emission fit functions.
+/*! Evaluates the kappa sychrotron emission fit functions, based on the source: https://arxiv.org/pdf/1602.08749
+*
+*   \param [out] Emission_functions - Pointer to the array that holds the fit functions.
+*   \param [in] X - Dimensionless parameter that the fit functions depend on.
+*   \param [in] sqrt_X - Square root of X - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \param [in] cbrt_X - Cube root of X - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \param [in] X_to_7_over_20 - pow(X, 7./20) - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \param [in] kappa - The value of the dimensionless kappa parameter.
+*   \param [in] sin_emission_angle - The sin of the angle between the photon 3-momentum vector and the magnetic field vector, in the plasma frame.
+*   \param [in] T_electron_dim - The dimensionless electron temperature.
+*   \return Nothing
+*/
+void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(double* const Emission_functions,
+                                                                                const double X,
+                                                                                const double sqrt_X,
+                                                                                const double cbrt_X,
+                                                                                const double X_to_7_over_20,
+                                                                                const double kappa,
+                                                                                const double sin_emission_angle,
+                                                                                const double T_electron_dim) {
 
     // The reference for these expressions is https://arxiv.org/pdf/1602.08749, equations (35), (36), (37) and (38).
 
@@ -220,14 +263,27 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(
 
 }
 
-void Generic_Optically_Thin_Model::get_kappa_synchrotron_absorbtion_fit_functions(double Absorbtion_functions[STOKES_PARAM_NUM],
-                                                                                 double X,
-                                                                                 double sqrt_X,
-                                                                                 double cbrt_X,
-                                                                                 double X_to_7_over_20,
-                                                                                 double kappa,
-                                                                                 double sin_emission_angle,
-                                                                                 double T_electron_dim) {
+//! Evaluates the kappa sychrotron absorbtion fit functions.
+/*! Evaluates the kappa sychrotron absorbtion fit functions, based on the source: https://arxiv.org/pdf/1602.08749
+*
+*   \param [out] Absorbtion_functions - Pointer to the array that holds the fit functions.
+*   \param [in] X - Dimensionless parameter that the fit functions depend on.
+*   \param [in] sqrt_X - Square root of X - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \param [in] cbrt_X - Cube root of X - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \param [in] X_to_7_over_20 - pow(X, 7./20) - computed ouside this function because it saves clock cycles when averaging over pitch angles.
+*   \param [in] kappa - The value of the dimensionless kappa parameter.
+*   \param [in] sin_emission_angle - The sin of the angle between the photon 3-momentum vector and the magnetic field vector, in the plasma frame.
+*   \param [in] T_electron_dim - The dimensionless electron temperature.
+*   \return Nothing
+*/
+void Generic_Optically_Thin_Model::get_kappa_synchrotron_absorbtion_fit_functions(double* const Absorbtion_functions,
+                                                                                  double const X,
+                                                                                  double const sqrt_X,
+                                                                                  double const cbrt_X,
+                                                                                  double const X_to_7_over_20,
+                                                                                  double const kappa,
+                                                                                  double const sin_emission_angle,
+                                                                                  double const T_electron_dim) {
 
     // The reference for these expressions is https://arxiv.org/pdf/1602.08749, equations (39), (40), (41) and (42).
 

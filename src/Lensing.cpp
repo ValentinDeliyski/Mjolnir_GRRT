@@ -24,7 +24,7 @@ void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Ste
     // The loop continues up untill e_path_log_number - 2 in order to exclude the log step from the loop,
     // because its not parat of the photon state vector - I take care of it after the loop "by hand".
 
-    for (int index = 0; index <= e_State_Number - 2; index++) {
+    for (int index = 0; index <= e_State_Number - 1; index++) {
 
         s_Ray_Results->Ray_log_struct.Ray_path_log[index + log_offset * e_State_Number] = State_Vector[index];
 
@@ -543,7 +543,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         step = Logged_ray_path[Current][e_step] * mass_to_cm;
 
-        *N_theta_turning_points += Increment_theta_turning_points(Logged_ray_path[Current], Logged_ray_path[Next]);
+        *N_theta_turning_points += Check_for_theta_turning_point(Logged_ray_path[Current], Logged_ray_path[Next]);
         
         if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
@@ -708,7 +708,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     int integration_count{}, N_theta_turning_points{};
 
     // Calculate the image coordinates from the initial conditions
-    get_impact_parameters(p_Sim_Context->p_Init_Conditions, p_Ray_results->Image_Coords);
+    get_image_coordinates(p_Sim_Context->p_Init_Conditions, p_Ray_results->Image_Coords);
 
     Step_controller controller(p_Sim_Context->p_Init_Conditions->Integrator_params);
 
@@ -751,7 +751,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
             log_ray_path(State_Vector, p_Ray_results, controller, p_Sim_Context->p_Init_Conditions);
 
-            N_theta_turning_points += Increment_theta_turning_points(State_Vector, Old_State_Vector);
+            N_theta_turning_points += Check_for_theta_turning_point(State_Vector, Old_State_Vector);
 
             Evaluate_Equatorial_Disk(p_Sim_Context, p_Ray_results, State_Vector, Old_State_Vector, N_theta_turning_points);
 

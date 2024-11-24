@@ -1,10 +1,4 @@
-#pragma once
-
-#include <cmath>
-
-#include "Structs.h"
 #include "Spacetimes.h"
-#include "Constants.h"
 
 double* RBH_class::get_ISCO() {
 
@@ -39,7 +33,7 @@ Metric_type RBH_class::get_metric(const double* const State_Vector) {
     double sin_theta = sin(theta);
     double rho = sqrt(r2 + this->Parameter * this->Parameter);
 
-    memset(&this->s_Metric, 0., sizeof(this->s_Metric));
+    memset(&this->s_Metric, 0, sizeof(this->s_Metric));
 
     this->s_Metric.Metric[0][0] = -(1 - 2 * this->Mass / rho);
     this->s_Metric.Metric[0][3] = 0.0;
@@ -67,7 +61,7 @@ Metric_type RBH_class::get_dr_metric(const double* const State_Vector) {
     double rho = sqrt(r2 + this->Parameter * this->Parameter);
     double rho3 = rho * rho * rho;
 
-    memset(&this->s_dr_Metric, 0., sizeof(this->s_dr_Metric));
+    memset(&this->s_dr_Metric, 0, sizeof(this->s_dr_Metric));
 
     this->s_dr_Metric.Metric[0][0] = -2 * this->Mass * r / rho3;
     this->s_dr_Metric.Metric[0][3] = 0.0;
@@ -89,7 +83,7 @@ Metric_type RBH_class::get_dtheta_metric(const double* const State_Vector) {
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    memset(&this->s_dtheta_Metric, 0., sizeof(this->s_dtheta_Metric));
+    memset(&this->s_dtheta_Metric, 0, sizeof(this->s_dtheta_Metric));
 
     this->s_dtheta_Metric.Metric[0][0] = 0.0;
     this->s_dtheta_Metric.Metric[0][3] = 0.0;
@@ -119,7 +113,7 @@ Metric_type RBH_class::get_d2r_metric(const double* const State_Vector) {
     double rho3 = rho * rho * rho;
     double rho5 = rho * rho * rho * rho * rho;
 
-    memset(&this->s_d2r_Metric, 0., sizeof(this->s_d2r_Metric));
+    memset(&this->s_d2r_Metric, 0, sizeof(this->s_d2r_Metric));
 
     this->s_d2r_Metric.Metric[0][0] = -2 * this->Mass / rho3 + 6 * this->Mass * r2 / (rho5);
     this->s_d2r_Metric.Metric[0][3] = 0.0;

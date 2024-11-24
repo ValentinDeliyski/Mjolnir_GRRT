@@ -1,10 +1,4 @@
-#pragma once
-
-#include <cmath>
-
-#include "Structs.h"
 #include "Spacetimes.h"
-#include "Constants.h"
 
 double* Black_Hole_w_Dark_Matter_Halo_class::get_ISCO() {
 
@@ -93,7 +87,7 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_metric(const double* const 
     double f = (1 - 2 * M / r) * exp(Y);
     double m = M + this->Halo_Mass * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
 
-    memset(&this->s_Metric, 0., sizeof(this->s_Metric));
+    memset(&this->s_Metric, 0, sizeof(this->s_Metric));
 
     this->s_Metric.Metric[0][0] = -f;
     this->s_Metric.Metric[1][1] = 1. / (1 - 2 * m / r);
@@ -131,7 +125,7 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(const double* con
     double m = M + this->Halo_Mass * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
     double dr_m = 2 * (1 - 2 * M / r) * ((1 - 2 * M / r) * (1 - r / (r + A_0)) * r + 2 * M) * this->Halo_Mass / (r + A_0) / (r + A_0);
 
-    memset(&this->s_dr_Metric, 0., sizeof(this->s_dr_Metric));
+    memset(&this->s_dr_Metric, 0, sizeof(this->s_dr_Metric));
 
     this->s_dr_Metric.Metric[0][0] = -dr_f;
     this->s_dr_Metric.Metric[1][1] = -1. / (1 - 2 * m / r) / (1 - 2 * m / r) * (2 * m / r2 - 2 / r * dr_m);
@@ -155,7 +149,7 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dtheta_metric(const double*
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    memset(&this->s_dtheta_Metric, 0., sizeof(this->s_dtheta_Metric));
+    memset(&this->s_dtheta_Metric, 0, sizeof(this->s_dtheta_Metric));
 
     this->s_dtheta_Metric.Metric[0][0] = 0.0;
     this->s_dtheta_Metric.Metric[0][3] = 0.0;

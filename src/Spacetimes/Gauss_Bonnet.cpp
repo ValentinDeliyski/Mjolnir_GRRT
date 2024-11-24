@@ -1,10 +1,4 @@
-#pragma once
-
-#include <cmath>
-
-#include "Structs.h"
 #include "Spacetimes.h"
-#include "Constants.h"
 
 double* Gauss_Bonnet_class::get_ISCO() {
 
@@ -76,7 +70,7 @@ Metric_type Gauss_Bonnet_class::get_metric(const double* const State_Vector) {
 
     double f = 1. + r2 / this->Gamma / 2. * (1. - sqrt(1. + 8. * this->Gamma * M / r2 / r));
 
-    memset(&this->s_Metric, 0., sizeof(this->s_Metric));
+    memset(&this->s_Metric, 0, sizeof(this->s_Metric));
 
     this->s_Metric.Metric[0][0] = -f;
     this->s_Metric.Metric[1][1] = 1. / f;
@@ -104,7 +98,7 @@ Metric_type Gauss_Bonnet_class::get_dr_metric(const double* const State_Vector) 
     double f = 1. + r2 / this->Gamma / 2. * (1. - sqrt(1. + 8. * this->Gamma * M / r2 / r));
     double dr_f = 2. / r * (f - 1.) + 6. * M / sqrt(r2 * r2 + 8. * this->Gamma * M * r);
 
-    memset(&this->s_dr_Metric, 0., sizeof(this->s_dr_Metric));
+    memset(&this->s_dr_Metric, 0, sizeof(this->s_dr_Metric));
 
     this->s_dr_Metric.Metric[0][0] = -dr_f;
     this->s_dr_Metric.Metric[1][1] = -1. / f / f * dr_f;
@@ -128,7 +122,7 @@ Metric_type Gauss_Bonnet_class::get_dtheta_metric(const double* const State_Vect
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    memset(&this->s_dtheta_Metric, 0., sizeof(this->s_dtheta_Metric));
+    memset(&this->s_dtheta_Metric, 0, sizeof(this->s_dtheta_Metric));
 
     this->s_dtheta_Metric.Metric[0][0] = 0.0;
     this->s_dtheta_Metric.Metric[0][3] = 0.0;
@@ -158,7 +152,7 @@ Metric_type Gauss_Bonnet_class::get_d2r_metric(const double* const State_Vector)
     double dr_f = 2. / r * (f - 1.) + 6 * M / root;
     double d2r_f = -2. / r2 * (f - 1.) + 2. / r * dr_f - 12. * M / root / root / root * (r2 * r + 2. * this->Gamma * M);
 
-    memset(&this->s_d2r_Metric, 0., sizeof(this->s_d2r_Metric));
+    memset(&this->s_d2r_Metric, 0, sizeof(this->s_d2r_Metric));
 
     this->s_d2r_Metric.Metric[0][0] = -d2r_f;
     this->s_d2r_Metric.Metric[1][1] = 2. / f / f / f * dr_f - 1. / f / f * d2r_f;
