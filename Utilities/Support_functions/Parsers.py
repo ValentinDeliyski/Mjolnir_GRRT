@@ -1,6 +1,5 @@
 import csv
 import numpy as np
-from itertools import islice
 
 class Simulation_Parser():
 
@@ -42,6 +41,10 @@ class Simulation_Parser():
             _ = csvreader.__next__() # Observer Azimuth
 
             self.OBS_FREQUENCY   = float(csvreader.__next__()[1])
+            
+            if(self.Active_Sim_Mode == 2):
+                self.Photon_Number = int(csvreader.__next__()[1])
+                self.Param_Sweep_Number = int(csvreader.__next__()[1])
 
             if (self.Active_Sim_Mode == 1):
 
@@ -54,10 +57,6 @@ class Simulation_Parser():
 
             _ = csvreader.__next__() # Accretion Disk Parameters Header
             _ = csvreader.__next__() # Density Model Parameters Header
-
-            # if(self.Active_Sim_Mode == 2):
-            #     self.Photon_Number = int(csvreader.__next__()[1])
-            #     self.Param_Sweep_Number = int(csvreader.__next__()[1])
 
             self.disk_density_profile = csvreader.__next__()[1][1:]
             if self.disk_density_profile == "Power law":
@@ -104,14 +103,18 @@ class Simulation_Parser():
             self.hotspot_density_profile = csvreader.__next__()[1][1:]
             if self.hotspot_density_profile == "Gaussian":
                 self.hotspot_density_spread = float(csvreader.__next__()[1])
-
+            elif self.hotspot_density_profile == "Spherical":
+                self.hotspot_dentiy_radius = float(csvreader.__next__()[1])
+            
             self.hotspot_max_density = float(csvreader.__next__()[1])
 
             _ = csvreader.__next__() # Temperature Model Parameters Header
 
             self.hotspot_temperature_profile = csvreader.__next__()[1][1:]
             if self.hotspot_temperature_profile == "Gaussian":
-                self.hotspot_temperature_spread = float(csvreader.__next__()[1])
+                self.hotspot_temperature_spread = float(csvreader.__next__()[1])       
+            elif self.hotspot_density_profile == "Spherical":
+                self.hotspot_temperature_radius = float(csvreader.__next__()[1])
 
             self.hotspot_max_temperature = float(csvreader.__next__()[1])
 
@@ -151,9 +154,7 @@ class Simulation_Parser():
             if (self.Active_Sim_Mode != 2):
                 Array_size = self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT
             else:
-                # TODO: fix this
-
-                Array_size = 1
+                Array_size = self.Photon_Number * self.Param_Sweep_Number
 
             self.X_coords        = np.zeros(Array_size)
             self.Y_coords        = np.zeros(Array_size)
@@ -211,41 +212,57 @@ class Simulation_Parser():
                     break
                 
 
-    def get_total_flux(self, obs_pos):
+    def get_total_flux(self, obs_pos: float, unit: str = "Jy"):
+        
+        """ The observation window limits are given in geometric length units, 
+            so one divides by the effective observer distance to get the angular size. """
+        Pixel_area = ((self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * 
+                      (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / obs_pos**2)
 
-        Pixel_area = (self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / self.OBS_DISTANCE**2
+        """ The base flux unit, returned by the ray-tracer is Jy. """
+        Total_Intensity_Jy = np.sum(self.I_Intensity) * Pixel_area
 
-        return np.sum(self.I_Intensity) * Pixel_area * self.OBS_DISTANCE**2 / obs_pos**2
+        match unit:
+            
+            case "Jy":
+                return Total_Intensity_Jy
+            
+            case "mJy":
+              return 1e3 * Total_Intensity_Jy
+        
+            case _:
+                print("Unsupported flux unit!")    
+                return 0
 
     def get_plottable_sim_data(self) -> tuple:
 
-        # Arrays need to be flipped, because mpl treats y = 0 as the top, 
-        # and the simulator (aka openGL) treats it as the bottom
-
+        """ The arrays first need to be reshaped into 2D ones, then flipped along the x axis, 
+            because mpl treats y = 0 as the top, and the ray-tracer (openGL) treats it as the bottom. """
+            
         I_Intensity = self.I_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
-        I_Intensity = np.flip(I_Intensity, 0)
+        I_Intensity = np.flip(I_Intensity, axis = 0)
 
         Q_Intensity = self.Q_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
-        Q_Intensity = np.flip(Q_Intensity, 0)
+        Q_Intensity = np.flip(Q_Intensity, axis =  0)
 
         U_Intensity = self.U_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
-        U_Intensity = np.flip(U_Intensity, 0)
+        U_Intensity = np.flip(U_Intensity, axis =  0)
 
         V_Intensity = self.V_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
-        V_Intensity = np.flip(V_Intensity, 0)
+        V_Intensity = np.flip(V_Intensity, axis =  0)
 
         NT_Flux         = self.NT_Flux.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
-        NT_Flux         = np.flip(NT_Flux, 0)
+        NT_Flux         = np.flip(NT_Flux, axis =  0)
 
         NT_Redshift     = self.NT_Redshift.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
-        NT_Redshift     = np.flip(NT_Redshift, 0)
+        NT_Redshift     = np.flip(NT_Redshift, axis =  0)
 
         NT_Flux_Shifted = self.NT_Flux_Shifted.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
-        NT_Flux_Shifted = np.flip(NT_Flux_Shifted, 0)
+        NT_Flux_Shifted = np.flip(NT_Flux_Shifted, axis =  0)
 
         return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, NT_Redshift, NT_Flux, NT_Flux_Shifted
     
-    def export_ehtim_data(self, Spacetime: str, data: np.array, path: str):
+    def export_ehtim_data(self, Spacetime: str, data: np.array, path: str) -> None:
 
         ehtim_x_fov = 2 * 5.500000e-05
         ehtim_y_fov = 2 * 5.500000e-05
@@ -287,11 +304,9 @@ class ehtim_Parser():
 
         with open(File_name + ".txt", 'r') as file:
 
-            self.HEADER_ROW_COUNT = 9
-
             csvreader = csv.reader(file, delimiter = " ")
 
-            for i in range(4):
+            for _ in range(4):
                     _ = csvreader.__next__()
 
             self.OBS_FREQUENCY = float(csvreader.__next__()[2])
@@ -308,13 +323,12 @@ class ehtim_Parser():
 
             self.WINDOW_LIMITS = [-X_range, X_range, -Y_range, Y_range]
 
-            for i in range(2):
+            for _ in range(2):
                     _ = csvreader.__next__()
 
-
-            self.X_coords        = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.Y_coords        = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.Intensity       = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.X_coords  = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.Y_coords  = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.Intensity = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
 
             index = 0
 
@@ -429,3 +443,8 @@ class Units_class():
         I_nu += 1e-10 # To avoid division by 0 errors
 
         return self.PLANCK_SI * f / self.BOLTZMANN_SI / np.log(1 + 2 * self.PLANCK_SI * f**3 / self.C_LIGHT_SI**2 / I_nu)
+    
+if __name__ == "__main__":
+    
+    Sim_Parser = Simulation_Parser("C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Sim_Results\\Test_Simulation\\Wormhole_n0")
+    

@@ -18,11 +18,8 @@
 
 void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Step_controller Controller, Initial_conditions_type* p_Init_Conditions){
 
-    int &log_offset = s_Ray_Results->Ray_log_struct.Log_offset;
+    int& log_offset = s_Ray_Results->Ray_log_struct.Log_offset;
     double& R_throat = p_Init_Conditions->Metric_params.R_throat;
-
-    // The loop continues up untill e_path_log_number - 2 in order to exclude the log step from the loop,
-    // because its not parat of the photon state vector - I take care of it after the loop "by hand".
 
     for (int index = 0; index <= e_State_Number - 1; index++) {
 
@@ -31,7 +28,7 @@ void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Ste
         // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
         // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead. 
 
-        if (p_Init_Conditions->Metric_params.e_Spacetime == Wormhole && index == e_r) {
+        if (Wormhole == p_Init_Conditions->Metric_params.e_Spacetime && e_r == index) {
 
             s_Ray_Results->Ray_log_struct.Ray_path_log[e_r + log_offset * e_State_Number] = sqrt(State_Vector[e_r] * State_Vector[e_r] + R_throat * R_throat);
 
@@ -166,7 +163,7 @@ void static Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
 
         std::cout << "Integration method not supported for the radiative transfer equations!" << '\n';
 
-        break;
+        exit(ERROR);
 
     }
 
@@ -188,28 +185,46 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
     // ------------- The magnetic field of the disk
 
     Magnetic_fields_type Disk_Magnetic_Fields{};
-    double* Disk_Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context, p_Sim_Context->p_Init_Conditions->Disk_params.Velocity_profile_type);
+    double* Disk_Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context, 
+                                                                                   p_Sim_Context->p_Init_Conditions->Disk_params.Velocity_profile_type, 
+                                                                                   p_Sim_Context->p_Init_Conditions->Disk_params.Radial_velocity_fraction);
 
     if (NULL != Disk_Plasma_Velocity) {
 
         Disk_density = p_Sim_Context->p_GOT_Model->get_disk_density(State_vector);
         double& Disk_Magnetization = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
+        double* Disk_mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry;
 
-        p_Sim_Context->p_GOT_Model->get_magnetic_field(&Disk_Magnetic_Fields, State_vector, p_Sim_Context, Disk_Plasma_Velocity, Disk_density, Disk_Magnetization);
+        p_Sim_Context->p_GOT_Model->get_magnetic_field(&Disk_Magnetic_Fields, 
+                                                        Disk_mag_field_geometry, 
+                                                        State_vector, 
+                                                        p_Sim_Context, 
+                                                        Disk_Plasma_Velocity, 
+                                                        Disk_density, 
+                                                        Disk_Magnetization);
 
     }
 
     // ------------- The magnetic field of the hotspot
 
     Magnetic_fields_type Hotspot_Magnetic_Fields{};
-    double* Hotspot_Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context, p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type);
+    double* Hotspot_Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context, 
+                                                                                      p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type, 
+                                                                                      p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
 
-    if (NULL != Disk_Plasma_Velocity) {
+    if (NULL != Hotspot_Plasma_Velocity) {
 
-        Hotspot_density = p_Sim_Context->p_GOT_Model->get_disk_density(State_vector);
-        double& Hotspot_Magnetization = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
+        Hotspot_density = p_Sim_Context->p_GOT_Model->get_hotspot_density(State_vector);
+        double& Hotspot_Magnetization = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;
+        double* Hotspot_mag_field_geometry = p_Sim_Context->p_Init_Conditions->Hotspot_params.Mag_field_geometry;
 
-        p_Sim_Context->p_GOT_Model->get_magnetic_field(&Disk_Magnetic_Fields, State_vector, p_Sim_Context, Disk_Plasma_Velocity, Hotspot_density, Hotspot_Magnetization);
+        p_Sim_Context->p_GOT_Model->get_magnetic_field(&Hotspot_Magnetic_Fields, 
+                                                        Hotspot_mag_field_geometry,
+                                                        State_vector, 
+                                                        p_Sim_Context, 
+                                                        Hotspot_Plasma_Velocity, 
+                                                        Hotspot_density,
+                                                        Hotspot_Magnetization);
 
     }
 
@@ -609,9 +624,9 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                                                                              absorbtion_functions,
                                                                              static_cast<Emission_medium_enums>(emission_medium));
 
-                add_4_vectors(emission_functions, total_emission_functions[Current], total_emission_functions[Current]);
-                add_4_vectors(faradey_functions, total_faradey_functions[Current], total_faradey_functions[Current]);
-                add_4_vectors(absorbtion_functions, total_absorbtion_functions[Current], total_absorbtion_functions[Current]);
+                add_4D_vectors(emission_functions, total_emission_functions[Current], total_emission_functions[Current]);
+                add_4D_vectors(faradey_functions, total_faradey_functions[Current], total_faradey_functions[Current]);
+                add_4D_vectors(absorbtion_functions, total_absorbtion_functions[Current], total_absorbtion_functions[Current]);
 
                 p_Sim_Context->p_GOT_Model->get_radiative_transfer_functions(Logged_ray_path[Next], 
                                                                              p_Sim_Context, 
@@ -620,11 +635,12 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                                                                              absorbtion_functions,
                                                                              static_cast<Emission_medium_enums>(emission_medium));
 
-                add_4_vectors(emission_functions, total_emission_functions[Next], total_emission_functions[Next]);
-                add_4_vectors(faradey_functions, total_faradey_functions[Next], total_faradey_functions[Next]);
-                add_4_vectors(absorbtion_functions, total_absorbtion_functions[Next], total_absorbtion_functions[Next]);
+                add_4D_vectors(emission_functions, total_emission_functions[Next], total_emission_functions[Next]);
+                add_4D_vectors(faradey_functions, total_faradey_functions[Next], total_faradey_functions[Next]);
+                add_4D_vectors(absorbtion_functions, total_absorbtion_functions[Next], total_absorbtion_functions[Next]);
 
             }
+
             /* ------------------------------------------------------------------------------------------------------------- */
 
             Propagate_Stokes_vector(RK4, total_emission_functions, total_absorbtion_functions, total_faradey_functions, step, Stokes_Vector);
@@ -715,33 +731,9 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     p_Ray_results->Ray_log_struct.Log_offset = 0;
     log_ray_path(State_Vector, p_Ray_results, controller, p_Sim_Context->p_Init_Conditions);
 
-    while (true) {
+    while (!controller.integration_complete && integration_count <= controller.Max_integration_count) {
 
         RK45(State_Vector, &controller, p_Sim_Context);
-
-        /* ============= Evaluate logical flags for terminating the integration ============= */
-
-        if (controller.integration_complete || integration_count >= controller.Max_integration_count) {
-
-            if (integration_count >= controller.Max_integration_count) {
-
-                std::cout << "Max iterations reached!" << '\n';
-
-            }
-
-            p_Ray_results->Ray_log_struct.Log_length = integration_count;
-
-            /* =========== Integrate the radiative transfer equations forward along the ray =========== */
-
-            Propagate_forward_emission(p_Sim_Context, p_Ray_results, &N_theta_turning_points);
-
-            /* ======================================================================================== */
-
-            integration_count = 0;
-
-            break;
-
-        }
 
         // If the error estimate, returned from RK45 < RK45_ACCURACY
         if (controller.continue_integration) {
@@ -760,5 +752,15 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
         }
 
     }
+
+    if (integration_count >= controller.Max_integration_count) { std::cout << "Max iterations reached!" << '\n'; }
+
+    p_Ray_results->Ray_log_struct.Log_length = integration_count;
+
+    /* =========== Integrate the radiative transfer equations forward along the ray =========== */
+
+    Propagate_forward_emission(p_Sim_Context, p_Ray_results, &N_theta_turning_points);
+
+    /* ======================================================================================== */
 
 }

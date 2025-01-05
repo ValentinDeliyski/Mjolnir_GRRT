@@ -4,40 +4,89 @@
 
 struct Disk_model_parameters_type {
 
-    Ensamble_enums Ensamble_type;
-    Profile_enums Density_profile_type;
-    Profile_enums Temperature_profile_type;
-    Velocity_enums Velocity_profile_type;
+    /*! Specifies the statistical ensamble of the hotspot. */
+    Ensamble_enums Ensamble_type; 
 
+    /*! Specifies the density profile of the hotspot. The current supported profiles are:
+        - Gaussian
+        - Sphere with a constant Radius  */
+    Profile_enums Density_profile_type; 
+
+    /*! Specifies the temperature profile of the hotspot. The current supported profiles are:
+        - Gaussian
+        - Sphere with a constant Radius */
+    Profile_enums Temperature_profile_type; 
+
+    /*! Specifies the velocity profile of the hotspot. */
+    Velocity_enums Velocity_profile_type;  
+
+    /*! Specifies the magnitude of the radial velocity component. I use this to interpolate the circular velocity profile, 
+        specified by the "Velocity_profile_type" enum, with a purely radial profile. The range is [0, 1]. */
+    double Radial_velocity_fraction;
+
+    /*! The peak density value in [g / cm^3]. */
     double Electron_density_scale;
+
+    /*! The peak temperature value in [K]. */
     double Electron_temperature_scale;
+
+    /*! The hotspot magnetization value [-]. */
     double Magnetization;
 
+    /*! The constant magnetic field geometry in the plasma rest frame.
+        The components are specified as [B_r, B_theta, B_phi].
+        This vector gets normalized when read from the input XML. */
     double Mag_field_geometry[3];
 
-    /* ----------- Power law density profile parameters ----------- */
+    /* ========= Power law density profile parameters ========= */
 
+    /*! The vertical density profile scales asa exp(-(cotan(theta) / 2. / opening_angle)^2). */
     double Power_law_disk_opening_angle;
+
+    /*! The radial density profile scales as pow(r / R_0, radial_power_lawa). */
     double Power_law_density_R_0;
-    double Power_law_density_R_cutoff;
-    double Power_law_density_cutoff_scale;
+
+    /*! The radial density profile scales as pow(r / R_0, radial_power_lawa). */
     double Power_law_density_radial_power_law;
 
-    /* -------- Exponential law density profile parameters ------- */
+    /*! Under the cutoff radius, the radial density profile gains an additional factor of 
+        exp(-(r - r_cutoff)^2 / cutoff_scale^2). */
+    double Power_law_density_R_cutoff;
 
+    /*! Under the cutoff radius, the radial density profile gains an additional factor of 
+        exp(-(r - r_cutoff)^2 / cutoff_scale^2). */
+    double Power_law_density_cutoff_scale;
+
+    /* ========= Exponential law density profile parameters ========= */
+
+    /*! The vertical density profile scales as exp(-(cos(theta) / height_scale)^2). */
     double Exp_law_density_height_scale;
+
+    /*! The radial density profile scales as exp(-(r / radial_scale)^2). */
     double Exp_law_density_radial_scale;
 
-    /* --------- Power law temperature profile parameters -------- */
+    /* ========= Power law temperature profile parameters ========= */
 
+    /*! The radial temperature profile scales as pow(r / R_0, radial_power_lawa). */
     double Power_law_temperature_R_0;
-    double Power_law_temperature_R_cutoff;
-    double Power_law_temperature_cutoff_scale;
+
+    /*! The radial temperature profile scales as pow(r / R_0, radial_power_lawa). */
     double Power_law_temperature_radial_power_law;
 
-    /* -------- Exponential law temperature profile parameters ------- */
+    /*! Under the cutoff radius, the radial temperature profile gains an additional factor of 
+        exp(-(r - r_cutoff)^2 / cutoff_scale^2). */
+    double Power_law_temperature_R_cutoff;
 
+    /* Under the cutoff radius, the radial temperature profile gains an additional factor of 
+       exp(-(r - r_cutoff)^2 / cutoff_scale^2). */
+    double Power_law_temperature_cutoff_scale;
+
+    /* ========= Exponential law temperature profile parameters ========= */
+
+    /*! The vertical temperature profile scales as exp(-(cos(theta) / height_scale)^2). */
     double Exp_law_temperature_height_scale;
+
+    /*! The radial temperature profile scales as exp(-(r / radial_scale)^2). */
     double Exp_law_temperature_radial_scale;
 
 };
@@ -52,23 +101,27 @@ struct Magnetic_fields_type {
 
 struct Hotspot_model_parameters_type {
 
-    /* Specifies the statistical ensamble of the hotspot. */
+    /*! Specifies the statistical ensamble of the hotspot. */
     Ensamble_enums Ensamble_type; 
 
-    /* Specifies the density profile of the hotspot. The current supported profiles are:
+    /*! Specifies the density profile of the hotspot. The current supported profiles are:
         - Gaussian
         - Sphere with a constant Radius  */
     Profile_enums Density_profile_type; 
 
-    /* Specifies the temperature profile of the hotspot. The current supported profiles are:
+    /*! Specifies the temperature profile of the hotspot. The current supported profiles are:
         - Gaussian
         - Sphere with a constant Radius */
     Profile_enums Temperature_profile_type; 
 
-    /* Specifies the velocity profile of the hotspot. */
+    /*! Specifies the velocity profile of the hotspot. */
     Velocity_enums Velocity_profile_type;  
 
-    /* The hotspot potision, specified as [Distance, Polar Angle, Azimuth Angle] */
+    /*! Specifies the magnitude of the radial velocity component. I use this to interpolate the circular velocity profile, 
+       specified by the "Velocity_profile_type" enum, with a purely radial profile. The range is [0, 1]. */
+    double Radial_velocity_fraction;
+
+    /*! The hotspot potision, specified as [Distance, Polar Angle, Azimuth Angle] */
     double Position[3]; 
 
     /* The hotspot is modelled as a localized Gaussian overdensity.
@@ -76,62 +129,76 @@ struct Hotspot_model_parameters_type {
      * their respective standard deviations.
      */
 
-     /* Standard deviation of the Gaussian density profile. */
+     /*! Standard deviation of the Gaussian density profile. */
     double Density_spread;     
 
-    /* Standard deviation of the Gaussian temperature profile. */
+    /*! Standard deviation of the Gaussian temperature profile. */
     double Temperature_spread; 
 
-    /* Standard deviation of the Gaussian temporal profile. Setting this to zero ignores the time 
+    /*! Standard deviation of the Gaussian temporal profile. Setting this to zero ignores the time 
        evolution of the hotspot profile. */
     double Temporal_spread;   
 
-    /* Radius of the hotspot. Only affects the Spherical profile. */
+    /*! Radius of the hotspot. Only affects the Spherical profile. */
     double Radius; 
 
-    /* Coordinate time of maximum hotspot emission */
+    /*! Coordinate time of maximum hotspot density */
     double Coord_time_at_max; 
 
-    /* The peak density value. */
+    /*! The peak density value in [g / cm^3]. */
     double Electron_density_scale;     
 
-    /* The peak temperature value. */
+    /*! The peak temperature value in [K]. */
     double Electron_temperature_scale; 
+    
+    double Magnetization; /* The hotspot magnetization value [-]. */
 
-    /* The hotspot magnetization value. */
-    double Magnetization;   
-
-    /* The constant magnetic field geometry in the plasma rest frame.
-       The components are specified as [B_r, B_theta, B_phi]. */
+    /*! The constant magnetic field geometry in the plasma rest frame.
+        The components are specified as [B_r, B_theta, B_phi]. 
+        This vector gets normalized when read from the input XML. */
     double Mag_field_geometry[3];
 
 };
 
 struct Emission_model_parameters_type {
 
-    // --------------- Thermal Synchotron Model --------------- //
-    // It is fully determined by the electron density and temperature
+    /* ================= Thermal Synchrotron Model ================== */
+    /* It is fully determined by the electron density and temperature */
 
-    // ----------- Phenomenological Synchotron Model ---------- //
+    /* ============= Phenomenological Synchrotron Model ============= */
 
+    /*! The emission is scales linearly with this parameter. It has units of [erg / s / sr / Hz]. */
     double Phenomenological_emission_coeff;
+    
+    /*! The absorbtion scales linearly with this parameter. It has units of [cm^-1]. */
     double Phenomenological_absorbtion_coeff;
-    double Phenomenological_emission_power_law;  // emission   ~ pow( redshift, EMISSION_POWER_LAW )
-    double Phenomenological_source_f_power_law;  // absorbtion ~ pow( redshift, SOURCE_F_POWER_LAW + EMISSION_POWER_LAW )
 
-    // ---------------- Kappa Synchotron Model ---------------- //
+    /*! The emission scales as pow(redshift, Phenomenological_emission_power_law). */
+    double Phenomenological_emission_power_law;
 
+    /*! The source function scales as pow(redshift, Phenomenological_source_f_power_law). */
+    double Phenomenological_source_f_power_law; 
+
+    /* ================== Kappa Synchrotron Model ================== */
+
+    /*! The free dimentionless parameter for the kappa distribution. */
     double Kappa;
 };
 
 struct Metric_parameters_type {
 
+    /*! Enum that specifies the active spacetime. */
     Spacetime_enums e_Spacetime;
 
     /* ============ Wormhole Specific Parameters ============ = */
 
+    /*! The Wormhole lapse function is given by exp(-M / r - Redshift_param * (M / r)^2). */
     double Redshift_Parameter;
+
+    /*! The Wormhole g_rr function is given by 1. / (1 - R_throat / r). */
     double R_throat;
+
+    /*! Boolean that decides weather to allow photons to cross the Worhmole throat. */
     bool Stop_At_Throat;
 
     /* ============ Janis-Newman-Winicour Specific Parameters ============ = */
@@ -162,18 +229,25 @@ struct Precomputed_e_pitch_angles {
     double* sin_electron_pitch_angles;
     double* cos_electron_pitch_angles;
 
-    // Used in the thermal synchotron emission functions
+    // === Used in the thermal synchotron emission functions === //
 
+    /*! 1. / sqrt(sin) */
     double* one_over_sqrt_sin;
+
+    /*! 1. / cbrt(sin) */
     double* one_over_cbrt_sin;
 
-    // Used in the thermal synchotron Faradey functions
+    // === Used in the thermal synchotron Faradey functions === //
 
+    /*! 1. / pow(sin, 1.035) */
     double* one_over_sin_to_1_point_035;
+
+    /*! 1. / pow(sin, 1.2 / 3) */
     double* one_over_sin_to_1_point_2_over_2;
 
-    // Used in the kappa synchotron emission functions
+    // === Used in the kappa synchotron emission functions === //
 
+    /*! 1. / pow(sin, 7. / 20) */
     double* one_over_sin_to_7_over_20;
 };
 
@@ -279,6 +353,7 @@ struct File_manager_parameters {
 struct Initial_conditions_type {
 
     int Simulation_mode;
+    bool Print_to_console;
     int Sim_mode_2_param_value_number;
     int Emission_pitch_angle_samples_to_average;
     bool Average_electron_pitch_angle;
@@ -300,7 +375,6 @@ struct Initial_conditions_type {
     NT_parameters_type NT_params;
     File_manager_parameters File_manager_params;
 
-
 };
 
 class Spacetime_Base_Class;
@@ -312,13 +386,10 @@ class File_manager_class;
 struct Simulation_Context_type {
 
     Initial_conditions_type* p_Init_Conditions;
-
     Spacetime_Base_Class* p_Spacetime;
     Observer_class*       p_Observer;
-
     Generic_Optically_Thin_Model* p_GOT_Model;
     Novikov_Thorne_Model* p_NT_model;
-
     File_manager_class* File_manager;
 
 };

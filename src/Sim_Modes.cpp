@@ -53,12 +53,12 @@ void static print_progress(int current, int max, bool lens_from_file) {
 
 }
 
-void static Rendering_function(Rendering_engine* Renderer, Initial_conditions_type* p_Init_conditions) {
+void static Rendering_function(std::stop_token stop_token, Rendering_engine* Renderer, Initial_conditions_type* p_Init_conditions) {
 
     Renderer->OpenGL_init(p_Init_conditions);
     glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);
 
-    while (!glfwWindowShouldClose(Renderer->window)) {
+    while (!glfwWindowShouldClose(Renderer->window) and !stop_token.stop_requested()) {
 
         Renderer->renormalize_colormap();
 
@@ -116,11 +116,11 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
         auto start_time = std::chrono::high_resolution_clock::now();
         int progress = 0;
 
-        std::cout << '\n' << "Generating image..." << '\n';
+        std::cout << '\n' << "Generating image for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << "..." << '\n';
 
         for (int V_pixel_num = 0; V_pixel_num <= Y_resolution - 1; V_pixel_num++) {
 
-            print_progress(progress, Y_resolution - 1, false);
+            if (p_Sim_Context->p_Init_Conditions->Print_to_console) { print_progress(progress, Y_resolution - 1, false); }
 
             progress += 1;
 
@@ -184,8 +184,8 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         auto end_time = std::chrono::high_resolution_clock::now();
 
-        std::cout << '\n' << "Image Generation Finished!";
-        std::cout << '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time) << "\n";
+        std::cout << '\n' << "Image Generation for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << " Finished!" << 
+                     '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time) << "\n";
 
         p_Sim_Context->File_manager->close_image_output_files();
 
@@ -211,6 +211,9 @@ void run_simulation_mode_1(const Simulation_Context_type* const p_Sim_Context, R
         Generate_Image(p_Sim_Context, &Renderer, p_Ray_results);
 
         GUI_Thread.request_stop();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
         Renderer.Free_memory();
 
     }

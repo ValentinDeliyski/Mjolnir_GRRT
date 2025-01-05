@@ -1,28 +1,3 @@
-/****************************************************************************************************
-|                                                                                                   |
-|                ---------  Mjølnir General Relativistic Ray Tracer  ---------                      | 
-|                                                                                                   |
-|    @ Version: 2.0                                                                                 |
-|    @ Author: Valentin Deliyski                                                                    |
-|    @ Description: This program numeriaclly integrates the equations of motion                     |
-|    for null geodesics and radiative transfer in a curved spacetime,then projects                  |
-|    them onto an observer's screen to construct relativistic images of accretion disks             |
-|                                                                                                   |
-|    @ Supported Spacetimes:                                                                        |
-|      * Kerr Black Holes                                                                           |
-|      * Static Regular Black Holes                                                                 |
-|      * Rotating Traversable Wormholes                                                             |
-|      * Janis - Newman - Winicour Naked Singularities                                              |
-|      * Gauss - Bonnet Black Holes / Naked Singularities                                           |
-|      * Black Holes with a Dark Matter Halo                                                        |
-|                                                                                                   |
-|    @ Supported Disk Models                                                                        |
-|      * Novikov-Thorne                                                                             |
-|      * Generic Optically Thin Disk With Arbitrary (up to what is actually implemented :) )        |
-|        Density, Emission and Absorbtion Profiles                                                  |
-|                                                                                                   |
-****************************************************************************************************/
-
 #define _USE_MATH_DEFINES
 
 #include "Constants.h"
@@ -91,19 +66,18 @@ void static Allocate_GOT_Model_class_instance(Simulation_Context_type* p_Sim_Con
 
 int main(int argument_count, char** cmd_line_args) {
 
-    Console_Printer_class Console_Printer;
-    Console_Printer.print_ASCII_art();
-
     std::string Input_file_path{};
-    if (argument_count == 3 && 0 == strcmp(cmd_line_args[1], "-in")) {
+    bool print_to_console{};
+    if (argument_count == 5 && 0 == strcmp(cmd_line_args[1], "-in") && 0 == strcmp(cmd_line_args[3], "-print_to_console")) {
 
         Input_file_path = cmd_line_args[2];
+        print_to_console = std::stoi(cmd_line_args[4]);
 
     }
     else {
 
         std::cout << "To run Mjolnir, use the following call structure:" << "\n";
-        std::cout << "Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__" << "\n";
+        std::cout << "Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__ -print_to_console __1 FOR YES 0 FOR NO__" << "\n";
 
         exit(ERROR);
 
@@ -124,6 +98,8 @@ int main(int argument_count, char** cmd_line_args) {
         exit(ERROR);
     
     }
+
+    s_Sim_Context.p_Init_Conditions->Print_to_console = print_to_console;
 
     // Populate the Spacetime class instance 
     Allocate_Spacetime_Class(&s_Sim_Context);
@@ -164,7 +140,14 @@ int main(int argument_count, char** cmd_line_args) {
 
     }
 
-    Console_Printer.print_sim_parameters(s_Sim_Context.p_Init_Conditions);
+    Console_Printer_class Console_Printer;
+    
+    if (s_Sim_Context.p_Init_Conditions->Print_to_console) { 
+
+        Console_Printer.print_ASCII_art();
+        Console_Printer.print_sim_parameters(s_Sim_Context.p_Init_Conditions);
+
+    }
 
     /*
 

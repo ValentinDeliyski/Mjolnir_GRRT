@@ -1,0 +1,32 @@
+|================================ Mjølnir TODO list ================================|
+
+0) Verify the polarized radiative transfer
+
+1) Add documentation comments to the remaining functions that dont have such
+	1.1) Think weather the documentation comments should only be in the .h files -> yeet from .cpp files
+	1.2) Run doxygen on the whole thing
+		1.2.1) Figure out how to include formulas in the generated HTML -> Put the latex in marakdown files, using \f[ \f]
+
+2) Add propagation for the optical depth
+
+4) Think about upgrading the renderer
+
+5) Create a makefile to compile with gcc under windows and linux
+
+6) Finish the reference simulation scripts
+
+7) Deal with the linker and compiler warnings (specifically LINK4098)
+
+8) Think about adding a "max integration attempt count" counter to the Propagate_ray() function
+
+9) Add a jet model
+
+10) Expose the threshold relative density at which I start evaluating the emission to the XML file
+
+11) Add a tracing option for events like "max iterations reached" - I want it to log the initial conditions of the ray and where it hit that stop condition. Probably other things aswell
+
+12) Think weather the parallel transport should have a higher order integratorn
+
+13) Hide the sim mode 1 specific inputs from the XML when using sim mode 2 or 3
+
+14) Add CPU multithreading

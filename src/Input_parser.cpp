@@ -22,7 +22,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     }
     else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Phenomenological")) {
-
+         
         Hotspot_params->Ensamble_type = e_Phenomenological_ensamble;
 
     }
@@ -68,6 +68,9 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     // -------------------- The velocity profile
 
     temp_param_var = Hotspot_element->FirstChildElement("Velocity_profile");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot velocity profile node!" << "\n"; return ERROR; }
+
+    temp_param_var = Hotspot_element->FirstChildElement("Velocity_profile")->FirstChildElement("Type");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot velocity profile type!" << "\n"; return ERROR; }
     std::string Velocity_profile_string = temp_param_var->GetText();
 
@@ -81,6 +84,10 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
         Hotspot_params->Velocity_profile_type = e_Keplarian;
 
     }else{std::cout << "Unsupported velocity profile type for the hotspot!" << "\n"; return ERROR; }
+
+    temp_param_var = Hotspot_element->FirstChildElement("Velocity_profile")->FirstChildElement("Radial_velocity_fraction");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the radial velocity fraction!" << "\n"; return ERROR; }
+    Hotspot_params->Radial_velocity_fraction = std::stod(temp_param_var->GetText());
 
     // -------------------- The density sclae factor
     temp_param_var = Hotspot_element->FirstChildElement("Density_scale_factor");
@@ -106,6 +113,19 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_Z");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry Z component!" << "\n"; return ERROR; }
     Hotspot_params->Mag_field_geometry[2] = std::stod(temp_param_var->GetText());
+
+    // -------------------- Normalize the magnetic field geometry vector
+
+    double mag_norm  = Hotspot_params->Mag_field_geometry[0] * Hotspot_params->Mag_field_geometry[0];
+           mag_norm += Hotspot_params->Mag_field_geometry[1] * Hotspot_params->Mag_field_geometry[1];
+           mag_norm += Hotspot_params->Mag_field_geometry[2] * Hotspot_params->Mag_field_geometry[2];
+           mag_norm  = sqrt(mag_norm);
+
+    for (int idx = 0; idx <= 2; idx++) {
+
+        Hotspot_params->Mag_field_geometry[idx] /= mag_norm;
+
+    }
 
     // -------------------- The distance to the hotspot center
     temp_param_var = Hotspot_element->FirstChildElement("Distance");
@@ -255,6 +275,9 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     // -------------------- The velocity profile
 
     temp_param_var = Common_paramaters_element->FirstChildElement("Velocity_profile");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk velocity profile node!" << "\n"; return ERROR; }
+
+    temp_param_var = Common_paramaters_element->FirstChildElement("Velocity_profile")->FirstChildElement("Type");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk velocity profile type!" << "\n"; return ERROR; }
     std::string Velocity_profile_string = temp_param_var->GetText();
 
@@ -270,6 +293,9 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     }
     else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
 
+    temp_param_var = Common_paramaters_element->FirstChildElement("Velocity_profile")->FirstChildElement("Radial_velocity_fraction");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the radial velocity fraction!" << "\n"; return ERROR; }
+    Disk_params->Radial_velocity_fraction = std::stod(temp_param_var->GetText());
 
     // -------------------- The disk electron density scale factor
     temp_param_var = Common_paramaters_element->FirstChildElement("Density_scale_factor");
@@ -291,16 +317,29 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry!" << "\n"; return ERROR; }
     Disk_params->Mag_field_geometry[1] = std::stod(temp_param_var->GetText());
 
-    // -------------------- The disk magnetic field geometry Z component
+    // -------------------- The disk magnetic field geometry Z component 
     temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_geometry_Z");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry!" << "\n"; return ERROR; }
     Disk_params->Mag_field_geometry[2] = std::stod(temp_param_var->GetText());
+      
+    // -------------------- Normalize the magnetic field geometry vector    
+     
+    double mag_norm  = Disk_params->Mag_field_geometry[0] * Disk_params->Mag_field_geometry[0];  
+           mag_norm += Disk_params->Mag_field_geometry[1] * Disk_params->Mag_field_geometry[1]; 
+           mag_norm += Disk_params->Mag_field_geometry[2] * Disk_params->Mag_field_geometry[2];
+           mag_norm  = sqrt(mag_norm);
+
+    for (int idx = 0; idx <= 2; idx++) {
+
+        Disk_params->Mag_field_geometry[idx] /= mag_norm;
+
+    }
 
     // -------------------- The disk magnetization
-    temp_param_var = Common_paramaters_element->FirstChildElement("Magnetization");
+    temp_param_var = Common_paramaters_element->FirstChildElement("Magnetization"); 
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk Magnetization!" << "\n"; return ERROR; }
     Disk_params->Magnetization = std::stod(temp_param_var->GetText());
-
+     
     /* ======================================== Disk profile paramaters ======================================== */
 
     tinyxml2::XMLElement* Power_law_profile_element = Accretion_disk_element->FirstChildElement("Power_law_profile");

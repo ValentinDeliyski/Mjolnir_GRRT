@@ -146,7 +146,7 @@ void File_manager_class::write_simulation_metadata() {
         case 2:
 
             *(Output_file + Image_order) << "Number Of Photons Per Param Value: " << this->sim_mode_2_ray_number << '\n'
-                                            << "Number Of Param Values: " << p_Initial_Conditions->Sim_mode_2_param_value_number << '\n';
+                                         << "Number Of Param Values: " << p_Initial_Conditions->Sim_mode_2_param_value_number << '\n';
 
             break;
 
@@ -473,11 +473,11 @@ void File_manager_class::write_simulation_metadata() {
         }
 
         *(Output_file + Image_order) << "Hotspot Magnetization [-]: "
-                                        << this->p_Initial_Conditions->Disk_params.Magnetization << "\n"
+                                        << this->p_Initial_Conditions->Hotspot_params.Magnetization << "\n"
                                         << "Hotspot Magnetic Field Geometry [-]: "
-                                        << "[" << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[0] << " "
-                                        << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[1] << " "
-                                        << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[2] << "]"
+                                        << "[" << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[0] << " "
+                                        << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[1] << " "
+                                        << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[2] << "]"
                                         << "\n";
 
         *(Output_file + Image_order) << "--------------------------- Hotspot Position"

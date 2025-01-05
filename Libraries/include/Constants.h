@@ -20,7 +20,7 @@ Real Coeff_sol[RK45_size] = { 35. / 384, 0, 500. / 1113, 125. / 192, -2187. / 67
 
 Real Coeff_test_sol[RK45_size] = { 5179. / 57600, 0, 7571. / 16695, 393. / 640, -92097. / 339200, 187. / 2100, 1. / 40 };
 
-const  std::complex<double> complex_i(0.0, 1.0);
+const std::complex<double> complex_i(0.0, 1.0);
 
 /*
 

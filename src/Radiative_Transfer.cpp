@@ -35,8 +35,7 @@ void Implicit_Trapezoid_Radiative_Transfer(double const Emission_Functions[STOKE
     |    This function applies the implicit trapezoidal rule to solve the radiative transfer             |
     |    equations. The equations are linear, so the method gives an explicit expression for             |
     |    the Stokes vector. The reference for this implementation is from the RAPTOR code/paper          |
-    |    (the paper screwed up the explanation of the method tough - they skipped defining the           |
-    |    variables x):                                                                                   |
+    |    (the paper screwed up the explanation of the method - they skipped defining the variables x):   |                                                                                 |
     |    https://arxiv.org/pdf/2007.03045.pdf, https://github.com/tbronzwaer/raptor/tree/polarization    |
     |                                                                                                    |
     |    The variables u_ij and ell_ij are the components of the lower and upper triangular matricies    |

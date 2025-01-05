@@ -8,12 +8,11 @@
 #include "General_GR_functions.h"
 #include "gsl/gsl_sf_hyperg.h"
 
-//! Evaluates the Planck function in the frequency domain in CGS units
-/*! Evaluates the Planck function in the frequency domain in CGS units
+/* @brief Evaluates the Planck function in the frequency domain in CGS units
  *
- *   \param [in] Frequency - Emission frequency in units [Hz].
- *   \param [in] Temperature - Emission medium temperature in units [K].
- *   \return The value of the Planck function in CGS.
+ * @param [in] Frequency - Emission frequency in units [Hz].
+ * @param [in] Temperature - Emission medium temperature in units [K].
+ * @return The value of the Planck function in CGS.
  */
 double get_planck_function_CGS(double Frequency, double Temperature);
 
@@ -21,10 +20,20 @@ class Novikov_Thorne_Model {
 
     private:
 
+        /* The inner accretion disk radius in [M]. */
         double r_in;
+
+        /* The outer accretion disk radius in [M]. */
         double r_out;
+
+        /* The threshold value for the flux integral error estimate. */
         double flux_integral_accuracy;
+
+        /* Pointer to the spacetime class. Stored in here so one does not have to pass it in as arguments to the functions.*/
         Spacetime_Base_Class* p_Spacetime;
+
+        /* The spacetime enum. Certain calculations are spacetime specific. Stored in here so one does not have 
+           to pass it in as arguments to the functions.*/
         Spacetime_enums e_Spacetime;
 
     public:
@@ -309,7 +318,10 @@ class Generic_Optically_Thin_Model {
          *   \param [in] Velocity_profile - Enum for the type of velocity profile
          *   \return Pointer to the 4-velocity vector
          */
-        double* get_plasma_velocity(const double* const State_Vector, const Simulation_Context_type* const p_Sim_Context, Velocity_enums const Velocity_profile);
+        double* get_plasma_velocity(const double* const State_Vector, 
+                                    const Simulation_Context_type* const p_Sim_Context, 
+                                    Velocity_enums const Velocity_profile,
+                                    double const Radial_velocity_fraction);
 
         //! Computes the background accretion disk density
         /*! Computes the background accretion disk density at the current photon position.
@@ -335,9 +347,10 @@ class Generic_Optically_Thin_Model {
          *    NOTE: The magnitude of the magnetic field in these frames is different, because its not concerved under Lorentz boosts.
          *          In the plasma frame I set the geometry of the field, then scale it by B_Plasma_norm_CGS.
          *
-         *    NOTE: The magnitudes of the magnetic fields in these frames are given in Gauss.
+         *    NOTE: The magnitudes of the magnetic fields in these frames are given in [G].
          *
          *   \param [out] Magnetic_fields - Struct that holds the magnetic field 4-vector in the two frames.
+         *   \param [in] Mag_field_geomery - Unit three-vector that specifies the geometry of the magnetic field in the plasma frame.
          *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
          *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to call the metric function for dot products.
          *   \param [in] Density - The current emission medium density - used to compute the field magnitude in the plasma frame.
@@ -345,6 +358,7 @@ class Generic_Optically_Thin_Model {
          *   \return Nothing.
          */
         void get_magnetic_field(Magnetic_fields_type* Magnetic_fields,
+                                const double* const Mag_field_geometry,
                                 const double* const State_Vector,
                                 const Simulation_Context_type* const p_Sim_Context,
                                 const double* const Plasma_Velocity,

@@ -1,10 +1,8 @@
-from numpy import pi
-import numpy as np
-
+from Support_functions.Parsers import Units_class
 import xml.etree.cElementTree as ET
 import xml.dom.minidom
-
-from Support_functions.Parsers import Units_class
+import os
+from numpy import pi
 
 class Integrator():
 
@@ -29,6 +27,7 @@ class Disk_model():
                  "Density_profile",
                  "Temperature_profile",
                  "Velocity_profile",
+                 "Radial_velocity_fraction",
                  "Density_scale_factor",
                  "Temperature_scale_factor",
                  "Mag_field_geometry_X",
@@ -58,6 +57,7 @@ class Hotspot_model():
                  "Density_profile",
                  "Temperature_profile",
                  "Velocity_profile",
+                 "Radial_velocity_fraction",
                  "Density_scale_factor",
                  "Temperature_scale_factor",
                  "Radius",
@@ -283,6 +283,7 @@ class Simulation_configurator:
                                     Density_profile: dict = {"Value": "Power Law", "Unit": "[-]"},
                                     Temperature_profile: dict = {"Value": "Power Law", "Unit": "[-]"},
                                     Velocity_profile: dict = {"Value": "Theta Dependant", "Unit": "[-]"},
+                                    Radial_velocity_fraction: dict = {"Value": 0, "Unit": "[-]"},
                                     Density_scale_factor: dict = {"Value": 1e5, "Unit": "[g/cm^3]"},
                                     Temperature_scale_factor: dict = {"Value": 1e11, "Unit": "[K]"},
                                     Mag_field_geometry_X: dict = {"Value": 0.5, "Unit": "[-]"},
@@ -308,7 +309,9 @@ class Simulation_configurator:
         self.disk_model.Ensamble_type       = Ensamble_type
         self.disk_model.Density_profile     = Density_profile
         self.disk_model.Temperature_profile = Temperature_profile
-        self.disk_model.Velocity_profile    = Velocity_profile
+        
+        self.disk_model.Velocity_profile         = Velocity_profile
+        self.disk_model.Radial_velocity_fraction = Radial_velocity_fraction
 
         self.disk_model.Density_scale_factor     = Density_scale_factor
         self.disk_model.Temperature_scale_factor = Temperature_scale_factor
@@ -338,6 +341,7 @@ class Simulation_configurator:
                                        Density_profile: dict = {"Value": "Gaussian", "Unit": "[-]"},
                                        Temperature_profile: dict = {"Value": "Gaussian", "Unit": "[-]"},
                                        Velocity_profile: dict = {"Value": "Theta Dependant", "Unit": "[-]"},
+                                       Radial_velocity_fraction: dict = {"Value": 0, "Unit": "[-]"},
                                        Radius: dict = {"Value": 1, "Unit": "[M]"},
                                        Density_scale_factor: dict = {"Value": 1e6, "Unit": "[g/cm^3]"},
                                        Temperature_scale_factor: dict = {"Value": 1e11, "Unit": "[K]"},
@@ -358,7 +362,9 @@ class Simulation_configurator:
         self.hotspot_model.Ensamble_type       = Ensamble_type     
         self.hotspot_model.Density_profile     = Density_profile   
         self.hotspot_model.Temperature_profile = Temperature_profile
-        self.hotspot_model.Velocity_profile    = Velocity_profile
+        
+        self.hotspot_model.Velocity_profile         = Velocity_profile
+        self.hotspot_model.Radial_velocity_fraction = Radial_velocity_fraction
 
         self.hotspot_model.Density_scale_factor     = Density_scale_factor     
         self.hotspot_model.Temperature_scale_factor = Temperature_scale_factor 
@@ -394,7 +400,7 @@ class Simulation_configurator:
         self.file_manager.Sim_mode_2_input_file_path = Sim_mode_2_input_file_path
         self.file_manager.Truncate_files = Truncate_files
 
-    def generate_simulation_input(self):
+    def generate_simulation_input(self, Path_to_input_dir: str, Input_file_name: str):
 
         Encoding = 'UTF-8'
         XML_root_node = ET.Element("Simulation_Input", {"Simulation_Name": self.simulation_name["Value"]})
@@ -453,10 +459,6 @@ class Simulation_configurator:
                                    "Density_cutoff_scale",
                                    "Density_r_cutoff",
                                    "Density_r_0",
-                                   "Temperature_radial_power_law",
-                                   "Temperature_cutoff_scale",
-                                   "Temperature_r_cutoff",
-                                   "Temperature_r_0",
                                    "Opening_angle"]
         
         Temperature_Power_law_slots = ["Temperature_radial_power_law",
@@ -465,12 +467,12 @@ class Simulation_configurator:
                                        "Temperature_r_0"]
         
         Density_exponential_law_slots = ["Density_exp_height_scale",
-                                        "Density_exp_radial_scale"]
+                                         "Density_exp_radial_scale"]
         
         Temperature_exponential_law_slots = ["Temperature_exp_height_scale",
                                              "Temperature_exp_radial_scale"]
 
-        Common_slots = [slot for slot in self.disk_model.__slots__ if slot not in Density_Power_law_slots + Temperature_Power_law_slots + Density_exponential_law_slots + Temperature_exponential_law_slots]
+        Common_slots = [slot for slot in self.disk_model.__slots__ if slot not in Density_Power_law_slots + Temperature_Power_law_slots + Density_exponential_law_slots + Temperature_exponential_law_slots + ["Radial_velocity_fraction"]]
 
         Disk_subelement = ET.SubElement(XML_root_node, "Accretion_Disk") 
 
@@ -478,7 +480,13 @@ class Simulation_configurator:
         Common_subelement = ET.SubElement(Disk_subelement, "Common_parameters") 
         for Disk_attrib_name in Common_slots:
             Disk_attrib = getattr(self.disk_model, Disk_attrib_name)
-            ET.SubElement(Common_subelement, Disk_attrib_name, units = Disk_attrib["Unit"]).text = "{}".format(Disk_attrib["Value"])
+            Sub_element = ET.SubElement(Common_subelement, Disk_attrib_name, units = Disk_attrib["Unit"])
+            
+            if Disk_attrib_name == "Velocity_profile":
+                ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Disk_attrib["Value"])
+                ET.SubElement(Sub_element, "Radial_velocity_fraction", units = "-").text = "{}".format(self.disk_model.Radial_velocity_fraction["Value"])
+            else:
+                Sub_element.text = "{}".format(Disk_attrib["Value"])
 
         match self.disk_model.Density_profile["Value"]:
 
@@ -534,12 +542,18 @@ class Simulation_configurator:
         
         Sphere_slots = ["Radius"]
 
-        Common_slots = [slot for slot in self.hotspot_model.__slots__ if slot not in Gaussian_density_slots + Gaussian_temperature_slots + Sphere_slots]
+        Common_slots = [slot for slot in self.hotspot_model.__slots__ if slot not in Gaussian_density_slots + Gaussian_temperature_slots + Sphere_slots + ["Radial_velocity_fraction"]]
         
         Hotspot_subelement = ET.SubElement(XML_root_node, "Hotspot") 
         for Hotspot_attrib_name in Common_slots:
             Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
-            ET.SubElement(Hotspot_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+            Sub_element = ET.SubElement(Hotspot_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"])
+ 
+            if Hotspot_attrib_name == "Velocity_profile":
+                ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Hotspot_attrib["Value"])
+                ET.SubElement(Sub_element, "Radial_velocity_fraction", units = "-").text = "{}".format(self.hotspot_model.Radial_velocity_fraction["Value"])
+            else:
+                Sub_element.text = "{}".format(Hotspot_attrib["Value"])
 
         match self.hotspot_model.Density_profile["Value"]:
 
@@ -635,83 +649,89 @@ class Simulation_configurator:
         formatted_XML_string = XML_struct.toprettyxml()
         Header, Body = formatted_XML_string.split('?>')
 
-        with open("FILE.xml", 'w') as xfile:
+        if not os.path.exists(Path_to_input_dir):
+                os.makedirs(Path_to_input_dir)
+
+        with open(Path_to_input_dir + "\\" + Input_file_name, 'w') as xfile:
             xfile.write(Header + 'encoding=\"{}\"?>\n'.format(Encoding) + Body)
             xfile.close()
 
 
-Units_class_instance = Units_class()
+if __name__ == "__main__":
 
-Sim_config = Simulation_configurator()
+    Units_class_instance = Units_class()
 
-Sim_config.object_mass = {"Value": 4.2e6, "Unit": "[M_sun]"}
+    Sim_config = Simulation_configurator()
 
-# ================================================== Metric ================================================== #
+    Sim_config.object_mass = {"Value": 4.2e6, "Unit": "[M_sun]"}
 
-Sim_config.metric_parameters.Metric_type = {"Value": "Wormhole", "Unit": "[-]"}
-Sim_config.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
+    # ================================================== Metric ================================================== #
 
-# ================================================== Observer ================================================== #
+    Sim_config.metric_parameters.Metric_type = {"Value": "Wormhole", "Unit": "[-]"}
+    Sim_config.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
 
-Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
-Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
-Sim_config.observer.Distance = {"Value": 1e4, "Unit": "[M]"}
-Sim_config.observer.Inclination = {"Value": 80 * pi / 180, "Unit": "[Rad]"}
-Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
+    # ================================================== Observer ================================================== #
 
-# ================================================== Disk ================================================== #
-Sim_config.disk_model.Ensamble_type = {"Value": "Phenomenological", "Unit": "[-]"}
-Sim_config.disk_model.Density_profile = {"Value": "Exponential Law", "Unit": "[-]"}
-Sim_config.disk_model.Temperature_profile = {"Value": "Exponential Law", "Unit": "[-]"}
-Sim_config.disk_model.Temperature_scale_factor = {"Value": 5.85e10, "Unit": "[K]"}
-Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g / cm^3]"}
+    Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
+    Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
+    Sim_config.observer.Distance = {"Value": 1e4, "Unit": "[M]"}
+    Sim_config.observer.Inclination = {"Value": 80 * pi / 180, "Unit": "[Rad]"}
+    Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
 
-Sim_config.disk_model.Density_r_cutoff = {"Value": 4.5, "Unit": "[M]"}
-Sim_config.disk_model.Temperature_r_cutoff = {"Value": 4.5, "Unit": "[M]"}
+    # ================================================== Disk ================================================== #
+    Sim_config.disk_model.Ensamble_type = {"Value": "Phenomenological", "Unit": "[-]"}
+    Sim_config.disk_model.Density_profile = {"Value": "Exponential Law", "Unit": "[-]"}
+    Sim_config.disk_model.Temperature_profile = {"Value": "Exponential Law", "Unit": "[-]"}
+    Sim_config.disk_model.Temperature_scale_factor = {"Value": 5.85e10, "Unit": "[K]"}
+    Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g / cm^3]"}
 
-Sim_config.disk_model.Density_r_0     = {"Value": 4.5, "Unit": "[M]"}
-Sim_config.disk_model.Temperature_r_0 = {"Value": 4.5, "Unit": "[M]"}
+    Sim_config.disk_model.Density_r_cutoff = {"Value": 4.5, "Unit": "[M]"}
+    Sim_config.disk_model.Temperature_r_cutoff = {"Value": 4.5, "Unit": "[M]"}
 
-Sim_config.disk_model.Opening_angle = {"Value": 0.1, "Unit": "[tan(angle)]"}
+    Sim_config.disk_model.Density_r_0     = {"Value": 4.5, "Unit": "[M]"}
+    Sim_config.disk_model.Temperature_r_0 = {"Value": 4.5, "Unit": "[M]"}
 
-# ================================================== Hotspot ================================================== #
+    Sim_config.disk_model.Opening_angle = {"Value": 0.1, "Unit": "[tan(angle)]"}
 
-Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g / cm^3]"}
-Sim_config.hotspot_model.Temperature_scale_factor = {"Value": 9.03e10, "Unit": "[K]"}
-Sim_config.hotspot_model.Ensamble_type = {"Value": "Kappa", "Unit": "[-]"}
-Sim_config.hotspot_model.Magnetization = {"Value": 0.01, "Unit": "[-]"}
-Sim_config.emission_models.Kappa = {"Value": 5, "Unit": "[-]"}
-Sim_config.hotspot_model.Distance = {"Value": 9, "Unit": "[M]"}
-Sim_config.hotspot_model.Velocity_profile = {"Value":"Keplarian", "Unit": "[-]"}
+    # ================================================== Hotspot ================================================== #
 
-Sim_config.hotspot_model.Temperature_profile = {"Value": "Sphere", "Unit": "[-]"}
-Sim_config.hotspot_model.Density_profile = {"Value": "Sphere", "Unit": "[-]"}
-Sim_config.hotspot_model.Radius = {"Value": 1, "Unit": "[M]"}
-# ================================================== Novikov - Thorne Disk ================================================== #
+    Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g / cm^3]"}
+    Sim_config.hotspot_model.Temperature_scale_factor = {"Value": 9.03e10, "Unit": "[K]"}
+    Sim_config.hotspot_model.Ensamble_type = {"Value": "Kappa", "Unit": "[-]"}
+    Sim_config.hotspot_model.Magnetization = {"Value": 0.01, "Unit": "[-]"}
+    Sim_config.emission_models.Kappa = {"Value": 5, "Unit": "[-]"}
+    Sim_config.hotspot_model.Distance = {"Value": 9, "Unit": "[M]"}
+    Sim_config.hotspot_model.Velocity_profile = {"Value":"Keplarian", "Unit": "[-]"}
 
-from Support_functions import Spacetimes
+    Sim_config.hotspot_model.Temperature_profile = {"Value": "Sphere", "Unit": "[-]"}
+    Sim_config.hotspot_model.Density_profile = {"Value": "Sphere", "Unit": "[-]"}
+    Sim_config.hotspot_model.Radius = {"Value": 1, "Unit": "[M]"}
+    # ================================================== Novikov - Thorne Disk ================================================== #
 
-Wormhole_class = Spacetimes.Wormhole(r_throat = 1, parameter = 2)
+    from Support_functions import Spacetimes
 
-Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 1, "Unit": "[-]"}
-Sim_config.NT_model_params.r_in = {"Value": 6, "Unit": "[M]"}
-Sim_config.NT_model_params.r_out = {"Value": 30, "Unit": "[M]"}
-# ================================================== Integrator ================================================== #
+    Wormhole_class = Spacetimes.Wormhole(r_throat = 1, parameter = 2)
 
-# Sim_config.integrator.step_controller_I_gain = {"Value": 0.18, "Unit": "[-]"}
-Sim_config.integrator.RK45_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+    Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 1, "Unit": "[-]"}
+    Sim_config.NT_model_params.r_in = {"Value": 6, "Unit": "[M]"}
+    Sim_config.NT_model_params.r_out = {"Value": 30, "Unit": "[M]"}
+    # ================================================== Integrator ================================================== #
 
-Sim_config.file_manager.Sim_mode_2_input_file_path = "C:/Users/Valur/Documents/University stuff/General Relativity/Polarization/Schwarzschild_Impact_parameters/Direct_image/geodesic_data_20_deg_Sch_r6_500_photons.txt"
+    # Sim_config.integrator.step_controller_I_gain = {"Value": 0.18, "Unit": "[-]"}
+    Sim_config.integrator.RK45_accuracy = {"Value": 1e-12, "Unit": "[-]"}
 
-Sim_config.generate_simulation_input()
+    Sim_config.file_manager.Sim_mode_2_input_file_path = "C:/Users/Valur/Documents/University stuff/General Relativity/Polarization/Schwarzschild_Impact_parameters/Direct_image/geodesic_data_20_deg_Sch_r6_500_photons.txt"
+
+    Sim_config.generate_simulation_input(Path_to_input_dir = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities",
+                                         Input_file_name = "FILE.XML")
 
 
-import subprocess
-filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\FILE.xml"
-args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename
+    import subprocess
+    filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\FILE.xml"
+    args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename
 
-# for i in range(19):
+    # for i in range(19):
 
-subprocess.call(args, shell=True)
+    # subprocess.call(args, shell=True)
 
-print("kek")
+    print("kek")

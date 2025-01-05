@@ -54,24 +54,12 @@ class Sim_Visualizer():
                 print("I looked at this path: {}".format(self.Ray_tracer_paths[Sim_number]))
                 exit()
 
-            #=============== Get the figure title, which I don't put on the figure, but print in the terminal ===============#
-
-            if self.Sim_Parsers[Sim_number][0].emission_model == " Phenomenological":
-
-                self.Fig_title = (self.Sim_Parsers[Sim_number][0].metric + ", " + self.Sim_Parsers[Sim_number][0].disk_profile + 
-                            ", Height Scale [M] = {}".format(self.Sim_Parsers[Sim_number][0].height_scale) + 
-                            ", Radial Scale [M] = {}".format(self.Sim_Parsers[Sim_number][0].radial_scale) +
-                            ", Emission constant = {}".format(self.Sim_Parsers[Sim_number][0].Emission_Scale))
-            else:
-
-                self.Fig_title = (self.Sim_Parsers[Sim_number][0].metric + ", " + self.Sim_Parsers[Sim_number][0].disk_profile + 
-                            ", Opening Angle [deg] = {}".format(np.round(np.arctan(self.Sim_Parsers[Sim_number][0].disk_opening_angle) * self.Units.RAD_TO_DEG, 2)) + 
-                            ", R_0 [M] = {}".format(self.Sim_Parsers[Sim_number][0].R_0) + 
-                            ", Cutoff [M] = {}".format(self.Sim_Parsers[Sim_number][0].R_Cutoff))
-                
             if Sim_Parser_0.Active_Sim_Mode != 2:
 
-                Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL) )
+                Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL) +
+                              self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL) +
+                              self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL) +
+                              self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL))
                 
                 self.Total_flux_str.append("Total flux at {}GHz = {} [mJy]\n".format(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9, np.round(Total_flux / 1e-3, 4)))
 
@@ -79,8 +67,7 @@ class Sim_Visualizer():
 
             self.Total_flux_str[-1] = self.Total_flux_str[-1][:len(self.Total_flux_str[-1]) - 1]
             self.Total_flux_str = "".join(self.Total_flux_str)
-            print("=" * len(self.Fig_title))
-            print(self.Fig_title)
+            print("=" * len(self.Total_flux_str.split("\n")[0]))
             print(self.Total_flux_str)
 
         for Array_num, _ in enumerate(self.Ehtim_paths):
@@ -129,7 +116,7 @@ class Sim_Visualizer():
                                 Save_Figures: bool,
                                 Custom_fig_title: str):
 
-        Obs_effective_distance = self.Units.M87_DISTANCE_GEOMETRICAL
+        Obs_effective_distance = self.Units.SGRA_DISTANCE_GEOMETRICAL
         Frequency_str_addon    = ""
 
         if len(self.Frequency_Bins) == 1:
@@ -155,7 +142,8 @@ class Sim_Visualizer():
             X_Slice_y_label = r'$T_b\,\,[10^9\, K]$'
 
             # Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation OBS_DISTANCE, and conver to to micro AS 
-            axes_limits = np.array([(limit) for limit in self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS]) * self.Sim_Parsers[Sim_number][0].OBS_DISTANCE / Obs_effective_distance * self.Units.RAD_TO_MICRO_AS
+            axes_limits = np.array([(limit) for limit in self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS]) / Obs_effective_distance
+            axes_limits = np.tan(axes_limits) * self.Units.RAD_TO_MICRO_AS
 
             # The literature (for some reason) has the X axis going positive to negative, 
             # so I invert the X axis limits
@@ -361,7 +349,7 @@ class Sim_Visualizer():
                 if Make_contour_plots:
                     self.plot_contours([Ehtim_Parser_Blur], self.VIDA_Parsers[Index], Subplot, Contour_specs[Sim_number])
 
-                Subplot.set_title("Post-Clean Beam Convolution at {}GHz".format(int(Ehtim_Parser_Blur.OBS_FREQUENCY)), fontsize = self.Font_size)
+                Subplot.set_title("Post Clean Beam Convolution at {}GHz".format(int(Ehtim_Parser_Blur.OBS_FREQUENCY)), fontsize = self.Font_size)
                 Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
                 Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
 
@@ -529,12 +517,11 @@ class Sim_Visualizer():
         for Array_num, Array_str in enumerate(self.Arrays):
 
             with open(self.Sim_path + "Figures\\Flux_ratios_" + Array_str + ".csv", "w") as file:
-                    print("=" * len(self.Fig_title), file = file)
-                    print(self.Fig_title, file = file)
+                    print("=" * len(self.Total_flux_str.split("\n")[0]), file = file)
                     print(self.Console_log_str[Array_num], file = file)
-                    print("=" * len(self.Fig_title), file = file)
+                    print("=" * len(self.Total_flux_str.split("\n")[0]), file = file)
 
-        print("=" * len(self.Fig_title))
+        print("=" * len(self.Total_flux_str.split("\n")[0]))
 
     def plot_contours(self, Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, Subplot, Contour_specs: tuple):
         
@@ -823,7 +810,6 @@ class Sim_Visualizer():
         else:
             Frequency_str = str(Ehtim_Parser.OBS_FREQUENCY)
 
-
         return Intensity_ehtim_jy, Intensity_ehtim_T, Frequency_str
 
     def compare_superpos_w_single_freq(self, 
@@ -919,9 +905,27 @@ class Sim_Visualizer():
                 Superposition_w_contour_fig.savefig(self.Sim_path + 
                                                     "Figures\\" + 
                                                     fig_title, bbox_inches = 'tight')
+                
+    def make_PIL_image(self, arr):
+        
+        from PIL import Image
 
+        size = len(arr)
 
+        # Initialize an empty image in RGB mode
+        img = Image.new("RGB", (size, size))
 
+        # Map the array to colors (0 -> white, 1 -> black)
+        # Using NumPy's broadcasting for efficiency
+        color_array = np.zeros((size, size, 3), dtype=np.uint8)  # Create a blank RGB array
+        color_array[arr == 0] = [255, 255, 255]  # White for 0
+        color_array[arr != 0] = [155, 0, 0]  # Black for non-0 values
+
+        # Convert the NumPy array to a PIL image
+        img = Image.fromarray(color_array)
+
+        # Save the image as a PNG file
+        img.save("output.png")
 
 
 
