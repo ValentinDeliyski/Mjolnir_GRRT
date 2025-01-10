@@ -19,7 +19,6 @@ void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[
     std::ifstream geodesic_data;
     std::string line;
 
-
     double J_input{};
     double P_input{};
 

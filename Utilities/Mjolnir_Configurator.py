@@ -663,19 +663,22 @@ if __name__ == "__main__":
 
     Sim_config = Simulation_configurator()
 
+
+    Sim_config.simulation_mode = {"Value": 2, "Unit": "[-]"}
+
     Sim_config.object_mass = {"Value": 4.2e6, "Unit": "[M_sun]"}
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type = {"Value": "Wormhole", "Unit": "[-]"}
-    Sim_config.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
+    Sim_config.metric_parameters.Metric_type = {"Value": "Kerr", "Unit": "[-]"}
+    Sim_config.metric_parameters.Spin = {"Value": 0.0, "Unit": "[M]"}
 
     # ================================================== Observer ================================================== #
 
     Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
     Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
     Sim_config.observer.Distance = {"Value": 1e4, "Unit": "[M]"}
-    Sim_config.observer.Inclination = {"Value": 80 * pi / 180, "Unit": "[Rad]"}
+    Sim_config.observer.Inclination = {"Value": 70 * pi / 180, "Unit": "[Rad]"}
     Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
 
     # ================================================== Disk ================================================== #
@@ -713,14 +716,14 @@ if __name__ == "__main__":
     Wormhole_class = Spacetimes.Wormhole(r_throat = 1, parameter = 2)
 
     Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 1, "Unit": "[-]"}
-    Sim_config.NT_model_params.r_in = {"Value": 6, "Unit": "[M]"}
+    Sim_config.NT_model_params.r_in = {"Value": 5, "Unit": "[M]"}
     Sim_config.NT_model_params.r_out = {"Value": 30, "Unit": "[M]"}
     # ================================================== Integrator ================================================== #
 
     # Sim_config.integrator.step_controller_I_gain = {"Value": 0.18, "Unit": "[-]"}
-    Sim_config.integrator.RK45_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+    Sim_config.integrator.RK45_accuracy = {"Value": 0.2e-14, "Unit": "[-]"}
 
-    Sim_config.file_manager.Sim_mode_2_input_file_path = "C:/Users/Valur/Documents/University stuff/General Relativity/Polarization/Schwarzschild_Impact_parameters/Direct_image/geodesic_data_20_deg_Sch_r6_500_photons.txt"
+    Sim_config.file_manager.Sim_mode_2_input_file_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/Schwarzschild_r6_70deg_500_photons_direct.csv"
 
     Sim_config.generate_simulation_input(Path_to_input_dir = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities",
                                          Input_file_name = "FILE.XML")
@@ -728,10 +731,10 @@ if __name__ == "__main__":
 
     import subprocess
     filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\FILE.xml"
-    args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename
+    args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
 
     # for i in range(19):
 
-    # subprocess.call(args, shell=True)
+    subprocess.call(args, shell=True)
 
-    print("kek")
+    # print("kek")

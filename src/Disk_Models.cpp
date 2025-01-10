@@ -1183,7 +1183,7 @@ void Generic_Optically_Thin_Model::get_radiative_transfer_functions(const double
     Magnetic_fields_type Magnetic_fields{};
     Ensamble_enums Ensamble_type{};
 
-    double Density{}, Temperature{}, B_field_norm_plasma_frame{}, Magnetization{};
+    double  Density{}, Temperature{}, B_field_norm_plasma_frame{}, Magnetization{};
     double* Plasma_Velocity{};
     double* Mag_field_geometry{};
     double* B_field_coord_frame{};

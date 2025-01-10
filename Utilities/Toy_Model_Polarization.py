@@ -102,7 +102,7 @@ def get_polarization_vector(Photon_Momentum: ndarray,
 
         Photon_4_Momentum_Fluid = dot(Boost_Matrix, Photon_ZAMO_Momentum)
         Photon_3_Momentum_Fluid = Photon_4_Momentum_Fluid[1:]
-
+        
         # ============================= Evaluate the polarization vector in the fluid frame ============================== #
 
         Polarization_3_Vector_Fluid = cross(Photon_3_Momentum_Fluid, B_Field) / norm(Photon_3_Momentum_Fluid)
@@ -115,13 +115,20 @@ def get_polarization_vector(Photon_Momentum: ndarray,
 
         # ====================================== Evaluate Penrose-Walker constants ======================================= #
 
-        kappa_1 = sqrt(Phoron_Log_Entry[e_Metric][e_phi]) * (Photon_ZAMO_Momentum[e_t]     * Polarization_4_Vector_ZAMO[e_r]   - Photon_ZAMO_Momentum[e_r]   * Polarization_4_Vector_ZAMO[e_t])
+        kappa_1 = sqrt(Phoron_Log_Entry[e_Metric][e_phi]) * (Photon_ZAMO_Momentum[e_t] * Polarization_4_Vector_ZAMO[e_r] - Photon_ZAMO_Momentum[e_r] * Polarization_4_Vector_ZAMO[e_t])
+        
+        kappa_11 = gamma_param * sqrt(Phoron_Log_Entry[e_Metric][e_theta]) * (Photon_4_Momentum_Fluid[e_t] * Polarization_4_Vector_Fluid[e_r] + 
+                                                                              beta_param * (Photon_4_Momentum_Fluid[e_r] * Polarization_4_Vector_Fluid[e_theta] - Polarization_4_Vector_Fluid[e_r] * Photon_4_Momentum_Fluid[e_theta]))
+        
         kappa_2 = sqrt(Phoron_Log_Entry[e_Metric][e_phi]) * (Photon_ZAMO_Momentum[e_theta] * Polarization_4_Vector_ZAMO[e_phi] - Photon_ZAMO_Momentum[e_phi] * Polarization_4_Vector_ZAMO[e_theta])
+
+        kappa_22 = gamma_param * sqrt(Phoron_Log_Entry[e_Metric][e_theta]) * ((Photon_4_Momentum_Fluid[e_theta] * Polarization_4_Vector_Fluid[e_phi] - Photon_4_Momentum_Fluid[e_phi] * Polarization_4_Vector_Fluid[e_theta]) - beta_param * Photon_4_Momentum_Fluid[e_t] * Polarization_4_Vector_Fluid[e_phi])
+
 
         # ========================================= Evaluate the scaling factors ========================================= #
 
         Redshift                 = 1 / Photon_4_Momentum_Fluid[e_t]
-        Projected_Disk_Thickness = abs(Photon_4_Momentum_Fluid[e_t] / Photon_4_Momentum_Fluid[e_theta])
+        Projected_Disk_Thickness = abs(Photon_4_Momentum_Fluid[e_t] / Photon_4_Momentum_Fluid[e_theta]) * 1
 
         # ============================ Evaluate the parallel transported polarization vector ============================= #
 
@@ -131,8 +138,8 @@ def get_polarization_vector(Photon_Momentum: ndarray,
 
         """
         Transported_Polarization_Vector = zeros(2)
-        Transported_Polarization_Vector[0] = Redshift**2 * sqrt(Projected_Disk_Thickness) * ( Phoron_Log_Entry[e_Image_Coords][e_x] * kappa_1 + Phoron_Log_Entry[e_Image_Coords][e_y] * kappa_2) / norm(Phoron_Log_Entry[e_Image_Coords])**2
-        Transported_Polarization_Vector[1] = Redshift**2 * sqrt(Projected_Disk_Thickness) * (-Phoron_Log_Entry[e_Image_Coords][e_x] * kappa_2 + Phoron_Log_Entry[e_Image_Coords][e_y] * kappa_1) / norm(Phoron_Log_Entry[e_Image_Coords])**2
+        Transported_Polarization_Vector[0] = Redshift**2 * ( Phoron_Log_Entry[e_Image_Coords][e_x] * kappa_1 + Phoron_Log_Entry[e_Image_Coords][e_y] * kappa_2) / norm(Phoron_Log_Entry[e_Image_Coords])**2
+        Transported_Polarization_Vector[1] = Redshift**2 * (-Phoron_Log_Entry[e_Image_Coords][e_x] * kappa_2 + Phoron_Log_Entry[e_Image_Coords][e_y] * kappa_1) / norm(Phoron_Log_Entry[e_Image_Coords])**2
 
         # ========================== Scale the polarization vector for visualization purposes =========================== #
 
@@ -143,7 +150,7 @@ def get_polarization_vector(Photon_Momentum: ndarray,
         Polarization_Vectors.append(Transported_Polarization_Vector)
         Scaled_Polarization_Vectors.append(Scaled_Transported_Polarization_Vector)
 
-    return array(Polarization_Vectors[:-1]), array(Scaled_Polarization_Vectors[:-1])
+    return array(Polarization_Vectors), array(Scaled_Polarization_Vectors)
 
 def get_observational_quantities(Polarization_Vectors, Image_Coordinates):
 
@@ -177,7 +184,7 @@ def plot_polarization_ticks(Schw_Parser, Other_Metric_Parser, B_Fields, beta_ang
 
     # ====================================== Ray-Tracer Log Parser ====================================== #
 
-    Schw_Photon_Momentum   = column_stack((-Schw_Parser.Radial_Momentum, -Schw_Parser.Theta_Momentum, Schw_Parser.Phi_Momentum))
+    Schw_Photon_Momentum   = column_stack((Schw_Parser.Radial_Momentum, Schw_Parser.Theta_Momentum, Schw_Parser.Phi_Momentum))
     Schw_Image_Coordiantes = column_stack((Schw_Parser.X_coords, Schw_Parser.Y_coords))
 
     Other_Metric_Photon_Momentum   = column_stack((-Other_Metric_Parser.Radial_Momentum, -Other_Metric_Parser.Theta_Momentum, Other_Metric_Parser.Phi_Momentum))
@@ -211,10 +218,10 @@ def plot_polarization_ticks(Schw_Parser, Other_Metric_Parser, B_Fields, beta_ang
         Schwarzschild_metric = Schwarzschild_class.metric(r = Schw_Parser.Source_R_Coord, theta = pi / 2)
 
         _, Schw_Scaled_Polzarization_Vectors = get_polarization_vector(Photon_Momentum = Schw_Photon_Momentum,
-                                                                                               Fluid_Velocity = Fluid_Velocity,
-                                                                                               B_Field = B_Field,
-                                                                                               Image_Coords = Schw_Image_Coordiantes,
-                                                                                               Metric = Schwarzschild_metric)
+                                                                        Fluid_Velocity = Fluid_Velocity,
+                                                                        B_Field = B_Field,
+                                                                        Image_Coords = Schw_Image_Coordiantes,
+                                                                        Metric = Schwarzschild_metric)
         
         Schw_Scaled_Polzarization_Vectors = Scalar * Schw_Scaled_Polzarization_Vectors
 
@@ -252,10 +259,10 @@ def plot_polarization_ticks(Schw_Parser, Other_Metric_Parser, B_Fields, beta_ang
             Other_Metric = Spacetime_dict[Other_Metric_Parser.metric].metric(r = Other_Metric_Parser.Source_R_Coord, theta = pi / 2)
 
             Polarization_Vectors, Scaled_Polzarization_Vectors = get_polarization_vector(Photon_Momentum = Other_Metric_Photon_Momentum[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number],
-                                                                                          Fluid_Velocity = Fluid_Velocity,
-                                                                                          B_Field = B_Field,
-                                                                                          Image_Coords = Other_Metric_Image_Coordiantes[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number],
-                                                                                          Metric = Other_Metric[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number])
+                                                                                        Fluid_Velocity = Fluid_Velocity,
+                                                                                        B_Field = B_Field,
+                                                                                        Image_Coords = Other_Metric_Image_Coordiantes[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number],
+                                                                                        Metric = Other_Metric[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number])
             
             Scaled_Polzarization_Vectors = Scalar * Scaled_Polzarization_Vectors
         
@@ -289,11 +296,11 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
 
     # ====================================== Ray-Tracer Log Parser ====================================== #
 
-    Schw_Photon_Momentum         = column_stack((Schw_Parser.Radial_Momentum, Schw_Parser.Theta_Momentum, Schw_Parser.Phi_Momentum))
-    Schw_Image_Coordiantes       = column_stack((Schw_Parser.X_coords, Schw_Parser.Y_coords))
+    Schw_Photon_Momentum   = column_stack((Schw_Parser.Radial_Momentum, Schw_Parser.Theta_Momentum, Schw_Parser.Phi_Momentum))
+    Schw_Image_Coordiantes = column_stack((Schw_Parser.X_coords, Schw_Parser.Y_coords))
 
-    Other_Metric_Photon_Momentum         = column_stack((Other_Metric_Parser.Radial_Momentum, Other_Metric_Parser.Theta_Momentum, Other_Metric_Parser.Phi_Momentum))
-    Other_Metric_Image_Coordiantes       = column_stack((Other_Metric_Parser.X_coords, Other_Metric_Parser.Y_coords))
+    Other_Metric_Photon_Momentum   = column_stack((-Other_Metric_Parser.Radial_Momentum, -Other_Metric_Parser.Theta_Momentum, Other_Metric_Parser.Phi_Momentum))
+    Other_Metric_Image_Coordiantes = column_stack((Other_Metric_Parser.X_coords, Other_Metric_Parser.Y_coords))
 
     # ==================================== Polarization Calculations ==================================== #
 
@@ -370,15 +377,15 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
         Colorbar.ax.tick_params(labelsize = Fontsize)     
 
         Schw_Polarization_Vectors, Schw_Scaled_Polzarization_Vectors = get_polarization_vector(Photon_Momentum = Schw_Photon_Momentum,
-                                                                                              Fluid_Velocity = Fluid_Velocity,
-                                                                                              B_Field = B_Field,
-                                                                                              Image_Coords = Schw_Image_Coordiantes,
-                                                                                              Metric = Schwarzschild_metric)
+                                                                                                Fluid_Velocity = Fluid_Velocity,
+                                                                                                B_Field = B_Field,
+                                                                                                Image_Coords = Schw_Image_Coordiantes,
+                                                                                                Metric = Schwarzschild_metric)
 
         Schw_Scaled_Polzarization_Vectors = Scalar * Schw_Scaled_Polzarization_Vectors
 
-        Schw_EVPA, Schw_EVPA_Branches, Schw_Polarization_I, Schw_Polarization_Q, Schw_Polarization_U, Schw_Image_phi_coord = get_observational_quantities(Polarization_Vectors = Schw_Polarization_Vectors,
-                                                                                                                                                        Image_Coordinates    = Schw_Image_Coordiantes)
+        Schw_EVPA, Schw_EVPA_Branches, Schw_Polarization_I, _, _, Schw_Image_phi_coord = get_observational_quantities(Polarization_Vectors = Schw_Polarization_Vectors,
+                                                                                                                      Image_Coordinates    = Schw_Image_Coordiantes)
         
         """ Plot the reference values for Schwarzschild """
 
@@ -447,8 +454,8 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
         
             Scaled_Polzarization_Vectors = Scalar * Scaled_Polzarization_Vectors
 
-            EVPA, EVPA_Branches, Polarization_I, Polarization_Q, Polarization_U, Image_phi_coord = get_observational_quantities(Polarization_Vectors = Polarization_Vectors,
-                                                                                                                                Image_Coordinates = Other_Metric_Image_Coordiantes[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number])
+            EVPA, EVPA_Branches, Polarization_I, _, _, Image_phi_coord = get_observational_quantities(Polarization_Vectors = Polarization_Vectors,
+                                                                                                      Image_Coordinates = Other_Metric_Image_Coordiantes[Param_sweep_index * Other_Metric_Parser.Photon_Number : (Param_sweep_index + 1) * Other_Metric_Parser.Photon_Number])
 
             Delta_I = Polarization_I - Schw_Polarization_I
             Delta_EVPA = EVPA - Schw_EVPA
@@ -488,7 +495,7 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
             Max_Delta_I_idx    = argmax(abs(Delta_I))  
             Max_Delta_EVPA_idx = argmax(abs(Delta_EVPA))      
 
-            Max_Delta_I.append(Delta_I[Max_Delta_I_idx])
+            Max_Delta_I.append(Delta_I[Max_Delta_I_idx] / Schw_Polarization_I[Max_Delta_I_idx])
             Max_Delta_EVPA.append(Delta_EVPA[Max_Delta_EVPA_idx])
             Param_Sweep_Values.append(Param_Sweep_Value)
 
@@ -547,7 +554,7 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
     Delta_EVPA_Plot_Sweep.set_xlim([Param_Sweep_Min_Value, Param_Sweep_Max_Value])
 
     Delta_EVPA_Plot_Sweep.legend(loc = "upper right", fontsize = 26)
-    Delta_I_Plot_Sweep.legend(loc = "lower left", fontsize = 26)
+    Delta_I_Plot_Sweep.legend(loc = "upper right", fontsize = 26)
 
     Delta_I_Plot_Sweep.plot([min(Param_Sweep_Values), max(Param_Sweep_Values)], [0, 0], "--", color = "k")
     Delta_EVPA_Plot_Sweep.plot([min(Param_Sweep_Values), max(Param_Sweep_Values)], [0, 0], "--", color = "k")
@@ -615,158 +622,33 @@ def plot_delta_figures(Schw_Parser, Other_Metric_Parser, B_Fields, beta_angles, 
         Delta_EVPA_Plot_list[index].set_ylim([Delta_EVPA_y_limits[0], Delta_EVPA_y_limits[1]])
         Delta_EVPA_Plot_list[index].set_aspect(abs(2 / (Delta_EVPA_y_limits[0] - Delta_EVPA_y_limits[1])) * ratio)
 
-if __name__ == '__main__':
- 
-    params = {"ytick.color" : "black",
-              "xtick.color" : "black",
-              "axes.labelcolor" : "black",
-              "axes.edgecolor" : "black",
-              "text.usetex" : True,
-              "font.family" : "serif",
-              "font.serif" : ["Computer Modern Serif"]}
-    plt.rcParams.update(params)
-
-    # ======================================================= Setup the Figure ======================================================= #
-
-    # Figure_Pattern, (Tick_plot_1, Tick_plot_2, Tick_plot_3) = plt.subplots(1, 3, gridspec_kw = {'width_ratios': [1, 1, 1]}, constrained_layout = True)
-    # Figure_Pattern.set_figwidth(12.5)
-    # Figure_Pattern.set_figheight(25)
-
-    # colorbar_map = matplotlib.cm.ScalarMappable(cmap = matplotlib.colormaps['plasma'])
-    # colorbar_map.set_clim([0,3])
-            
-    # Colorbar = Figure_Pattern.colorbar(colorbar_map, ax = Tick_plot_3)
-    # Colorbar.set_label(r"$\gamma$", fontsize = 32)
-    # Colorbar.ax.tick_params(labelsize = 26)    
-
-    # Tick_plot_2.axes.get_yaxis().set_visible(False)
-    # Tick_plot_3.axes.get_yaxis().set_visible(False)
-
-    # Tick_plot_1.axes.get_xaxis().set_ticks(arange(-8, 10, 2.0))
-    # Tick_plot_1.axes.get_yaxis().set_ticks(arange(-8, 10, 2.0))
-    # Tick_plot_2.axes.get_xaxis().set_ticks(arange(-8, 10, 2.0))
-    # Tick_plot_3.axes.get_xaxis().set_ticks(arange(-8, 10, 2.0))
-
-    # ================================================================================================================================= #
-
-    # Schw_Sim_Path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Schwarzschild_n0_r4.5_20_deg"
-    # Schw_Parser_4_5   = Simulation_Parser(Schw_Sim_Path)
-
-    # Other_Metric_Sim_Path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Wormhole_n0_r4.5_gamma_scan_20_deg"
-    # Other_Metric_Parser_4_5   = Simulation_Parser(Other_Metric_Sim_Path)
-
-    Schw_Sim_Path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\Kerr_n0"
-    Schw_Parser_6 = Simulation_Parser(Schw_Sim_Path)
-
-    Other_Metric_Sim_Path = "C:\\Users\\Valur\\Documents\\Repos\\Gravitational_Lenser\\Sim_Results\\JNW_n0"
-    Other_Metric_Parser_6   = Simulation_Parser(Other_Metric_Sim_Path)
-
-    QUIVER_SAMPLE_SKIP = 8
-    PARAWM_SWEEP_FIGURE_SKIP = 20
-
-    """  
-    For metrics with more than one parameter these go as:
-        * Wormhole: 1 = Spin, 2 = Redshift
-        * Black Hole With Dark Matter Halo: 1 - Halo Mass, 2 = Halo Compactness
-    """
-
-    Other_Metric_Param_Number = 1
-
-    B_Fields = [array([0.87, 0, 0.5]),
-                array([0.71, 0, 0.71]),
-                array([0.5, 0, 0.87])] # This vector has components [r, theta, phi]
-
-    beta_angles = [-150. / 180 * pi,
-                   -135. / 180 * pi,
-                   -120. / 180 * pi]
-
-    plot_delta_figures(Schw_Parser = Schw_Parser_6, 
-                       Other_Metric_Parser = Other_Metric_Parser_6,
-                       B_Fields = B_Fields,
-                       beta_angles = beta_angles,
-                       Other_Metric_Param_Number = Other_Metric_Param_Number,
-                       Fontsize = 32,
-                       Scalar = 1.5,
-                       PARAWM_SWEEP_FIGURE_SKIP = PARAWM_SWEEP_FIGURE_SKIP, 
-                       QUIVER_SAMPLE_SKIP = QUIVER_SAMPLE_SKIP)
-
-    # ======================================= Initial Conditions ======================================= #
-
-    # B_Fields = [array([0.5, 0, 0.87])] # This vector has components [r, theta, phi]
-
-    # beta_angles = [-120 / 180 * pi]
-
-    # Tick_plot_1.set_title(r'B = [0.5, 0.87, 0] $\beta = 0.3,\,\chi = -120^\circ$', fontsize = 36)
-
-    # plot_polarization_ticks(Schw_Parser = Schw_Parser_6, 
-    #                         Other_Metric_Parser = Other_Metric_Parser_6, 
-    #                         B_Fields = B_Fields, 
-    #                         beta_angles = beta_angles, 
-    #                         Other_Metric_Param_Number = 2, 
-    #                         QUIVER_SAMPLE_SKIP = 18, 
-    #                         Scalar = 1, 
-    #                         Tick_plot = Tick_plot_1,
-    #                         Fontsize = 36)
-    # plot_polarization_ticks(Schw_Parser = Schw_Parser_4_5, 
-    #                         Other_Metric_Parser = Other_Metric_Parser_4_5, 
-    #                         B_Fields = B_Fields, beta_angles = beta_angles, 
-    #                         Other_Metric_Param_Number = 2, 
-    #                         QUIVER_SAMPLE_SKIP = 18, 
-    #                         Scalar = 3, 
-    #                         Tick_plot = Tick_plot_1,
-    #                         Fontsize = 36)
+def plot_UV_diagram(Sim_Parser: Simulation_Parser,
+                    B_Fields: array,
+                    beta_angles: array,
+                    beta_norms: array,
+                    Figure_subplot = None):
     
-    #  # ======================================= Initial Conditions ======================================= #
+    Photon_Momentum   = column_stack((Sim_Parser.Radial_Momentum, Sim_Parser.Theta_Momentum, Sim_Parser.Phi_Momentum))
+    Image_Coordiantes = column_stack((Sim_Parser.X_coords, Sim_Parser.Y_coords))
 
-    # B_Fields = [array([0.71, 0, 0.71])] # This vector has components [r, theta, phi]
+    # ==================================== Polarization Calculations ==================================== #
 
-    # beta_angles = [-135 / 180 * pi]
+    Schwarzschild_class  = Spacetimes.Schwarzschild()
+    Schwarzschild_metric = Schwarzschild_class.metric(r = Sim_Parser.Source_R_Coord, theta = pi / 2)
 
-    # Tick_plot_2.set_title(r'B = [0.71, 0.71, 0] $\beta = 0.3,\,\chi = -135^\circ$', fontsize = 36)
+    for _, (B_field, beta_angle, beta_norm) in enumerate(zip(B_Fields, beta_angles, beta_norms)):
 
-    # plot_polarization_ticks(Schw_Parser = Schw_Parser_6, 
-    #                         Other_Metric_Parser = Other_Metric_Parser_6, 
-    #                         B_Fields = B_Fields, 
-    #                         beta_angles = beta_angles, 
-    #                         Other_Metric_Param_Number = 2, 
-    #                         QUIVER_SAMPLE_SKIP = 18, 
-    #                         Scalar = 1, 
-    #                         Tick_plot = Tick_plot_2,
-    #                         Fontsize = 36)
-    # plot_polarization_ticks(Schw_Parser = Schw_Parser_4_5, 
-    #                         Other_Metric_Parser = Other_Metric_Parser_4_5, 
-    #                         B_Fields = B_Fields, beta_angles = beta_angles, 
-    #                         Other_Metric_Param_Number = 2, 
-    #                         QUIVER_SAMPLE_SKIP = 18, 
-    #                         Scalar = 3, 
-    #                         Tick_plot = Tick_plot_2,
-    #                         Fontsize = 36)
-    
+        Fluid_Velocity = beta_norm * array([cos(beta_angle), sin(beta_angle), 0]) # This vector has components [x, y, z]
 
-    #  # ======================================= Initial Conditions ======================================= #
+        Polarization_Vectors, _ = get_polarization_vector(Photon_Momentum,
+                                                          Fluid_Velocity,
+                                                          B_field,
+                                                          Image_Coordiantes,
+                                                          Schwarzschild_metric)
+        
+        EVPA, EVPA_Branches, Polarization_I, Polarization_Q, Polarization_U, Image_phi_coord = get_observational_quantities(Polarization_Vectors = Polarization_Vectors,
+                                                                                                                            Image_Coordinates = Image_Coordiantes)
 
-    # B_Fields = [array([0.87, 0, 0.5])] # This vector has components [r, theta, phi]
-
-    # beta_angles = [-150 / 180 * pi]
-
-    # Tick_plot_3.set_title(r'B = [0.87, 0.5, 0] $\beta = 0.3,\,\chi = -150^\circ$', fontsize = 36)
-
-    # plot_polarization_ticks(Schw_Parser = Schw_Parser_6, 
-    #                         Other_Metric_Parser = Other_Metric_Parser_6, 
-    #                         B_Fields = B_Fields, 
-    #                         beta_angles = beta_angles, 
-    #                         Other_Metric_Param_Number = 2, 
-    #                         QUIVER_SAMPLE_SKIP = 18, 
-    #                         Scalar = 1, 
-    #                         Tick_plot = Tick_plot_3,
-    #                         Fontsize = 36)
-    # plot_polarization_ticks(Schw_Parser = Schw_Parser_4_5, 
-    #                         Other_Metric_Parser = Other_Metric_Parser_4_5, 
-    #                         B_Fields = B_Fields, beta_angles = beta_angles, 
-    #                         Other_Metric_Param_Number = 2, 
-    #                         QUIVER_SAMPLE_SKIP = 18, 
-    #                         Scalar = 3, 
-    #                         Tick_plot = Tick_plot_3,
-    #                         Fontsize = 36)
-    
-    plt.show()
+        plt.plot(Polarization_Q ,Polarization_U)
+        # plt.xlim([-0.4,0.1])
+        # plt.ylim([-0.4,0.1])

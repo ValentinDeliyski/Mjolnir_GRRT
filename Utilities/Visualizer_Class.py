@@ -238,8 +238,8 @@ class Sim_Visualizer():
             T_Brightness_norm     = max(T_Brightness)
             T_Brightness_min_norm = min(T_Brightness)
             # Rescale the celestial coordinates for an observer, located at "Obs_effective_distance", rather than the simulation OBS_DISTANCE, and converto to micro AS
-            x_coords  = np.linspace(self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS[0], self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS[1], self.Sim_Parsers[Sim_number][0].X_PIXEL_COUNT) # These limits are in radians, for an observer located at the ray-tracer's OBS_DISTANCE
-            x_coords *= self.Sim_Parsers[Sim_number][0].OBS_DISTANCE / Obs_effective_distance * self.Units.RAD_TO_MICRO_AS
+            x_coords  = np.linspace(self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS[0], self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS[1], self.Sim_Parsers[Sim_number][0].X_PIXEL_COUNT) / Obs_effective_distance
+            x_coords *= self.Units.RAD_TO_MICRO_AS 
 
             # Set the aspect ratio of the figure to 1:1 (y:x)
             Subplot.set_aspect(2 * x_coords[-1] / T_Brightness_norm)

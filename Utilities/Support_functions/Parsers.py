@@ -404,7 +404,7 @@ class Units_class():
         self.BOLTZMANN_SI = 1.380649e-23
         self.PLANCK_SI    = 6.62607015e-34
 
-        self.M_SUN_SI     = 1.989e30
+        self.M_SUN_SI     = 1.988475e30
         self.M_M87_BH_SI  = 6.2e9 * self.M_SUN_SI
         self.M_SGRA_BH_SI = 4.297e6 * self.M_SUN_SI
 
