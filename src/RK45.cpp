@@ -103,7 +103,7 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
         // Otherwise the photons never reach the turning point and the integration grinds to a halt.
         if (p_Sim_context->p_Init_Conditions->Metric_params.e_Spacetime == Janis_Newman_Winicour && p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 0.5) {
 
-            if (State_Vector[e_r] - 2 / p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 1e-8) {
+            if (State_Vector[e_r] - 2 / p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 1e-7) {
 
                 State_Vector[e_p_r] *= -1;
 

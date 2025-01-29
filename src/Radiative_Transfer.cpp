@@ -1,8 +1,4 @@
-#define _USE_MATH_DEFINES
-
-#include "Enumerations.h"
-#include "Constants.h"
-#include "General_math_functions.h"
+#include "Radiative_Transfer.h"
 
 void static get_M_matrix(double M[STOKES_PARAM_NUM][STOKES_PARAM_NUM],
                          const double absorbtion_function[STOKES_PARAM_NUM], 
@@ -314,9 +310,7 @@ void Analytic_Radiative_Transfer(double const emission_functions[STOKES_PARAM_NU
 
 }
 
-void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM],
-                            double const absorbtion_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM],
-                            double const faradey_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM],
+void RK4_Radiative_Transfer(Transfer_functions_type* const Transfer_functions,
                             double const step,
                             double Stokes_Vector[STOKES_PARAM_NUM]){
 
@@ -326,9 +320,9 @@ void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][S
 
     for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
 
-        emission_functions_middle[index]   = (emission_functions[Current][index]   + emission_functions[Next][index]) / 2;
-        absorbtion_functions_middle[index] = (absorbtion_functions[Current][index] + absorbtion_functions[Next][index]) / 2;
-        faradey_functions_middle[index]    = (faradey_functions[Current][index]    + faradey_functions[Next][index]) / 2;
+        emission_functions_middle[index]   = (Transfer_functions[Current].Emission_functions[index] + Transfer_functions[Next].Emission_functions[index]) / 2;
+        absorbtion_functions_middle[index] = (Transfer_functions[Current].Absorbtion_functions[index] + Transfer_functions[Next].Absorbtion_functions[index]) / 2;
+        faradey_functions_middle[index]    = (Transfer_functions[Current].Faradey_functions[index] + Transfer_functions[Next].Faradey_functions[index]) / 2;
 
     }
 
@@ -336,9 +330,9 @@ void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][S
     double M_matrix_middle[4][4]{};
     double M_matrix_next[4][4]{};
 
-    get_M_matrix(M_matrix,        absorbtion_functions[Current], faradey_functions[Current]);
-    get_M_matrix(M_matrix_middle, absorbtion_functions_middle,   faradey_functions_middle);
-    get_M_matrix(M_matrix_next,   absorbtion_functions[Next],    faradey_functions[Next]);
+    get_M_matrix(M_matrix,        Transfer_functions[Current].Absorbtion_functions, Transfer_functions[Current].Faradey_functions);
+    get_M_matrix(M_matrix_middle, absorbtion_functions_middle,                      faradey_functions_middle);
+    get_M_matrix(M_matrix_next,   Transfer_functions[Next].Absorbtion_functions,    Transfer_functions[Next].Faradey_functions);
 
     /* ================================ Stage 1 ================================ */
 
@@ -350,7 +344,7 @@ void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][S
 
     for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
     
-        Derivative_1[index] = emission_functions[Current][index] - M_dot_Stokes_Vector[index];
+        Derivative_1[index] = Transfer_functions[Current].Emission_functions[index] - M_dot_Stokes_Vector[index];
         Stokes_vector_internal[index] = Stokes_Vector[index] + Derivative_1[index] * step / 2;
     }
 
@@ -387,7 +381,7 @@ void RK4_Radiative_Transfer(double const emission_functions[INTERPOLATION_NUM][S
 
     for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
 
-        Derivative_4[index] = emission_functions[Next][index] - M_dot_Stokes_Vector[index];
+        Derivative_4[index] = Transfer_functions[Next].Emission_functions[index] - M_dot_Stokes_Vector[index];
         Stokes_Vector[index] += step * (Derivative_1[index] + 2 * Derivative_2[index] + 2 * Derivative_3[index] + Derivative_4[index]) / 6;
     }
 

@@ -131,31 +131,29 @@ void static Seperate_Image_into_orders(int const Max_theta_turning_points,
 }
 
 void static Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
-                                    double const emission_functions[2][STOKES_PARAM_NUM], 
-                                    double const absorbtion_functions[2][STOKES_PARAM_NUM],
-                                    double const faradey_functions[2][STOKES_PARAM_NUM], 
+                                    Transfer_functions_type* const Transfer_functions,
                                     double const step, 
-                                    double Intensity[STOKES_PARAM_NUM]) {
+                                    double* Intensity) {
 
     switch (Integrator) {
 
     case Analytic:
 
-        Analytic_Radiative_Transfer(emission_functions[Current], absorbtion_functions[Current], faradey_functions[Current], step / 2, Intensity);
-        Analytic_Radiative_Transfer(emission_functions[Next], absorbtion_functions[Next], faradey_functions[Next], step / 2, Intensity);
+        Analytic_Radiative_Transfer(Transfer_functions[Current].Emission_functions, Transfer_functions[Current].Absorbtion_functions, Transfer_functions[Current].Faradey_functions, step / 2, Intensity);
+        Analytic_Radiative_Transfer(Transfer_functions[Next].Emission_functions, Transfer_functions[Next].Absorbtion_functions, Transfer_functions[Next].Faradey_functions, step / 2, Intensity);
 
         break;
 
     case Implicit_Trapezoid:
 
-        Implicit_Trapezoid_Radiative_Transfer(emission_functions[Current], absorbtion_functions[Current], faradey_functions[Current], step / 2, Intensity);
-        Implicit_Trapezoid_Radiative_Transfer(emission_functions[Next], absorbtion_functions[Next], faradey_functions[Next], step / 2, Intensity);
+        Implicit_Trapezoid_Radiative_Transfer(Transfer_functions[Current].Emission_functions, Transfer_functions[Current].Absorbtion_functions, Transfer_functions[Current].Faradey_functions, step / 2, Intensity);
+        Implicit_Trapezoid_Radiative_Transfer(Transfer_functions[Next].Emission_functions, Transfer_functions[Next].Absorbtion_functions, Transfer_functions[Next].Faradey_functions, step / 2, Intensity);
 
         break;
 
     case RK4:
 
-        RK4_Radiative_Transfer(emission_functions, absorbtion_functions, faradey_functions, step, Intensity);
+        RK4_Radiative_Transfer(Transfer_functions, step, Intensity);
 
         break;
 
@@ -180,51 +178,37 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
     /* --------------------- Get the three 4-vectors from which we will construct the tetrad --------------------- */
 
-    double Disk_density{}, Hotspot_density{};
+    Emission_medium_state_type Disk_state{};
+    Emission_medium_state_type Hotspot_state{};
 
     // ------------- The magnetic field of the disk
 
-    Magnetic_fields_type Disk_Magnetic_Fields{};
-    double* Disk_Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context, 
-                                                                                   p_Sim_Context->p_Init_Conditions->Disk_params.Velocity_profile_type, 
-                                                                                   p_Sim_Context->p_Init_Conditions->Disk_params.Radial_velocity_fraction);
+    Disk_state.Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context,
+                                                                                 p_Sim_Context->p_Init_Conditions->Disk_params.Velocity_profile_type, 
+                                                                                 p_Sim_Context->p_Init_Conditions->Disk_params.Radial_velocity_fraction);
+    if (NULL != Disk_state.Plasma_Velocity) {
 
-    if (NULL != Disk_Plasma_Velocity) {
+        Disk_state.Density = p_Sim_Context->p_GOT_Model->get_disk_density(State_vector);
+        Disk_state.Magnetization = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
+        memcpy(Disk_state.Magnetic_fields.Magnetic_field_geometry, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
 
-        Disk_density = p_Sim_Context->p_GOT_Model->get_disk_density(State_vector);
-        double& Disk_Magnetization = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
-        double* Disk_mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry;
-
-        p_Sim_Context->p_GOT_Model->get_magnetic_field(&Disk_Magnetic_Fields, 
-                                                        Disk_mag_field_geometry, 
-                                                        State_vector, 
-                                                        p_Sim_Context, 
-                                                        Disk_Plasma_Velocity, 
-                                                        Disk_density, 
-                                                        Disk_Magnetization);
+        p_Sim_Context->p_GOT_Model->get_magnetic_field(State_vector, p_Sim_Context, &Disk_state);
 
     }
 
     // ------------- The magnetic field of the hotspot
 
-    Magnetic_fields_type Hotspot_Magnetic_Fields{};
-    double* Hotspot_Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context, 
-                                                                                      p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type, 
-                                                                                      p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
+    Hotspot_state.Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context,
+                                                                                    p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type, 
+                                                                                    p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
 
-    if (NULL != Hotspot_Plasma_Velocity) {
+    if (NULL != Hotspot_state.Plasma_Velocity) {
 
-        Hotspot_density = p_Sim_Context->p_GOT_Model->get_hotspot_density(State_vector);
-        double& Hotspot_Magnetization = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;
-        double* Hotspot_mag_field_geometry = p_Sim_Context->p_Init_Conditions->Hotspot_params.Mag_field_geometry;
+        Hotspot_state.Density = p_Sim_Context->p_GOT_Model->get_hotspot_density(State_vector, p_Sim_Context);
+        Hotspot_state.Magnetization = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;
+        memcpy(Hotspot_state.Magnetic_fields.Magnetic_field_geometry, p_Sim_Context->p_Init_Conditions->Hotspot_params.Mag_field_geometry, 3 * sizeof(double));
 
-        p_Sim_Context->p_GOT_Model->get_magnetic_field(&Hotspot_Magnetic_Fields, 
-                                                        Hotspot_mag_field_geometry,
-                                                        State_vector, 
-                                                        p_Sim_Context, 
-                                                        Hotspot_Plasma_Velocity, 
-                                                        Hotspot_density,
-                                                        Hotspot_Magnetization);
+        p_Sim_Context->p_GOT_Model->get_magnetic_field(State_vector, p_Sim_Context, &Hotspot_state);
 
     }
 
@@ -234,7 +218,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
     for (int index = 0; index <= 3; index++) {
 
-        Total_B_field_contravariant[index] = Disk_Magnetic_Fields.B_field_coord_frame[index] + Hotspot_Magnetic_Fields.B_field_coord_frame[index];
+        Total_B_field_contravariant[index] = Disk_state.Magnetic_fields.B_field_coord_frame[index] + Hotspot_state.Magnetic_fields.B_field_coord_frame[index];
 
     }
 
@@ -543,7 +527,6 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                                                     std::complex<double>(0,0) };
 
     double* Logged_ray_path[INTERPOLATION_NUM]{};
-    double mass_to_cm = p_Sim_Context->p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
     double step{};
 
     // TODO: Propagate this aswell
@@ -556,7 +539,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
         Logged_ray_path[Current] = &(s_Ray_results->Ray_log_struct.Ray_path_log[ log_index      * e_State_Number]);
         Logged_ray_path[Next]    = &(s_Ray_results->Ray_log_struct.Ray_path_log[(log_index - 1) * e_State_Number]);
 
-        step = Logged_ray_path[Current][e_step] * mass_to_cm;
+        step = Logged_ray_path[Current][e_step];
 
         *N_theta_turning_points += Check_for_theta_turning_point(Logged_ray_path[Current], Logged_ray_path[Next]);
         
@@ -575,8 +558,8 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
         bool Inside_disk = p_Sim_Context->p_GOT_Model->get_disk_density(Logged_ray_path[Current]) / p_Sim_Context->p_Init_Conditions->Disk_params.Electron_density_scale > 1e-3
                         && p_Sim_Context->p_GOT_Model->get_disk_density(Logged_ray_path[Next]) / p_Sim_Context->p_Init_Conditions->Disk_params.Electron_density_scale > 1e-3;
 
-        bool Inside_hotspot = p_Sim_Context->p_GOT_Model->get_hotspot_density(Logged_ray_path[Current]) / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale > 1e-3
-                           && p_Sim_Context->p_GOT_Model->get_hotspot_density(Logged_ray_path[Next]) / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale > 1e-3;
+        bool Inside_hotspot = p_Sim_Context->p_GOT_Model->get_hotspot_density(Logged_ray_path[Current], p_Sim_Context) / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale > 1e-3
+                           && p_Sim_Context->p_GOT_Model->get_hotspot_density(Logged_ray_path[Next], p_Sim_Context) / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale > 1e-3;
 
         if (Inside_disk || Inside_hotspot) {
 
@@ -594,9 +577,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             /* ================================= Propagate the radiative transfer equations ================================= */
 
-            double total_emission_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
-            double total_faradey_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
-            double total_absorbtion_functions[INTERPOLATION_NUM][STOKES_PARAM_NUM]{};
+            Transfer_functions_type total_Transfer_functions[INTERPOLATION_NUM]{};
 
             /* Loop trough each emission medium (Disk, Hotspot, Jet and so on) and sum their respective transfer functions */
             for (int emission_medium = Disk; emission_medium <= Hotspot; emission_medium++){
@@ -613,37 +594,31 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
                 }
 
-                double   emission_functions[STOKES_PARAM_NUM]{};
-                double    faradey_functions[STOKES_PARAM_NUM]{};
-                double absorbtion_functions[STOKES_PARAM_NUM]{};
+                Transfer_functions_type temp_Transfer_functions{};
 
                 p_Sim_Context->p_GOT_Model->get_radiative_transfer_functions(Logged_ray_path[Current], 
-                                                                             p_Sim_Context, 
-                                                                             emission_functions, 
-                                                                             faradey_functions, 
-                                                                             absorbtion_functions,
-                                                                             static_cast<Emission_medium_enums>(emission_medium));
+                                                                             p_Sim_Context,
+                                                                             static_cast<Emission_medium_enums>(emission_medium),
+                                                                             &temp_Transfer_functions);
 
-                add_4D_vectors(emission_functions, total_emission_functions[Current], total_emission_functions[Current]);
-                add_4D_vectors(faradey_functions, total_faradey_functions[Current], total_faradey_functions[Current]);
-                add_4D_vectors(absorbtion_functions, total_absorbtion_functions[Current], total_absorbtion_functions[Current]);
+                add_4D_vectors(temp_Transfer_functions.Emission_functions,   total_Transfer_functions[Current].Emission_functions,   total_Transfer_functions[Current].Emission_functions);
+                add_4D_vectors(temp_Transfer_functions.Faradey_functions,    total_Transfer_functions[Current].Faradey_functions,    total_Transfer_functions[Current].Faradey_functions);
+                add_4D_vectors(temp_Transfer_functions.Absorbtion_functions, total_Transfer_functions[Current].Absorbtion_functions, total_Transfer_functions[Current].Absorbtion_functions);
 
                 p_Sim_Context->p_GOT_Model->get_radiative_transfer_functions(Logged_ray_path[Next], 
-                                                                             p_Sim_Context, 
-                                                                             emission_functions,    
-                                                                             faradey_functions,    
-                                                                             absorbtion_functions,
-                                                                             static_cast<Emission_medium_enums>(emission_medium));
+                                                                             p_Sim_Context,
+                                                                             static_cast<Emission_medium_enums>(emission_medium),
+                                                                             &temp_Transfer_functions);
 
-                add_4D_vectors(emission_functions, total_emission_functions[Next], total_emission_functions[Next]);
-                add_4D_vectors(faradey_functions, total_faradey_functions[Next], total_faradey_functions[Next]);
-                add_4D_vectors(absorbtion_functions, total_absorbtion_functions[Next], total_absorbtion_functions[Next]);
+                add_4D_vectors(temp_Transfer_functions.Emission_functions,   total_Transfer_functions[Next].Emission_functions,   total_Transfer_functions[Next].Emission_functions);
+                add_4D_vectors(temp_Transfer_functions.Faradey_functions,    total_Transfer_functions[Next].Faradey_functions,    total_Transfer_functions[Next].Faradey_functions);
+                add_4D_vectors(temp_Transfer_functions.Absorbtion_functions, total_Transfer_functions[Next].Absorbtion_functions, total_Transfer_functions[Next].Absorbtion_functions);
 
             }
 
             /* ------------------------------------------------------------------------------------------------------------- */
 
-            Propagate_Stokes_vector(RK4, total_emission_functions, total_absorbtion_functions, total_faradey_functions, step, Stokes_Vector);
+            Propagate_Stokes_vector(RK4, total_Transfer_functions, step, Stokes_Vector);
 
             if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization){
 
@@ -669,13 +644,26 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         }
 
-        log_ray_emission(Stokes_Vector, Optical_Depth, s_Ray_results, log_index);
+        double Restored_Stokes_Vector[STOKES_PARAM_NUM]{};
+        memcpy(Restored_Stokes_Vector, Stokes_Vector, STOKES_PARAM_NUM * sizeof(double));
+
+        double lambda_0 = p_Sim_Context->p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
+        double Intensity_scale = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS * lambda_0 / C_LIGHT_CGS * p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
+
+
+        for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
+
+            Restored_Stokes_Vector[stokes_idx] *= Intensity_scale;
+
+        }
+
+        log_ray_emission(Restored_Stokes_Vector, Optical_Depth, s_Ray_results, log_index);
 
         Seperate_Image_into_orders(Max_theta_turning_points, 
-                                  *N_theta_turning_points, 
-                                   p_Sim_Context->p_Init_Conditions, 
-                                   s_Ray_results,
-                                   Stokes_Vector);
+                                   *N_theta_turning_points, 
+                                    p_Sim_Context->p_Init_Conditions, 
+                                    s_Ray_results,
+                                    Restored_Stokes_Vector);
          
     }
 

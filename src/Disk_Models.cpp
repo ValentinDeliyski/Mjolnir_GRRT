@@ -225,9 +225,36 @@ double Novikov_Thorne_Model::get_flux(const double* const State_Vector) {
 |                                                          |
 ***********************************************************/
 
+Hotspot_position_type Generic_Optically_Thin_Model::get_hotspot_position(const double* const State_Vector,
+                                                                         const Simulation_Context_type* const p_Sim_Context){
+
+    // The velocity is needed to integrrate the position of the hospot. 
+    double* Hotspot_velocity = this->get_plasma_velocity(this->s_Hotspot_params.Position - 1,
+                                                         p_Sim_Context, 
+                                                         p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type, 
+                                                         p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
+    Hotspot_position_type Hotspot_position{};
+    double Hotspot_ang_velocity{};
+
+    if (NULL != Hotspot_velocity) { Hotspot_ang_velocity = Hotspot_velocity[e_phi] / Hotspot_velocity[e_t]; }
+
+    Hotspot_position.Distance    = this->s_Hotspot_params.Position[e_r - 1];
+    Hotspot_position.Inclination = M_PI_2;
+    Hotspot_position.Azimuth     = this->s_Hotspot_params.Position[e_phi - 1] + Hotspot_ang_velocity * (-State_Vector[e_t] - this->s_Hotspot_params.Coord_time_at_max);
+
+    double sin_hotspot_inclination = sin(Hotspot_position.Inclination);
+
+    Hotspot_position.x = Hotspot_position.Distance * sin_hotspot_inclination * cos(Hotspot_position.Azimuth);
+    Hotspot_position.y = Hotspot_position.Distance * sin_hotspot_inclination * sin(Hotspot_position.Azimuth);
+    Hotspot_position.z = Hotspot_position.Distance * cos(Hotspot_position.Inclination);
+
+    return Hotspot_position;
+
+}
+
 /* ==================================================== Temperature Functions ===================================================== */
 
-double Generic_Optically_Thin_Model::get_disk_temperature(const double* const State_Vector) {
+double Generic_Optically_Thin_Model::get_disk_temperature(const double* const State_Vector) const {
 
 
     const double& r            = State_Vector[e_r];
@@ -261,11 +288,13 @@ double Generic_Optically_Thin_Model::get_disk_temperature(const double* const St
 
 }
 
-double Generic_Optically_Thin_Model::get_hotspot_temperature(const double* const State_Vector) {
+double Generic_Optically_Thin_Model::get_hotspot_temperature(const double* const State_Vector, const Simulation_Context_type* const p_Sim_Context) {
 
-    const double& Hotspot_r      = this->s_Hotspot_params.Position[e_r - 1];
-    const double& Hotspot_theta  = this->s_Hotspot_params.Position[e_theta - 1];
-    const double& Hotspot_phi    = this->s_Hotspot_params.Position[e_phi - 1];
+    Hotspot_position_type Hotspot_position = this->get_hotspot_position(State_Vector, p_Sim_Context);
+
+    const double& Hotspot_r      = Hotspot_position.Distance;
+    const double& Hotspot_theta  = Hotspot_position.Inclination;
+    const double& Hotspot_phi    = Hotspot_position.Azimuth;
     const double& Spatial_spread = this->s_Hotspot_params.Temperature_spread;
 
     const double& photon_r = State_Vector[e_r];
@@ -432,11 +461,13 @@ double* Generic_Optically_Thin_Model::get_plasma_velocity(const double* const St
 
 }
 
-double Generic_Optically_Thin_Model::get_hotspot_density(const double* const State_Vector) {
+double Generic_Optically_Thin_Model::get_hotspot_density(const double* const State_Vector, const Simulation_Context_type* const p_Sim_Context) {
 
-    double& Hotspot_r     = this->s_Hotspot_params.Position[e_r - 1];
-    double& Hotspot_theta = this->s_Hotspot_params.Position[e_theta - 1];
-    double& Hotspot_phi   = this->s_Hotspot_params.Position[e_phi - 1];
+    Hotspot_position_type Hotspot_position = this->get_hotspot_position(State_Vector, p_Sim_Context);
+
+    const double& Hotspot_r = Hotspot_position.Distance;
+    const double& Hotspot_theta = Hotspot_position.Inclination;
+    const double& Hotspot_phi = Hotspot_position.Azimuth;
 
     double& Spatial_spread = this->s_Hotspot_params.Density_spread;
 
@@ -471,7 +502,7 @@ double Generic_Optically_Thin_Model::get_hotspot_density(const double* const Sta
 
         if (squred_distance_to_hotspot_center < this->s_Hotspot_params.Radius * this->s_Hotspot_params.Radius) {
 
-            Spatial_profile = 1;
+            Spatial_profile = 1.0;
 
         }
         break;
@@ -568,20 +599,16 @@ double Generic_Optically_Thin_Model::get_disk_density(const double* const State_
 
 }
 
-void Generic_Optically_Thin_Model::get_magnetic_field(Magnetic_fields_type* const Magnetic_fields,
-                                                      const double* const Mag_field_geometry,
-                                                      const double* const State_Vector,
+void Generic_Optically_Thin_Model::get_magnetic_field(const double* const State_Vector,
                                                       const Simulation_Context_type* const p_Sim_Context,
-                                                      const double* const Plasma_Velocity,
-                                                      const double Density,
-                                                      const double Magnetization)  {
+                                                      Emission_medium_state_type* const Emission_medium_state)  {
 
-    Magnetic_fields->B_field_plasma_frame_norm = sqrt(Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Density * M_PROTON_CGS * 4 * M_PI);
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm = sqrt(Emission_medium_state->Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Emission_medium_state->Density * M_PROTON_CGS * 4 * M_PI);
 
-    double Disk_B_plasma_frame[4] = { 0.0,
-                                     Magnetic_fields->B_field_plasma_frame_norm * Mag_field_geometry[0],
-                                     Magnetic_fields->B_field_plasma_frame_norm * Mag_field_geometry[1],
-                                     Magnetic_fields->B_field_plasma_frame_norm * Mag_field_geometry[2] };
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t]     = 0.0;
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_r]     = Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm * Emission_medium_state->Magnetic_fields.Magnetic_field_geometry[e_r - 1];
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_theta] = Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm * Emission_medium_state->Magnetic_fields.Magnetic_field_geometry[e_theta - 1];
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_phi]   = Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm * Emission_medium_state->Magnetic_fields.Magnetic_field_geometry[e_phi - 1];
 
     /* 
 
@@ -598,14 +625,14 @@ void Generic_Optically_Thin_Model::get_magnetic_field(Magnetic_fields_type* cons
 
         for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
-            Magnetic_fields->B_field_coord_frame[e_t] += s_Metric.Metric[left_idx][right_idx] * Plasma_Velocity[left_idx] * Disk_B_plasma_frame[right_idx];
+            Emission_medium_state->Magnetic_fields.B_field_coord_frame[e_t] += s_Metric.Metric[left_idx][right_idx] * Emission_medium_state->Plasma_Velocity[left_idx] * Emission_medium_state->Magnetic_fields.B_field_plasma_frame[right_idx];
         }
 
     }
 
     for (int index = 1; index <= 3; index++) {
 
-        Magnetic_fields->B_field_coord_frame[index] = (Disk_B_plasma_frame[index] + Magnetic_fields->B_field_coord_frame[e_t] * Plasma_Velocity[index]) / Plasma_Velocity[e_t];
+        Emission_medium_state->Magnetic_fields.B_field_coord_frame[index] = (Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] + Emission_medium_state->Magnetic_fields.B_field_coord_frame[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Emission_medium_state->Plasma_Velocity[e_t];
        
     }
 
@@ -638,8 +665,6 @@ double Generic_Optically_Thin_Model::get_electron_pitch_angle(const double* cons
     TODO: Maybe make functions that do this, or functions that raise and lower indicies
     
     */
-
-    double test{};
 
     for (int left_idx = 0; left_idx <= 3; left_idx++) {
 
@@ -675,147 +700,62 @@ double Generic_Optically_Thin_Model::get_electron_pitch_angle(const double* cons
         return acos(cos_angle / fabs(cos_angle));
 
     }
-
 }
 
 /* =============================================== Thermal synchrotron Transfer Functions =============================================== */
 
-void Generic_Optically_Thin_Model::evaluate_thermal_synchrotron_transfer_functions(double Density,
-                                                                                  double T_electron_dim,
-                                                                                  double f_cyclo,
-                                                                                  double sin_pitch_angle,
-                                                                                  double cos_pitch_angle,
-                                                                                  double Emission_functions[STOKES_PARAM_NUM],
-                                                                                  double Faradey_functions[STOKES_PARAM_NUM],
-                                                                                  Thermal_emission_f_arguments Emission_args,
-                                                                                  Thermal_faradey_f_arguments Faradey_args) {
-
-    for (int index = I; index <= STOKES_PARAM_NUM - 1; index++) {
-
-        Emission_functions[index] = 0.0;
-        Faradey_functions[index]  = 0.0;
-
-    }
-
-    /* ============ Extract the observational frequency (corrected with the redshift) from the emission arguments ============ */
-
-    double& frequency = Emission_args.frequency;
-
-    /* =================== These Bessel functions pop up as normalization factors in the expressions below =================== */
-
-    double const K0_Bessel = std::cyl_bessel_k(0.0, 1.0 / T_electron_dim);
-    double const K1_Bessel = std::cyl_bessel_k(1.0, 1.0 / T_electron_dim);
-    double const K2_Bessel = std::cyl_bessel_k(2.0, 1.0 / T_electron_dim);
-    double const f_crit = 3. / 2 * f_cyclo * T_electron_dim * T_electron_dim * sin_pitch_angle;
-
-    double const omega_plasma_squared = 4 * M_PI * Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / M_ELECTRON_CGS;
-
-    /* All the functions are normalized by a Bessel function, so I check if I can divide by it */
-    if (!isinf(1e10 / K2_Bessel)) {
-
-        this->get_thermal_synchrotron_fit_functions(Emission_functions, Faradey_functions, &Emission_args, &Faradey_args);
-
-        /* ================================================ The emission functions ================================================ */
-
-        Emission_functions[I] *= Density * f_crit / K2_Bessel; // Scale the emission by the remaining position-dependant factors
-        Emission_functions[Q] *= Density * f_crit / K2_Bessel; // Scale the emission by the remaining position-dependant factors
-
-
-        if (!isinf(1e2 / sin_pitch_angle) && !isnan(1e2 / sin_pitch_angle)) {
-
-            Emission_functions[V] *= Density * f_crit / K2_Bessel;                               // Scale the emission by the remaining position-dependant factors
-            Emission_functions[V] *= (1. / T_electron_dim) * cos_pitch_angle / sin_pitch_angle;  // The V component has some extra angle dependance
-
-        }
-
-        /* ================================================ The faradey functions ================================================ */
-        /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33 */
-
-        Faradey_functions[Q] *= omega_plasma_squared * (2 * M_PI * f_cyclo) * (2 * M_PI * f_cyclo) * sin_pitch_angle * sin_pitch_angle * (K1_Bessel / K2_Bessel + 6 * T_electron_dim);
-        Faradey_functions[Q] /= 2 * C_LIGHT_CGS * (2 * M_PI * frequency) * (2 * M_PI * frequency) * (2 * M_PI * frequency);
-        Faradey_functions[V] *= omega_plasma_squared * (2 * M_PI * f_cyclo) * cos_pitch_angle * (K0_Bessel) / K2_Bessel;
-        Faradey_functions[V] /= C_LIGHT_CGS * (2 * M_PI * frequency) * (2 * M_PI * frequency);
-
-    }
-
-}
-
 void Generic_Optically_Thin_Model::get_thermal_synchrotron_transfer_functions(const double* const State_Vector,
-                                                                              const double* const Plasma_velocity,
                                                                               const Simulation_Context_type* const p_Sim_Context,
-                                                                              double* const Emission_functions,
-                                                                              double* const Faradey_functions,
-                                                                              double* const Absorbtion_functions,
-                                                                              double  const Density,
-                                                                              double  const Temperature,
-                                                                              const double* const B_field_coord_frame,
-                                                                              double  const B_field_plasma_frame_norm) {
+                                                                              const Emission_medium_state_type* const p_Emission_medium_state,
+                                                                              Transfer_functions_type* const p_Transfer_functions) {
 
     /* === Zero out the transfer functions just in case === */
-    for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+    memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-        Emission_functions[stokes_index] = 0.0;
-        Faradey_functions[stokes_index] = 0.0;
-        Absorbtion_functions[stokes_index] = 0.0;
+    double redshift = get_redshift(State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
 
-    }
+    /* Check weather redshift is numerically OK to use in the transfer functions. */
+    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) { return; }
 
-    /* === Currently this only happens for the "Keplarian" velocity profile below ISCO, where such orbits do not exist === */
-    if (NULL == Plasma_velocity) {
+    /* The dimensionless electron temperature. */
+    double const T_electron_dim = BOLTZMANN_CONST_CGS * p_Emission_medium_state->Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
 
-        return;
+    /* The cyclotron frequency. */
+    double const f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
 
-    }
+    /* The "averaged" rescaled (by a factor of 27 / 4) critical frequency (without the sin(theta) term.
+       That gets added on later from a pre-computed table). */
+    double const f_s_no_sin = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim;
 
-    double redshift = get_redshift(State_Vector, Plasma_velocity, p_Sim_Context->p_Observer);
+    /* Check weather the rescaled critical frequency f_s is numerically OK to use in the transfer functions. */
+    if (isinf(f_s_no_sin) || isnan(f_s_no_sin) || isinf(1.0 / f_s_no_sin)) { return; }
 
-    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) {
-
-        return;
-
-    }
+    Thermal_transfer_f_arguments_type Transfer_args_uncorrected{};
 
     /* Observation Frequency */
     double const obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
-    /* Dimensionless Electron Temperature */
-    double const T_electron_dim = BOLTZMANN_CONST_CGS * Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
+    /* Compute all the wierd powers of X outside the pitch angle averaging loop. */
+    Transfer_args_uncorrected.X      = obs_frequency / f_s_no_sin / redshift;
+    Transfer_args_uncorrected.sqrt_X = sqrt(Transfer_args_uncorrected.X);
+    Transfer_args_uncorrected.cbrt_X = cbrt(Transfer_args_uncorrected.X);
+    Transfer_args_uncorrected.X_to_0_p_5175 = pow(Transfer_args_uncorrected.X, 0.5175);
+    Transfer_args_uncorrected.X_to_0_p_6    = pow(Transfer_args_uncorrected.X, 0.6);
+    Transfer_args_uncorrected.X_to_0_p_7515 = pow(Transfer_args_uncorrected.X, 0.7515);
 
-    /* Cyclotron Frequency */
-    double const f_cyclo = Q_ELECTRON_CGS * B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    /* Compute the werid power of the electron temperature outside the pitch angle averaging loop. */
+    Transfer_args_uncorrected.T_electron_dim          = T_electron_dim;
+    Transfer_args_uncorrected.T_electron_dim_to_24_25 = pow(T_electron_dim, 24. / 25);
 
-    /* The "averaged" critical frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
-    double const f_crit_no_sin = 3. / 2 * f_cyclo * T_electron_dim * T_electron_dim;
+    /* We also need the current photon frequency to evalauate the emission functions. */
+    Transfer_args_uncorrected.frequency = obs_frequency / redshift;
 
-    Thermal_emission_f_arguments Emission_args_ang_uncorrected{};
-    Thermal_faradey_f_arguments Faradey_args_ang_uncorrected{};
-
-    /* Both the emission and faradey function expressions are in terms of an dimensionless variable X, but the definitions for X are different */
-    Emission_args_ang_uncorrected = {1e100,  // X
-                                     1e100,  // sqrt_X
-                                     1e100,  // cbrt_X
-                                     1e100}; // frequency
-
-    Faradey_args_ang_uncorrected = { 1e100,   // X
-                                     1e100,   // X_to_1_point_035
-                                     1e100,   // X_to_1_point_2
-                                     1e100 }; // frequency
-
-    /* Compute all the wierd powers of X outside the pitch angle averaging loop */
-
-    if (f_crit_no_sin > std::numeric_limits<double>::min()) {
-
-        Emission_args_ang_uncorrected.X      = obs_frequency / f_crit_no_sin / redshift;
-        Emission_args_ang_uncorrected.sqrt_X = sqrt(Emission_args_ang_uncorrected.X);
-        Emission_args_ang_uncorrected.cbrt_X = cbrt(Emission_args_ang_uncorrected.X);
-
-        Faradey_args_ang_uncorrected.X                = T_electron_dim * sqrt(M_SQRT2 * 1e3 * f_cyclo / (obs_frequency / redshift));
-        Faradey_args_ang_uncorrected.X_to_1_point_2   = pow(Faradey_args_ang_uncorrected.X, 1.2f);
-        Faradey_args_ang_uncorrected.X_to_1_point_035 = pow(Faradey_args_ang_uncorrected.X, 1.035f);
-
-    }
-
+    /* Reference for the sake of readabiity. */
     int& Num_Samples_to_avg = p_Sim_Context->p_Init_Conditions->Emission_pitch_angle_samples_to_average;
+
+    /* This structcs holds the transfer function args, corrected for the electron pitch angle. I am setting it equal to the uncorrected one
+    so they copy over the variables that don't depend on the pitch angle. The rest get corrected inside the averaging loop. */
+    Thermal_transfer_f_arguments_type Transfer_args_corrected = Transfer_args_uncorrected;
 
     if (p_Sim_Context->p_Init_Conditions->Average_electron_pitch_angle) {
 
@@ -823,209 +763,120 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_transfer_functions(co
 
         for (int averaging_idx = 1; averaging_idx <= Num_Samples_to_avg - 1; averaging_idx++) {
 
-            Thermal_emission_f_arguments Emission_args_ang_corrected{};
-            Thermal_faradey_f_arguments Faradey_args_ang_corrected{};
-
+            /* References for the sake of readabiity. */
             double& sin_pitch_angle = this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[averaging_idx];
             double& cos_pitch_angle = this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[averaging_idx];
 
-            Emission_args_ang_corrected.X         = Emission_args_ang_uncorrected.X / sin_pitch_angle;
-            Emission_args_ang_corrected.sqrt_X    = Emission_args_ang_uncorrected.sqrt_X * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
-            Emission_args_ang_corrected.cbrt_X    = Emission_args_ang_uncorrected.cbrt_X * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
-            Emission_args_ang_corrected.frequency = obs_frequency / redshift;
+            Transfer_args_corrected.X      = Transfer_args_uncorrected.X / sin_pitch_angle;
+            Transfer_args_corrected.sqrt_X = Transfer_args_uncorrected.sqrt_X * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
+            Transfer_args_corrected.cbrt_X = Transfer_args_uncorrected.cbrt_X * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
+            Transfer_args_corrected.X_to_0_p_5175 = Transfer_args_uncorrected.X_to_0_p_5175 * this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_5175[averaging_idx];
+            Transfer_args_corrected.X_to_0_p_6    = Transfer_args_uncorrected.X_to_0_p_6 * this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_6[averaging_idx];
+            Transfer_args_corrected.X_to_0_p_7515 = Transfer_args_uncorrected.X_to_0_p_7515 * this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_7515[averaging_idx];
 
-            Faradey_args_ang_corrected.X                = Faradey_args_ang_uncorrected.X / this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
-            Faradey_args_ang_corrected.X_to_1_point_035 = Faradey_args_ang_uncorrected.X_to_1_point_035 / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[averaging_idx];
-            Faradey_args_ang_corrected.X_to_1_point_2   = Faradey_args_ang_uncorrected.X_to_1_point_2 / this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[averaging_idx];
-            Faradey_args_ang_corrected.frequency        = obs_frequency / redshift;
+            Transfer_args_corrected.sin_pitch_angle = sin_pitch_angle;
+            Transfer_args_corrected.cos_pitch_angle = cos_pitch_angle;
 
-            double temp_emission_functions[STOKES_PARAM_NUM]{};
-            double temp_faradey_functions[STOKES_PARAM_NUM]{};
+            Transfer_functions_type temp_Transfer_functions{};
 
-            this->evaluate_thermal_synchrotron_transfer_functions(Density, T_electron_dim, f_cyclo, sin_pitch_angle, cos_pitch_angle, temp_emission_functions, temp_faradey_functions, Emission_args_ang_corrected, Faradey_args_ang_corrected);
+            this->evaluate_synchrotron_transfer_functions(e_Thermal_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Sim_Context, &temp_Transfer_functions);
 
             // The U component is 0 by definition
-            Emission_functions[I] += temp_emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            Emission_functions[Q] += temp_emission_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            Emission_functions[U] = 0.0;
-            Emission_functions[V] += temp_emission_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Emission_functions[I] += temp_Transfer_functions.Emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Emission_functions[Q] += temp_Transfer_functions.Emission_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Emission_functions[V] += temp_Transfer_functions.Emission_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+
+            // The U component is 0 by definition
+            p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
             // The I and U components are 0 by definition
-            Faradey_functions[I] = 0.0f;
-            Faradey_functions[Q] += temp_faradey_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            Faradey_functions[U] = 0.0f;
-            Faradey_functions[V] += temp_faradey_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faradey_functions[Q] += temp_Transfer_functions.Faradey_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faradey_functions[V] += temp_Transfer_functions.Faradey_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
         }
     }
     else {
 
         /* The magnetic field is the one measured by a comoving with the plasma observer, but expressed in the cooridante frame */
-        
-        double pitch_angle = get_electron_pitch_angle(B_field_coord_frame, Plasma_velocity, State_Vector, p_Sim_Context);
+        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_coord_frame, p_Emission_medium_state->Plasma_Velocity, State_Vector, p_Sim_Context);
         double sin_pitch_angle = sin(pitch_angle);
 
         double one_over_sqrt_sin = 1.0 / sqrt(sin_pitch_angle);
         double one_over_cbrt_sin = 1.0 / cbrt(sin_pitch_angle);
+        double one_over_sin_to_0_p_5175 = 1.0 / pow(sin_pitch_angle, 0.5175);
+        double one_over_sin_to_0_p_6    = 1.0 / pow(sin_pitch_angle, 0.6);
+        double one_over_sin_to_0_p_7515 = 1.0 / pow(sin_pitch_angle, 0.7515);
 
-        Thermal_emission_f_arguments Emission_args_ang_corrected{};
-        Thermal_faradey_f_arguments Faradey_args_ang_corrected{};
+        Transfer_args_corrected.X      = Transfer_args_uncorrected.X / sin_pitch_angle;
+        Transfer_args_corrected.sqrt_X = Transfer_args_uncorrected.sqrt_X * one_over_sqrt_sin;
+        Transfer_args_corrected.cbrt_X = Transfer_args_uncorrected.cbrt_X * one_over_cbrt_sin;
+        Transfer_args_corrected.X_to_0_p_5175 = Transfer_args_uncorrected.X_to_0_p_5175 * one_over_sin_to_0_p_5175;
+        Transfer_args_corrected.X_to_0_p_6    = Transfer_args_uncorrected.X_to_0_p_6 * one_over_sin_to_0_p_6;
+        Transfer_args_corrected.X_to_0_p_7515 = Transfer_args_uncorrected.X_to_0_p_7515 * one_over_sin_to_0_p_7515;
 
-        Emission_args_ang_corrected.X         = Emission_args_ang_uncorrected.X / sin_pitch_angle;
-        Emission_args_ang_corrected.sqrt_X    = Emission_args_ang_uncorrected.sqrt_X * one_over_sqrt_sin;
-        Emission_args_ang_corrected.cbrt_X    = Emission_args_ang_uncorrected.cbrt_X * one_over_cbrt_sin;
-        Emission_args_ang_corrected.frequency = obs_frequency / redshift;
+        Transfer_args_corrected.sin_pitch_angle = sin_pitch_angle;
+        Transfer_args_corrected.cos_pitch_angle = cos(pitch_angle);
 
-        Faradey_args_ang_corrected.X                = Faradey_args_ang_uncorrected.X / one_over_sqrt_sin;
-        Faradey_args_ang_corrected.X_to_1_point_035 = Faradey_args_ang_uncorrected.X_to_1_point_035 * pow(sin_pitch_angle, 1.035);
-        Faradey_args_ang_corrected.X_to_1_point_2   = Faradey_args_ang_uncorrected.X_to_1_point_2 * pow(sin_pitch_angle, 1.2);
-        Faradey_args_ang_corrected.frequency        = obs_frequency / redshift;
-
-        this->evaluate_thermal_synchrotron_transfer_functions(Density, T_electron_dim, f_cyclo, sin_pitch_angle, cos(pitch_angle), Emission_functions, Faradey_functions, Emission_args_ang_corrected, Faradey_args_ang_corrected);
-
-    }
-
-    /* ================================================ The absorbtion functions ================================================ */
-
-    double Planck_function_CGS = get_planck_function_CGS(obs_frequency / redshift, Temperature);
-
-    if (Planck_function_CGS > std::numeric_limits<double>::min()) {
-
-        for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
-
-            Absorbtion_functions[stokes_index] = Emission_functions[stokes_index] / Planck_function_CGS;
-
-        }
-    }
-    else {
-
-        for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
-
-            Absorbtion_functions[stokes_index] = 0.0;
-
-        }
+        this->evaluate_synchrotron_transfer_functions(e_Thermal_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Sim_Context, p_Transfer_functions);
 
     }
 
-    /* Account for the relativistic doppler effet via the redshift */
-
+    /* Account for the relativistic doppler effet via the redshift. */
     for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
 
-        Emission_functions[stokes_idx] *= redshift * redshift;
-        Faradey_functions[stokes_idx] /= redshift;
-        Absorbtion_functions[stokes_idx] /= redshift;
+        p_Transfer_functions->Emission_functions[stokes_idx] *= redshift * redshift;
+        p_Transfer_functions->Faradey_functions[stokes_idx] /= redshift;
+        p_Transfer_functions->Absorbtion_functions[stokes_idx] /= redshift;
     }
 
 }
 
 /* ========================================== Kappa synchrotron Transfer Functions ========================================== */
 
-void Generic_Optically_Thin_Model::evaluate_kappa_synchrotron_transfer_functions(double Density,
-                                                                                double f_cyclo,
-                                                                                double Emission_functions[STOKES_PARAM_NUM],
-                                                                                double Faradey_functions[STOKES_PARAM_NUM],
-                                                                                double Absorbtion_functions[STOKES_PARAM_NUM],
-                                                                                Kappa_transfer_f_arguments Transfer_args) {
-
-
-    /* ===================== Extract the observation frequency (corrected with the redshift) from the transfer args ===================== */
-
-    double frequency = Transfer_args.X * f_cyclo * (Transfer_args.T_electron_dim * Transfer_args.kappa) * 
-                                                   (Transfer_args.T_electron_dim * Transfer_args.kappa) * 
-                                                    Transfer_args.sin_emission_angle;
-
-    for (int index = 0; index <= STOKES_PARAM_NUM - 1; index++) {
-
-        Emission_functions[index] = 0.0;
-        Faradey_functions[index] = 0.0;
-        Absorbtion_functions[index] = 0.0;
-
-    }
-
-    this->get_kappa_synchrotron_fit_functions(Emission_functions, Faradey_functions, Absorbtion_functions, &Transfer_args);
-
-    Emission_functions[I] *= Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * f_cyclo; 
-    Emission_functions[Q] *= Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * f_cyclo; 
-    Emission_functions[V] *= Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * f_cyclo; 
-
-    if (!isnan(frequency)) {
-
-        Absorbtion_functions[I] *= Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / M_ELECTRON_CGS / C_LIGHT_CGS / frequency;
-        Absorbtion_functions[Q] *= Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / M_ELECTRON_CGS / C_LIGHT_CGS / frequency;
-        Absorbtion_functions[V] *= Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / M_ELECTRON_CGS / C_LIGHT_CGS / frequency;
-
-    }
-
-}
-
 void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(const double* const State_Vector,
-                                                                           const double* const Plasma_velocity,
                                                                            const Simulation_Context_type* const p_Sim_Context,
-                                                                           double* const Emission_functions,
-                                                                           double* const Faradey_functions,
-                                                                           double* const Absorbtion_functions,
-                                                                           double  const Density,
-                                                                           double  const Temperature,
-                                                                           double* const B_field_coord_frame,
-                                                                           double  const B_field_plasma_frame_norm){
+                                                                           const Emission_medium_state_type* const p_Emission_medium_state,
+                                                                           Transfer_functions_type* const p_Transfer_functions){
 
     /* === Zero out the transfer functions just in case === */
-    for (int stokes_index = 0; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) { 
+    memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-        Emission_functions[stokes_index] = 0.0; 
-        Faradey_functions[stokes_index] = 0.0; 
-        Absorbtion_functions[stokes_index] = 0.0;  
+    const double redshift = get_redshift(State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
 
-    }
-
-    /* === Currently this only happens for the "Keplarian" velocity profile below ISCO, where such orbits do not exist === */
-    if (NULL == Plasma_velocity) {
-
-        return;
-
-    }
-
-    const double redshift = get_redshift(State_Vector, Plasma_velocity, p_Sim_Context->p_Observer);
-
-    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) {
-
-        return;
-
-    }
-
-    /* Observation frequency */
-    double& obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
+    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) { return; }
 
     /* Dimensionless Electron Temperature */
-    double T_electron_dim = BOLTZMANN_CONST_CGS * Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
+    double T_electron_dim = BOLTZMANN_CONST_CGS * p_Emission_medium_state->Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
 
     /* Cyclotron Frequency */
-    double f_cyclo = Q_ELECTRON_CGS * B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    double f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
 
     /* The "averaged" critical frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
     double f_k_no_sin = f_cyclo * (this->s_Emission_params.Kappa * T_electron_dim) * (this->s_Emission_params.Kappa * T_electron_dim);
 
-    Kappa_transfer_f_arguments Transfer_args_uncorrected{};
+    if (isinf(f_k_no_sin) || isnan(f_k_no_sin) || isinf(1.0 / f_k_no_sin)) { return; }
 
-    /* Init the argument X to something really large, which would correspond to no emission */
-    Transfer_args_uncorrected = { 1e100, // X
-                                  1e100, // sqrt_X
-                                  1e100, // cbrt_X
-                                  1e100, // X_to_7_over_20
-                                  this->s_Emission_params.Kappa,
-                                  0.0,
-                                  T_electron_dim };
+    /* Observation frequency */
+    double& obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
-    if (f_k_no_sin > std::numeric_limits<double>::min()) {
+    Kappa_transfer_f_arguments_type Transfer_args_uncorrected{};
 
-        Transfer_args_uncorrected.X              = obs_frequency / f_k_no_sin / redshift;
-        Transfer_args_uncorrected.sqrt_X         = sqrt(Transfer_args_uncorrected.X);
-        Transfer_args_uncorrected.cbrt_X         = cbrt(Transfer_args_uncorrected.X);
-        Transfer_args_uncorrected.X_to_7_over_20 = pow(Transfer_args_uncorrected.X, 7. / 20);
-
-    }
+    /* Populate the angle-uncorrected transfer arguments struct. */
+    Transfer_args_uncorrected.X              = obs_frequency / f_k_no_sin / redshift;
+    Transfer_args_uncorrected.sqrt_X         = sqrt(Transfer_args_uncorrected.X);
+    Transfer_args_uncorrected.cbrt_X         = cbrt(Transfer_args_uncorrected.X);
+    Transfer_args_uncorrected.X_to_7_over_20 = pow(Transfer_args_uncorrected.X, 7. / 20);
+    Transfer_args_uncorrected.kappa          = this->s_Emission_params.Kappa;
+    Transfer_args_uncorrected.T_electron_dim = T_electron_dim;
+    Transfer_args_uncorrected.frequency      = obs_frequency / redshift;
 
     int& Num_Samples_to_avg = p_Sim_Context->p_Init_Conditions->Emission_pitch_angle_samples_to_average;
+
+    /* This structcs holds the transfer function args, corrected for the electron pitch angle. I am setting it equal to the uncorrected one
+    so they copy over the variables that don't depend on the pitch angle. The rest get corrected inside the averaging loop. */
+    Kappa_transfer_f_arguments_type Transfer_args_corrected = Transfer_args_uncorrected;
 
     if (p_Sim_Context->p_Init_Conditions->Average_electron_pitch_angle) {
 
@@ -1034,75 +885,59 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(cons
         for (int averaging_idx = 1; averaging_idx <= Num_Samples_to_avg - 1; averaging_idx++) {
 
             double& sin_pitch_angle = this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[averaging_idx];
-            double& cos_pitch_angle = this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[averaging_idx];
 
-            Kappa_transfer_f_arguments Transfer_args_ang_corrected = { 1e100, // X
-                                                                       1e100, // sqrt_X
-                                                                       1e100, // cbrt_X
-                                                                       1e100, // X_to_7_over_20
-                                                                       this->s_Emission_params.Kappa,
-                                                                       sin_pitch_angle,
-                                                                       T_electron_dim };
+            Transfer_args_corrected.X                  = Transfer_args_uncorrected.X / sin_pitch_angle;
+            Transfer_args_corrected.sqrt_X             = Transfer_args_uncorrected.sqrt_X * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
+            Transfer_args_corrected.cbrt_X             = Transfer_args_uncorrected.cbrt_X * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
+            Transfer_args_corrected.X_to_7_over_20     = Transfer_args_uncorrected.X_to_7_over_20 * this->s_Precomputed_e_pitch_angles.one_over_sin_to_7_over_20[averaging_idx];
+            Transfer_args_corrected.sin_emission_angle = sin_pitch_angle;
 
-            Transfer_args_ang_corrected.X = Transfer_args_uncorrected.X / sin_pitch_angle;
-            Transfer_args_ang_corrected.sqrt_X = Transfer_args_uncorrected.sqrt_X * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
-            Transfer_args_ang_corrected.cbrt_X = Transfer_args_uncorrected.cbrt_X * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
-            Transfer_args_ang_corrected.X_to_7_over_20 = Transfer_args_uncorrected.X_to_7_over_20 * this->s_Precomputed_e_pitch_angles.one_over_sin_to_7_over_20[averaging_idx];
+            Transfer_functions_type temp_Transfer_functions{};
 
-            double temp_emission_functions[STOKES_PARAM_NUM]{};
-            double temp_faradey_functions[STOKES_PARAM_NUM]{};
-            double temp_absorbtion_functions[STOKES_PARAM_NUM]{};
-
-            this->evaluate_kappa_synchrotron_transfer_functions(Density, f_cyclo, temp_emission_functions, temp_faradey_functions, temp_absorbtion_functions, Transfer_args_ang_corrected);
+            this->evaluate_synchrotron_transfer_functions(e_Kappa_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Sim_Context, &temp_Transfer_functions);
 
             // The U component is 0 by definition
-            Emission_functions[I] += temp_emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            Emission_functions[Q] += temp_emission_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            Emission_functions[U] = 0.0;
-            Emission_functions[V] += temp_emission_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Emission_functions[I] += temp_Transfer_functions.Emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Emission_functions[Q] += temp_Transfer_functions.Emission_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Emission_functions[V] += temp_Transfer_functions.Emission_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+
+            // The U component is 0 by definition
+            p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
             // The I and U components are 0 by definition
-            Faradey_functions[I] = 0.0f;
-            Faradey_functions[Q] += temp_faradey_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            Faradey_functions[U] = 0.0f;
-            Faradey_functions[V] += temp_faradey_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faradey_functions[Q] += temp_Transfer_functions.Faradey_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faradey_functions[V] += temp_Transfer_functions.Faradey_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
         }
     }
     else {
 
         /* The magnetic field is the one measured by a comoving with the plasma observer, but expressed in the cooridante frame */
-
-        double pitch_angle = get_electron_pitch_angle(B_field_coord_frame, Plasma_velocity, State_Vector, p_Sim_Context);
+        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_coord_frame, p_Emission_medium_state->Plasma_Velocity, State_Vector, p_Sim_Context);
         double sin_pitch_angle = sin(pitch_angle);
 
         double one_over_sqrt_sin    = 1. / sqrt(sin_pitch_angle);
         double one_over_cbrt_sin    = 1. / cbrt(sin_pitch_angle);
         double one_over_7_to_20_sin = 1. / pow(sin_pitch_angle, 7. / 20);
 
-        Kappa_transfer_f_arguments Transfer_args_ang_corrected = { 1e100, // X
-                                                                   1e100, // sqrt_X
-                                                                   1e100, // cbrt_X
-                                                                   1e100, // X_to_7_over_20
-                                                                   this->s_Emission_params.Kappa,
-                                                                   sin_pitch_angle,
-                                                                   T_electron_dim };
+        Transfer_args_corrected.X                  = Transfer_args_uncorrected.X / sin_pitch_angle;
+        Transfer_args_corrected.sqrt_X             = Transfer_args_uncorrected.sqrt_X * one_over_sqrt_sin;
+        Transfer_args_corrected.cbrt_X             = Transfer_args_uncorrected.cbrt_X * one_over_cbrt_sin;
+        Transfer_args_corrected.X_to_7_over_20     = Transfer_args_uncorrected.X_to_7_over_20 * one_over_7_to_20_sin;
+        Transfer_args_corrected.sin_emission_angle = sin_pitch_angle;
 
-        Transfer_args_ang_corrected.X = Transfer_args_uncorrected.X / sin_pitch_angle;
-        Transfer_args_ang_corrected.sqrt_X = Transfer_args_uncorrected.sqrt_X * one_over_sqrt_sin;
-        Transfer_args_ang_corrected.cbrt_X = Transfer_args_uncorrected.cbrt_X * one_over_cbrt_sin;
-        Transfer_args_ang_corrected.X_to_7_over_20 = Transfer_args_uncorrected.X_to_7_over_20 * one_over_7_to_20_sin;
-        this->evaluate_kappa_synchrotron_transfer_functions(Density, f_cyclo, Emission_functions, Faradey_functions, Absorbtion_functions, Transfer_args_ang_corrected);
+        this->evaluate_synchrotron_transfer_functions(e_Kappa_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Sim_Context, p_Transfer_functions);
 
     }
 
     /* Account for the relativistic doppler effet via the redshift */
-
     for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
 
-        Emission_functions[stokes_idx] *= redshift * redshift;
-        Faradey_functions[stokes_idx] /= redshift;
-        Absorbtion_functions[stokes_idx] /= redshift;
+        p_Transfer_functions->Emission_functions[stokes_idx] *= redshift * redshift;
+        p_Transfer_functions->Faradey_functions[stokes_idx]  /= redshift;
+        p_Transfer_functions->Absorbtion_functions[stokes_idx] /= redshift;
     }
 
 }
@@ -1110,105 +945,68 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(cons
 /* ========================================== Phenomenological synchrotron Transfer Functions ========================================== */
 
 void Generic_Optically_Thin_Model::get_phenomenological_synchrotron_functions(const double* const State_Vector,
-                                                                             const double* const Plasma_Veclocity,
-                                                                             const Simulation_Context_type* const p_Sim_Context, 
-                                                                             double* const Emission_functions,
-                                                                             double* const Faradey_functions,
-                                                                             double* const Absorbtion_functions,
-                                                                             const double Density) {
+                                                                              const Simulation_Context_type* const p_Sim_Context, 
+                                                                              const Emission_medium_state_type* const p_Emission_medium_state,
+                                                                              Transfer_functions_type* const p_Transfer_functions) {
 
-    /* === Currently this only happens for the "Keplarian" velocity profile below ISCO, where such orbits do not exist === */
-    if (NULL == Plasma_Veclocity) {
+    /* === Zero out the transfer functions just in case === */
+    memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-        return;
+    Phenomenological_transfer_f_arguments_type Transfer_args{};
 
-    }
+    Transfer_args.redshift = get_redshift(State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
 
-    double redshift = get_redshift(State_Vector, Plasma_Veclocity, p_Sim_Context->p_Observer);
+    if (isinf(Transfer_args.redshift) || isnan(Transfer_args.redshift) || isinf(1.0 / Transfer_args.redshift)) { return; }
 
-    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) {
+    Transfer_args.frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency / Transfer_args.redshift;
+    Transfer_args.f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
 
-        return;
+    this->evaluate_synchrotron_transfer_functions(e_Phenomenological_ensamble, p_Emission_medium_state, &Transfer_args, p_Sim_Context, p_Transfer_functions);
 
-    }
-
-    double& emission_power_law = this->s_Emission_params.Phenomenological_emission_power_law;
-    double& source_f_power_law = this->s_Emission_params.Phenomenological_source_f_power_law;
-    double& emission_coeff     = this->s_Emission_params.Phenomenological_emission_coeff;
-    double& abs_coeff          = this->s_Emission_params.Phenomenological_absorbtion_coeff;
-
-    Emission_functions[I] = emission_coeff * Density / this->s_Disk_params.Electron_density_scale * pow(redshift, emission_power_law);
-    Emission_functions[Q] = 0.0;
-    Emission_functions[U] = 0.0;
-    Emission_functions[V] = 0.0;
-
-    Absorbtion_functions[I] = abs_coeff * emission_coeff * Density / this->s_Disk_params.Electron_density_scale * pow(redshift, source_f_power_law + emission_power_law);
-    Absorbtion_functions[Q] = 0.0;
-    Absorbtion_functions[U] = 0.0;
-    Absorbtion_functions[V] = 0.0;
-
-    Faradey_functions[I] = 0.0;
-    Faradey_functions[Q] = 0.0;
-    Faradey_functions[U] = 0.0;
-    Faradey_functions[V] = 0.0;
-
-    /* Account for the relativistic doppler effet via the redshift */
-
+    /* Account for the relativistic doppler effet via the redshift. */
     for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
 
-        Emission_functions[stokes_idx] *= redshift * redshift;
-        Faradey_functions[stokes_idx] /= redshift;
-        Absorbtion_functions[stokes_idx] /= redshift;
+        p_Transfer_functions->Emission_functions[stokes_idx] *= Transfer_args.redshift * Transfer_args.redshift;
+        p_Transfer_functions->Faradey_functions[stokes_idx] /= Transfer_args.redshift;
+        p_Transfer_functions->Absorbtion_functions[stokes_idx] /= Transfer_args.redshift;
     }
-
 }
 
 /* ============================================ Main "Selector" For The Transfer Functions ============================================ */
 
 void Generic_Optically_Thin_Model::get_radiative_transfer_functions(const double* const State_Vector,
-                                                                    const Simulation_Context_type* const p_Sim_Context, 
-                                                                    double* const Emission_functions,
-                                                                    double* const Faradey_functions,
-                                                                    double* const Absorbtion_functions,
-                                                                    Emission_medium_enums Emission_medium) {
+                                                                    const Simulation_Context_type* const p_Sim_Context,
+                                                                    const Emission_medium_enums Emission_medium,
+                                                                    Transfer_functions_type* const p_Transfer_functions) {
 
-    for (int index = I; index <= STOKES_PARAM_NUM - 1; index++) {
+    /* === Zero out the transfer functions just in case === */
+    memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-        Emission_functions[index] = 0.0;
-        Faradey_functions[index] = 0.0;
-        Absorbtion_functions[index] = 0.0;
-
-    }
-
-    Magnetic_fields_type Magnetic_fields{};
-    Ensamble_enums Ensamble_type{};
-
-    double  Density{}, Temperature{}, B_field_norm_plasma_frame{}, Magnetization{};
-    double* Plasma_Velocity{};
-    double* Mag_field_geometry{};
-    double* B_field_coord_frame{};
+    Emission_medium_state_type Emission_medium_state{};
 
     switch (Emission_medium) {
 
     case Disk:
 
-        Density            = this->get_disk_density(State_Vector);
-        Temperature        = this->get_disk_temperature(State_Vector);
-        Plasma_Velocity    = this->get_plasma_velocity(State_Vector, p_Sim_Context, this->s_Disk_params.Velocity_profile_type, this->s_Disk_params.Radial_velocity_fraction);
-        Ensamble_type      = p_Sim_Context->p_Init_Conditions->Disk_params.Ensamble_type;
-        Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry;
-        Magnetization      = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
+        Emission_medium_state.Density         = this->get_disk_density(State_Vector);
+        Emission_medium_state.Temperature     = this->get_disk_temperature(State_Vector);
+        Emission_medium_state.Ensamble_type   = p_Sim_Context->p_Init_Conditions->Disk_params.Ensamble_type;
+        Emission_medium_state.Plasma_Velocity = this->get_plasma_velocity(State_Vector, p_Sim_Context, this->s_Disk_params.Velocity_profile_type, this->s_Disk_params.Radial_velocity_fraction);
+        Emission_medium_state.Magnetization   = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
+
+        memcpy(Emission_medium_state.Magnetic_fields.Magnetic_field_geometry, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
 
         break;
 
     case Hotspot:
 
-        Density            = this->get_hotspot_density(State_Vector);
-        Temperature        = this->get_hotspot_temperature(State_Vector);
-        Plasma_Velocity    = this->get_plasma_velocity(State_Vector, p_Sim_Context, this->s_Hotspot_params.Velocity_profile_type, this->s_Hotspot_params.Radial_velocity_fraction);
-        Ensamble_type      = p_Sim_Context->p_Init_Conditions->Hotspot_params.Ensamble_type;
-        Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Hotspot_params.Mag_field_geometry;
-        Magnetization      = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;
+        Emission_medium_state.Density         = this->get_hotspot_density(State_Vector, p_Sim_Context);
+        Emission_medium_state.Temperature     = this->get_hotspot_temperature(State_Vector, p_Sim_Context);
+        Emission_medium_state.Ensamble_type   = p_Sim_Context->p_Init_Conditions->Hotspot_params.Ensamble_type;
+        Emission_medium_state.Plasma_Velocity = this->get_plasma_velocity(State_Vector, p_Sim_Context, this->s_Hotspot_params.Velocity_profile_type, this->s_Hotspot_params.Radial_velocity_fraction);
+        Emission_medium_state.Magnetization   = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;
+
+        memcpy(Emission_medium_state.Magnetic_fields.Magnetic_field_geometry, p_Sim_Context->p_Init_Conditions->Hotspot_params.Mag_field_geometry, 3 * sizeof(double));
 
         break;
 
@@ -1222,31 +1020,103 @@ void Generic_Optically_Thin_Model::get_radiative_transfer_functions(const double
 
     }
 
-    if (NULL != Plasma_Velocity) { this->get_magnetic_field(&Magnetic_fields, Mag_field_geometry, State_Vector, p_Sim_Context, Plasma_Velocity, Density, Magnetization); }
+    /* === Currently this only happens for the "Keplarian" velocity profile below ISCO, where such orbits do not exist === */
+    if (NULL == Emission_medium_state.Plasma_Velocity) { return; }
 
-    B_field_coord_frame       = Magnetic_fields.B_field_coord_frame;
-    B_field_norm_plasma_frame = Magnetic_fields.B_field_plasma_frame_norm;
+    this->get_magnetic_field(State_Vector, p_Sim_Context, &Emission_medium_state);
 
-    switch (Ensamble_type) {
+    switch (Emission_medium_state.Ensamble_type) {
 
     case(e_Phenomenological_ensamble):
 
-        this->get_phenomenological_synchrotron_functions(State_Vector, Plasma_Velocity, p_Sim_Context, Emission_functions, Faradey_functions, Absorbtion_functions, Density);
+        this->get_phenomenological_synchrotron_functions(State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
         break;
 
     case(e_Kappa_ensamble):
 
-        this->get_kappa_synchrotron_transfer_functions(State_Vector, Plasma_Velocity, p_Sim_Context, Emission_functions, Faradey_functions, Absorbtion_functions,
-                                                      Density, Temperature, B_field_coord_frame, B_field_norm_plasma_frame);
+        this->get_kappa_synchrotron_transfer_functions(State_Vector, p_Sim_Context, &Emission_medium_state,  p_Transfer_functions);
         break;
 
     default:
 
-        this->get_thermal_synchrotron_transfer_functions(State_Vector, Plasma_Velocity, p_Sim_Context, Emission_functions, Faradey_functions, Absorbtion_functions,
-                                                       Density, Temperature, B_field_coord_frame, B_field_norm_plasma_frame);
+        this->get_thermal_synchrotron_transfer_functions(State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
         break;
     }
-  
+}
+
+void Generic_Optically_Thin_Model::evaluate_synchrotron_transfer_functions(const Ensamble_enums e_Ensamble_type,
+                                                                           const Emission_medium_state_type* const p_Emission_medium_state,
+                                                                           const void* const p_Transfer_args,
+                                                                           const Simulation_Context_type* const p_Sim_Context,
+                                                                           Transfer_functions_type* const p_Transfer_functions) {
+
+    /* The dimensionless frequency needs to get extracted from the p_Transfer_args pointer, but it first needs to be recast to not-void.
+       This happens in the scopes of the switch statemeent below, so I create a variable here to store it. */
+    double  frequency_dim{};
+    double& obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
+
+    switch (e_Ensamble_type) {
+
+    case e_Thermal_ensamble:
+
+        this->get_thermal_synchrotron_emission_fit_functions(static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Emission_functions);
+        this->get_thermal_synchrotron_absorbtion_fit_functions(static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args), p_Emission_medium_state, p_Transfer_functions->Emission_functions, p_Transfer_functions->Absorbtion_functions);
+        this->get_thermal_synchrotron_faradey_fit_functions(static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Faradey_functions);
+
+        frequency_dim = static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args)->frequency / obs_frequency;
+
+        break;
+
+    case e_Kappa_ensamble:
+
+        this->get_kappa_synchrotron_emission_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Emission_functions);
+        this->get_kappa_synchrotron_absorbtion_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Absorbtion_functions);
+
+        // TODO: Add the Faradey function fits.
+
+        frequency_dim = static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args)->frequency / obs_frequency;
+
+        break;
+
+    case e_Phenomenological_ensamble:
+
+        this->get_phenomenological_synchrotron_fit_functions(static_cast<const Phenomenological_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions);
+
+        frequency_dim = static_cast<const Phenomenological_transfer_f_arguments_type*>(p_Transfer_args)->frequency / obs_frequency;
+
+        break;
+
+    default:
+
+        std::cout << "\n" << "Error! Unsupported emission model - something broke in the evaluate_synchrotron_transfer_functions function!" << "\n";
+        exit(ERROR);
+
+    }
+
+    /* The below coefficients pop up in the dimentionless radiative transfer equation. */
+
+    const double f_cyclo_dim    = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS) / obs_frequency;
+    const double distance_scale = p_Sim_Context->p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
+    const double transport_matrix_ratio = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS * distance_scale / C_LIGHT_CGS / obs_frequency / M_ELECTRON_CGS;
+
+    /* ================================================ The emission functions ================================================ */
+
+    p_Transfer_functions->Emission_functions[I] *= (p_Emission_medium_state->Density / Global_density_scale) * f_cyclo_dim;
+    p_Transfer_functions->Emission_functions[Q] *= (p_Emission_medium_state->Density / Global_density_scale) * f_cyclo_dim;
+    p_Transfer_functions->Emission_functions[V] *= (p_Emission_medium_state->Density / Global_density_scale) * f_cyclo_dim;
+
+    /* ================================================ The absorbtion functions ================================================ */
+
+    p_Transfer_functions->Absorbtion_functions[I] *= (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio / frequency_dim;
+    p_Transfer_functions->Absorbtion_functions[Q] *= (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio / frequency_dim;
+    p_Transfer_functions->Absorbtion_functions[V] *= (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio / frequency_dim;
+
+    /* ================================================ The faradey functions ================================================ */
+    /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33 */
+
+    p_Transfer_functions->Faradey_functions[Q] *= -(p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio * (f_cyclo_dim / frequency_dim) * (f_cyclo_dim / frequency_dim) / frequency_dim;
+    p_Transfer_functions->Faradey_functions[V] *= 2 * (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio * (f_cyclo_dim / frequency_dim) / frequency_dim;
+
 }
 
 /* ========================================================== Misc Functions ========================================================== */
@@ -1261,8 +1131,9 @@ void Generic_Optically_Thin_Model::precompute_electron_pitch_angles(Initial_cond
     this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
     this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
 
-    this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035      = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
-    this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2 = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
+    this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_5175 = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
+    this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_6    = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
+    this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_7515 = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
 
     this->s_Precomputed_e_pitch_angles.one_over_sin_to_7_over_20 = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
 
@@ -1283,8 +1154,9 @@ void Generic_Optically_Thin_Model::precompute_electron_pitch_angles(Initial_cond
 
             // Used in the thermal synchrotron Faradey functions
 
-            this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_035[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 1.035);
-            this->s_Precomputed_e_pitch_angles.one_over_sin_to_1_point_2_over_2[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 1.2 / 2);
+            this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_5175[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 0.5175);
+            this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_6[index]    = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 0.6);
+            this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_7515[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 0.7515);
 
             // Used in the kappa synchrotron emission functions
 
@@ -1336,11 +1208,5 @@ int Generic_Optically_Thin_Model::load_parameters(Simulation_Context_type* p_Sim
     }
 
     return OK;
-
-}
-
-double get_planck_function_CGS(double Frequency, double Temperature) {
-
-    return 2 * PLANCK_CONSTANT_CGS * Frequency * Frequency * Frequency / C_LIGHT_CGS / C_LIGHT_CGS / (exp(PLANCK_CONSTANT_CGS * Frequency / BOLTZMANN_CONST_CGS / Temperature) - 1.);
 
 }

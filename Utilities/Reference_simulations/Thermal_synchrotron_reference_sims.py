@@ -70,8 +70,8 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.observer.Image_x_min = {"Value": -(self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         self.Simulation_configurator.observer.Image_x_max = {"Value":  (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         
-        self.Simulation_configurator.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
@@ -80,7 +80,8 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
     
     
-        self.Simulation_configurator.integrator.RK45_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK45_accuracy      = {"Value": 1e-13, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
 
     def Run_and_eval_sim_1(self):
         
@@ -125,6 +126,8 @@ class Thermal_syhnchrotron_reference_sims:
         Total_flux_n3 = Sim_parser_n3.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
         
         Total_flux = Total_flux_n0 + Total_flux_n1 + Total_flux_n2 + Total_flux_n3
+        
+        print(Total_flux)
         
         try:
             assert(abs(Total_flux - 546) / 546 < 0.01)

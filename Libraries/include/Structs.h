@@ -93,6 +93,7 @@ struct Disk_model_parameters_type {
 
 struct Magnetic_fields_type {
 
+    double Magnetic_field_geometry[3];
     double B_field_plasma_frame[4];
     double B_field_coord_frame[4];
     double B_field_plasma_frame_norm;
@@ -121,7 +122,7 @@ struct Hotspot_model_parameters_type {
        specified by the "Velocity_profile_type" enum, with a purely radial profile. The range is [0, 1]. */
     double Radial_velocity_fraction;
 
-    /*! The hotspot potision, specified as [Distance, Polar Angle, Azimuth Angle] */
+    /*! The hotspot position, specified as [Distance, Polar Angle, Azimuth Angle] */
     double Position[3]; 
 
     /* The hotspot is modelled as a localized Gaussian overdensity.
@@ -157,6 +158,30 @@ struct Hotspot_model_parameters_type {
         The components are specified as [B_r, B_theta, B_phi]. 
         This vector gets normalized when read from the input XML. */
     double Mag_field_geometry[3];
+
+};
+
+struct Emission_medium_state_type {
+
+    double Density;
+    double Temperature;
+    double Magnetization;
+    double* Plasma_Velocity;
+    Magnetic_fields_type Magnetic_fields;
+
+    Ensamble_enums Ensamble_type;
+
+};
+
+struct Hotspot_position_type {
+
+    double Distance;
+    double Inclination;
+    double Azimuth;
+
+    double x;
+    double y;
+    double z;
 
 };
 
@@ -224,7 +249,7 @@ struct Metric_parameters_type {
 
 };
 
-struct Precomputed_e_pitch_angles {
+struct Precomputed_e_pitch_angles_type {
 
     double* sin_electron_pitch_angles;
     double* cos_electron_pitch_angles;
@@ -239,11 +264,14 @@ struct Precomputed_e_pitch_angles {
 
     // === Used in the thermal synchotron Faradey functions === //
 
-    /*! 1. / pow(sin, 1.035) */
-    double* one_over_sin_to_1_point_035;
+    /*! 1. / pow(sin, 0.5175) */
+    double* one_over_sin_to_0_p_5175;
 
-    /*! 1. / pow(sin, 1.2 / 3) */
-    double* one_over_sin_to_1_point_2_over_2;
+    /*! 1. / pow(sin, 0.6) */
+    double* one_over_sin_to_0_p_6;
+
+    /*! 1. / pow(sin, 0.7515) */
+    double* one_over_sin_to_0_p_7515;
 
     // === Used in the kappa synchotron emission functions === //
 
@@ -251,33 +279,53 @@ struct Precomputed_e_pitch_angles {
     double* one_over_sin_to_7_over_20;
 };
 
-struct Thermal_emission_f_arguments {
+struct Thermal_transfer_f_arguments_type {
 
     double X;
     double sqrt_X;
     double cbrt_X;
-    double frequency;
+    double X_to_0_p_5175;
+    double X_to_0_p_6;
+    double X_to_0_p_7515;
 
+    double T_electron_dim;
+    double T_electron_dim_to_24_25;
+
+    double sin_pitch_angle;
+    double cos_pitch_angle;
+
+    double frequency;
 };
 
-struct Thermal_faradey_f_arguments {
-
-    double X;
-    double X_to_1_point_035;
-    double X_to_1_point_2;
-    double frequency;
-
-};
-
-struct Kappa_transfer_f_arguments {
+struct Kappa_transfer_f_arguments_type {
 
     double X;
     double sqrt_X;
     double cbrt_X;
     double X_to_7_over_20;
-    double kappa;
-    double sin_emission_angle;
+
     double T_electron_dim;
+
+    double sin_emission_angle;
+
+    double kappa;
+
+    double frequency;
+};
+
+struct Phenomenological_transfer_f_arguments_type {
+
+    double redshift;
+    double f_cyclo;
+    double frequency;
+
+};
+
+struct Transfer_functions_type {
+
+    double Emission_functions[STOKES_PARAM_NUM];
+    double Faradey_functions[STOKES_PARAM_NUM];
+    double Absorbtion_functions[STOKES_PARAM_NUM];
 
 };
 

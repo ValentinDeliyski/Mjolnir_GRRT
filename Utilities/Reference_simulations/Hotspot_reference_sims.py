@@ -38,29 +38,28 @@ class Hotspot_reference_sims:
         """ Central black hole setup"""
         self.Simulation_configurator.metric_parameters.Metric_type = {"Value": "Kerr",  "Unit": "[-]"}
         self.Simulation_configurator.object_mass                   = {"Value": 4.297e6, "Unit": "[M_sun]"}
-        self.Simulation_configurator.metric_parameters.Spin        = {"Value": 0.00001, "Unit": "[M]"}
+        self.Simulation_configurator.metric_parameters.Spin        = {"Value": 0.000, "Unit": "[M]"}
         self.Object_distance                                       = {"Value": 8.277e3, "Unit": "[Pc]"}
         
         """ Kill the accretion disk setup """   
         self.Simulation_configurator.disk_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
 
         """ Hotspot setup """
-        self.Simulation_configurator.hotspot_model.Density_scale_factor     = {"Value": 3.01 * 3.5e6,  "Unit": "[g/cm^3]"}
-        self.Simulation_configurator.hotspot_model.Temperature_scale_factor = {"Value": 3.01 * 3e10, "Unit": "[K]"}
+        self.Simulation_configurator.hotspot_model.Density_scale_factor     = {"Value": 1.05e7, "Unit": "[g/cm^3]"}
+        self.Simulation_configurator.hotspot_model.Temperature_scale_factor = {"Value": 3.01 * 3e10,  "Unit": "[K]"}
         
         self.Simulation_configurator.hotspot_model.Density_profile     = {"Value": "Sphere", "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Temperature_profile = {"Value": "Sphere", "Unit": "[-]"}
         
-        self.Simulation_configurator.hotspot_model.Temporal_spread   = {"Value": 850,         "Unit": "[GM/c^3]"}
+        self.Simulation_configurator.hotspot_model.Temporal_spread   = {"Value": 850000,      "Unit": "[GM/c^3]"}
         self.Simulation_configurator.hotspot_model.Coord_time_at_max = {"Value": 1e4,         "Unit": "[GM/c^3]"}
         self.Simulation_configurator.hotspot_model.Magnetization     = {"Value": 0.01,        "Unit": "[-]"}
         self.Simulation_configurator.emission_models.Kappa           = {"Value": 5,           "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Distance          = {"Value": 9,           "Unit": "[M]"} 
-        self.Simulation_configurator.hotspot_model.Azimuth           = {"Value": -pi/2,       "Unit": "[M]"} 
         self.Simulation_configurator.hotspot_model.Velocity_profile  = {"Value": "Keplarian", "Unit": "[-]"}
-        self.Simulation_configurator.hotspot_model.Mag_field_geometry_X = {"Value": 0.5,  "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry_X = {"Value": 0,  "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Mag_field_geometry_Y = {"Value": 0,    "Unit": "[-]"}
-        self.Simulation_configurator.hotspot_model.Mag_field_geometry_Z = {"Value": 0.87, "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry_Z = {"Value": 1, "Unit": "[-]"}
         
         """ Observer setup """
         self.Simulation_configurator.observer.Distance    = {"Value": 1e4,           "Unit": "[M]"}
@@ -83,36 +82,43 @@ class Hotspot_reference_sims:
         
         """ Configure the integrator """
         self.Simulation_configurator.integrator.Step_controller_type = {"Value": "Gustafsson", "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK45_accuracy        = {"Value": 1e-14, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK45_accuracy        = {"Value": 1e-13, "Unit": "[-]"}
         
         """ The simulation name and input file path """
-        self.Simulation_configurator.simulation_name = {"Value": "Hotspot_Reference_Simulation", "Unit": "[-]"}
         
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
 
-        self.Simulation_configurator.generate_simulation_input(Path_to_input_dir = "Reference_simulations\\Hotspot_Reference_Simulation",
-                                                               Input_file_name = "Hotspot_Reference_Simulation_input.XML")
-        
-        """ Run the simulation """
-        filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Hotspot_Reference_Simulation\\Hotspot_Reference_Simulation_input.xml"
-        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
-        subprocess.call(args, shell = True)
-                
-        """ Evaluate the simulataion results """
-        Sim_parser_n0 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation" + "\\Kerr_n0")
-        Total_flux_n0 = Sim_parser_n0.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
-        
-        Sim_parser_n1 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation" + "\\Kerr_n1")
-        Total_flux_n1 = Sim_parser_n1.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
-        
-        Sim_parser_n2 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation" + "\\Kerr_n2")
-        Total_flux_n2 = Sim_parser_n2.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
-        
-        Sim_parser_n3 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation" + "\\Kerr_n3")
-        Total_flux_n3 = Sim_parser_n3.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
-        
-        Total_flux = Total_flux_n0 + Total_flux_n1 + Total_flux_n2 + Total_flux_n3
-        
-        print(Total_flux)
+        hotspot_azimuth_position_number = 1
+
+        for hotspot_azimuth_offset in range(0, hotspot_azimuth_position_number):
+            
+            self.Simulation_configurator.simulation_name = {"Value": "Hotspot_Reference_Simulation_{}".format(hotspot_azimuth_offset), "Unit": "[-]"}
+
+            self.Simulation_configurator.hotspot_model.Azimuth = {"Value": pi/2 - pi/6 + hotspot_azimuth_offset * 2 * pi / hotspot_azimuth_position_number, "Unit": "[M]"} 
+
+            self.Simulation_configurator.generate_simulation_input(Path_to_input_dir = "Reference_simulations\\Hotspot_Reference_Simulation",
+                                                                Input_file_name = "Hotspot_Reference_Simulation_input.XML")
+            
+            """ Run the simulation """
+            filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Hotspot_Reference_Simulation\\Hotspot_Reference_Simulation_input.xml"
+            args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
+            subprocess.call(args, shell = True)
+                    
+            """ Evaluate the simulataion results """
+            Sim_parser_n0 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation_{}".format(hotspot_azimuth_offset) + "\\Kerr_n0")
+            Total_flux_n0 = Sim_parser_n0.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
+            
+            Sim_parser_n1 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation_{}".format(hotspot_azimuth_offset) + "\\Kerr_n1")
+            Total_flux_n1 = Sim_parser_n1.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
+            
+            Sim_parser_n2 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation_{}".format(hotspot_azimuth_offset) + "\\Kerr_n2")
+            Total_flux_n2 = Sim_parser_n2.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
+            
+            Sim_parser_n3 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation_{}".format(hotspot_azimuth_offset) + "\\Kerr_n3")
+            Total_flux_n3 = Sim_parser_n3.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
+            
+            Total_flux = Total_flux_n0 + Total_flux_n1 + Total_flux_n2 + Total_flux_n3
+            
+            print(Total_flux / 15)
 
 Hotspot_reference_sims_instance = Hotspot_reference_sims()

@@ -64,3 +64,5 @@ Real OBS_FREQUENCY_CGS = 230e9;
 
 Real CGS_TO_JANSKY = 1e+23;
 
+/* This constant is used in the dimentionless radiative transfer equations as a density scale in units of [g/cm^3]. */
+Real Global_density_scale = 1.0e6; 
