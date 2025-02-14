@@ -79,7 +79,6 @@ class Thermal_syhnchrotron_reference_sims:
         """ Kill the Novikov-Thorne disk """
         self.Simulation_configurator.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
     
-    
         self.Simulation_configurator.integrator.RK45_accuracy      = {"Value": 1e-13, "Unit": "[-]"}
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
 

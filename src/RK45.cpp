@@ -101,9 +101,9 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
         // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
         // Close enough that it requires "manual" scattering, by flipping the p_r sign.
         // Otherwise the photons never reach the turning point and the integration grinds to a halt.
-        if (p_Sim_context->p_Init_Conditions->Metric_params.e_Spacetime == Janis_Newman_Winicour && p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 0.5) {
+        if (p_Sim_context->p_Init_Conditions->Metric_parameters.e_Spacetime == Janis_Newman_Winicour && p_Sim_context->p_Init_Conditions->Metric_parameters.JNW_Gamma_Parameter < 0.5) {
 
-            if (State_Vector[e_r] - 2 / p_Sim_context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter < 1e-7) {
+            if (State_Vector[e_r] - 2 / p_Sim_context->p_Init_Conditions->Metric_parameters.JNW_Gamma_Parameter < 1e-7) {
 
                 State_Vector[e_p_r] *= -1;
 
@@ -115,31 +115,14 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
 
 Step_controller::Step_controller(const Integrator_parameters_type Integrator_parameters) {
 
-    this->Controller_type = Integrator_parameters.Controller_type;
-
-    this->Gustafsson_k_1 = Integrator_parameters.Gustafsson_k1;
-    this->Gustafsson_k_2 = Integrator_parameters.Gustafsson_k2;
-
-    this->Max_rel_step_increase = Integrator_parameters.Max_rel_step_increase;
-    this->Min_rel_step_increase = Integrator_parameters.Min_rel_step_increase;
-
-    this->Gain_I = Integrator_parameters.PID_gain_I;
-    this->Gain_P = Integrator_parameters.PID_gain_P;
-    this->Gain_D = Integrator_parameters.PID_gain_D;
+    this->Parameters = Integrator_parameters;
 
     this->step = Integrator_parameters.Init_stepzie;
     this->previous_step = Integrator_parameters.Init_stepzie;
 
-    this->Max_absolute_err = Integrator_parameters.RK_45_accuracy;
-
-    this->current_err  = this->Max_absolute_err;
-    this->prev_err     = this->Max_absolute_err;
-    this->sec_prev_err = this->Max_absolute_err;
-
-    this->Safety_1 = Integrator_parameters.Safety_1;
-    this->Safety_2 = Integrator_parameters.Safety_2;
-
-    this->Max_integration_count = Integrator_parameters.Max_integration_count;
+    this->current_err  = Integrator_parameters.RK_45_accuracy;
+    this->prev_err     = Integrator_parameters.RK_45_accuracy;
+    this->sec_prev_err = Integrator_parameters.RK_45_accuracy;
 
     this->continue_integration = false;
     this->integration_complete = false;
@@ -159,17 +142,17 @@ void Step_controller::update_step(const double* const State_Vector) {
 
     double Rel_step_increase{};
     
-    double Error_threshold = this->Max_absolute_err * (1 + get_max_element(State_Vector, e_State_Number - 1));
+    double Error_threshold = this->Parameters.RK_45_accuracy * (1 + get_max_element(State_Vector, e_State_Number - 1));
 
-    switch (this->Controller_type) {
+    switch (this->Parameters.Controller_type) {
 
     case PID:
 
-        Rel_step_increase = this->Safety_1 * pow(Error_threshold / (current_err + this->Safety_2), this->Gain_I) *
-                                             pow(Error_threshold / (prev_err + this->Safety_2), this->Gain_P) *
-                                             pow(Error_threshold / (sec_prev_err + this->Safety_2), this->Gain_D);
+        Rel_step_increase = this->Parameters.Safety_1 * pow(Error_threshold / (this->current_err + this->Parameters.Safety_2), this->Parameters.PID_gain_I) *
+                                                        pow(Error_threshold / (this->prev_err + this->Parameters.Safety_2), this->Parameters.PID_gain_P) *
+                                                        pow(Error_threshold / (this->sec_prev_err + this->Parameters.Safety_2), this->Parameters.PID_gain_D);
 
-        Rel_step_increase = std::min(this->Max_rel_step_increase, std::max(this->Min_rel_step_increase, Rel_step_increase));
+        Rel_step_increase = std::min(this->Parameters.Max_rel_step_increase, std::max(this->Parameters.Min_rel_step_increase, Rel_step_increase));
 
         this->step = Rel_step_increase * this->step;
 
@@ -177,10 +160,10 @@ void Step_controller::update_step(const double* const State_Vector) {
 
     default:
 
-        Rel_step_increase = this->Safety_1 * pow(Error_threshold / (current_err + this->Safety_2), this->Gustafsson_k_1) *
-                                             pow(current_err / (prev_err + this->Safety_2), this->Gustafsson_k_2);
+        Rel_step_increase = this->Parameters.Safety_1 * pow(Error_threshold / (this->current_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k1) *
+                                                        pow(current_err / (this->prev_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k2);
 
-        Rel_step_increase = std::min(this->Max_rel_step_increase, std::max(this->Min_rel_step_increase, Rel_step_increase));
+        Rel_step_increase = std::min(this->Parameters.Max_rel_step_increase, std::max(this->Parameters.Min_rel_step_increase, Rel_step_increase));
 
         this->step = Rel_step_increase * this->step;
 
@@ -188,7 +171,7 @@ void Step_controller::update_step(const double* const State_Vector) {
 
     }
 
-    if (current_err < Error_threshold)
+    if (this->current_err < Error_threshold)
     {
         this->continue_integration = true;
     }

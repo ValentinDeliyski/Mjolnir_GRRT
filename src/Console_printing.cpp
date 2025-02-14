@@ -25,12 +25,12 @@ void Console_Printer_class::print_sim_parameters(Initial_conditions_type* p_Init
     std::cout << "============================================================ SIMULATION METADATA ============================================================"
         << "\n"
         << "Spacetime: "
-        << this->Metric_strings[p_Initial_Conditions->Metric_params.e_Spacetime]
+        << this->Metric_strings[p_Initial_Conditions->Metric_parameters.e_Spacetime]
         << "\n";
 
-    Metric_parameters_type& Parameters = p_Initial_Conditions->Metric_params;
+    Metric_parameters_type& Parameters = p_Initial_Conditions->Metric_parameters;
 
-    switch (p_Initial_Conditions->Metric_params.e_Spacetime) {
+    switch (p_Initial_Conditions->Metric_parameters.e_Spacetime) {
 
     case Kerr:
 

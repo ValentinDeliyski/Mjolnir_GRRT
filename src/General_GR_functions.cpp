@@ -113,7 +113,7 @@ void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Cond
 
     double g2, gamma, ksi, L_z, E;
 
-    double(*metric)[4] = p_Initial_Conditions->init_metric;
+    double(*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
 
     g2 = pow(metric[0][3], 2) - metric[0][0] * metric[3][3];
     ksi = sqrt(metric[3][3] / g2);
@@ -122,24 +122,24 @@ void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Cond
     L_z = sqrt(metric[3][3]) * sin(H_angle + 2 * M_PI) * cos(V_angle);
     E = (1 + gamma * L_z) / ksi;
 
-    p_Initial_Conditions->init_Three_Momentum[e_t]     = -1;
-    p_Initial_Conditions->init_Three_Momentum[e_phi]   = L_z / E;
-    p_Initial_Conditions->init_Three_Momentum[e_theta] = sqrt(metric[2][2]) * sin(V_angle) / E;
-    p_Initial_Conditions->init_Three_Momentum[e_r]     = sqrt(metric[1][1]) * cos(H_angle + 2 * M_PI) * cos(V_angle) / E;
+    p_Initial_Conditions->Init_Momentum[e_t]     = -1;
+    p_Initial_Conditions->Init_Momentum[e_phi]   = L_z / E;
+    p_Initial_Conditions->Init_Momentum[e_theta] = sqrt(metric[2][2]) * sin(V_angle) / E;
+    p_Initial_Conditions->Init_Momentum[e_r]     = sqrt(metric[1][1]) * cos(H_angle + 2 * M_PI) * cos(V_angle) / E;
 
 }
 
 void get_image_coordinates(Initial_conditions_type* p_Initial_Conditions, double* const Image_coords) {
 
-    double(*metric)[4] = p_Initial_Conditions->init_metric;
+    double(*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
 
     double g2    = pow(metric[0][3], 2) - metric[0][0] * metric[3][3];
     double ksi   = sqrt(metric[3][3] / g2);
     double gamma = -metric[0][3] / metric[3][3] * ksi;
 
     double& r_0  = p_Initial_Conditions->Observer_params.distance;
-    double& J    = p_Initial_Conditions->init_Three_Momentum[e_phi];
-    double& p_th = p_Initial_Conditions->init_Three_Momentum[e_theta];
+    double& J    = p_Initial_Conditions->Init_Momentum[e_phi];
+    double& p_th = p_Initial_Conditions->Init_Momentum[e_theta];
 
     Image_coords[x] = -r_0 *  J   / (ksi - gamma * J) / sqrt(metric[3][3]);
     Image_coords[y] =  r_0 * p_th / (ksi - gamma * J) / sqrt(metric[2][2]);
@@ -202,12 +202,12 @@ int compute_image_order(const int N_theta_turning_points, Initial_conditions_typ
 
     if (p_Initial_Conditions->Observer_params.inclination > M_PI_2) {
 
-        order -= bool(p_Initial_Conditions->init_Three_Momentum[e_theta] < 0);
+        order -= bool(p_Initial_Conditions->Init_Momentum[e_theta] < 0);
 
     }
     else {
 
-        order -= bool(p_Initial_Conditions->init_Three_Momentum[e_theta] > 0);
+        order -= bool(p_Initial_Conditions->Init_Momentum[e_theta] > 0);
 
     }
 

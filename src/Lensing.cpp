@@ -19,7 +19,7 @@
 void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Step_controller Controller, Initial_conditions_type* p_Init_Conditions){
 
     int& log_offset = s_Ray_Results->Ray_log_struct.Log_offset;
-    double& R_throat = p_Init_Conditions->Metric_params.R_throat;
+    double& R_throat = p_Init_Conditions->Metric_parameters.R_throat;
 
     for (int index = 0; index <= e_State_Number - 1; index++) {
 
@@ -28,7 +28,7 @@ void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Ste
         // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
         // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead. 
 
-        if (Wormhole == p_Init_Conditions->Metric_params.e_Spacetime && e_r == index) {
+        if (Wormhole == p_Init_Conditions->Metric_parameters.e_Spacetime && e_r == index) {
 
             s_Ray_Results->Ray_log_struct.Ray_path_log[e_r + log_offset * e_State_Number] = sqrt(State_Vector[e_r] * State_Vector[e_r] + R_throat * R_throat);
 
@@ -57,7 +57,7 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
                                      int N_theta_turning_points) {
 
     double crossing_coords[4]{}, crossing_momenta[4]{};
-    double& R_throat = p_Sim_Context->p_Init_Conditions->Metric_params.R_throat;
+    double& R_throat = p_Sim_Context->p_Init_Conditions->Metric_parameters.R_throat;
 
     if (interpolate_crossing(State_vector, Old_state, crossing_coords, crossing_momenta)) {
 
@@ -65,7 +65,7 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
 
         double r_crossing_squared = crossing_coords[x] * crossing_coords[x] + crossing_coords[y] * crossing_coords[y];
 
-        if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_params.e_Spacetime) {
+        if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
             // The wormhole metric uses the global coordinate ell = r^2 + r_throat^2
             // Here I convert back to the r coordinate for the NT model evaluation
@@ -671,19 +671,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
 void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
-    /* ===============================================================================================
-    |                                                                                                |
-    |   @ Description:                                       |
-    |                                                                                                |
-    |   @ Inputs:                                                                                    |
-    |     *                     |
-    |                                                                                                |
-    |   @ Ouput: None                                                                                |
-    |                                                                                                |
-    ================================================================================================ */
-
     // Initialize the State Vectors
-
     double State_Vector[e_State_Number]{};
     double Old_State_Vector[e_State_Number]{};
 
@@ -691,10 +679,10 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     State_Vector[e_r]       = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
     State_Vector[e_theta]   = p_Sim_Context->p_Init_Conditions->Observer_params.inclination;
     State_Vector[e_phi]     = p_Sim_Context->p_Init_Conditions->Observer_params.azimuth;
-    State_Vector[e_p_phi]   = p_Sim_Context->p_Init_Conditions->init_Three_Momentum[e_phi];
-    State_Vector[e_p_theta] = p_Sim_Context->p_Init_Conditions->init_Three_Momentum[e_theta];
-    State_Vector[e_p_r]     = p_Sim_Context->p_Init_Conditions->init_Three_Momentum[e_r];
-    State_Vector[e_p_t]     = p_Sim_Context->p_Init_Conditions->init_Three_Momentum[e_t];
+    State_Vector[e_p_phi]   = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_phi];
+    State_Vector[e_p_theta] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_theta];
+    State_Vector[e_p_r]     = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_r];
+    State_Vector[e_p_t]     = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
 
     // Set the Old State Vector to the Initial State Vector
     memcpy(Old_State_Vector, State_Vector, e_State_Number * sizeof(double));
@@ -706,7 +694,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     }
 
-    p_Ray_results->Parameters = p_Sim_Context->p_Init_Conditions->Metric_params;
+    p_Ray_results->Metric_parameters = p_Sim_Context->p_Init_Conditions->Metric_parameters;
 
     // Initialize counters for the Number Of Integration Steps and the Number Of Turning points of the Polar Coordinate
     int integration_count{}, N_theta_turning_points{};
@@ -719,7 +707,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     p_Ray_results->Ray_log_struct.Log_offset = 0;
     log_ray_path(State_Vector, p_Ray_results, controller, p_Sim_Context->p_Init_Conditions);
 
-    while (!controller.integration_complete && integration_count <= controller.Max_integration_count) {
+    while (!controller.integration_complete && integration_count <= controller.Parameters.Max_integration_count) {
 
         RK45(State_Vector, &controller, p_Sim_Context);
 
@@ -741,7 +729,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     }
 
-    if (integration_count >= controller.Max_integration_count) { std::cout << "Max iterations reached!" << '\n'; }
+    if (integration_count >= controller.Parameters.Max_integration_count) { std::cout << "Max iterations reached!" << '\n'; }
 
     p_Ray_results->Ray_log_struct.Log_length = integration_count;
 

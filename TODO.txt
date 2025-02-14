@@ -33,7 +33,6 @@
 
 15) Rename the magnetic field components because XYZ is confusing, given that you use Y as the "vertical" direction
 
-16) Make the hotspot move
-	- Maybe add a get_hotspot_position() function -> This would require you to pass the sim_context to the density function though, becuse the velocity needs it
-	
-17) Maybe add the spacetime class instance to the private variables of the optically thin model class, so I dont have to pass around the sim context all the time? Maybe do it before 16.
+16) Maybe add the spacetime class instance to the private variables of the optically thin model class, so I dont have to pass around the sim context all the time?
+
+17) Change the simulation mode fron INT to an ENUM

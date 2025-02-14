@@ -69,12 +69,12 @@ void File_manager_class::write_simulation_metadata() {
         *(Output_file + Image_order) << "============================================================ SIMULATION METADATA ============================================================"
                                         << "\n"
                                         << "Spacetime: "
-                                        << this->Base_File_Names[this->p_Initial_Conditions->Metric_params.e_Spacetime]
+                                        << this->Base_File_Names[this->p_Initial_Conditions->Metric_parameters.e_Spacetime]
                                         << "\n";
 
-        Metric_parameters_type& Parameters = this->p_Initial_Conditions->Metric_params;
+        Metric_parameters_type& Parameters = this->p_Initial_Conditions->Metric_parameters;
 
-        switch (this->p_Initial_Conditions->Metric_params.e_Spacetime) {
+        switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
 
         case Kerr:
 
@@ -492,6 +492,7 @@ void File_manager_class::write_simulation_metadata() {
                                         << this->p_Initial_Conditions->Hotspot_params.Position[e_phi - 1] * 180.0 / M_PI
                                         << "\n";
 
+        *(Output_file + Image_order) << "Coordinate time offset [M]: " << this->p_Initial_Conditions->Hotspot_params.Coord_time_offset - this->p_Initial_Conditions->Observer_params.distance << "\n";
 
         *(Output_file + Image_order) << "------------------------------------------------------- Novikov - Thorne Model Parameters -------------------------------------------------------"
                                         << "\n";
@@ -552,7 +553,7 @@ void File_manager_class::write_simulation_metadata() {
                     << "Phi Momentum (covariant),"
                     << " ";
 
-                switch (this->p_Initial_Conditions->Metric_params.e_Spacetime) {
+                switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
 
                 case Kerr:
 
@@ -671,7 +672,7 @@ void File_manager_class::open_image_output_files() {
 
         if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
-            Image_file_names[File_Index] = this->Base_File_Names[this->p_Initial_Conditions->Metric_params.e_Spacetime]
+            Image_file_names[File_Index] = this->Base_File_Names[this->p_Initial_Conditions->Metric_parameters.e_Spacetime]
                                          + "_n"
                                          + std::to_string(File_Index);
 
@@ -754,33 +755,33 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
                                             << s_Ray_results->Photon_Momentum[e_phi][Image_order]
                                             << " ";
 
-                switch (this->p_Initial_Conditions->Metric_params.e_Spacetime) {
+                switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
 
                 case Kerr:
-                    Image_Output_files[Image_order] << s_Ray_results->Parameters.Spin;
+                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.Spin;
                     break;
 
                 case Wormhole:
-                    Image_Output_files[Image_order] << s_Ray_results->Parameters.Spin
+                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.Spin
                                                     << " " 
-                                                    << s_Ray_results->Parameters.Redshift_Parameter;
+                                                    << s_Ray_results->Metric_parameters.Redshift_Parameter;
                     break;
 
                 case Reg_Black_Hole:
-                    Image_Output_files[Image_order] << s_Ray_results->Parameters.RBH_Parameter;
+                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.RBH_Parameter;
          
                     break;
 
                 case Janis_Newman_Winicour:
-                    Image_Output_files[Image_order] << s_Ray_results->Parameters.JNW_Gamma_Parameter;
+                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.JNW_Gamma_Parameter;
                     break;
 
                 case Einstein_Gauss_Bonnet:
-                    Image_Output_files[Image_order] << s_Ray_results->Parameters.GB_Gamma_Parameter;
+                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.GB_Gamma_Parameter;
                     break;
 
                 case BH_w_Dark_Matter:
-                    Image_Output_files[Image_order] << s_Ray_results->Parameters.Halo_Mass << " " << s_Ray_results->Parameters.Compactness;
+                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.Halo_Mass << " " << s_Ray_results->Metric_parameters.Compactness;
                     break;
                 }
         }

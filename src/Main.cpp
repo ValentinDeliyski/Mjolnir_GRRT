@@ -22,7 +22,7 @@ void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
 
     // These do not ever get "delete" called on them, because they need to exist for the entire duration of the program
 
-    switch (p_Sim_context->p_Init_Conditions->Metric_params.e_Spacetime) {
+    switch (p_Sim_context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
     case Kerr:
         p_Sim_context->p_Spacetime = new Kerr_class;
@@ -100,11 +100,12 @@ int main(int argument_count, char** cmd_line_args) {
     }
 
     s_Sim_Context.p_Init_Conditions->Print_to_console = print_to_console;
+    s_Sim_Context.p_Init_Conditions->Hotspot_params.Coord_time_offset += s_Sim_Context.p_Init_Conditions->Observer_params.distance;
 
     // Populate the Spacetime class instance 
     Allocate_Spacetime_Class(&s_Sim_Context);
 
-    s_Sim_Context.p_Spacetime->load_parameters(s_Sim_Context.p_Init_Conditions->Metric_params);
+    s_Sim_Context.p_Spacetime->load_parameters(s_Sim_Context.p_Init_Conditions->Metric_parameters);
 
     // Get the observer position and populate the Observer class instance.
     s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
@@ -116,9 +117,7 @@ int main(int argument_count, char** cmd_line_args) {
 
     Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_metric(init_state);
     
-    memcpy(s_Sim_Context.p_Init_Conditions->init_metric, s_init_Metric.Metric, sizeof(s_init_Metric.Metric));
-    s_Sim_Context.p_Init_Conditions->init_metric_Redshift_func = s_init_Metric.Lapse_function;
-    s_Sim_Context.p_Init_Conditions->init_metric_Shitft_func   = s_init_Metric.Shift_function;
+    memcpy(&s_Sim_Context.p_Init_Conditions->Init_metric, &s_init_Metric, sizeof(Metric_type));
 
     // Populate the Emission Model class instances
     Allocate_GOT_Model_class_instance(&s_Sim_Context);

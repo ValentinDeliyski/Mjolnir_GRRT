@@ -250,8 +250,8 @@ static void Get_radiative_transfer_matrix(double const absorbtion_functions[STOK
 
     /* This part of the implementation is adapted from equation (24) of https://academic.oup.com/mnras/article/475/1/43/4712230 */
 
-    bool math_guard_1 = fabs(alpha[I] * alpha[I] - Lambda[0] * Lambda[0]) > std::numeric_limits<double>::min();
-    bool math_guard_2 = fabs(alpha[I] * alpha[I] + Lambda[1] * Lambda[1]) > std::numeric_limits<double>::min();
+    bool math_guard_1 = fabs(alpha[I] * alpha[I] - Lambda[0] * Lambda[0]) >= 0;
+    bool math_guard_2 = fabs(alpha[I] * alpha[I] + Lambda[1] * Lambda[1]) >= 0;
 
     if (math_guard_1 && math_guard_2) {
 

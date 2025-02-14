@@ -174,17 +174,17 @@ int Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditions_type
     double& r_obs     = p_Initial_Conditions->Observer_params.distance;
     double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
 
-    p_Initial_Conditions->init_Three_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
-    p_Initial_Conditions->init_Three_Momentum[e_theta] = p_theta_data[photon];
+    p_Initial_Conditions->Init_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
+    p_Initial_Conditions->Init_Momentum[e_theta] = p_theta_data[photon];
 
-    double& J = p_Initial_Conditions->init_Three_Momentum[e_phi];
+    double& J = p_Initial_Conditions->Init_Momentum[e_phi];
     double  f = 1. + r_obs * r_obs / 2. / this->Gamma * (1. - sqrt(1. + 8. * this->Gamma * this->Mass / r_obs / r_obs / r_obs));
 
     double rad_potential = 1. - f * J * J / (r_obs * r_obs);
 
-    double(*metric)[4] = p_Initial_Conditions->init_metric;
+    double(*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
 
-    p_Initial_Conditions->init_Three_Momentum[e_r] = sqrt(rad_potential) * metric[1][1];
+    p_Initial_Conditions->Init_Momentum[e_r] = sqrt(rad_potential) * metric[1][1];
 
     return OK;
 

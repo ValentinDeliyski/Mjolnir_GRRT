@@ -195,7 +195,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     // -------------------- The Coordiante time at max emission
     temp_param_var = Hotspot_element->FirstChildElement("Coord_time_at_max");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the coordiante time at max emission!" << "\n"; return ERROR; }
-    Hotspot_params->Coord_time_at_max = std::stod(temp_param_var->GetText());
+    Hotspot_params->Coord_time_offset = std::stod(temp_param_var->GetText());
 
     return OK;
 
@@ -847,7 +847,7 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
 
     tinyxml2::XMLElement* Metric_element = Root_node->FirstChildElement("Metric");
     if (Metric_element == nullptr) { std::cout << "Failed to find the Metric node!" << "\n"; return ERROR; }
-    if (OK != parse_metric_parameters(Metric_element, &p_Initial_conditions->Metric_params)) { return ERROR; };
+    if (OK != parse_metric_parameters(Metric_element, &p_Initial_conditions->Metric_parameters)) { return ERROR; };
 
     /* ====================================== Parse the integrator parameters ====================================== */
 

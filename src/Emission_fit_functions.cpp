@@ -131,7 +131,8 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(
     // ----------------------------------------------------------------------- High frequency fit ------------------------------------------------------------------------ //
 
     double Emission_functions_high[STOKES_PARAM_NUM]{};
-    double Common_factor_high = pow(p_Transfer_args->X, -(p_Transfer_args->kappa - 2.) / 2.) * p_Transfer_args->sin_emission_angle * pow(3.0, (p_Transfer_args->kappa - 1.) / 2) * (p_Transfer_args->kappa - 2.) * (p_Transfer_args->kappa - 1.) / 4 * std::tgamma(p_Transfer_args->kappa / 4 - 1.0 / 3) * std::tgamma(p_Transfer_args->kappa / 4 + 4.0 / 3);
+    double Common_factor_high = pow(p_Transfer_args->X, -(p_Transfer_args->kappa - 2.) / 2.) * p_Transfer_args->sin_emission_angle * pow(3.0, (p_Transfer_args->kappa - 1.) / 2) * (p_Transfer_args->kappa - 2.) * (p_Transfer_args->kappa - 1.) / 4 
+                              * std::tgamma(p_Transfer_args->kappa / 4 - 1.0 / 3) * std::tgamma(p_Transfer_args->kappa / 4 + 4.0 / 3);
 
     Emission_functions_high[I] = Common_factor_high;
     Emission_functions_high[Q] = -Common_factor_high * (16.0 / 25 + p_Transfer_args->kappa / 50);

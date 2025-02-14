@@ -28,15 +28,15 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     // Initialize GLFW
     glfwInit();   
 
-    // Tell GLFW what version of OpenGL we are using -> OpenGL 3.3
+    // Tell GLFW what version of OpenGL I am using -> OpenGL 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
     // Tell GLFW we are using the CORE profile -> we only have the modern functions
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    
     window = glfwCreateWindow(aspect_ratio * 1200, 1200, "Mjolnir GRRT", NULL, NULL);
+
     // Introduce the window into the current context
     glfwMakeContextCurrent(window);
 
@@ -62,8 +62,13 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     // This thing holds the sequence in which the edges should be connected
     Element_Buffer Element_buffer(this->Vertex_order, sizeof(this->Vertex_order));
 
-    Vertex_array.Linkattrib(Vertex_buffer, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
-    Vertex_array.Linkattrib(Vertex_buffer, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    /* Tell openGL that the data inside the vertex buffer at index "0" has "2" components of size "4 * sizeof(float)" and are offset in the array by 0.
+       These "indecies" are specified in the vertex shader - I tell it there that index (called position there) 0 are the vertex coordinates. */
+    Vertex_array.Linkattrib(0, 2, 4 * sizeof(float), (const void*)0);
+
+    /* Tell openGL that the data inside the vertex buffer at index "1" has "2" components of size "4 * sizeof(float)" and are offset in the array by 2 floats.
+       These "indecies" are specified in the vertex shader - I tell it there that index (called position there) 1 are the texture coordinates. */
+    Vertex_array.Linkattrib(1, 2, 4 * sizeof(float), (const void*)(2 * sizeof(float)));
 
     // Generates a Shader object using the shaders defualt.vert and default.frag
     Shader shaderProgram(static_cast<const char*>(p_Init_Conditions->File_manager_params.Vert_shader_path.c_str()),
@@ -72,16 +77,17 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     shaderProgram.Activate();
 
     // Generates a float (with an int ID), that scales the output image
-    GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
+    GLuint Scale_factor_handle = glGetUniformLocation(shaderProgram.ID, "scale");
 
     // Generates an int (with an int ID), that tells the shader *insert what it tells it here*
-    GLuint tex0Uni = glGetUniformLocation(shaderProgram.ID, "tex0");
-    glUniform1i(tex0Uni, 0);
+    GLuint Texture_uniform_handle = glGetUniformLocation(shaderProgram.ID, "u_Texture");
+
+    /* Sets the value of the texture uniform to the index of the binded texture (0 in this case). 
+       This tells openGL which texture to sample. */
+    glUniform1i(Texture_uniform_handle, 0);
 
     // Activates the scaler with a value of 1.5f
-    glUniform1f(uniID, 1.5f);
-    // Binds the texture array (RGB values 
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1f(Scale_factor_handle, 1.5f);
 
 }
 
@@ -105,8 +111,8 @@ void Rendering_engine::update_max_intensity(float Intensity) {
 
     if (Intensity > Max_Intensity) {
 
-        Max_Intensity = Intensity;
-        renormalize_colormap_flag = true;
+        this->Max_Intensity = Intensity;
+        this->renormalize_colormap_flag = true;
 
     }
 
@@ -165,6 +171,8 @@ void Rendering_engine::set_background_pattern_color(double State_vector[], doubl
 
 void Rendering_engine::renormalize_colormap() {
 
+    // TODO: think about simplifying this
+
     float current_max{};
 
     for (int index = 0; index <= this->texture_indexer; index += 3) {
@@ -208,34 +216,24 @@ void Rendering_engine::renormalize_colormap() {
 |                                          |
 *******************************************/
 
-Rendering_engine::Vertex_Buffer::Vertex_Buffer(const GLfloat* vertices, GLsizeiptr size) {
+Rendering_engine::Vertex_Buffer::Vertex_Buffer(const GLfloat* Vertex_attribute_data, GLsizeiptr size) {
 
-    glGenBuffers(1, &ID);
-    glBindBuffer(GL_ARRAY_BUFFER, ID);
-    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_DYNAMIC_DRAW);
+    /* Calls openGL to (internally) allocate one buffer and store its handle in this->Vertex_buffer_ID. */
+    glGenBuffers(1, &this->Vertex_buffer_ID);
 
-}
+    /* Calls openGL to set the above buffer as an active ARRAY_BUFFER (a.e. one that holds vertex attirubtes). */
+    glBindBuffer(GL_ARRAY_BUFFER, this->Vertex_buffer_ID);
 
-void Rendering_engine::Vertex_Buffer::Bind()
-{
-
-    glBindBuffer(GL_ARRAY_BUFFER, ID);
+    /* Calls openGL to store the data that the pointer "Vertex_attribute_data" points to, inside the now active buffer with ID, this->Vertex_buffer_ID. */
+    glBufferData(GL_ARRAY_BUFFER, size, Vertex_attribute_data, GL_DYNAMIC_DRAW);
 
 }
 
-void Rendering_engine::Vertex_Buffer::Unbind()
-{
+void Rendering_engine::Vertex_Buffer::Bind() const { glBindBuffer(GL_ARRAY_BUFFER, this->Vertex_buffer_ID); }
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+void Rendering_engine::Vertex_Buffer::Unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
-}
-
-void Rendering_engine::Vertex_Buffer::Delete()
-{
-
-    glDeleteBuffers(1, &ID);
-
-}
+void Rendering_engine::Vertex_Buffer::Delete() const { glDeleteBuffers(1, &Vertex_buffer_ID); }
 
 /******************************************
 |                                         |
@@ -248,14 +246,13 @@ Rendering_engine::Vertex_array::Vertex_array()
     glGenVertexArrays(1, &ID);
 }
 
-void Rendering_engine::Vertex_array::Linkattrib(Vertex_Buffer Vertex_Buffer, GLuint index, GLuint numComponents, GLenum type, GLsizei stride, void* offset) {
+void Rendering_engine::Vertex_array::Linkattrib(GLuint index, GLuint numComponents, GLsizei stride, const void* offset) {
 
-
-    Vertex_Buffer.Bind();
-    glVertexAttribPointer(index, numComponents, type, GL_FALSE, stride, offset);
+    /* Tell openGL that the Vertex attirbutes stored in a buffer with ID "index" and have "cumComponents" many components of type "GL_FLOAT".
+       Further tell openGL that consecutive atributes are speperated by "stride" array elements, and the offset of the first component is "offset". */
+    glVertexAttribPointer(index, numComponents, GL_FLOAT, GL_FALSE, stride, offset);
     // Enable the Vertex Attribute so that OpenGL knows to use it
     glEnableVertexAttribArray(index);
-    Vertex_Buffer.Unbind();
 
 }
 
@@ -286,50 +283,42 @@ void Rendering_engine::Vertex_array::Delete() {
 
 Rendering_engine::Element_Buffer::Element_Buffer(const GLuint* vertices, GLsizeiptr size) {
 
-    glGenBuffers(1, &ID);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
+    glGenBuffers(1, &this->Element_buffer_ID);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->Element_buffer_ID);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, vertices, GL_DYNAMIC_DRAW);
 
 }
 
-void Rendering_engine::Element_Buffer::Bind()
-{
+void Rendering_engine::Element_Buffer::Bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->Element_buffer_ID); }
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
+void Rendering_engine::Element_Buffer::Unbind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
-}
-
-void Rendering_engine::Element_Buffer::Unbind()
-{
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-}
-
-void Rendering_engine::Element_Buffer::Delete()
-{
-
-    glDeleteBuffers(1, &ID);
-
-}
+void Rendering_engine::Element_Buffer::Delete() const { glDeleteBuffers(1, &this->Element_buffer_ID); }
 
 GLuint Rendering_engine::init_texture() {
 
-    // Texture
+    /* Declares a texture hangle (uint) that numbers the different textures. */
+    GLuint texture_handle;
 
-    GLuint texture;
-    glGenTextures(1, &texture);
+    /* Calls openGL to (internally) generate a texture and store its label in the "texture_handle" variable. */
+    glGenTextures(1, &texture_handle);
 
+    /* Calls openGL to set the current ative texture to be the one in its internal "slot 0". */
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
 
+    /* Calls openGL to allocate the active "slot 0" texture to the one generated above. */
+    glBindTexture(GL_TEXTURE_2D, texture_handle);
+
+    /* Calls openGL to set the pixel interpolation to be linear. */
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
+    /* Calls openGL to set the image to clamp to the edge, rather than repeat.
+       In theory this shouldn't matter for my use case? */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
-    return texture;
+    return texture_handle;
 }
 
 std::string Rendering_engine::get_file_contents(const char* filename, std::string file_type)
@@ -344,7 +333,8 @@ std::string Rendering_engine::get_file_contents(const char* filename, std::strin
         in.seekg(0, std::ios::beg);
         in.read(&contents[0], contents.size());
         in.close();
-        return(contents);
+
+        return contents;
 
     }
     else {
@@ -397,7 +387,6 @@ Rendering_engine::Shader::Shader(const char* vertexFile, const char* fragmentFil
 void Rendering_engine::Shader::Activate() {
 
     glUseProgram(ID);
-    
 
 }
 
@@ -414,8 +403,8 @@ void Rendering_engine::Window_Callbacks::define_button_callbacks(GLFWwindow* win
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     }
 
@@ -424,8 +413,8 @@ void Rendering_engine::Window_Callbacks::define_button_callbacks(GLFWwindow* win
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     }
 

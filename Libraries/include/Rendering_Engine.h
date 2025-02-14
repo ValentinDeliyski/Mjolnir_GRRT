@@ -27,7 +27,6 @@
             float* Intensity_buffer{};
             float* texture_buffer{};
             
-
             const GLuint Vertex_order[6] = { 0, 2, 1, 0, 3, 2 };
             const GLfloat vertices[16] =
             {
@@ -62,12 +61,12 @@
 
             public:
 
-                GLuint ID;
-                Vertex_Buffer(const GLfloat* verticies, GLsizeiptr size);
+                GLuint Vertex_buffer_ID;
+                Vertex_Buffer(const GLfloat* verticies, GLsizeiptr size) ;
 
-                void Bind();
-                void Unbind();
-                void Delete();
+                void Bind() const;
+                void Unbind() const;
+                void Delete() const;
 
             };
 
@@ -78,7 +77,7 @@
                 GLuint ID;
                 Vertex_array();
 
-                void Linkattrib(Vertex_Buffer Vertex_Buffer, GLuint layout, GLuint numComponents, GLenum type, GLsizei stride, void* offset);
+                void Linkattrib(GLuint layout, GLuint numComponents, GLsizei stride, const void* offset);
                 void Bind();
                 void Unbind();
                 void Delete();
@@ -88,12 +87,12 @@
             class Element_Buffer {
 
             public:
-                GLuint ID;
+                GLuint Element_buffer_ID;
                 Element_Buffer(const GLuint* verticies, GLsizeiptr size);
 
-                void Bind();
-                void Unbind();
-                void Delete();
+                void Bind() const;
+                void Unbind() const;
+                void Delete() const;
 
             };
 

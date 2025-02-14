@@ -12,7 +12,7 @@ Novikov_Thorne_Model::Novikov_Thorne_Model(Simulation_Context_type* p_Sim_Contex
     this->r_out = p_Sim_Context->p_Init_Conditions->NT_params.r_out;
     this->flux_integral_accuracy = p_Sim_Context->p_Init_Conditions->Integrator_params.Simpson_accuracy;
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
-    this->e_Spacetime = p_Sim_Context->p_Init_Conditions->Metric_params.e_Spacetime;
+    this->e_Spacetime = p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime;
 
 };
 
@@ -240,7 +240,7 @@ Hotspot_position_type Generic_Optically_Thin_Model::get_hotspot_position(const d
 
     Hotspot_position.Distance    = this->s_Hotspot_params.Position[e_r - 1];
     Hotspot_position.Inclination = M_PI_2;
-    Hotspot_position.Azimuth     = this->s_Hotspot_params.Position[e_phi - 1] + Hotspot_ang_velocity * (-State_Vector[e_t] - this->s_Hotspot_params.Coord_time_at_max);
+    Hotspot_position.Azimuth     = this->s_Hotspot_params.Position[e_phi - 1] + Hotspot_ang_velocity * (-State_Vector[e_t] - this->s_Hotspot_params.Coord_time_offset);
 
     double sin_hotspot_inclination = sin(Hotspot_position.Inclination);
 
@@ -336,7 +336,7 @@ double Generic_Optically_Thin_Model::get_hotspot_temperature(const double* const
 
     double Temporal_profile = 1.0, Temporal_argument{};
 
-    double& t_ref = this->s_Hotspot_params.Coord_time_at_max;
+    double& t_ref = this->s_Hotspot_params.Coord_time_offset;
     double& t_sigma = this->s_Hotspot_params.Temporal_spread;
 
     if (0 != this->s_Hotspot_params.Temporal_spread) {
@@ -364,6 +364,8 @@ double* Generic_Optically_Thin_Model::get_plasma_velocity(const double* const St
                                                           Velocity_enums const Velocity_profile,
                                                           double const Radial_velocity_fraction) {
 
+    /* The reference for this implementation is https://arxiv.org/pdf/2206.12066. */
+
     /* === Initialize some variables === */
     double Omega{}, rho{}, ell{}, u_t{}, u_r{}, u_phi{}, Normalization{}, inv_metric[4][4]{};
     static double Plasma_velocity[4]{};
@@ -373,6 +375,8 @@ double* Generic_Optically_Thin_Model::get_plasma_velocity(const double* const St
 
     Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
     invert_metric(inv_metric, s_Metric.Metric);
+
+    Metric_type s_dr_Metric = p_Sim_Context->p_Spacetime->get_dr_metric(State_Vector);
 
     switch (Velocity_profile) {
 
@@ -386,7 +390,8 @@ double* Generic_Optically_Thin_Model::get_plasma_velocity(const double* const St
         u_r = -Radial_velocity_fraction * sqrt((-1 - inv_metric[e_t][e_t]) * inv_metric[e_r][e_r]);
 
         /* Interpolated azimuthal angular velocity -> Corresponds to equation (10b) from the reference, but with beta_phi = 1 - beta_r. */
-        Omega = sqrt(1 / r_source / r_source / r_source);
+        Omega = -s_dr_Metric.Metric[e_t][e_phi] / s_dr_Metric.Metric[e_phi][e_phi];
+        Omega += sqrt(s_dr_Metric.Metric[e_t][e_phi] * s_dr_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi]) / s_dr_Metric.Metric[e_phi][e_phi];
         Omega = Omega + Radial_velocity_fraction * (inv_metric[e_t][e_phi] / inv_metric[e_t][e_t] - Omega);
 
         break;
@@ -398,15 +403,15 @@ double* Generic_Optically_Thin_Model::get_plasma_velocity(const double* const St
 
         /* I have noticed that this velocity profile becomes ill-defined in some places for the metric in the below "if" clause. 
            I correct this by modifying the angular momentum profile by something that seems reasonable. */
-        if (Janis_Newman_Winicour == p_Sim_Context->p_Init_Conditions->Metric_params.e_Spacetime) {
+        if (Janis_Newman_Winicour == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
-            double& gamma = p_Sim_Context->p_Init_Conditions->Metric_params.JNW_Gamma_Parameter;
+            double& gamma = p_Sim_Context->p_Init_Conditions->Metric_parameters.JNW_Gamma_Parameter;
             ell *= pow(1. -  2. / r_source / gamma, gamma);
 
         }
-        else if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_params.e_Spacetime) {
+        else if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
-            ell *= (1. - p_Sim_Context->p_Init_Conditions->Metric_params.R_throat / r_source);
+            ell *= (1. - p_Sim_Context->p_Init_Conditions->Metric_parameters.R_throat / r_source);
 
         }
 
@@ -443,17 +448,17 @@ double* Generic_Optically_Thin_Model::get_plasma_velocity(const double* const St
         isinf(Plasma_velocity[e_phi])) {
 
         std::cout << "Invalid disk 4-velocity: "
-            << "["
-            << Plasma_velocity[e_t]
-            << ", "
-            << Plasma_velocity[e_r]
-            << ", "
-            << Plasma_velocity[e_theta]
-            << ", "
-            << Plasma_velocity[e_phi]
-            << "]\n";
+                  << "["
+                  << Plasma_velocity[e_t]
+                  << ", "
+                  << Plasma_velocity[e_r]
+                  << ", "
+                  << Plasma_velocity[e_theta]
+                  << ", "
+                  << Plasma_velocity[e_phi]
+                  << "]\n";
 
-        exit(ERROR);
+        return NULL;
 
     }
 
@@ -510,7 +515,7 @@ double Generic_Optically_Thin_Model::get_hotspot_density(const double* const Sta
 
     double Temporal_profile = 1.0, Temporal_argument{};
 
-    double& t_ref   = this->s_Hotspot_params.Coord_time_at_max;
+    double& t_ref   = this->s_Hotspot_params.Coord_time_offset;
     double& t_sigma = this->s_Hotspot_params.Temporal_spread;
 
     if (0 != this->s_Hotspot_params.Temporal_spread) {
@@ -832,7 +837,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_transfer_functions(co
     }
 
 }
-
+ 
 /* ========================================== Kappa synchrotron Transfer Functions ========================================== */
 
 void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(const double* const State_Vector,
@@ -902,9 +907,9 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(cons
             p_Transfer_functions->Emission_functions[V] += temp_Transfer_functions.Emission_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
             // The U component is 0 by definition
-            p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            //p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            //p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            //p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
             // The I and U components are 0 by definition
             p_Transfer_functions->Faradey_functions[Q] += temp_Transfer_functions.Faradey_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
@@ -949,7 +954,7 @@ void Generic_Optically_Thin_Model::get_phenomenological_synchrotron_functions(co
                                                                               const Emission_medium_state_type* const p_Emission_medium_state,
                                                                               Transfer_functions_type* const p_Transfer_functions) {
 
-    /* === Zero out the transfer functions just in case === */
+    /* === Zero out the transfer functions just in case. === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
     Phenomenological_transfer_f_arguments_type Transfer_args{};
@@ -979,7 +984,7 @@ void Generic_Optically_Thin_Model::get_radiative_transfer_functions(const double
                                                                     const Emission_medium_enums Emission_medium,
                                                                     Transfer_functions_type* const p_Transfer_functions) {
 
-    /* === Zero out the transfer functions just in case === */
+    /* === Zero out the transfer functions just in case. === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
     Emission_medium_state_type Emission_medium_state{};
@@ -1020,7 +1025,6 @@ void Generic_Optically_Thin_Model::get_radiative_transfer_functions(const double
 
     }
 
-    /* === Currently this only happens for the "Keplarian" velocity profile below ISCO, where such orbits do not exist === */
     if (NULL == Emission_medium_state.Plasma_Velocity) { return; }
 
     this->get_magnetic_field(State_Vector, p_Sim_Context, &Emission_medium_state);
@@ -1112,7 +1116,7 @@ void Generic_Optically_Thin_Model::evaluate_synchrotron_transfer_functions(const
     p_Transfer_functions->Absorbtion_functions[V] *= (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio / frequency_dim;
 
     /* ================================================ The faradey functions ================================================ */
-    /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33 */
+    /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33. */
 
     p_Transfer_functions->Faradey_functions[Q] *= -(p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio * (f_cyclo_dim / frequency_dim) * (f_cyclo_dim / frequency_dim) / frequency_dim;
     p_Transfer_functions->Faradey_functions[V] *= 2 * (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio * (f_cyclo_dim / frequency_dim) / frequency_dim;
@@ -1147,18 +1151,18 @@ void Generic_Optically_Thin_Model::precompute_electron_pitch_angles(Initial_cond
 
         if (this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index] != 0) {
 
-            // Used in the thermal synchrotron emission functions
+            // Used in the thermal and kappa synchrotron emission functions.
 
             this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[index] = 1. / sqrt(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index]);
             this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[index] = 1. / cbrt(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index]);
 
-            // Used in the thermal synchrotron Faradey functions
+            // Used in the thermal synchrotron Faradey functions.
 
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_5175[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 0.5175);
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_6[index]    = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 0.6);
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_7515[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 0.7515);
 
-            // Used in the kappa synchrotron emission functions
+            // Used in the kappa synchrotron emission functions.
 
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_7_over_20[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 7. / 20);
 
