@@ -2,6 +2,15 @@
 #include "Enumerations.h"
 #include <string>
 
+/* Declaring these here, so I dont have to include their headers,
+   which hold a whole bunch of function declarations that are not needed in this header. */
+
+class Spacetime_Base_Class;
+class Generic_Optically_Thin_Model;
+class Novikov_Thorne_Model;
+class Observer_class;
+class File_manager_class;
+
 struct Disk_model_parameters_type {
 
     /*! Specifies the statistical ensamble of the hotspot. */
@@ -592,15 +601,6 @@ struct Initial_conditions_type {
     bool Average_electron_pitch_angle;
 
 };
-
-/* Declaring these here, so I dont have to include their headers, 
-   which hold a whole bunch of function declarations that are not needed in this header. */
-
-class Spacetime_Base_Class;
-class Generic_Optically_Thin_Model;
-class Novikov_Thorne_Model;
-class Observer_class;
-class File_manager_class;
 
 struct Simulation_Context_type {
 

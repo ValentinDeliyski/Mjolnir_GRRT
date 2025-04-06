@@ -1,8 +1,19 @@
+import sys
+import os
+import threading
+import time
+
 from Support_functions.Parsers import Units_class
 import xml.etree.cElementTree as ET
 import xml.dom.minidom
 import os
 from numpy import pi
+
+""" Add the parent directory of this file to the search path, 
+    so this script can be ran from the "Utilities" folder """
+    
+parent_directory = os.path.abspath('...')
+sys.path.append(parent_directory)
 
 class Integrator():
 
@@ -663,78 +674,72 @@ if __name__ == "__main__":
 
     Sim_config = Simulation_configurator()
 
+    Sim_config.simulation_mode = {"Value": 1, "Unit": "[-]"}
 
-    Sim_config.simulation_mode = {"Value": 2, "Unit": "[-]"}
-
-    Sim_config.object_mass = {"Value": 4.2e6, "Unit": "[M_sun]"}
+    Sim_config.object_mass = {"Value": 6.2e9, "Unit": "[M_sun]"}
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type = {"Value": "Kerr", "Unit": "[-]"}
-    Sim_config.metric_parameters.Spin = {"Value": 0.0, "Unit": "[M]"}
-
+    Sim_config.metric_parameters.Metric_type = {"Value": "Wormhole", "Unit": "[-]"}
+    Sim_config.metric_parameters.Spin        = {"Value": 0, "Unit": "[M]"}
+    Sim_config.metric_parameters.WH_redshift = {"Value": 0, "Unit": "[M]"}
     # ================================================== Observer ================================================== #
 
     Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
     Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
-    Sim_config.observer.Distance = {"Value": 1e4, "Unit": "[M]"}
-    Sim_config.observer.Inclination = {"Value": 70 * pi / 180, "Unit": "[Rad]"}
+    
+    Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
+    Sim_config.observer.Inclination = {"Value": 160 * pi / 180, "Unit": "[Rad]"}
     Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
+    Sim_config.observer.Cam_rotation_angle = {"Value": -70 * pi / 180 - pi / 4, "Unit": "[Hz]"}
 
     # ================================================== Disk ================================================== #
-    Sim_config.disk_model.Ensamble_type = {"Value": "Phenomenological", "Unit": "[-]"}
-    Sim_config.disk_model.Density_profile = {"Value": "Exponential Law", "Unit": "[-]"}
-    Sim_config.disk_model.Temperature_profile = {"Value": "Exponential Law", "Unit": "[-]"}
-    Sim_config.disk_model.Temperature_scale_factor = {"Value": 5.85e10, "Unit": "[K]"}
-    Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g / cm^3]"}
+    Sim_config.disk_model.Ensamble_type       = {"Value": "Thermal",   "Unit": "[-]"}
+    Sim_config.disk_model.Density_profile     = {"Value": "Power Law", "Unit": "[-]"}
+    Sim_config.disk_model.Temperature_profile = {"Value": "Power Law", "Unit": "[-]"}
+    
+    Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g/cm^3]"}
+    Sim_config.disk_model.Temperature_scale_factor = {"Value": 5.1e+10, "Unit": "[K]"}
+            
+    Sim_config.disk_model.Density_r_cutoff = {"Value": 5, "Unit": "[M]"}
+    Sim_config.disk_model.Temperature_r_cutoff = {"Value": 5, "Unit": "[M]"}
 
-    Sim_config.disk_model.Density_r_cutoff = {"Value": 4.5, "Unit": "[M]"}
-    Sim_config.disk_model.Temperature_r_cutoff = {"Value": 4.5, "Unit": "[M]"}
-
-    Sim_config.disk_model.Density_r_0     = {"Value": 4.5, "Unit": "[M]"}
-    Sim_config.disk_model.Temperature_r_0 = {"Value": 4.5, "Unit": "[M]"}
+    Sim_config.disk_model.Density_r_0     = {"Value": 5, "Unit": "[M]"}
+    Sim_config.disk_model.Temperature_r_0 = {"Value": 5, "Unit": "[M]"}
 
     Sim_config.disk_model.Opening_angle = {"Value": 0.1, "Unit": "[tan(angle)]"}
-
+    
+    Sim_config.disk_model.Density_radial_power_law     = {"Value": 2.0, "Unit": "[-]"}
+    Sim_config.disk_model.Temperature_radial_power_law = {"Value": 1.0, "Unit": "[-]"}
+    
+    Sim_config.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
+    
+    Sim_config.observer.Image_y_min = {"Value": -13.8, "Unit": "[M]"}
+    Sim_config.observer.Image_y_max = {"Value":  13.8, "Unit": "[M]"}
+    Sim_config.observer.Image_x_min = {"Value": -13.8, "Unit": "[M]"}
+    Sim_config.observer.Image_x_max = {"Value":  13.8, "Unit": "[M]"}
+        
     # ================================================== Hotspot ================================================== #
 
     Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g / cm^3]"}
-    Sim_config.hotspot_model.Temperature_scale_factor = {"Value": 9.03e10, "Unit": "[K]"}
-    Sim_config.hotspot_model.Ensamble_type = {"Value": "Kappa", "Unit": "[-]"}
-    Sim_config.hotspot_model.Magnetization = {"Value": 0.01, "Unit": "[-]"}
-    Sim_config.emission_models.Kappa = {"Value": 5, "Unit": "[-]"}
-    Sim_config.hotspot_model.Distance = {"Value": 9, "Unit": "[M]"}
-    Sim_config.hotspot_model.Velocity_profile = {"Value":"Keplarian", "Unit": "[-]"}
 
-    Sim_config.hotspot_model.Temperature_profile = {"Value": "Sphere", "Unit": "[-]"}
-    Sim_config.hotspot_model.Density_profile = {"Value": "Sphere", "Unit": "[-]"}
-    Sim_config.hotspot_model.Radius = {"Value": 1, "Unit": "[M]"}
     # ================================================== Novikov - Thorne Disk ================================================== #
+    
+    Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
+    
+    """ The simulation name and input file path """
+    Sim_config.simulation_name = {"Value": "Reference_Simulation_2", "Unit": "[-]"}
 
-    from Support_functions import Spacetimes
+    """ The simulation output file path """
+    Sim_config.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
+    Sim_config.simulation_name = {"Value": "Old_wormhole_sanity_check", "Unit": "[-]"}
 
-    Wormhole_class = Spacetimes.Wormhole(r_throat = 1, parameter = 2)
-
-    Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 1, "Unit": "[-]"}
-    Sim_config.NT_model_params.r_in = {"Value": 5, "Unit": "[M]"}
-    Sim_config.NT_model_params.r_out = {"Value": 30, "Unit": "[M]"}
-    # ================================================== Integrator ================================================== #
-
-    # Sim_config.integrator.step_controller_I_gain = {"Value": 0.18, "Unit": "[-]"}
-    Sim_config.integrator.RK45_accuracy = {"Value": 0.2e-14, "Unit": "[-]"}
-
-    Sim_config.file_manager.Sim_mode_2_input_file_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/Schwarzschild_r6_70deg_500_photons_direct.csv"
-
-    Sim_config.generate_simulation_input(Path_to_input_dir = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities",
-                                         Input_file_name = "FILE.XML")
-
+    Sim_config.generate_simulation_input(Path_to_input_dir = "Reference_simulations\\Old_wormhole_sanity_check",
+                                         Input_file_name = "Old_wormhole_sanity_check.XML")
 
     import subprocess
-    filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\FILE.xml"
+
+    filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Old_wormhole_sanity_check\\Old_wormhole_sanity_check.xml"
     args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
-
-    # for i in range(19):
-
-    subprocess.call(args, shell=True)
-
-    # print("kek")
+    
+    subprocess.call(args, shell = True)

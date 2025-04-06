@@ -28,6 +28,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_emission_fit_function
 
     Emission_functions[I] = M_SQRT2 * M_PI / 27.0 * p_Transfer_arags->sin_pitch_angle * p_Transfer_arags->X * (1 + TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X) * (1 + TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X) * exponent;
 
+    /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
 
     Emission_functions[Q] = -M_SQRT2 * M_PI / 27.0 * p_Transfer_arags->sin_pitch_angle * p_Transfer_arags->X
@@ -73,6 +74,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_faradey_fit_functions
     /* Zero out the Faradey functions just in case. */
     memset(Faradey_fucntions, 0, STOKES_PARAM_NUM * sizeof(double));
 
+    /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
 
     double const K0_Bessel = std::cyl_bessel_k(0.0, 1.0 / Transfer_arags->T_electron_dim);
@@ -102,7 +104,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_faradey_fit_functions
 /* ========================================== Kappa Synchrotron Transfer Functions ========================================== */
 
 void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
-                                                                                double* const Emission_functions) {
+                                                                                double* const Emission_functions) const {
 
     // The reference for these expressions is https://arxiv.org/pdf/1602.08749, equations (35), (36), (37) and (38).
 
@@ -117,26 +119,18 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(
 
     }
 
-    // ------------------------------------------------------------------------ Low frequency fit ------------------------------------------------------------------------ //
+    // ------------------------------------------------------------------------ Low frequency fit coefficient ------------------------------------------------------------------------ //
 
     constexpr double THREE_TO_7_OVER_3 = 12.980246132766677;
 
     double Emission_functions_low[STOKES_PARAM_NUM]{};
     double Common_factor_low = p_Transfer_args->cbrt_X * p_Transfer_args->sin_emission_angle * (4 * M_PI / THREE_TO_7_OVER_3) * std::tgamma(p_Transfer_args->kappa - 4.0 / 3) / std::tgamma(p_Transfer_args->kappa - 2.0);
 
-    Emission_functions_low[I] = Common_factor_low;
-    Emission_functions_low[Q] = -Common_factor_low / 2;
-    Emission_functions_low[V] = -Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1., 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
-
-    // ----------------------------------------------------------------------- High frequency fit ------------------------------------------------------------------------ //
+    // ----------------------------------------------------------------------- High frequency fit coefficient ------------------------------------------------------------------------ //
 
     double Emission_functions_high[STOKES_PARAM_NUM]{};
     double Common_factor_high = pow(p_Transfer_args->X, -(p_Transfer_args->kappa - 2.) / 2.) * p_Transfer_args->sin_emission_angle * pow(3.0, (p_Transfer_args->kappa - 1.) / 2) * (p_Transfer_args->kappa - 2.) * (p_Transfer_args->kappa - 1.) / 4 
                               * std::tgamma(p_Transfer_args->kappa / 4 - 1.0 / 3) * std::tgamma(p_Transfer_args->kappa / 4 + 4.0 / 3);
-
-    Emission_functions_high[I] = Common_factor_high;
-    Emission_functions_high[Q] = -Common_factor_high * (16.0 / 25 + p_Transfer_args->kappa / 50);
-    Emission_functions_high[V] = -Common_factor_high * (49.0 / 64 * pow(pow(p_Transfer_args->sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(p_Transfer_args->kappa, -11.0 / 25) / p_Transfer_args->T_electron_dim / p_Transfer_args->sqrt_X;
 
     // ------------------------------------------------------------------------ Bridging function ------------------------------------------------------------------------ //
 
@@ -144,13 +138,24 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(
 
     if (!isnan(Emission_functions_high[I] / Emission_functions_low[I])) {
 
+        Emission_functions_low[I]  = Common_factor_low;
+        Emission_functions_high[I] = Common_factor_high;
+
         Emission_functions[I] = Emission_functions_low[I] * pow(1. + pow(Emission_functions_high[I] / Emission_functions_low[I], -power_I), -1. / power_I);
 
+        //Emission_functions[I] = Emission_functions_high[I];
+
     }
+
+    /* Return if the simulataion does not include polarization components */
+    if (!this->Include_polarization) { return; }
 
     double power_Q = 3.7 * pow(p_Transfer_args->kappa, -8. / 5);
 
     if (!isnan(Emission_functions_high[Q] / Emission_functions_low[Q])) {
+
+        Emission_functions_low[Q]  = -Common_factor_low / 2;
+        Emission_functions_high[Q] = -Common_factor_high * (16.0 / 25 + p_Transfer_args->kappa / 50);
 
         Emission_functions[Q] = Emission_functions_low[Q] * pow(1. + pow(Emission_functions_high[Q] / Emission_functions_low[Q], -power_Q), -1. / power_Q);
     }
@@ -159,11 +164,12 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(
 
     if (!isnan(Emission_functions_high[V] / Emission_functions_low[V])) {
 
+        Emission_functions_low[V]  = -Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1., 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
+        Emission_functions_high[V] = -Common_factor_high * (49.0 / 64 * pow(pow(p_Transfer_args->sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(p_Transfer_args->kappa, -11.0 / 25) / p_Transfer_args->T_electron_dim / p_Transfer_args->sqrt_X;
+
         Emission_functions[V] = Emission_functions_low[V] * pow(1. + pow(Emission_functions_high[V] / Emission_functions_low[V], -power_V), -1. / power_V);
 
     }
-
-    //Emission_functions[I] = Emission_functions_high[I];
 
 }
 
@@ -175,8 +181,6 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_absorbtion_fit_function
     /* Zero out the emission functions just in case. */
     memset(Absorbtion_functions, 0, STOKES_PARAM_NUM * sizeof(double));
 
-    double Absorbtion_functions_high[STOKES_PARAM_NUM]{};
-
     /* Check weather the fit function p_Transfer_args are numerically OK to use in the expressions - they have problems at velry low densities where the emission/absorbtion is negligable.
        In such cases I directly return. */
     if (isnan(p_Transfer_args->sqrt_X) || isinf(p_Transfer_args->sqrt_X) || isnan(p_Transfer_args->X) || isinf(p_Transfer_args->X) || isnan(1. / p_Transfer_args->X_to_7_over_20) || isinf(1. / p_Transfer_args->X_to_7_over_20) || isinf(1. / p_Transfer_args->T_electron_dim) || isinf(1. / p_Transfer_args->sin_emission_angle)) {
@@ -185,12 +189,12 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_absorbtion_fit_function
 
     }
 
-    // ------------------------------------------------------------------------ Low frequency fit ------------------------------------------------------------------------ //
+    // ------------------------------------------------------------------------ Low frequency fit coefficients ------------------------------------------------------------------------ //
 
     constexpr double THREE_TO_1_OVER_6 = 1.2009369551760027;
     constexpr double GAMMA_OF_5_OVER_3 = 0.90274529295;
 
-    // Below are the coefficients, present in the 2F1 hypergoemetric function from expression (39). Bcause in general |(-kappa * T_electron_dim)| > 1, I will use the algebraic relation 
+    // Below are the coefficients, present in the 2F1 hypergoemetric function from expression (39). Bcause in general |-kappa * T_electron_dim| > 1, I will use the algebraic relation 
     // from Abramowitz and Stegun 15.3.8. Note that our equivalent to the argument z in 15.3.8 is strictly real and negative, so taking fractional powers of it returns a real number.
 
     double a = p_Transfer_args->kappa - 1.0 / 3;
@@ -216,43 +220,53 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_absorbtion_fit_function
     double Common_factor_low = 1.0 / p_Transfer_args->cbrt_X / p_Transfer_args->cbrt_X * THREE_TO_1_OVER_6 * 10.0 / 41 * 2 * M_PI / pow(p_Transfer_args->T_electron_dim * p_Transfer_args->kappa, 10.0 / 3 - p_Transfer_args->kappa) * (p_Transfer_args->kappa - 2) * (p_Transfer_args->kappa - 1) * p_Transfer_args->kappa / (3 * p_Transfer_args->kappa - 1)
                              * GAMMA_OF_5_OVER_3 * _2F1;
 
-    Absorbtion_functions_low[I] = Common_factor_low;
-    Absorbtion_functions_low[Q] = -Common_factor_low * 25.0 / 48;
-    Absorbtion_functions_low[V] = -Common_factor_low * pow((pow(p_Transfer_args->sin_emission_angle, -114.0 / 50) - 1), 223.0 / 500) / p_Transfer_args->X_to_7_over_20 * pow(p_Transfer_args->kappa, -7.0 / 10);
+    // ----------------------------------------------------------------------- High frequency fit coefficients ------------------------------------------------------------------------ //
 
-    // ----------------------------------------------------------------------- High frequency fit ------------------------------------------------------------------------ //
-
+    double Absorbtion_functions_high[STOKES_PARAM_NUM]{};
     double Common_factor_high = pow(p_Transfer_args->X, -(1 + p_Transfer_args->kappa) / 2) * M_PI * (2 / M_2_SQRTPI) / 3 * (p_Transfer_args->kappa - 2) * (p_Transfer_args->kappa - 1) * p_Transfer_args->kappa / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim) / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim) / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim)
                               * (2 * std::tgamma(2 + p_Transfer_args->kappa / 2) / (2 + p_Transfer_args->kappa) - 1.0);
 
-    Absorbtion_functions_high[I] = Common_factor_high * (pow(3.0 / p_Transfer_args->kappa, 19.0 / 4) + 3.0 / 5);
-    Absorbtion_functions_high[Q] = -Common_factor_high * (441 * pow(p_Transfer_args->kappa, -144.0 / 25) + 11.0 / 20);
-    Absorbtion_functions_high[V] = -Common_factor_high * 143.0 / 10 * pow(p_Transfer_args->T_electron_dim, -116.0 / 125) * sqrt(pow(p_Transfer_args->sin_emission_angle, -41.0 / 20) - 1) * (169 * pow(p_Transfer_args->kappa, -8) + 13.0 / 2500 * p_Transfer_args->kappa - 1.0 / 200 + 47.0 / 200 / p_Transfer_args->kappa) / p_Transfer_args->sqrt_X;
 
     // ------------------------------------------------------------------------ Bridging function ------------------------------------------------------------------------ //
 
     double power_I = pow(-7.0 / 4 + 8.0 / 5 * p_Transfer_args->kappa, -43.0 / 50);
+
     if (!isnan(Absorbtion_functions_high[I] / Absorbtion_functions_low[I])) {
+
+        Absorbtion_functions_low[I]  = Common_factor_low;
+        Absorbtion_functions_high[I] = Common_factor_high * (pow(3.0 / p_Transfer_args->kappa, 19.0 / 4) + 3.0 / 5);
 
         Absorbtion_functions[I] = Absorbtion_functions_low[I] * pow(1. + pow(Absorbtion_functions_high[I] / Absorbtion_functions_low[I], -power_I), -1.0 / power_I);
 
+        //Absorbtion_functions[I] = Absorbtion_functions_high[I];
     }
 
+    /* Return if the simulataion does not include polarization components */
+    if (!this->Include_polarization) { return; }
+
     double power_Q = 7.0 / 5 * pow(p_Transfer_args->kappa, -23.0 / 20);
+
     if (!isnan(Absorbtion_functions_high[Q] / Absorbtion_functions_low[Q])) {
+
+
+        Absorbtion_functions_low[Q]  = -Common_factor_low * 25.0 / 48;
+        Absorbtion_functions_high[Q] = -Common_factor_high * (441 * pow(p_Transfer_args->kappa, -144.0 / 25) + 11.0 / 20);
 
         Absorbtion_functions[Q] = Absorbtion_functions_low[Q] * pow(1. + pow(Absorbtion_functions_high[Q] / Absorbtion_functions_low[Q], -power_Q), -1.0 / power_Q);
 
     }
 
     double power_V = 61.0 / 50 * pow(p_Transfer_args->kappa, -142.0 / 125) + 7.0 / 1000;
+
     if (!isnan(Absorbtion_functions_high[V] / Absorbtion_functions_low[V])) {
+
+        Absorbtion_functions_low[V]  = -Common_factor_low * pow((pow(p_Transfer_args->sin_emission_angle, -114.0 / 50) - 1), 223.0 / 500) / p_Transfer_args->X_to_7_over_20 * pow(p_Transfer_args->kappa, -7.0 / 10);
+        Absorbtion_functions_high[V] = -Common_factor_high * 143.0 / 10 * pow(p_Transfer_args->T_electron_dim, -116.0 / 125) * sqrt(pow(p_Transfer_args->sin_emission_angle, -41.0 / 20) - 1) * (169 * pow(p_Transfer_args->kappa, -8) + 13.0 / 2500 * p_Transfer_args->kappa - 1.0 / 200 + 47.0 / 200 / p_Transfer_args->kappa) / p_Transfer_args->sqrt_X;
 
         Absorbtion_functions[V] = Absorbtion_functions_low[V] * pow(1. + pow(Absorbtion_functions_high[V] / Absorbtion_functions_low[V], -power_V), -1.0 / power_V);
 
     }
 
-    //Absorbtion_functions[I] = Absorbtion_functions_high[I];
 }
 
 /* ========================================== Phenomenological Synchrotron Transfer Functions ========================================== */

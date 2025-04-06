@@ -169,7 +169,7 @@ class Generic_Optically_Thin_Model {
         *   \return Nothing
         */
         void get_kappa_synchrotron_emission_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
-                                                          double* const Emission_functions);
+                                                          double* const Emission_functions) const;
 
         //! Evaluates the kappa sychrotron absorbtion fit functions.
         /*! Evaluates the kappa sychrotron absorbtion fit functions, based on the source: https://arxiv.org/pdf/1602.08749

@@ -759,7 +759,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_transfer_functions(co
     int& Num_Samples_to_avg = p_Sim_Context->p_Init_Conditions->Emission_pitch_angle_samples_to_average;
 
     /* This structcs holds the transfer function args, corrected for the electron pitch angle. I am setting it equal to the uncorrected one
-    so they copy over the variables that don't depend on the pitch angle. The rest get corrected inside the averaging loop. */
+        so they copy over the variables that don't depend on the pitch angle. The rest get corrected inside the averaging loop. */
     Thermal_transfer_f_arguments_type Transfer_args_corrected = Transfer_args_uncorrected;
 
     if (p_Sim_Context->p_Init_Conditions->Average_electron_pitch_angle) {
@@ -880,7 +880,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(cons
     int& Num_Samples_to_avg = p_Sim_Context->p_Init_Conditions->Emission_pitch_angle_samples_to_average;
 
     /* This structcs holds the transfer function args, corrected for the electron pitch angle. I am setting it equal to the uncorrected one
-    so they copy over the variables that don't depend on the pitch angle. The rest get corrected inside the averaging loop. */
+        so they copy over the variables that don't depend on the pitch angle. The rest get corrected inside the averaging loop. */
     Kappa_transfer_f_arguments_type Transfer_args_corrected = Transfer_args_uncorrected;
 
     if (p_Sim_Context->p_Init_Conditions->Average_electron_pitch_angle) {
@@ -907,9 +907,9 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_transfer_functions(cons
             p_Transfer_functions->Emission_functions[V] += temp_Transfer_functions.Emission_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
             // The U component is 0 by definition
-            //p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            //p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            //p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
             // The I and U components are 0 by definition
             p_Transfer_functions->Faradey_functions[Q] += temp_Transfer_functions.Faradey_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
