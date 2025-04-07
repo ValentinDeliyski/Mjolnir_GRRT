@@ -1,5 +1,6 @@
-import csv
-import numpy as np
+from csv import reader
+from dataclasses import dataclass
+from numpy import array, zeros, sum, flip, linspace, vstack, repeat, savetxt, log, pi
 
 class Simulation_Parser():
 
@@ -7,7 +8,7 @@ class Simulation_Parser():
 
         with open(File_name + ".txt", 'r') as file:
 
-            csvreader = csv.reader(file, delimiter = ":")
+            csvreader = reader(file, delimiter = ":")
 
             _ = csvreader.__next__()
 
@@ -22,7 +23,7 @@ class Simulation_Parser():
                     self.Redshift_parameter = float(csvreader.__next__()[1][1:])
                 case "Janis_Newman_Winicour":
                     self.Gamma = float(csvreader.__next__()[1][1:])
-                case "Einstein-Gauss-Bonnet":
+                case "Einstein_Gauss_Bonnet":
                     self.Gamma = float(csvreader.__next__()[1][1:])
                 case "Regular_Black_Hole":
                     self.Parameter = float(csvreader.__next__()[1][1:])
@@ -137,6 +138,7 @@ class Simulation_Parser():
             self.hotspot_distance    = float(csvreader.__next__()[1])
             self.hotspot_inclination = float(csvreader.__next__()[1])
             self.hotspot_azimuth     = float(csvreader.__next__()[1])
+            self.coord_time_offset   = float(csvreader.__next__()[1])
 
             _ = csvreader.__next__() # Novikov - Thorner Model Parameters Header
 
@@ -149,30 +151,30 @@ class Simulation_Parser():
             _ = csvreader.__next__() # Simulation Results Header
             self.Legend = csvreader.__next__()
 
-            csvreader = csv.reader(file, delimiter = " ")
+            csvreader = reader(file, delimiter = " ")
 
             if (self.Active_Sim_Mode != 2):
                 Array_size = self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT
             else:
                 Array_size = self.Photon_Number * self.Param_Sweep_Number
 
-            self.X_coords        = np.zeros(Array_size)
-            self.Y_coords        = np.zeros(Array_size)
-            self.NT_Flux         = np.zeros(Array_size)
-            self.I_Intensity     = np.zeros(Array_size)
-            self.Q_Intensity     = np.zeros(Array_size)
-            self.U_Intensity     = np.zeros(Array_size)
-            self.V_Intensity     = np.zeros(Array_size)
-            self.NT_Redshift     = np.zeros(Array_size)
-            self.NT_Flux_Shifted = np.zeros(Array_size)
+            self.X_coords        = zeros(Array_size)
+            self.Y_coords        = zeros(Array_size)
+            self.NT_Flux         = zeros(Array_size)
+            self.I_Intensity     = zeros(Array_size)
+            self.Q_Intensity     = zeros(Array_size)
+            self.U_Intensity     = zeros(Array_size)
+            self.V_Intensity     = zeros(Array_size)
+            self.NT_Redshift     = zeros(Array_size)
+            self.NT_Flux_Shifted = zeros(Array_size)
 
-            self.Source_R_Coord   = np.zeros(Array_size)
-            self.Source_Phi_Coord = np.zeros(Array_size)
-            self.Radial_Momentum  = np.zeros(Array_size)
-            self.Theta_Momentum   = np.zeros(Array_size)
-            self.Phi_Momentum     = np.zeros(Array_size)
-            self.Param_1          = np.zeros(Array_size)
-            self.Param_2          = np.zeros(Array_size)
+            self.Source_R_Coord   = zeros(Array_size)
+            self.Source_Phi_Coord = zeros(Array_size)
+            self.Radial_Momentum  = zeros(Array_size)
+            self.Theta_Momentum   = zeros(Array_size)
+            self.Phi_Momentum     = zeros(Array_size)
+            self.Param_1          = zeros(Array_size)
+            self.Param_2          = zeros(Array_size)
 
             index = 0
 
@@ -211,8 +213,7 @@ class Simulation_Parser():
                 except:
                     break
                 
-
-    def get_total_flux(self, obs_pos: float, unit: str = "Jy"):
+    def get_total_flux(self, obs_pos: float, unit: str = "Jy") -> float:
         
         """ The observation window limits are given in geometric length units, 
             so one divides by the effective observer distance to get the angular size. """
@@ -220,7 +221,7 @@ class Simulation_Parser():
                       (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / obs_pos**2)
 
         """ The base flux unit, returned by the ray-tracer is Jy. """
-        Total_Intensity_Jy = np.sum(self.I_Intensity) * Pixel_area
+        Total_Intensity_Jy = sum(self.I_Intensity) * Pixel_area
 
         match unit:
             
@@ -234,38 +235,38 @@ class Simulation_Parser():
                 print("Unsupported flux unit!")    
                 return 0
 
-    def get_plottable_sim_data(self) -> tuple:
+    def get_plottable_sim_data(self) -> tuple[array, array, array, array, array, array, array]:
 
         """ The arrays first need to be reshaped into 2D ones, then flipped along the x axis, 
             because mpl treats y = 0 as the top, and the ray-tracer (openGL) treats it as the bottom. """
             
         I_Intensity = self.I_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
-        I_Intensity = np.flip(I_Intensity, axis = 0)
+        I_Intensity = flip(I_Intensity, axis = 0)
 
         Q_Intensity = self.Q_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
-        Q_Intensity = np.flip(Q_Intensity, axis =  0)
+        Q_Intensity = flip(Q_Intensity, axis =  0)
 
         U_Intensity = self.U_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
-        U_Intensity = np.flip(U_Intensity, axis =  0)
+        U_Intensity = flip(U_Intensity, axis =  0)
 
         V_Intensity = self.V_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
-        V_Intensity = np.flip(V_Intensity, axis =  0)
+        V_Intensity = flip(V_Intensity, axis =  0)
 
         NT_Flux         = self.NT_Flux.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
-        NT_Flux         = np.flip(NT_Flux, axis =  0)
+        NT_Flux         = flip(NT_Flux, axis =  0)
 
         NT_Redshift     = self.NT_Redshift.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
-        NT_Redshift     = np.flip(NT_Redshift, axis =  0)
+        NT_Redshift     = flip(NT_Redshift, axis =  0)
 
         NT_Flux_Shifted = self.NT_Flux_Shifted.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
-        NT_Flux_Shifted = np.flip(NT_Flux_Shifted, axis =  0)
+        NT_Flux_Shifted = flip(NT_Flux_Shifted, axis =  0)
 
         return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, NT_Redshift, NT_Flux, NT_Flux_Shifted
     
-    def export_ehtim_data(self, Spacetime: str, data: np.array, path: str) -> None:
+    def export_ehtim_data(self, Spacetime: str, data: array, path: str) -> None:
 
-        ehtim_x_fov = 2 * 5.500000e-05
-        ehtim_y_fov = 2 * 5.500000e-05
+        ehtim_x_fov = 2 * 5.000000e-05
+        ehtim_y_fov = 2 * 5.000000e-05
 
         Units = Units_class()
         
@@ -273,28 +274,28 @@ class Simulation_Parser():
 
         formatted_sim_data = data.reshape(1, self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT).flatten()
 
-        X_coords = np.linspace(-1, 1, self.X_PIXEL_COUNT) * ehtim_x_fov / 2
-        X_coords = np.vstack([X_coords] * self.Y_PIXEL_COUNT).flatten()
+        X_coords = linspace(-1, 1, self.X_PIXEL_COUNT) * ehtim_x_fov / 2
+        X_coords = vstack([X_coords] * self.Y_PIXEL_COUNT).flatten()
 
-        Y_coords = np.linspace(-1, 1, self.Y_PIXEL_COUNT) * ehtim_y_fov / 2
-        Y_coords = np.repeat(Y_coords, self.X_PIXEL_COUNT, axis = 0)
+        Y_coords = linspace(-1, 1, self.Y_PIXEL_COUNT) * ehtim_y_fov / 2
+        Y_coords = repeat(Y_coords, self.X_PIXEL_COUNT, axis = 0)
 
-        array_to_export = np.array([X_coords, 
-                                    Y_coords, 
-                                    formatted_sim_data * Pixel_area * self.OBS_DISTANCE**2 / Units.M87_DISTANCE_GEOMETRICAL**2]).T
+        array_to_export = array([X_coords, 
+                                 Y_coords, 
+                                 formatted_sim_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2]).T
 
         header = ("SRC: M87 \n"                   + 
                   "RA: 12 h 30 m 49.3920 s \n"    +
                   "DEC: 12 deg 23 m 27.9600 s \n" +
                   "MJD: 58211.000000 \n"          + 
                   "RF: {} GHz \n".format(self.OBS_FREQUENCY / 1e9)    +
-                  "FOVX: {} pix 0.000110 as \n".format(self.X_PIXEL_COUNT) +
-                  "FOVY: {} pix 0.000110 as \n".format(self.Y_PIXEL_COUNT) +
+                  "FOVX: {} pix 0.000100 as \n".format(self.X_PIXEL_COUNT) +
+                  "FOVY: {} pix 0.000100 as \n".format(self.Y_PIXEL_COUNT) +
                   "------------------------------------ \n" +
                   "x (as)     y (as)       I (Jy/pixel)")
 
         with open(path + '{}_data_for_ehtim_{}.csv'.format(Spacetime, int(self.OBS_FREQUENCY / 1e9)), 'w') as my_file:
-            np.savetxt(my_file, array_to_export, fmt = '%0.4e', header = header)
+                  savetxt(my_file, array_to_export, fmt = '%0.4e', header = header)
 
         print('Array exported to file!')
 
@@ -304,7 +305,7 @@ class ehtim_Parser():
 
         with open(File_name + ".txt", 'r') as file:
 
-            csvreader = csv.reader(file, delimiter = " ")
+            csvreader = reader(file, delimiter = " ")
 
             for _ in range(4):
                     _ = csvreader.__next__()
@@ -326,9 +327,9 @@ class ehtim_Parser():
             for _ in range(2):
                     _ = csvreader.__next__()
 
-            self.X_coords  = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.Y_coords  = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
-            self.Intensity = np.zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.X_coords  = zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.Y_coords  = zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
+            self.Intensity = zeros(self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT)
 
             index = 0
 
@@ -340,7 +341,7 @@ class ehtim_Parser():
 
                 index += 1
 
-    def get_plottable_ehtim_data(self) -> tuple:
+    def get_plottable_ehtim_data(self) -> tuple[array, list]:
 
         Intensity = self.Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
 
@@ -348,103 +349,92 @@ class ehtim_Parser():
         
         return Intensity, Metadata
     
-    def get_total_flux(self):
+    def get_total_flux(self) -> float:
 
-        return np.sum(self.Intensity)
+        return sum(self.Intensity)
 
+@dataclass
 class VIDA_params_Parser():
 
-    def __init__(self, File_name):
+    d0: float
+    Sigma: float
+    Tau: float
+    rot_angle: float
+    slash: float
+    slash_angle: float
+    x0: float
+    y0: float
+    div: float
+
+    def __init__(self, File_name: str) -> None:
 
         with open(File_name + ".csv", 'r') as file:
 
-            csvreader = csv.reader(file, delimiter = " ")
-
-            self.template_params = {"Gaussian_1":{}, 
-                                    "Gaussian_2":{}}
+            csvreader = reader(file, delimiter = " ")
             
-            self.template_params["Gaussian_1"]["d0"]          = 2 * float(csvreader.__next__()[0])
-            self.template_params["Gaussian_1"]["sigma"]       = float(csvreader.__next__()[0]) 
-            self.template_params["Gaussian_1"]["tau"]         = float(csvreader.__next__()[0])
-            self.template_params["Gaussian_1"]["rot_angle"]   = float(csvreader.__next__()[0])
-            self.template_params["Gaussian_1"]["slash"]       = float(csvreader.__next__()[0])
-            self.template_params["Gaussian_1"]["slash_angle"] = float(csvreader.__next__()[0])
-            self.template_params["Gaussian_1"]["x0"]          = float(csvreader.__next__()[0])
-            self.template_params["Gaussian_1"]["y0"]          = float(csvreader.__next__()[0])
+            self.d0          = 2 * float(csvreader.__next__()[0])
+            self.Sigma       = float(csvreader.__next__()[0]) 
+            self.Tau         = float(csvreader.__next__()[0])
+            self.rot_angle   = float(csvreader.__next__()[0])
+            self.slash       = float(csvreader.__next__()[0])
+            self.slash_angle = float(csvreader.__next__()[0])
+            self.x0          = float(csvreader.__next__()[0])
+            self.y0          = float(csvreader.__next__()[0])
+            self.div         = float(csvreader.__next__()[0]) 
 
-            try:
-
-                self.template_params["Gaussian_2"]["d0"]          = 2 * float(csvreader.__next__()[0])
-                self.template_params["Gaussian_2"]["sigma"]       = float(csvreader.__next__()[0]) 
-                self.template_params["Gaussian_2"]["tau"]         = float(csvreader.__next__()[0])
-                self.template_params["Gaussian_2"]["rot_angle"]   = float(csvreader.__next__()[0])
-                self.template_params["Gaussian_2"]["slash"]       = float(csvreader.__next__()[0])
-                self.template_params["Gaussian_2"]["slash_angle"] = float(csvreader.__next__()[0])
-                self.template_params["Gaussian_2"]["x0"]          = float(csvreader.__next__()[0])
-                self.template_params["Gaussian_2"]["y0"]          = float(csvreader.__next__()[0])
-
-            except:
-
-                self.template_params["Gaussian_2"] = None
-
+@dataclass
 class Units_class():
 
-    def __init__(self) -> None:
+    """ ============== Useful scaling constants ============== """
 
-        #============== Useful scaling constants ==============#
-
-        self.KILO = 1e3
-        self.MEGA = 1e6
-        self.GIGA = 1e9
-
-        #============== Physical constants ==============#
-        
-        self.C_LIGHT_SI   = 299792458
-        self.G_NEWTON_SI  = 6.6743e-11
-        self.BOLTZMANN_SI = 1.380649e-23
-        self.PLANCK_SI    = 6.62607015e-34
-
-        self.M_SUN_SI     = 1.988475e30
-        self.M_M87_BH_SI  = 6.2e9 * self.M_SUN_SI
-        self.M_SGRA_BH_SI = 4.297e6 * self.M_SUN_SI
-
-        #==============  Time conversions  ==============#
-
-        self.YEAR_TO_SEC = 31556952
-
-        #============== Angular conversions ==============#
-
-        self.RAD_TO_DEG      = 180 / np.pi
-        self.ARCSEC_TO_RAD   = np.pi / 180 / 3600
-        self.DEG_TO_AS       = 3600
-        self.RAD_TO_MICRO_AS = self.RAD_TO_DEG * self.DEG_TO_AS * 1e6
-
-        #============== Distance conversions ==============#
-
-        self.LY_TO_METER      = self.C_LIGHT_SI * self.YEAR_TO_SEC
-        self.PC_TO_METER      = 3.26156 * self.LY_TO_METER
-        self.GR_MASS_TO_METER = self.G_NEWTON_SI / self.C_LIGHT_SI**2
-
-        self.M87_DISTANCE_LY = 53.49e6
-        self.M87_DISTANCE_PC = 16.9e6
-        self.M87_DISTANCE_GEOMETRICAL = self.M87_DISTANCE_PC * self.PC_TO_METER / self.GR_MASS_TO_METER / self.M_M87_BH_SI
-
-        self.SGRA_DISTANCE_LY = 26673
-        self.SGRA_DISTANCE_PC = 8.277e3
-        self.SGRA_DISTANCE_GEOMETRICAL = self.SGRA_DISTANCE_PC * self.PC_TO_METER / self.GR_MASS_TO_METER / self.M_SGRA_BH_SI
-
-        #============== Flux conversions ==============#
-
-        self.W_M2_TO_JY = 1e26
-        self.J_TO_ERG   = 1e7
+    KILO: float = 1e3
+    MEGA: float = 1e6
+    GIGA: float = 1e9
     
-    def Spectral_density_to_T(self, I_nu, f):
+    """ =================== Physical constants ================ """
+    
+    C_LIGHT_SI: float   = 299792458
+    G_NEWTON_SI: float  = 6.6743e-11
+    BOLTZMANN_SI: float = 1.380649e-23
+    PLANCK_SI: float    = 6.62607015e-34
+
+    M_SUN_SI: float     = 1.988475e30
+    M_M87_BH_SI: float  = 6.2e9 * M_SUN_SI
+    M_SGRA_BH_SI: float = 4.297e6 * M_SUN_SI
+    
+    """ ================== Time conversions ================== """
+
+    YEAR_TO_SEC: float = 31556952
+    
+    """ ================= Angular conversions ================ """
+
+    RAD_TO_DEG: float      = 180 / pi
+    ARCSEC_TO_RAD: float   = pi / 180 / 3600
+    DEG_TO_AS: float       = 3600
+    RAD_TO_MICRO_AS: float = RAD_TO_DEG * DEG_TO_AS * 1e6
+
+    """ ================ Distance conversions ================ """
+
+    LY_TO_METER: float      = C_LIGHT_SI * YEAR_TO_SEC
+    PC_TO_METER: float      = 3.26156 * LY_TO_METER
+    GR_MASS_TO_METER: float = G_NEWTON_SI / C_LIGHT_SI**2
+
+    M87_DISTANCE_LY: float = 53.49e6
+    M87_DISTANCE_PC: float = 16.9e6
+    M87_DISTANCE_GEOMETRICAL: float = M87_DISTANCE_PC * PC_TO_METER / GR_MASS_TO_METER / M_M87_BH_SI
+
+    SGRA_DISTANCE_LY: float = 26673
+    SGRA_DISTANCE_PC: float = 8.277e3
+    SGRA_DISTANCE_GEOMETRICAL = SGRA_DISTANCE_LY * LY_TO_METER / GR_MASS_TO_METER / M_SGRA_BH_SI
+
+    """ ================== Flux conversions ================== """
+
+    W_M2_TO_JY: float = 1e26
+    J_TO_ERG: float   = 1e7
+
+    def Spectral_density_to_T(self, I_nu: array, frequency: float) -> array:
 
         I_nu += 1e-10 # To avoid division by 0 errors
 
-        return self.PLANCK_SI * f / self.BOLTZMANN_SI / np.log(1 + 2 * self.PLANCK_SI * f**3 / self.C_LIGHT_SI**2 / I_nu)
-    
-if __name__ == "__main__":
-    
-    Sim_Parser = Simulation_Parser("C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Sim_Results\\Test_Simulation\\Wormhole_n0")
+        return self.PLANCK_SI * frequency / self.BOLTZMANN_SI / log(1 + 2 * self.PLANCK_SI * frequency**3 / self.C_LIGHT_SI**2 / I_nu)
     

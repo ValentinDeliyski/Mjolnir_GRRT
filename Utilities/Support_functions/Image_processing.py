@@ -4,16 +4,16 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as cl
 from Support_functions.Parsers import*
 
-def generate_general_gaussian_template(N_pixels: int, template_params: dict, FOV: float) -> np.ndarray:
+def generate_general_gaussian_template(N_pixels: int, VIDA_parser: VIDA_params_Parser, FOV: float) -> np.ndarray:
 
-    elipse_x_offset = template_params["x0"] + FOV / 2
-    elipse_y_offset = template_params["y0"] + FOV / 2
-    rot_angle       = template_params["rot_angle"]
-    template_std    = template_params["sigma"]
-    d0              = template_params["d0"]
-    tau             = template_params["tau"]
-    slash           = template_params["slash"]
-    slash_angle     = template_params["slash_angle"]
+    elipse_x_offset = VIDA_parser.x0 + FOV / 2
+    elipse_y_offset = VIDA_parser.y0 + FOV / 2
+    rot_angle       = VIDA_parser.rot_angle
+    template_std    = VIDA_parser.Sigma
+    d0              = VIDA_parser.d0
+    tau             = VIDA_parser.Tau
+    slash           = VIDA_parser.slash
+    slash_angle     = VIDA_parser.slash_angle
 
     a_elipse = d0 / 2 / sqrt(1 - tau)
     b_elipse = d0 / 2 * sqrt(1 - tau)
@@ -41,25 +41,14 @@ def generate_general_gaussian_template(N_pixels: int, template_params: dict, FOV
     
     return template_image
 
-def get_template_pixel_mask(template_params, FOV, N_pixels, std_scale: float = 1):
+def get_template_pixel_mask(VIDA_parser: VIDA_params_Parser, FOV, N_pixels, std_scale: float = 1):
 
-    if template_params["Gaussian_2"] != None:
-
-        elipse_x_offset =     (template_params["Gaussian_1"]["x0"] + template_params["Gaussian_2"]["x0"]) / 2 + FOV / 2
-        elipse_y_offset =     (template_params["Gaussian_1"]["y0"] + template_params["Gaussian_2"]["y0"]) / 2 + FOV / 2
-        rot_angle       =     (template_params["Gaussian_1"]["rot_angle"] + template_params["Gaussian_2"]["rot_angle"]) / 2 
-        template_std    = sqrt(template_params["Gaussian_1"]["sigma"]**2 + template_params["Gaussian_2"]["sigma"]**2)
-        d0              =     (template_params["Gaussian_1"]["d0"] + template_params["Gaussian_2"]["d0"]) / 2
-        tau             =     (template_params["Gaussian_1"]["tau"] + template_params["Gaussian_2"]["tau"]) / 2
-
-    else:
-
-        elipse_x_offset = template_params["Gaussian_1"]["x0"] + FOV / 2
-        elipse_y_offset = template_params["Gaussian_1"]["y0"] + FOV / 2
-        rot_angle       = template_params["Gaussian_1"]["rot_angle"] 
-        template_std    = template_params["Gaussian_1"]["sigma"]
-        d0              = template_params["Gaussian_1"]["d0"]
-        tau             = template_params["Gaussian_1"]["tau"]
+    elipse_x_offset = VIDA_parser.x0 + FOV / 2
+    elipse_y_offset = VIDA_parser.y0 + FOV / 2
+    rot_angle       = VIDA_parser.rot_angle
+    template_std    = VIDA_parser.Sigma
+    d0              = VIDA_parser.d0
+    tau             = VIDA_parser.Tau
 
     a_elipse = d0 / 2 / sqrt(1 - tau)
     b_elipse = d0 / 2 * sqrt(1 - tau)
@@ -94,15 +83,10 @@ def get_brigness_depression_ratio(ring_mask, dark_spot_mask, Ehtim_intensity):
 
     return np.min(Ehtim_intensity[dark_spot_mask != 0]) / np.mean(Ehtim_intensity[ring_mask != 0])
 
-def get_template_slices(N_pixels: int, template: np.array, template_params: dict, FOV: float) -> tuple:
+def get_template_slices(N_pixels: int, template: np.array, VIDA_parser: VIDA_params_Parser, FOV: float) -> tuple:
 
-    if (template_params["Gaussian_2"] != None):
-
-        slice_x_offset = (template_params["Gaussian_1"]["x0"] + template_params["Gaussian_2"]["x0"]) / 2 + FOV / 2
-        slice_y_offset = (template_params["Gaussian_1"]["y0"] + template_params["Gaussian_2"]["y0"]) / 2 + FOV / 2
-    else:
-        slice_x_offset = template_params["Gaussian_1"]["x0"] + FOV / 2
-        slice_y_offset = template_params["Gaussian_1"]["y0"] + FOV / 2
+    slice_x_offset = VIDA_parser.x0 + FOV / 2
+    slice_y_offset = VIDA_parser.y0 + FOV / 2
 
     x_slice_y_index = N_pixels - int( slice_y_offset / FOV * (N_pixels - 1) )
     y_slice_x_index = N_pixels - int( slice_x_offset / FOV * (N_pixels - 1) )

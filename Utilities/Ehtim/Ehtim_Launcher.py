@@ -9,7 +9,7 @@ from numpy import array, savetxt, maximum
 parent_directory = os.path.abspath('...')
 sys.path.append(parent_directory)
 
-def run_single_reconstruction(Input_simulation: str, EHT_array: str, Base_reconstruction_params: list, Parameter_modifiers: tuple) -> None:
+def run_single_reconstruction(Input_simulation: str, EHT_array: str, Base_reconstruction_params: list, Parameter_modifiers: tuple[float, float, float, float, float, float]) -> None:
                                 
     simple_multiplier, tv_multiplier, l1_multiplier, FWHM, Total_flux, FOV_mult = Parameter_modifiers
     
@@ -192,7 +192,7 @@ def run_single_reconstruction(Input_simulation: str, EHT_array: str, Base_recons
     with open(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Chi2.csv', 'w') as chi2_file:
              savetxt(chi2_file, array([msg]), delimiter = " ", fmt = "%s")
   
-def run_multifrequncy_reconstruction(Input_simulation: str, EHT_array: str, Base_reconstruction_params: list, Parameter_modifiers: tuple) -> None:
+def run_multifrequncy_reconstruction(Input_simulation: str, EHT_array: str, Base_reconstruction_params: list, Parameter_modifiers: tuple[float, float, float, float, float, float]) -> None:
     
     simple_multiplier, tv_multiplier, l1_multiplier, FWHM, Total_flux, FOV_mult = Parameter_modifiers
     
@@ -201,7 +201,7 @@ def run_multifrequncy_reconstruction(Input_simulation: str, EHT_array: str, Base
     
     """ This checks weather results for the simulation exist already. If yes, then it skips this reconstruction.
         If not, it then makes a directory for this simulation if there isn't already one. """
-    if not os.path.isfile(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_230_blur.txt'):        
+    if not os.path.isfile(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_blur_230.txt'):        
         if not os.path.isdir(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/'):
             os.makedirs(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/')    
     else:
@@ -405,10 +405,10 @@ def run_multifrequncy_reconstruction(Input_simulation: str, EHT_array: str, Base
     Final_output_345_GHz.save_txt(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_345.txt')
     Final_output_345_GHz.save_fits(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name +'/Results_345.fits')
 
-    Final_output_230_GHz_blur.save_txt(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_230_blur.txt')
-    Final_output_230_GHz_blur.save_fits(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_230_blur.fits')
-    Final_output_345_GHz_blur.save_txt(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_345_blur.txt')
-    Final_output_345_GHz_blur.save_fits(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_345_blur.fits')
+    Final_output_230_GHz_blur.save_txt(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_blur_230.txt')
+    Final_output_230_GHz_blur.save_fits(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_blur_230.fits')
+    Final_output_345_GHz_blur.save_txt(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_blur_345.txt')
+    Final_output_345_GHz_blur.save_fits(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_blur_345.fits')
 
     Final_spectral_index.save_txt(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_specIDX_no_blur.txt')
     Final_spectral_index.save_fits(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_specIDX_no_blur.fits')
@@ -422,27 +422,38 @@ def run_multifrequncy_reconstruction(Input_simulation: str, EHT_array: str, Base
     obs345_chi_cphase = Simulated_observation_345_GHz.chisq(Final_output_345_GHz, ttype = 'fast', dtype = 'cphase')
     obs230_chi_cphase = Simulated_observation_230_GHz.chisq(Final_output_230_GHz, ttype = 'fast', dtype = 'cphase')
 
-    msg1 = ("chi2 amp,    345 = {} | chi2 amp,    230 = {}".format(round(obs345_chi_amp, 5), round(obs230_chi_amp, 5)))
-    msg2 = ("chi2 cphase, 345 = {} | chi2 cphase, 230 = {}".format(round(obs345_chi_cphase, 5), round(obs230_chi_cphase, 5)))
+    for frequency_idx, (chi2_amp, chi2_cphase) in enumerate(zip([obs230_chi_amp, obs345_chi_amp], [obs230_chi_cphase, obs345_chi_cphase])):
 
-    msg_len = maximum(len(msg1), len(msg2))
+        msg1 = ("chi2 amp = {}".format(round(chi2_amp, 5)))
+        msg2 = ("chi2 cphase = {}".format(round(chi2_cphase, 5)))
 
-    msg = "|" + "=" * msg_len + "|" + "\n"
+        msg_len = maximum(len(msg1), len(msg2))
 
-    if (len(msg1) < msg_len):
-        msg = msg + "|" + msg1 + " " * (msg_len - len(msg1)) + "|" 
-    else:
-        msg = msg + "|" + msg1 + "|"
+        msg = "|" + "=" * msg_len + "|" + "\n"
 
-    if (len(msg2) < msg_len):
-        msg = msg  + "\n" + "|" + msg2 + " " * (msg_len - len(msg2)) + "|"
-    else:
-        msg = msg  + "\n" + "|" + msg2 + "|"
+        if (len(msg1) < msg_len):
+            msg = msg + "|" + msg1 + " " * (msg_len - len(msg1)) + "|"
+        else:
+            msg = msg + "|" + msg1 + "|"
 
-    msg = msg + "\n" + "|" + "=" * msg_len + "|"
+        if (len(msg2) < msg_len):
+            msg = msg  + "\n" + "|" + msg2 + " " * (msg_len - len(msg2)) + "|"
+        else:
+            msg = msg  + "\n" + "|" + msg2 + "|"
 
-    with open(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Chi2.csv', 'w') as chi2_file:
-             savetxt(chi2_file, array([msg]), delimiter = " ", fmt = "%s")
+        msg = msg + "\n" + "|" + "=" * msg_len + "|"
+        
+        match frequency_idx:
+    
+            case 0:
+                filename = "Chi2_230.csv"
+            
+            case _:
+                filename = "Chi2_345.csv"
+
+        with open(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/' + filename, 'w') as chi2_file:
+                savetxt(chi2_file, array([msg]), delimiter = " ", fmt = "%s")
+  
   
     return
   
@@ -450,7 +461,7 @@ def Run_reconstruction_sweep(Input_simulatiaon, EHT_array, Base_reconstruction_p
 
     for simple_multiplier in [1, 10, 100]:
 
-        for tv_multiplier in [1, 10, 100]:
+        for tv2_multiplier in [1, 10, 100]:
             
             for l1_multiplier in [0, 1, 10, 100]:
                 
@@ -460,7 +471,7 @@ def Run_reconstruction_sweep(Input_simulatiaon, EHT_array, Base_reconstruction_p
                         
                         for FOV_mult in [1, 1.2]:
                             
-                            Parameter_modifiers = (simple_multiplier, tv_multiplier, l1_multiplier, FWHM, Total_flux, FOV_mult)
+                            Parameter_modifiers = (simple_multiplier, tv2_multiplier, l1_multiplier, FWHM, Total_flux, FOV_mult)
 
                             if EHT_array == "ngEHT":
                                 

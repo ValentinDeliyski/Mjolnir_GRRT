@@ -56,12 +56,12 @@ class Sim_Visualizer():
 
             if Sim_Parser_0.Active_Sim_Mode != 2:
 
-                Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL) +
-                              self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL) +
-                              self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL) +
-                              self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL))
+                Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy") +
+                              self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy") +
+                              self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy") +
+                              self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy"))
                 
-                self.Total_flux_str.append("Total flux at {}GHz = {} [mJy]\n".format(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9, np.round(Total_flux / 1e-3, 4)))
+                self.Total_flux_str.append("Total flux at {}GHz = {} [mJy]\n".format(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9, np.round(Total_flux, 4)))
 
         if Sim_Parser_0.Active_Sim_Mode != 2:
 
@@ -116,7 +116,7 @@ class Sim_Visualizer():
                                 Save_Figures: bool,
                                 Custom_fig_title: str):
 
-        Obs_effective_distance = self.Units.SGRA_DISTANCE_GEOMETRICAL
+        Obs_effective_distance = self.Units.M87_DISTANCE_GEOMETRICAL
         Frequency_str_addon    = ""
 
         if len(self.Frequency_Bins) == 1:
@@ -523,7 +523,7 @@ class Sim_Visualizer():
 
         print("=" * len(self.Total_flux_str.split("\n")[0]))
 
-    def plot_contours(self, Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, Subplot, Contour_specs: tuple):
+    def plot_contours(self, Ehtim_Parsers: list, VIDA_parser: VIDA_params_Parser, Subplot, Contour_specs: tuple[list, list]):
         
         Contour_levels, Contour_colors = Contour_specs
 
@@ -581,12 +581,7 @@ class Sim_Visualizer():
 
         Intensity_ehtim_jy, Intensity_ehtim_T, Frequency_str = self.get_plottable_intensity_from_parsers(Ehtim_Parsers)
 
-        template = generate_general_gaussian_template(Ehtim_image_res, VIDA_parser.template_params["Gaussian_1"], Ehtim_image_FOV)
-
-        if VIDA_parser.template_params["Gaussian_2"] != None:
-            
-            template_2 = generate_general_gaussian_template(Ehtim_image_res, VIDA_parser.template_params["Gaussian_2"], Ehtim_image_FOV)
-            template = template + template_2
+        template = generate_general_gaussian_template(Ehtim_image_res, VIDA_parser, Ehtim_image_FOV)
 
         if Plot_Brihtness_T:
             Intensity_ehtim = Intensity_ehtim_T
@@ -722,7 +717,6 @@ class Sim_Visualizer():
         colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
         colorbar.set_label(colorbar_legend, fontsize = self.Font_size, labelpad = self.Label_Pad)
         colorbar.ax.tick_params(labelsize = self.Font_size)
-
 
         #------------------------ Y Slice Plot ------------------------#
 

@@ -7,45 +7,45 @@ if __name__ == "__main__":
     plt.rcParams['axes.titlepad'] = 20
 
     EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Hotspot_Reference_Simulation\\Kerr"
-    Sim_Frequency_Bins  = ["345"] # In units of [GHz]
+    Sim_path            = "C:\\Users\\Valur\\Documents\\Papers\\Sim_Paper_2\\Wormhole_a_0.5_alpha_0\\"
+    Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
     Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
                                 Sim_Frequency_Bins = Sim_Frequency_Bins,
                                 Array              = EHT_Array,
                                 Font_size          = 32, 
                                 Label_Pad          = 8, 
-                                Common_file_name   = "Kerr",
-                                Respect_folder_structure = False)
+                                Common_file_name   = "Wormhole",
+                                Respect_folder_structure = True)
 
     Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
                                        Save_Figures          = False, 
                                        Radiation_Component   = "Stokes I",
-                                       Custom_fig_title      = r"Schwarzschild Hotspot")
+                                       Custom_fig_title      = r"Wormhole $a= 0.5$ $\alpha = 0$")
 
     # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
-    #                               Contour_specs      = [([0.15, 0.2, 0.3], ["r", "w", "k"])], 
-    #                               Save_Figures       = True,
+    #                               Contour_specs      = None, 
+    #                               Save_Figures       = False,
     #                               Plot_no_blur       = False,
-    #                               Custom_fig_title = r"Gauss-Bonnet ($\gamma = 1.15$)") 
+    #                               Custom_fig_title = r"Wormhole $a= 0$ $\alpha = 2$") 
     
     # Visualizer.plot_EHTIM_results(Make_contour_plots = True,                                                      
     #                               Contour_specs      = [([0.16, 0.2, 0.3], ["r", "w", "k"])], 
     #                               Save_Figures       = True,
     #                               Plot_no_blur       = False,
-    #                               Custom_fig_title = r"Gauss-Bonnet ($\gamma = 1.15$)") 
+    #                               Custom_fig_title = r"Wormhole $a a= 0.5$ $\alpha = 0$") 
     
-    # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
-    #                               Contour_specs      = [([0.15, 0.2, 0.3], ["r", "w", "k"])], 
-    #                               Save_Figures       = True,
-    #                               Plot_no_blur       = True,
-    #                               Custom_fig_title = r"Janis-Newman-Winicour ($\gamma = 0.48$)") 
+    Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
+                                  Contour_specs      = None, 
+                                  Save_Figures       = False,
+                                  Plot_no_blur       = True,
+                                  Custom_fig_title = r"Wormhole $a= 0.5$ $\alpha = 0$") 
 
-    # Visualizer.plot_VIDA_style(Center_plot = False, 
-    #                            Save_Figures = True, 
-    #                            Custom_fig_title = r"Gauss-Bonnet ($\gamma = 1.15$)")
+    Visualizer.plot_VIDA_style(Center_plot = False, 
+                               Save_Figures = True, 
+                               Custom_fig_title = r"Wormhole $a= 0$ $\alpha = 2$")
 
-    # # Visualizer.create_EHTIM_superposition()
+    # Visualizer.create_EHTIM_superposition()
 
     # Visualizer.plot_superposition(Center_plot = False,
     #                               Save_Figures = True,
