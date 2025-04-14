@@ -1,6 +1,6 @@
 #include "General_math_functions.h"
 #include "General_GR_functions.h"
-#include "Disk_Models.h"
+#include "Emission_Models.h"
 #include "Spacetimes.h"
 #include "Constants.h"
 
@@ -8,13 +8,13 @@
 
 /* =============================================== Thermal Synchrotron Transfer Functions =============================================== */
 
-void Generic_Optically_Thin_Model::get_thermal_synchrotron_emission_fit_functions(const Thermal_transfer_f_arguments_type* const p_Transfer_arags,
+void Emission_models_class::get_thermal_synchrotron_emission_fit_functions(const Thermal_transfer_f_arguments_type* const p_Transfer_arags,
                                                                                   double* const Emission_functions) const {
 
     /* The reference for the expressions below can be found in https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf - equations (30). */
 
     /* Zero out the emission functions just in case. */
-    memset(Emission_functions, 0, STOKES_PARAM_NUM * sizeof(double));
+    memset(Emission_functions, 0, e_Stokes_param_num * sizeof(double));
 
     /* Check weather the fit function p_Transfer_args are numerically OK to use in the expressions - they have problems at velry low densities where the emission/absorbtion is negligable.
        In such cases I directly return. */
@@ -41,7 +41,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_emission_fit_function
 
 }
 
-void Generic_Optically_Thin_Model::get_thermal_synchrotron_absorbtion_fit_functions(const Thermal_transfer_f_arguments_type* const Transfer_arags,
+void Emission_models_class::get_thermal_synchrotron_absorbtion_fit_functions(const Thermal_transfer_f_arguments_type* const Transfer_arags,
                                                                                     const Emission_medium_state_type* p_Emission_medium_state,
                                                                                     const double* const Emission_function,
                                                                                     double* const Absorbtion_function) const {
@@ -49,7 +49,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_absorbtion_fit_functi
     /* The reference for the expressions below can be found in https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf - equation (32). */
 
     /* Zero out the absorbtion functions just in case. */
-    memset(Absorbtion_function, 0, STOKES_PARAM_NUM * sizeof(double));
+    memset(Absorbtion_function, 0, e_Stokes_param_num * sizeof(double));
 
     const double& frequency   = Transfer_arags->frequency;
     const double exp_argument = PLANCK_CONSTANT_SI * frequency / (BOLTZMANN_CONST_SI * p_Emission_medium_state->Temperature);
@@ -58,7 +58,7 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_absorbtion_fit_functi
     /* Check weather the exponent argument is numerically OK to use in the fit functions. */
     if (isnan(exp_argument) || isinf(exp_argument)) { return; }
     
-    for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
+    for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
 
         Absorbtion_function[stokes_idx] = Emission_function[stokes_idx] * M_ELECTRON_CGS * C_LIGHT_CGS * C_LIGHT_CGS / 2 / PLANCK_CONSTANT_CGS / frequency / frequency * f_cyclo * (exp(exp_argument) - 1);
 
@@ -66,13 +66,13 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_absorbtion_fit_functi
 
 }
 
-void Generic_Optically_Thin_Model::get_thermal_synchrotron_faradey_fit_functions(const Thermal_transfer_f_arguments_type* const Transfer_arags,
+void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const Thermal_transfer_f_arguments_type* const Transfer_arags,
                                                                                  double* const Faradey_fucntions) const {
 
     /* The reference for this implementation is from Appendix B2 of https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf, expressions (33) to (37). */
 
     /* Zero out the Faradey functions just in case. */
-    memset(Faradey_fucntions, 0, STOKES_PARAM_NUM * sizeof(double));
+    memset(Faradey_fucntions, 0, e_Stokes_param_num * sizeof(double));
 
     /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
@@ -103,13 +103,13 @@ void Generic_Optically_Thin_Model::get_thermal_synchrotron_faradey_fit_functions
 
 /* ========================================== Kappa Synchrotron Transfer Functions ========================================== */
 
-void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
+void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
                                                                                 double* const Emission_functions) const {
 
     // The reference for these expressions is https://arxiv.org/pdf/1602.08749, equations (35), (36), (37) and (38).
 
     /* Zero out the emission functions just in case. */
-    memset(Emission_functions, 0, STOKES_PARAM_NUM * sizeof(double));
+    memset(Emission_functions, 0, e_Stokes_param_num * sizeof(double));
 
     /* Check weather the fit function p_Transfer_args are numerically OK to use in the expressions - they have problems at velry low densities where the emission/absorbtion is negligable. 
        In such cases I directly return. */
@@ -123,12 +123,12 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(
 
     constexpr double THREE_TO_7_OVER_3 = 12.980246132766677;
 
-    double Emission_functions_low[STOKES_PARAM_NUM]{};
+    double Emission_functions_low[e_Stokes_param_num]{};
     double Common_factor_low = p_Transfer_args->cbrt_X * p_Transfer_args->sin_emission_angle * (4 * M_PI / THREE_TO_7_OVER_3) * std::tgamma(p_Transfer_args->kappa - 4.0 / 3) / std::tgamma(p_Transfer_args->kappa - 2.0);
 
     // ----------------------------------------------------------------------- High frequency fit coefficient ------------------------------------------------------------------------ //
 
-    double Emission_functions_high[STOKES_PARAM_NUM]{};
+    double Emission_functions_high[e_Stokes_param_num]{};
     double Common_factor_high = pow(p_Transfer_args->X, -(p_Transfer_args->kappa - 2.) / 2.) * p_Transfer_args->sin_emission_angle * pow(3.0, (p_Transfer_args->kappa - 1.) / 2) * (p_Transfer_args->kappa - 2.) * (p_Transfer_args->kappa - 1.) / 4 
                               * std::tgamma(p_Transfer_args->kappa / 4 - 1.0 / 3) * std::tgamma(p_Transfer_args->kappa / 4 + 4.0 / 3);
 
@@ -173,13 +173,13 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_emission_fit_functions(
 
 }
 
-void Generic_Optically_Thin_Model::get_kappa_synchrotron_absorbtion_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
+void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
                                                                                   double* const Absorbtion_functions) const {
 
     // The reference for these expressions is https://arxiv.org/pdf/1602.08749, equations (39), (40), (41) and (42).
     
     /* Zero out the emission functions just in case. */
-    memset(Absorbtion_functions, 0, STOKES_PARAM_NUM * sizeof(double));
+    memset(Absorbtion_functions, 0, e_Stokes_param_num * sizeof(double));
 
     /* Check weather the fit function p_Transfer_args are numerically OK to use in the expressions - they have problems at velry low densities where the emission/absorbtion is negligable.
        In such cases I directly return. */
@@ -216,13 +216,13 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_absorbtion_fit_function
 
     }
 
-    double Absorbtion_functions_low[STOKES_PARAM_NUM]{};
+    double Absorbtion_functions_low[e_Stokes_param_num]{};
     double Common_factor_low = 1.0 / p_Transfer_args->cbrt_X / p_Transfer_args->cbrt_X * THREE_TO_1_OVER_6 * 10.0 / 41 * 2 * M_PI / pow(p_Transfer_args->T_electron_dim * p_Transfer_args->kappa, 10.0 / 3 - p_Transfer_args->kappa) * (p_Transfer_args->kappa - 2) * (p_Transfer_args->kappa - 1) * p_Transfer_args->kappa / (3 * p_Transfer_args->kappa - 1)
                              * GAMMA_OF_5_OVER_3 * _2F1;
 
     // ----------------------------------------------------------------------- High frequency fit coefficients ------------------------------------------------------------------------ //
 
-    double Absorbtion_functions_high[STOKES_PARAM_NUM]{};
+    double Absorbtion_functions_high[e_Stokes_param_num]{};
     double Common_factor_high = pow(p_Transfer_args->X, -(1 + p_Transfer_args->kappa) / 2) * M_PI * (2 / M_2_SQRTPI) / 3 * (p_Transfer_args->kappa - 2) * (p_Transfer_args->kappa - 1) * p_Transfer_args->kappa / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim) / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim) / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim)
                               * (2 * std::tgamma(2 + p_Transfer_args->kappa / 2) / (2 + p_Transfer_args->kappa) - 1.0);
 
@@ -271,7 +271,7 @@ void Generic_Optically_Thin_Model::get_kappa_synchrotron_absorbtion_fit_function
 
 /* ========================================== Phenomenological Synchrotron Transfer Functions ========================================== */
 
-void Generic_Optically_Thin_Model::get_phenomenological_synchrotron_fit_functions(const Phenomenological_transfer_f_arguments_type* const p_Transfer_args,
+void Emission_models_class::get_phenomenological_synchrotron_fit_functions(const Phenomenological_transfer_f_arguments_type* const p_Transfer_args,
                                                                                   Transfer_functions_type* const p_Transfer_functions) const {
 
     /* The reference for this implementation is https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6 - expressions (9) and (11). */
@@ -295,8 +295,8 @@ void Generic_Optically_Thin_Model::get_phenomenological_synchrotron_fit_function
     const double& emission_coeff     = this->s_Emission_params.Phenomenological_emission_coeff;
     const double& abs_coeff          = this->s_Emission_params.Phenomenological_absorbtion_coeff;
 
-    p_Transfer_functions->Emission_functions[I] = (emission_coeff / this->s_Disk_params.Electron_density_scale / common_factor_emission) * pow(p_Transfer_args->redshift, emission_power_law);
+    p_Transfer_functions->Emission_functions[I] = (emission_coeff / this->p_Disk_Model->s_Disk_params.Electron_density_scale / common_factor_emission) * pow(p_Transfer_args->redshift, emission_power_law);
 
-    p_Transfer_functions->Absorbtion_functions[I] = (abs_coeff * emission_coeff / this->s_Disk_params.Electron_density_scale / common_factor_absorbtion) * pow(p_Transfer_args->redshift, source_f_power_law + emission_power_law);
+    p_Transfer_functions->Absorbtion_functions[I] = (abs_coeff * emission_coeff / this->p_Disk_Model->s_Disk_params.Electron_density_scale / common_factor_absorbtion) * pow(p_Transfer_args->redshift, source_f_power_law + emission_power_law);
 
 }

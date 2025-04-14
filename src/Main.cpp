@@ -6,7 +6,8 @@
 #include "IO_files.h"
 #include <iostream>
 
-#include "Disk_Models.h"
+#include "Emission_Models.h"
+#include "Novikov_Thorne_model.h"
 #include "General_GR_functions.h"
 #include "Lensing.h"
 
@@ -52,18 +53,6 @@ void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
 
 }
 
-void static Allocate_GOT_Model_class_instance(Simulation_Context_type* p_Sim_Context) {
-
-    p_Sim_Context->p_GOT_Model = new Generic_Optically_Thin_Model();
-    p_Sim_Context->p_GOT_Model->precompute_electron_pitch_angles(p_Sim_Context->p_Init_Conditions);
-
-    if (ERROR == p_Sim_Context->p_GOT_Model->load_parameters(p_Sim_Context)) {
-
-        exit(ERROR);
-
-    }
-}
-
 int main(int argument_count, char** cmd_line_args) {
 
     std::string Input_file_path{};
@@ -93,11 +82,7 @@ int main(int argument_count, char** cmd_line_args) {
 
     s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
 
-    if (ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)){
-    
-        exit(ERROR);
-    
-    }
+    if (ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)){ exit(ERROR); }
 
     s_Sim_Context.p_Init_Conditions->Print_to_console = print_to_console;
     s_Sim_Context.p_Init_Conditions->Hotspot_params.Coord_time_offset += s_Sim_Context.p_Init_Conditions->Observer_params.distance;
@@ -120,10 +105,11 @@ int main(int argument_count, char** cmd_line_args) {
     memcpy(&s_Sim_Context.p_Init_Conditions->Init_metric, &s_init_Metric, sizeof(Metric_type));
 
     // Populate the Emission Model class instances
-    Allocate_GOT_Model_class_instance(&s_Sim_Context);
+    s_Sim_Context.p_Emission_Model = new Emission_models_class(&s_Sim_Context);
+    s_Sim_Context.p_Emission_Model->precompute_electron_pitch_angles(s_Sim_Context.p_Init_Conditions);
 
     // Allocate the Novikov-Thorne Model class
-     s_Sim_Context.p_NT_model = new Novikov_Thorne_Model(&s_Sim_Context);
+     s_Sim_Context.p_NT_model = new Novikov_Thorne_Model_class(&s_Sim_Context);
 
     // Populate the File Manager class instance
     s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions);
@@ -133,7 +119,11 @@ int main(int argument_count, char** cmd_line_args) {
 
     s_Ray_results.Ray_log_struct.Ray_path_log = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_State_Number]();
 
-    for (int index = I; index <= STOKES_PARAM_NUM - 1; index++) {
+    // Compute the dimentionless sclaes, and save them in the "Ray_results" struct for later use (the code gets messy otherwise).
+    s_Ray_results.Length_scale = s_Sim_Context.p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
+    s_Ray_results.Intensity_scale = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * s_Sim_Context.p_Init_Conditions->Observer_params.obs_frequency * s_Ray_results.Length_scale;
+
+    for (int index = I; index <= e_Stokes_param_num - 1; index++) {
 
         s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[2 * s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
 

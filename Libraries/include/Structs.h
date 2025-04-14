@@ -6,10 +6,65 @@
    which hold a whole bunch of function declarations that are not needed in this header. */
 
 class Spacetime_Base_Class;
-class Generic_Optically_Thin_Model;
-class Novikov_Thorne_Model;
+class Emission_models_class;
+class Novikov_Thorne_Model_class;
 class Observer_class;
 class File_manager_class;
+
+struct Hotspot_profile_parameters_type {
+
+    /* ======== Gaussian parameters ======== */
+
+    double Gaussian_variable;
+    double Gaussian_spread;
+    double Gaussian_mean;
+
+    /* ======== Spherical parameters ======== */
+
+    double Distance_from_sphere_center;
+    double Sphere_radius;
+
+};
+
+struct Disk_profile_parameters_type {
+
+    /* ================================ Common profile variables ================================ */
+
+    /*! The radial position. */
+    double r;
+
+    /*! The verticical position component. */
+    double z;
+
+    /*! The equatorial position component. */
+    double rho;
+
+    /* ====================== Hybrid power - exponential profile parameters ====================== */
+
+    /*! The power law scale ~ (r_0 / r)^power */
+    double r_0;
+
+    /*! The power law exponent ~ (r_0 / r)^power */
+    double power;
+
+    /*! The disk opening angle ~ exp(-[tan(theta)/tan(opening_angle)]^2 / 2) */
+    double tan_opening_angle;
+
+    /*! The cutoff radius ~ exp( -[(r - r_cutoff) / cutoff_scale]^2 ) if r < r_cutoff */
+    double r_cutoff;
+
+    /*! The cutoff scale ~ exp( -[(r - r_cutoff) / cutoff_scale]^2 ) if r < r_cutoff */
+    double cutoff_scale;
+
+    /* =========================== Pure exponential profile parameters =========================== */
+
+    /*! The radial scale ~ exp( -[r / exp_radial_scale]^2 ) */
+    double exp_radial_scale;
+
+    /*! The radial scale ~ exp( -[z / exp_height_scale]^2 ) */
+    double exp_height_scale;
+
+};
 
 struct Disk_model_parameters_type {
 
@@ -394,13 +449,13 @@ struct Phenomenological_transfer_f_arguments_type {
 struct Transfer_functions_type {
 
     /*! Array that holds the current emission functions for all polarizations. */
-    double Emission_functions[STOKES_PARAM_NUM];
+    double Emission_functions[e_Stokes_param_num];
 
     /*! Array that holds the current Faradey functions for all polarizations. */
-    double Faradey_functions[STOKES_PARAM_NUM];
+    double Faradey_functions[e_Stokes_param_num];
 
     /*! Array that holds the current absorbtion functions for all polarizations. */
-    double Absorbtion_functions[STOKES_PARAM_NUM];
+    double Absorbtion_functions[e_Stokes_param_num];
 
 };
 
@@ -614,10 +669,10 @@ struct Simulation_Context_type {
     Observer_class* p_Observer;
 
     /*! Pointer to the class that holds all the emission medium related functions. */
-    Generic_Optically_Thin_Model* p_GOT_Model;
+    Emission_models_class* p_Emission_Model;
 
     /*! Pointer to the class that holds all the Novikov-Thorne related functions. */
-    Novikov_Thorne_Model* p_NT_model;
+    Novikov_Thorne_Model_class* p_NT_model;
 
     /*! Pointer to the class that holds all the file manager related functions. */
     File_manager_class* File_manager;
@@ -650,21 +705,21 @@ struct Results_type {
     s_Ray_log_type Ray_log_struct;
 
     /* Array that holds the integrated intensity for each image order and polarization. */
-    double Intensity[ORDER_NUM][STOKES_PARAM_NUM]{};
+    double Intensity[e_order_number][e_Stokes_param_num]{};
 
     /* Array that holds the source coordinates from the Novikov-Thorne disk for each image order.
        This exists for use in simulation mode 2. */
-    double Source_Coords[4][ORDER_NUM]{};
+    double Source_Coords[4][e_order_number]{};
 
     /* Array that holds the photon momentum at the source from the Novikov-Thorne disk for each image order.
        This exists for use in simulation mode 2. */
-    double Photon_Momentum[4][ORDER_NUM]{};
+    double Photon_Momentum[4][e_order_number]{};
 
     /* Array that holds the Novikov-Thorne disk flux for each image order. */
-    double Flux_NT[ORDER_NUM]{};
+    double Flux_NT[e_order_number]{};
 
     /* Array that holds the Novikov-Thorne disk redshift for each image order. */
-    double Redshift_NT[ORDER_NUM]{};
+    double Redshift_NT[e_order_number]{};
 
     /* Placeholder for an array that will hold the integrated optical depth for each image order and polarization. */
     double Optical_Depth{};
@@ -672,5 +727,9 @@ struct Results_type {
     /* Array that holds the coordinates of the image on the observer plane. 
        NOTE: These get affected by the cam_rotation_angle parameter of the observer. */
     double Image_Coords[2]{};
+
+    double Length_scale;
+
+    double Intensity_scale;
 
 };

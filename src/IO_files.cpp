@@ -46,7 +46,7 @@ void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[
 void File_manager_class::write_simulation_metadata() {
 
     std::ofstream* Output_file;
-    int Output_file_number = ORDER_NUM;
+    int Output_file_number = e_order_number;
 
     switch (this->p_Initial_Conditions->Simulation_mode){
 
@@ -64,7 +64,7 @@ void File_manager_class::write_simulation_metadata() {
         break;
     }
 
-    for (int Image_order = direct; Image_order <= Output_file_number - 1; Image_order += 1) {
+    for (int Image_order = e_direct; Image_order <= Output_file_number - 1; Image_order += 1) {
 
         *(Output_file + Image_order) << "============================================================ SIMULATION METADATA ============================================================"
                                         << "\n"
@@ -649,10 +649,10 @@ void File_manager_class::open_image_output_files() {
     std::filesystem::path dir(Output_directory_path);
 
     // Init the std::path variables where we will store the names of the output files
-    std::filesystem::path Image_file_names[ORDER_NUM];
+    std::filesystem::path Image_file_names[e_order_number];
 
     // Init the std::path variables of the full file paths
-    std::filesystem::path Image_full_path[ORDER_NUM]{};
+    std::filesystem::path Image_full_path[e_order_number]{};
 
     // Specify the output file extention
     std::filesystem::path file_extention(".txt");
@@ -668,7 +668,7 @@ void File_manager_class::open_image_output_files() {
 
     // Loop over all the files and populate the (so far empty) 
     
-    for (int File_Index = 0; File_Index <= ORDER_NUM - 1; File_Index += 1) {
+    for (int File_Index = 0; File_Index <= e_order_number - 1; File_Index += 1) {
 
         if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
@@ -723,7 +723,7 @@ void File_manager_class::open_log_output_file() {
 
 void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
-    for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
+    for (int Image_order = e_direct; Image_order <= e_order_number - 1; Image_order += 1) {
 
         Image_Output_files[Image_order] << s_Ray_results->Image_Coords[x]
                                         << " "
@@ -801,7 +801,7 @@ void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
           
         }
 
-        for (int stokes_index = I; stokes_index <= STOKES_PARAM_NUM - 1; stokes_index++) {
+        for (int stokes_index = I; stokes_index <= e_Stokes_param_num - 1; stokes_index++) {
 
             Log_Output_File << s_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][0 + 2 * log_index] << " ";
 
@@ -814,7 +814,7 @@ void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
 void File_manager_class::close_image_output_files() {
 
-    for (int File_Index = 0; File_Index <= ORDER_NUM - 1; File_Index++) {
+    for (int File_Index = 0; File_Index <= e_order_number - 1; File_Index++) {
 
         Image_Output_files[File_Index].close();
     }

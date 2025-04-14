@@ -282,7 +282,7 @@ class Simulation_Parser():
 
         array_to_export = array([X_coords, 
                                  Y_coords, 
-                                 formatted_sim_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2]).T
+                                 formatted_sim_data * Pixel_area / Units.SGRA_DISTANCE_GEOMETRICAL**2]).T
 
         header = ("SRC: M87 \n"                   + 
                   "RA: 12 h 30 m 49.3920 s \n"    +
@@ -425,7 +425,7 @@ class Units_class():
 
     SGRA_DISTANCE_LY: float = 26673
     SGRA_DISTANCE_PC: float = 8.277e3
-    SGRA_DISTANCE_GEOMETRICAL = SGRA_DISTANCE_LY * LY_TO_METER / GR_MASS_TO_METER / M_SGRA_BH_SI
+    SGRA_DISTANCE_GEOMETRICAL = SGRA_DISTANCE_PC * PC_TO_METER / GR_MASS_TO_METER / M_SGRA_BH_SI
 
     """ ================== Flux conversions ================== """
 

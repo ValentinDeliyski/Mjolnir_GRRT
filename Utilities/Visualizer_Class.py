@@ -143,7 +143,7 @@ class Sim_Visualizer():
 
             # Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation OBS_DISTANCE, and conver to to micro AS 
             axes_limits = np.array([(limit) for limit in self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS]) / Obs_effective_distance
-            axes_limits = np.tan(axes_limits) * self.Units.RAD_TO_MICRO_AS
+            axes_limits = np.arctan(axes_limits) * self.Units.RAD_TO_MICRO_AS
 
             # The literature (for some reason) has the X axis going positive to negative, 
             # so I invert the X axis limits
@@ -543,10 +543,10 @@ class Sim_Visualizer():
         x_axis = np.linspace(axes_limits[0],axes_limits[1], Ehtim_Parser.X_PIXEL_COUNT)
         y_axis = np.linspace(axes_limits[3],axes_limits[2], Ehtim_Parser.Y_PIXEL_COUNT)
 
-        ring_mask, dark_spot_mask = get_template_pixel_mask(template_params = VIDA_parser.template_params, 
-                                                            FOV             = np.abs(axes_limits[0] - axes_limits[1]), 
-                                                            N_pixels        = Ehtim_Parser.X_PIXEL_COUNT,
-                                                            std_scale       = 0.5)
+        ring_mask, dark_spot_mask = get_template_pixel_mask(VIDA_parser = VIDA_parser, 
+                                                            FOV         = np.abs(axes_limits[0] - axes_limits[1]), 
+                                                            N_pixels    = Ehtim_Parser.X_PIXEL_COUNT,
+                                                            std_scale   = 0.5)
                     
         # Cast to a numpy array, so I can scale it by max_value
         Contour_levels = np.array(Contour_levels)
@@ -591,8 +591,8 @@ class Sim_Visualizer():
             Intensity_ehtim = Intensity_ehtim_jy * self.Units.KILO
             colorbar_legend = r"Flux Per Pixel [mJy]"
 
-        template_x_slice, slice_x_offset, template_y_slice, slice_y_offset = get_template_slices(Ehtim_image_res, template, VIDA_parser.template_params, Ehtim_image_FOV)
-        Ehtim_x_slice, _, Ehtim_y_slice, _ = get_template_slices(Ehtim_image_res, Intensity_ehtim, VIDA_parser.template_params, Ehtim_image_FOV)
+        template_x_slice, slice_x_offset, template_y_slice, slice_y_offset = get_template_slices(Ehtim_image_res, template, VIDA_parser, Ehtim_image_FOV)
+        Ehtim_x_slice, _, Ehtim_y_slice, _ = get_template_slices(Ehtim_image_res, Intensity_ehtim, VIDA_parser, Ehtim_image_FOV)
 
 
         # This figure is a bit large, and with the giant fontsize its going to need to be readable
@@ -631,15 +631,16 @@ class Sim_Visualizer():
             x_crop_idx = (x_crop_range / (Ehtim_image_FOV / 2) + 1) / 2 * Ehtim_image_res
             y_crop_idx = (y_crop_range / (Ehtim_image_FOV / 2) + 1) / 2 * Ehtim_image_res
 
-            x_crop_idx = x_crop_idx.astype(int) - 1
-            y_crop_idx = y_crop_idx.astype(int) - 1
+            x_crop_idx = x_crop_idx.astype(int)
+            y_crop_idx = y_crop_idx.astype(int)
 
         else:
         
             x_crop_idx = [0, (Ehtim_image_res - 1)]
             y_crop_idx = [0, (Ehtim_image_res - 1)]
 
-        crop_res = x_crop_idx[1] - x_crop_idx[0]
+        crop_res_x = x_crop_idx[1] - x_crop_idx[0]
+        crop_res_y = y_crop_idx[1] - y_crop_idx[0]
 
         # The literature (for some reason) has the X axis going positive to negative, 
         # so I invert the X axis limits
@@ -647,8 +648,8 @@ class Sim_Visualizer():
         axes_limits[0] = -axes_limits[0]
         axes_limits[1] = -axes_limits[1]
 
-        x_coords = np.linspace(axes_limits[0], axes_limits[1], crop_res)
-        y_coords = np.linspace(axes_limits[2], axes_limits[3], crop_res)
+        x_coords = np.linspace(axes_limits[0], axes_limits[1], crop_res_x)
+        y_coords = np.linspace(axes_limits[2], axes_limits[3], crop_res_y)
 
         Subplot = template_fig.add_subplot(141)
         Ehtim_crop        = Intensity_ehtim[y_crop_idx[0] : y_crop_idx[1], x_crop_idx[0] : x_crop_idx[1]]
@@ -656,13 +657,13 @@ class Sim_Visualizer():
 
         if CROP:
 
-            Subplot.plot(np.zeros(crop_res), y_coords, "r", linewidth = 4)
-            Subplot.plot(x_coords, np.zeros(crop_res), "b", linewidth = 4)
+            Subplot.plot(np.zeros(crop_res_y), y_coords, "r", linewidth = 4)
+            Subplot.plot(x_coords, np.zeros(crop_res_x), "b", linewidth = 4)
 
         else:
 
-            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), y_coords, "r", linewidth = 4)
-            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), "b", linewidth = 4)
+            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res_y), y_coords, "r", linewidth = 4)
+            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res_x), "b", linewidth = 4)
 
         Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
         Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
@@ -698,20 +699,20 @@ class Sim_Visualizer():
 
         if CROP:
 
-            Subplot.plot(np.zeros(crop_res), y_coords, "r--", linewidth = 4)
-            Subplot.plot(x_coords, np.zeros(crop_res), "b--", linewidth = 4)
+            Subplot.plot(np.zeros(crop_res_y), y_coords, "r--", linewidth = 4)
+            Subplot.plot(x_coords, np.zeros(crop_res_x), "b--", linewidth = 4)
 
         else:
 
-            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), y_coords, "r--", linewidth = 4)
-            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res), "b--", linewidth = 4)
+            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res_y), y_coords, "r--", linewidth = 4)
+            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res_x), "b--", linewidth = 4)
 
         Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
         Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
         plt.xticks(fontsize = self.Font_size)
         plt.yticks(fontsize = self.Font_size)
 
-        ring_mask, dark_spot_mask = get_template_pixel_mask(VIDA_parser.template_params, Ehtim_image_FOV, Ehtim_image_res)
+        ring_mask, dark_spot_mask = get_template_pixel_mask(VIDA_parser, Ehtim_image_FOV, Ehtim_image_res)
         Subplot.set_title("VIDA Template", fontsize = self.Font_size)
 
         colorbar = template_fig.colorbar(Ehtim_crop_figure, ax = Subplot, fraction=0.046, pad=0.04)
@@ -911,7 +912,7 @@ class Sim_Visualizer():
 
         # Map the array to colors (0 -> white, 1 -> black)
         # Using NumPy's broadcasting for efficiency
-        color_array = np.zeros((size, size, 3), dtype=np.uint8)  # Create a blank RGB array
+        color_array = np.zeros((size, size, 3), dtype = np.uint8)  # Create a blank RGB array
         color_array[arr == 0] = [255, 255, 255]  # White for 0
         color_array[arr != 0] = [155, 0, 0]  # Black for non-0 values
 

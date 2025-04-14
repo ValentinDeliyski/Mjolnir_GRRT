@@ -176,3 +176,13 @@ void add_4D_vectors(const double* const Vec_1, const double* const Vec_2, double
 	}
 
 }
+
+double int_power(const double base, const int exponent) {
+
+	double result = 1.0;
+
+	for (int counter = exponent; counter > 0; counter--) { result *= base; }
+
+	return result;
+
+}

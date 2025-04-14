@@ -116,7 +116,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
         auto start_time = std::chrono::high_resolution_clock::now();
         int progress = 0;
 
-        std::cout << '\n' << "Generating image for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << "..." << '\n';
+        std::cout << '\n' << "Generating image for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << "...\n";
 
         for (int V_pixel_num = 0; V_pixel_num <= Y_resolution - 1; V_pixel_num++) {
 
@@ -150,10 +150,10 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
                 
                 */
 
-                Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Intensity[direct][I] +
-                                                                                 p_Ray_results->Intensity[first][I] +
-                                                                                 p_Ray_results->Intensity[second][I] +
-                                                                                 p_Ray_results->Intensity[third][I];
+                Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Intensity[e_direct][I] +
+                                                                                 p_Ray_results->Intensity[e_first][I] +
+                                                                                 p_Ray_results->Intensity[e_second][I] +
+                                                                                 p_Ray_results->Intensity[e_third][I];
 
                 Renderer->texture_indexer += 3;
 
@@ -172,11 +172,11 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
                 
                 */
 
-                memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
-                memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
-                memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
-                memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
-                memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 3) * sizeof(double));
+                memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(e_order_number * e_Stokes_param_num) * sizeof(double));
+                memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
+                memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
+                memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(e_order_number * 3) * sizeof(double));
+                memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(e_order_number * 3) * sizeof(double));
 
             }
 
@@ -270,11 +270,11 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
 
         */
 
-        memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(ORDER_NUM * STOKES_PARAM_NUM) * sizeof(double));
-        memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
-        memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(ORDER_NUM) * sizeof(double));
-        memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(ORDER_NUM * 4) * sizeof(double));
-        memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(ORDER_NUM * 4) * sizeof(double));
+        memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(e_order_number * e_Stokes_param_num) * sizeof(double));
+        memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
+        memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
+        memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(e_order_number * 4) * sizeof(double));
+        memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(e_order_number * 4) * sizeof(double));
 
         print_progress(photon, p_Sim_Context->File_manager->sim_mode_2_ray_number - 1, true);
 

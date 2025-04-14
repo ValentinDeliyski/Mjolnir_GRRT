@@ -22,7 +22,7 @@ private:
 
 	};
 
-	std::ofstream Image_Output_files[ORDER_NUM];
+	std::ofstream Image_Output_files[e_order_number];
 	std::ofstream Log_Output_File;
 	Initial_conditions_type *p_Initial_Conditions;
 

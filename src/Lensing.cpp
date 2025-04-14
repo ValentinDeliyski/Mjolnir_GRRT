@@ -1,18 +1,22 @@
 #pragma once
-
 #define _USE_MATH_DEFINES
-
+#include "IO_files.h"
 #include "Enumerations.h"
 #include "Constants.h"
 #include "Spacetimes.h"
+
+#include "Novikov_Thorne_model.h"
+#include "Emission_Models.h"
 #include "Disk_Models.h"
-#include "IO_files.h"
+
 #include "General_GR_functions.h"
 #include "General_math_functions.h"
+
 #include "Rendering_Engine.h"
 #include "Radiative_Transfer.h"
 
 #include "Lensing.h"
+
 #include <iostream>
 #include <complex>
 
@@ -40,12 +44,12 @@ void static log_ray_path(double State_Vector[], Results_type* s_Ray_Results, Ste
 
 }
 
-void static log_ray_emission(double Stokes_Vector[STOKES_PARAM_NUM], double Optical_depth, Results_type* s_Ray_Results, int log_index) {
+void static log_ray_emission(double Stokes_Vector[e_Stokes_param_num], double Optical_depth, Results_type* p_Ray_Results, int log_index) {
     
-    for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
+    for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
 
-        s_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][0 + 2 * log_index] = Stokes_Vector[stokes_idx];
-        s_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][1 + 2 * log_index] = Optical_depth;
+        p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][0 + 2 * log_index] = Stokes_Vector[stokes_idx] * p_Ray_Results->Intensity_scale;
+        p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][1 + 2 * log_index] = Optical_depth;
     }
 
 }
@@ -67,7 +71,7 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
 
         if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
-            // The wormhole metric uses the global coordinate ell = r^2 + r_throat^2
+            // The wormhole metric uses the global coordinate ell = r^2 - r_throat^2
             // Here I convert back to the r coordinate for the NT model evaluation
 
             r_crossing_squared = r_crossing_squared - R_throat * R_throat;
@@ -112,48 +116,48 @@ void static Seperate_Image_into_orders(int const Max_theta_turning_points,
                                        int const N_theta_turning_points,
                                        Initial_conditions_type* const s_Initial_Conditions, 
                                        Results_type* const p_Ray_results,
-                                       double const Intensity[STOKES_PARAM_NUM]) {
+                                       double const Intensity[e_Stokes_param_num]) {
 
-        int Image_Order = compute_image_order(Max_theta_turning_points - N_theta_turning_points, s_Initial_Conditions);
-
-        for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
-
-            p_Ray_results->Intensity[Image_Order][stokes_idx] = Intensity[stokes_idx];
-
-            for (int order_scan = Image_Order + 1; order_scan <= compute_image_order(Max_theta_turning_points, s_Initial_Conditions); order_scan++) {
-
-                p_Ray_results->Intensity[Image_Order][stokes_idx] -= p_Ray_results->Intensity[order_scan][stokes_idx];
-
-            }
-
+    int Image_Order = compute_image_order(Max_theta_turning_points - N_theta_turning_points, s_Initial_Conditions);
+    
+    for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
+    
+        p_Ray_results->Intensity[Image_Order][stokes_idx] = Intensity[stokes_idx] * p_Ray_results->Intensity_scale;
+    
+        for (int order_scan = Image_Order + 1; order_scan <= compute_image_order(Max_theta_turning_points, s_Initial_Conditions); order_scan++) {
+    
+            p_Ray_results->Intensity[Image_Order][stokes_idx] -= p_Ray_results->Intensity[order_scan][stokes_idx];
+    
         }
+    
+    }
 
 }
 
 void static Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
-                                    Transfer_functions_type* const Transfer_functions,
+                                    const Transfer_functions_type const Transfer_functions,
                                     double const step, 
-                                    double* Intensity) {
+                                    double* const Intensity) {
 
     switch (Integrator) {
 
     case Analytic:
 
-        Analytic_Radiative_Transfer(Transfer_functions[Current].Emission_functions, Transfer_functions[Current].Absorbtion_functions, Transfer_functions[Current].Faradey_functions, step / 2, Intensity);
-        Analytic_Radiative_Transfer(Transfer_functions[Next].Emission_functions, Transfer_functions[Next].Absorbtion_functions, Transfer_functions[Next].Faradey_functions, step / 2, Intensity);
+        Analytic_Radiative_Transfer(const_cast<double*>(Transfer_functions.Emission_functions), 
+                                    const_cast<double*>(Transfer_functions.Absorbtion_functions), 
+                                    const_cast<double*>(Transfer_functions.Faradey_functions), 
+                                    step, 
+                                    Intensity);
 
         break;
 
     case Implicit_Trapezoid:
 
-        Implicit_Trapezoid_Radiative_Transfer(Transfer_functions[Current].Emission_functions, Transfer_functions[Current].Absorbtion_functions, Transfer_functions[Current].Faradey_functions, step / 2, Intensity);
-        Implicit_Trapezoid_Radiative_Transfer(Transfer_functions[Next].Emission_functions, Transfer_functions[Next].Absorbtion_functions, Transfer_functions[Next].Faradey_functions, step / 2, Intensity);
-
-        break;
-
-    case RK4:
-
-        RK4_Radiative_Transfer(Transfer_functions, step, Intensity);
+        Implicit_Trapezoid_Radiative_Transfer(const_cast<double*>(Transfer_functions.Emission_functions), 
+                                              const_cast<double*>(Transfer_functions.Absorbtion_functions), 
+                                              const_cast<double*>(Transfer_functions.Faradey_functions), 
+                                              step, 
+                                              Intensity);
 
         break;
 
@@ -183,32 +187,33 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
     // ------------- The magnetic field of the disk
 
-    Disk_state.Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context,
+    Disk_state.Plasma_Velocity = p_Sim_Context->p_Emission_Model->get_plasma_velocity(State_vector, p_Sim_Context,
                                                                                  p_Sim_Context->p_Init_Conditions->Disk_params.Velocity_profile_type, 
                                                                                  p_Sim_Context->p_Init_Conditions->Disk_params.Radial_velocity_fraction);
     if (NULL != Disk_state.Plasma_Velocity) {
 
-        Disk_state.Density = p_Sim_Context->p_GOT_Model->get_disk_density(State_vector);
+
+        p_Sim_Context->p_Emission_Model->p_Disk_Model->get_density_and_temperature(State_vector, &Disk_state);
         Disk_state.Magnetization = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
         memcpy(Disk_state.Magnetic_fields.Magnetic_field_geometry, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
 
-        p_Sim_Context->p_GOT_Model->get_magnetic_field(State_vector, p_Sim_Context, &Disk_state);
+        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector, p_Sim_Context, &Disk_state);
 
     }
 
     // ------------- The magnetic field of the hotspot
 
-    Hotspot_state.Plasma_Velocity = p_Sim_Context->p_GOT_Model->get_plasma_velocity(State_vector, p_Sim_Context,
+    Hotspot_state.Plasma_Velocity = p_Sim_Context->p_Emission_Model->get_plasma_velocity(State_vector, p_Sim_Context,
                                                                                     p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type, 
                                                                                     p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
 
     if (NULL != Hotspot_state.Plasma_Velocity) {
 
-        Hotspot_state.Density = p_Sim_Context->p_GOT_Model->get_hotspot_density(State_vector, p_Sim_Context);
+        p_Sim_Context->p_Emission_Model->p_Hotspot_Model->get_density_and_temperature(State_vector, Hotspot_state.Plasma_Velocity, &Hotspot_state);
         Hotspot_state.Magnetization = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;
         memcpy(Hotspot_state.Magnetic_fields.Magnetic_field_geometry, p_Sim_Context->p_Init_Conditions->Hotspot_params.Mag_field_geometry, 3 * sizeof(double));
 
-        p_Sim_Context->p_GOT_Model->get_magnetic_field(State_vector, p_Sim_Context, &Hotspot_state);
+        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector, p_Sim_Context, &Hotspot_state);
 
     }
 
@@ -395,11 +400,11 @@ void static Parallel_Transport_Polarization_Vector(double State_Vector[],
 
   /* ========================== Compute the derivative of the polarization vector from the parallel transport ========================== */
 
-    for (int derivative_index = 0; derivative_index <= STOKES_PARAM_NUM - 1; derivative_index++) {
+    for (int derivative_index = 0; derivative_index <= e_Stokes_param_num - 1; derivative_index++) {
 
-        for (int polarization_index = 0; polarization_index <= STOKES_PARAM_NUM - 1; polarization_index++) {
+        for (int polarization_index = 0; polarization_index <= e_Stokes_param_num - 1; polarization_index++) {
 
-            for (int wave_vector_index = 0; wave_vector_index <= STOKES_PARAM_NUM - 1; wave_vector_index++) {
+            for (int wave_vector_index = 0; wave_vector_index <= e_Stokes_param_num - 1; wave_vector_index++) {
 
                 Polarization_Vector_Derivative[derivative_index] = -Connection_Coefficients[derivative_index][wave_vector_index][polarization_index] * photon_wave_vector[wave_vector_index] * Polarization_Vector[polarization_index];
 
@@ -418,8 +423,8 @@ void static Parallel_Transport_Polarization_Vector(double State_Vector[],
 }
 
 void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][4],
-                                              std::complex<double> Coord_Basis_Pol_vec[STOKES_PARAM_NUM],
-                                              double Stokes_Vector[STOKES_PARAM_NUM]) {
+                                              std::complex<double> Coord_Basis_Pol_vec[e_Stokes_param_num],
+                                              double Stokes_Vector[e_Stokes_param_num]) {
 
             std::complex<double> Stokes_Basis_Pol_vec[4]{};
 
@@ -470,9 +475,9 @@ void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][
 
 }
 
-void static Map_Stokes_to_Polarization_Vector(const double Stokes_Vector[STOKES_PARAM_NUM],
+void static Map_Stokes_to_Polarization_Vector(const double Stokes_Vector[e_Stokes_param_num],
                                               const double Stokes_Tetrad[4][4],
-                                              std::complex<double> Coord_Basis_Pol_vec[STOKES_PARAM_NUM]) {
+                                              std::complex<double> Coord_Basis_Pol_vec[e_Stokes_param_num]) {
 
     for (int index = 0; index <= 3; index++) {
 
@@ -513,53 +518,55 @@ void static Map_Stokes_to_Polarization_Vector(const double Stokes_Vector[STOKES_
 }
 
 void static Propagate_forward_emission(const Simulation_Context_type* const p_Sim_Context, 
-                                       Results_type* const s_Ray_results, 
+                                       Results_type* const p_Ray_results,
                                        int* const N_theta_turning_points) {
 
     int const Max_theta_turning_points = *N_theta_turning_points;
     *N_theta_turning_points = 0;
 
-    double Stokes_Vector[STOKES_PARAM_NUM]{};
+    double Stokes_Vector[e_Stokes_param_num]{};
 
     std::complex<double> Coord_Basis_Pol_vec[4] = { std::complex<double>(0,0),
                                                     std::complex<double>(1,0), 
                                                     std::complex<double>(0,0), 
                                                     std::complex<double>(0,0) };
 
-    double* Logged_ray_path[INTERPOLATION_NUM]{};
-    double step{};
-
     // TODO: Propagate this aswell
     double Optical_Depth{};
 
-    for (int log_index = s_Ray_results->Ray_log_struct.Log_length; log_index > 0; log_index--) {
+    for (int log_index = p_Ray_results->Ray_log_struct.Log_length; log_index > 0; log_index--) {
 
         /* =============== Pick out the ray position / momenta from the Log, at the given log index =============== */
 
-        Logged_ray_path[Current] = &(s_Ray_results->Ray_log_struct.Ray_path_log[ log_index      * e_State_Number]);
-        Logged_ray_path[Next]    = &(s_Ray_results->Ray_log_struct.Ray_path_log[(log_index - 1) * e_State_Number]);
+        double* Logged_ray_path = &(p_Ray_results->Ray_log_struct.Ray_path_log[log_index * e_State_Number]);
 
-        step = Logged_ray_path[Current][e_step];
-
-        *N_theta_turning_points += Check_for_theta_turning_point(Logged_ray_path[Current], Logged_ray_path[Next]);
+        *N_theta_turning_points += Check_for_theta_turning_point(Logged_ray_path, Logged_ray_path - e_State_Number);
         
         if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
             /* ======================================== Parallel transport the polarization vector ======================== */
 
-            Parallel_Transport_Polarization_Vector(Logged_ray_path[Current], p_Sim_Context->p_Spacetime, Coord_Basis_Pol_vec);
+            Parallel_Transport_Polarization_Vector(Logged_ray_path, p_Sim_Context->p_Spacetime, Coord_Basis_Pol_vec);
 
             /* ============================================================================================================ */
 
         }
 
-        /* =============== Boolian flag to check if we are inside a non-negligable part of the emission medium =============== */
+        /* =============== Boolian flags to check if we are inside a non-negligable part of the emission medium =============== */
 
-        bool Inside_disk = p_Sim_Context->p_GOT_Model->get_disk_density(Logged_ray_path[Current]) / p_Sim_Context->p_Init_Conditions->Disk_params.Electron_density_scale > 1e-3
-                        && p_Sim_Context->p_GOT_Model->get_disk_density(Logged_ray_path[Next]) / p_Sim_Context->p_Init_Conditions->Disk_params.Electron_density_scale > 1e-3;
+        Emission_medium_state_type Disk_state{};
+        Emission_medium_state_type Hotspot_state{};
 
-        bool Inside_hotspot = p_Sim_Context->p_GOT_Model->get_hotspot_density(Logged_ray_path[Current], p_Sim_Context) / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale > 1e-3
-                           && p_Sim_Context->p_GOT_Model->get_hotspot_density(Logged_ray_path[Next], p_Sim_Context) / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale > 1e-3;
+        p_Sim_Context->p_Emission_Model->p_Disk_Model->get_density_and_temperature(Logged_ray_path, &Disk_state);
+
+        Hotspot_state.Plasma_Velocity = p_Sim_Context->p_Emission_Model->get_plasma_velocity(Logged_ray_path, p_Sim_Context,
+                                                                                             p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type, 
+                                                                                             p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
+
+        p_Sim_Context->p_Emission_Model->p_Hotspot_Model->get_density_and_temperature(Logged_ray_path, Hotspot_state.Plasma_Velocity, &Hotspot_state);
+
+        bool Inside_disk    = Disk_state.Density / p_Sim_Context->p_Init_Conditions->Disk_params.Electron_density_scale > 1e-3;
+        bool Inside_hotspot = Hotspot_state.Density / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale > 1e-3;
 
         if (Inside_disk || Inside_hotspot) {
 
@@ -568,7 +575,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
-                if (OK == Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path[Current])) {
+                if (OK == Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path)) {
 
                     Map_Polarization_Vector_to_Stokes(std::as_const(inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
 
@@ -577,7 +584,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             /* ================================= Propagate the radiative transfer equations ================================= */
 
-            Transfer_functions_type total_Transfer_functions[INTERPOLATION_NUM]{};
+            Transfer_functions_type total_Transfer_functions{};
 
             /* Loop trough each emission medium (Disk, Hotspot, Jet and so on) and sum their respective transfer functions */
             for (int emission_medium = Disk; emission_medium <= Hotspot; emission_medium++){
@@ -596,29 +603,20 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
                 Transfer_functions_type temp_Transfer_functions{};
 
-                p_Sim_Context->p_GOT_Model->get_radiative_transfer_functions(Logged_ray_path[Current], 
-                                                                             p_Sim_Context,
-                                                                             static_cast<Emission_medium_enums>(emission_medium),
-                                                                             &temp_Transfer_functions);
+                p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(Logged_ray_path,
+                                                                                  p_Sim_Context,
+                                                                                  static_cast<Emission_medium_enums>(emission_medium),
+                                                                                  &temp_Transfer_functions);
 
-                add_4D_vectors(temp_Transfer_functions.Emission_functions,   total_Transfer_functions[Current].Emission_functions,   total_Transfer_functions[Current].Emission_functions);
-                add_4D_vectors(temp_Transfer_functions.Faradey_functions,    total_Transfer_functions[Current].Faradey_functions,    total_Transfer_functions[Current].Faradey_functions);
-                add_4D_vectors(temp_Transfer_functions.Absorbtion_functions, total_Transfer_functions[Current].Absorbtion_functions, total_Transfer_functions[Current].Absorbtion_functions);
-
-                p_Sim_Context->p_GOT_Model->get_radiative_transfer_functions(Logged_ray_path[Next], 
-                                                                             p_Sim_Context,
-                                                                             static_cast<Emission_medium_enums>(emission_medium),
-                                                                             &temp_Transfer_functions);
-
-                add_4D_vectors(temp_Transfer_functions.Emission_functions,   total_Transfer_functions[Next].Emission_functions,   total_Transfer_functions[Next].Emission_functions);
-                add_4D_vectors(temp_Transfer_functions.Faradey_functions,    total_Transfer_functions[Next].Faradey_functions,    total_Transfer_functions[Next].Faradey_functions);
-                add_4D_vectors(temp_Transfer_functions.Absorbtion_functions, total_Transfer_functions[Next].Absorbtion_functions, total_Transfer_functions[Next].Absorbtion_functions);
+                add_4D_vectors(temp_Transfer_functions.Emission_functions,   total_Transfer_functions.Emission_functions,   total_Transfer_functions.Emission_functions);
+                add_4D_vectors(temp_Transfer_functions.Faradey_functions,    total_Transfer_functions.Faradey_functions,    total_Transfer_functions.Faradey_functions);
+                add_4D_vectors(temp_Transfer_functions.Absorbtion_functions, total_Transfer_functions.Absorbtion_functions, total_Transfer_functions.Absorbtion_functions);
 
             }
 
             /* ------------------------------------------------------------------------------------------------------------- */
 
-            Propagate_Stokes_vector(RK4, total_Transfer_functions, step, Stokes_Vector);
+            Propagate_Stokes_vector(Analytic, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
 
             if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization){
 
@@ -632,38 +630,9 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         }
 
-        double Polarized_Intensity = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
-                                          Stokes_Vector[U] * Stokes_Vector[U] +
-                                          Stokes_Vector[V] * Stokes_Vector[V]);
+        log_ray_emission(Stokes_Vector, Optical_Depth, p_Ray_results, log_index);
 
-        double fractional_polarization = Polarized_Intensity / Stokes_Vector[I];
-
-        if (fractional_polarization > 1.001 && Stokes_Vector[I] > 1e-10) {
-
-            //exit(ERROR);
-
-        }
-
-        double Restored_Stokes_Vector[STOKES_PARAM_NUM]{};
-        memcpy(Restored_Stokes_Vector, Stokes_Vector, STOKES_PARAM_NUM * sizeof(double));
-
-        double lambda_0 = p_Sim_Context->p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
-        double Intensity_scale = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS * lambda_0 / C_LIGHT_CGS * p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
-
-
-        for (int stokes_idx = 0; stokes_idx <= STOKES_PARAM_NUM - 1; stokes_idx++) {
-
-            Restored_Stokes_Vector[stokes_idx] *= Intensity_scale;
-
-        }
-
-        log_ray_emission(Restored_Stokes_Vector, Optical_Depth, s_Ray_results, log_index);
-
-        Seperate_Image_into_orders(Max_theta_turning_points, 
-                                   *N_theta_turning_points, 
-                                    p_Sim_Context->p_Init_Conditions, 
-                                    s_Ray_results,
-                                    Restored_Stokes_Vector);
+        Seperate_Image_into_orders(Max_theta_turning_points, *N_theta_turning_points, p_Sim_Context->p_Init_Conditions, p_Ray_results, Stokes_Vector);
          
     }
 
@@ -687,7 +656,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     // Set the Old State Vector to the Initial State Vector
     memcpy(Old_State_Vector, State_Vector, e_State_Number * sizeof(double));
 
-    for (int Image_order = direct; Image_order <= ORDER_NUM - 1; Image_order += 1) {
+    for (int Image_order = e_direct; Image_order <= e_order_number - 1; Image_order += 1) {
 
         p_Ray_results->Photon_Momentum[e_phi][Image_order] = State_Vector[e_p_phi];
         p_Ray_results->Photon_Momentum[e_t][Image_order] = State_Vector[e_p_t];

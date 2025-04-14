@@ -1,5 +1,6 @@
 from csv import reader
-from numpy import average, std, pi
+from copy import deepcopy
+from numpy import average, std, pi, argsort, array
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
@@ -244,10 +245,10 @@ def Compute_quality_metric(Reconstruction_parameters: Reconstruction_parameters_
 
 if __name__ == "__main__":
     
-    EHT_array = "EHT2022"
+    EHT_array = "ngEHT"
 
-    Reconstruction_file_list, Chi2_file_list = Scan_trough_Ehtim_results(Simulation_case = "Ehtim\\Ehtim_Output_Data\\Sim_Paper_2\\run_2\\M87_Wormhole_a_0.5_redshift_0", EHT_array = EHT_array, Frequency = 230)
-    Fit_param_file_list = Scan_trough_VIDA_results(Simulation_case = "VIDA\\VIDA_Output_Data\\Sim_Paper_2\\run_2\\M87_Wormhole_a_0.5_redshift_0", EHT_array = EHT_array, Frequency = 230)
+    Reconstruction_file_list, Chi2_file_list = Scan_trough_Ehtim_results(Simulation_case = "Ehtim\\Ehtim_Output_Data\\Sim_Paper_2\\run_2\\M87_Wormhole_a_0_redshift_2", EHT_array = EHT_array, Frequency = 230)
+    Fit_param_file_list = Scan_trough_VIDA_results(Simulation_case = "VIDA\\VIDA_Output_Data\\Sim_Paper_2\\run_2\\M87_Wormhole_a_0_redshift_2", EHT_array = EHT_array, Frequency = 230)
 
     Reconstruction_parameters, Template_parameters = Get_reconstruction_parameters(Reconstruction_file_list, Chi2_file_list, Fit_param_file_list)
 
@@ -255,6 +256,17 @@ if __name__ == "__main__":
     Std_reconstruction_parameters, Std_template_parameters = Process_parameters(Reconstruction_parameters = Reconstruction_parameters, Template_parameters = Template_parameters, func = std)
 
     Quality_metric = Compute_quality_metric(Reconstruction_parameters, Avg_reconstruction_parameters, Std_reconstruction_parameters, Template_parameters, Avg_template_parameters, Std_template_parameters)
+
+    Sim_names = deepcopy(Reconstruction_parameters.Simulation_name)
+
+    sorted_idx = argsort(Quality_metric) 
+    
+    Quality_metric = array(Quality_metric)[sorted_idx]
+    Sim_names = array(Sim_names)[sorted_idx]
+    
+    for Q_metric, Sim_name in zip(Quality_metric, Sim_names):
+        print(Q_metric, Sim_name)
+    
 
     params = {"ytick.color" : "black",
                 "xtick.color" : "black",

@@ -105,4 +105,14 @@ void convert_cartesian_to_spherical(double* Cartesian_Coords, double* Spherical_
  */
 void add_4D_vectors(const double* const vec_1, const double* const vec_2, double* const Result);
 
+/*! @brief Raises a base to an integer power.
+ *	Raaises the "base" variable to the integer power "exponent". 
+ *  NOTE: The "exponent" variable is assumed positive.
+ *
+ *  @param [in] base - The number being exponentiated.
+ *  @param [in] exponent - The power to which "base" is being raised.
+ *  @return Result - base^exponent.
+ */
+double int_power(const double base, const int exponent);
+
 /** @} */ // End of the General_Math_Support_Functions group

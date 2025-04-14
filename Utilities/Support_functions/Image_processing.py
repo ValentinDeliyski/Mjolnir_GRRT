@@ -41,7 +41,7 @@ def generate_general_gaussian_template(N_pixels: int, VIDA_parser: VIDA_params_P
     
     return template_image
 
-def get_template_pixel_mask(VIDA_parser: VIDA_params_Parser, FOV, N_pixels, std_scale: float = 1):
+def get_template_pixel_mask(VIDA_parser: VIDA_params_Parser, FOV, N_pixels, std_scale: float = 1) -> tuple[array, array]:
 
     elipse_x_offset = VIDA_parser.x0 + FOV / 2
     elipse_y_offset = VIDA_parser.y0 + FOV / 2
@@ -79,9 +79,12 @@ def get_template_pixel_mask(VIDA_parser: VIDA_params_Parser, FOV, N_pixels, std_
             
     return ring_mask, dark_spot_mask
 
-def get_brigness_depression_ratio(ring_mask, dark_spot_mask, Ehtim_intensity):
-
-    return np.min(Ehtim_intensity[dark_spot_mask != 0]) / np.mean(Ehtim_intensity[ring_mask != 0])
+def get_brigness_depression_ratio(ring_mask, dark_spot_mask, Ehtim_intensity) -> float:
+    
+    try:
+        return np.min(Ehtim_intensity[dark_spot_mask != 0]) / np.mean(Ehtim_intensity[ring_mask != 0])
+    except:
+        return 0.0
 
 def get_template_slices(N_pixels: int, template: np.array, VIDA_parser: VIDA_params_Parser, FOV: float) -> tuple:
 

@@ -89,11 +89,11 @@ enum XYZ_enums: std::underlying_type_t <std::byte> {
 
 enum Image_Orders: std::underlying_type_t <std::byte> {
 
-    direct    = 0,
-    first     = 1,
-    second    = 2,
-    third     = 3,
-    ORDER_NUM = 4,
+    e_direct       = 0,
+    e_first        = 1,
+    e_second       = 2,
+    e_third        = 3,
+    e_order_number = 4,
 
 };
 
@@ -111,21 +111,13 @@ enum Orbit_select: std::underlying_type_t <std::byte> {
 
 };
 
-enum Emission_Interpolation_points: std::underlying_type_t <std::byte> {
-
-    Current  = 0,
-    Next     = 1,
-    INTERPOLATION_NUM = 2,
-
-};
-
 enum Stokes_parameters: std::underlying_type_t <std::byte> { 
 
     I = 0,
     Q = 1,
     U = 2,
     V = 3,
-    STOKES_PARAM_NUM = 4
+    e_Stokes_param_num = 4
 
 };
 
@@ -133,7 +125,6 @@ enum Radiative_Transfer_Integrator: std::underlying_type_t <std::byte> {
 
     Analytic = 0,
     Implicit_Trapezoid = 1,
-    RK4 = 2
 
 };
 
@@ -148,3 +139,4 @@ enum Metric_Parameter_Selector: std::underlying_type_t <std::byte> {
     BH_w_DM_Halo_M_Halo = 6
 
 };
+
