@@ -1,9 +1,11 @@
-from numpy import array, concatenate, tile, zeros, linspace, meshgrid, einsum, reshape, random
+from numpy import array, concatenate, tile, zeros, linspace, meshgrid, einsum, reshape, random, flip, argsort, concatenate
 from numpy.linalg import inv
 
 class Surface_Cubic_B_spline():
     
     def __init__(self, x_grid: array, y_grid: array, z_grid: array, X_patch_number: int = 5, Y_patch_number: int = 5) -> None:
+
+        """ === The source for this script is https://hal.science/hal-03017566/document === """
 
         """ ==== Specify the number of patches in each coordinate direction ==== """
         self.X_patch_number = X_patch_number
@@ -126,15 +128,23 @@ class Surface_Cubic_B_spline():
         
         return Control_point_matrix
 
-    def evaluate_spline(self, Patch_discretization: int = 15) -> tuple[list, list, list]:
-
-        X_surface = []
-        Y_surface = []
-        Z_surface = []
+    def evaluate_spline(self, Patch_discretization: int = 15) -> tuple[array, array, array]:
+        
+        X_surface = array([[]])
+        Y_surface = array([[]])
+        Z_surface = array([[]])
         
         U, V = meshgrid(linspace(0, 1, num = Patch_discretization), linspace(0, 1, num = Patch_discretization))
 
         for V_idx in range(0, self.Y_patch_number - 1):
+            
+            Partial_X_grid = []
+            Partial_Y_grid = []
+            Partial_Z_grid = []
+            
+            Patch_X_coords = []
+            Patch_Y_coords = []
+            Patch_Z_coords = []
             
             for U_idx in range (0, self.X_patch_number - 1):
                 
@@ -157,14 +167,36 @@ class Surface_Cubic_B_spline():
                 """ Evaluate the actual spline -> this uses the Knot vector and basais polynomials to compte the (x, y, z) points of the parametric surface """
 
                 Control_point_matrix = self.get_control_point_matrix(Control_vector = self.Control_vector_X, U_idx = U_idx, V_idx = V_idx)
-                X_surface.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
+                Patch_X_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
                     
                 Control_point_matrix = self.get_control_point_matrix(Control_vector = self.Control_vector_Y, U_idx = U_idx, V_idx = V_idx)
-                Y_surface.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
+                Patch_Y_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
 
                 Control_point_matrix = self.get_control_point_matrix(Control_vector = self.Control_vector_Z, U_idx = U_idx, V_idx = V_idx)
-                Z_surface.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
+                Patch_Z_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
  
+            for Patch_X_coords, Patch_Y_coords, Patch_Z_coords in zip(Patch_X_coords, Patch_Y_coords, Patch_Z_coords):
+                
+                try:
+                    Partial_X_grid = concatenate((Partial_X_grid, Patch_X_coords), axis = 1)
+                    Partial_Y_grid = concatenate((Partial_Y_grid, Patch_Y_coords), axis = 1)
+                    Partial_Z_grid = concatenate((Partial_Z_grid, Patch_Z_coords), axis = 1)
+                    
+                except:
+                    Partial_X_grid = Patch_X_coords
+                    Partial_Y_grid = Patch_Y_coords
+                    Partial_Z_grid = Patch_Z_coords
+                    
+            try:
+                X_surface = concatenate((X_surface, Partial_X_grid), axis = 0)
+                Y_surface = concatenate((Y_surface, Partial_Y_grid), axis = 0)
+                Z_surface = concatenate((Z_surface, Partial_Z_grid), axis = 0)
+                
+            except:
+                X_surface = Partial_X_grid
+                Y_surface = Partial_Y_grid
+                Z_surface = Partial_Z_grid
+
         return X_surface, Y_surface, Z_surface
 
 if __name__ == "__main__":  
@@ -186,18 +218,17 @@ if __name__ == "__main__":
 
     Spline_class_instance = Surface_Cubic_B_spline(x_grid = x_grid, y_grid = y_grid, z_grid = z)
 
-    X_surface, Y_surface, Z_surface = Spline_class_instance.evaluate_spline()
-
     import matplotlib.pyplot as plt
 
     """ === Plot the resulting parametric surface === """
     Fig = plt.figure(figsize = (8, 8))
     Surface_subplot = Fig.add_subplot(111, projection = '3d')
     Surface_subplot.scatter(x_grid, y_grid, z, color = 'black')
+  
+    X_surface, Y_surface, Z_surface = Spline_class_instance.evaluate_spline(Patch_discretization = 5)
 
-    for X_patch, Y_patch, Z_patch in zip(X_surface, Y_surface, Z_surface):
-        Surface_subplot.plot_surface(X_patch, Y_patch, Z_patch, color = 'orange', alpha = 0.9) 
-                        
+    Surface_subplot.plot_surface(X_surface.T, Y_surface.T, Z_surface.T, color = 'orange', alpha = 0.5) 
+               
     Surface_subplot.set_xlabel('x')
     Surface_subplot.set_ylabel('y')
     Surface_subplot.set_zlabel('z')
