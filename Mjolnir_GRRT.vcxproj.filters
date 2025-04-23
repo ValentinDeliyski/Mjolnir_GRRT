@@ -7,7 +7,7 @@
     <ClCompile Include="src\Emission_fit_functions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Disk_Models.cpp">
+    <ClCompile Include="src\Emission_Models.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\glad.c">
@@ -66,6 +66,15 @@
     </ClCompile>
     <ClCompile Include="src\Spacetimes\Regular_Black_Hole.cpp">
       <Filter>Source Files\Spacetimes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Hotspot_Models.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Disk_Models.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Novikov_Thorne_disk_model.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -888,7 +897,7 @@
     <ClInclude Include="Libraries\include\Enumerations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\Disk_Models.h">
+    <ClInclude Include="Libraries\include\Emission_Models.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\General_GR_functions.h">
@@ -922,6 +931,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\tinyxml2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Hotspot_Models.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Disk_Models.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Novikov_Thorne_model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

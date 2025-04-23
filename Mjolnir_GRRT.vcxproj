@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\Console_printing.h" />
+    <ClInclude Include="Libraries\include\Disk_Models.h" />
     <ClInclude Include="Libraries\include\glad\glad.h" />
     <ClInclude Include="Libraries\include\GLFW\glfw3.h" />
     <ClInclude Include="Libraries\include\GLFW\glfw3native.h" />
@@ -289,13 +290,15 @@
     <ClInclude Include="Libraries\include\gsl\gsl_version.h" />
     <ClInclude Include="Libraries\include\gsl\gsl_wavelet.h" />
     <ClInclude Include="Libraries\include\gsl\gsl_wavelet2d.h" />
+    <ClInclude Include="Libraries\include\Hotspot_Models.h" />
     <ClInclude Include="Libraries\include\Input_parser.h" />
     <ClInclude Include="Libraries\include\KHR\khrplatform.h" />
+    <ClInclude Include="Libraries\include\Novikov_Thorne_model.h" />
     <ClInclude Include="Libraries\include\Radiative_Transfer.h" />
     <ClInclude Include="Libraries\include\Spacetimes.h" />
     <ClInclude Include="Libraries\include\Structs.h" />
     <ClInclude Include="Libraries\include\Constants.h" />
-    <ClInclude Include="Libraries\include\Disk_Models.h" />
+    <ClInclude Include="Libraries\include\Emission_Models.h" />
     <ClInclude Include="Libraries\include\Enumerations.h" />
     <ClInclude Include="Libraries\include\General_GR_functions.h" />
     <ClInclude Include="Libraries\include\General_math_functions.h" />
@@ -307,14 +310,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Console_printing.cpp" />
+    <ClCompile Include="src\Emission_Models.cpp" />
     <ClCompile Include="src\Disk_Models.cpp" />
     <ClCompile Include="src\Emission_fit_functions.cpp" />
     <ClCompile Include="src\General_GR_functions.cpp" />
     <ClCompile Include="src\General_math_functions.cpp" />
     <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\Hotspot_Models.cpp" />
     <ClCompile Include="src\Input_parser.cpp" />
     <ClCompile Include="src\IO_files.cpp" />
     <ClCompile Include="src\Lensing.cpp" />
+    <ClCompile Include="src\Novikov_Thorne_disk_model.cpp" />
     <ClCompile Include="src\Radiative_Transfer.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Rendering_Engine.cpp" />

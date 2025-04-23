@@ -1,4 +1,4 @@
-from numpy import array, concatenate, tile, zeros, linspace, meshgrid, einsum, reshape, random, flip, argsort, concatenate
+from numpy import array, concatenate, tile, zeros, linspace, meshgrid, einsum, reshape, random, concatenate
 from numpy.linalg import inv
 
 class Surface_Cubic_B_spline():
@@ -223,12 +223,51 @@ if __name__ == "__main__":
     """ === Plot the resulting parametric surface === """
     Fig = plt.figure(figsize = (8, 8))
     Surface_subplot = Fig.add_subplot(111, projection = '3d')
-    Surface_subplot.scatter(x_grid, y_grid, z, color = 'black')
-  
+    # Surface_subplot.scatter(x_grid, y_grid, z, color = 'black')
+    
+    x_test = 0.1232
+    y_test = 52.1485
+    
+    import numpy as np
+    
+    x_bin_idx = np.digitize(x_test,x_span) - 1
+    y_bin_idx = np.digitize(y_test,y_span) - 1
+     
+    V = (y_test - y_span[y_bin_idx]) / (y_span[y_bin_idx + 1] - y_span[y_bin_idx])
+    
+    V1 = (1 - V)**3
+    V2 =  3 * V**3 - 6 * V**2 + 4
+    V3 = -3 * V**3 + 3 * V**2 + 3 * V + 1
+    V4 =  V**3
+                
+    Basis_V_vector = array([V1, V2, V3, V4])
+    
+    U = (x_test - x_span[x_bin_idx]) / (x_span[y_bin_idx + 1] - x_span[y_bin_idx])
+    
+    U1 = (1 - U)**3    
+    U2 = 3 * U**3 - 6 * U**2 + 4
+    U3 = -3 * U**3 + 3 * U**2 + 3 * U + 1
+    U4 = U**3
+                
+    Basis_U_vector = array([U1, U2, U3, U4])
+    
+    Control_point_matrix = Spline_class_instance.get_control_point_matrix(Spline_class_instance.Control_vector_X, y_bin_idx, x_bin_idx)
+    x_interp = np.dot(Basis_V_vector, np.dot(Control_point_matrix, Basis_U_vector)) / 36
+    
+    Control_point_matrix = Spline_class_instance.get_control_point_matrix(Spline_class_instance.Control_vector_Y, y_bin_idx, x_bin_idx)
+    y_interp = np.dot(Basis_V_vector, np.dot(Control_point_matrix, Basis_U_vector)) / 36
+    
+    Control_point_matrix = Spline_class_instance.get_control_point_matrix(Spline_class_instance.Control_vector_Z, y_bin_idx, x_bin_idx)
+    z_interp = np.dot(Basis_V_vector, np.dot(Control_point_matrix, Basis_U_vector)) / 36
+    
+    print(x_interp, y_interp, z_interp)
+    
     X_surface, Y_surface, Z_surface = Spline_class_instance.evaluate_spline(Patch_discretization = 5)
 
-    Surface_subplot.plot_surface(X_surface.T, Y_surface.T, Z_surface.T, color = 'orange', alpha = 0.5) 
-               
+    Surface_subplot.plot_surface(X_surface, Y_surface, Z_surface, color = 'orange', alpha = 0.5) 
+    
+    Surface_subplot.scatter(x_interp, y_interp, z_interp, color = 'black')
+
     Surface_subplot.set_xlabel('x')
     Surface_subplot.set_ylabel('y')
     Surface_subplot.set_zlabel('z')

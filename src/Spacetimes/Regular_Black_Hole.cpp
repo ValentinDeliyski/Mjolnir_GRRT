@@ -148,7 +148,7 @@ int RBH_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initi
     return OK;
 }
 
-int RBH_class::get_EOM(double State_vector[], double Derivatives[]) {
+void RBH_class::get_EOM(double State_vector[], double Derivatives[]) const{
 
     double r = State_vector[e_r];
     double rho = sqrt(r * r + this->Parameter * this->Parameter);
@@ -173,7 +173,6 @@ int RBH_class::get_EOM(double State_vector[], double Derivatives[]) {
 
     *(Derivatives + e_p_r) = r_term_1 + r_term_2;
 
-    return 0;
 }
 
 bool RBH_class::terminate_integration(double State_vector[], double Derivatives[]) {
@@ -199,18 +198,5 @@ bool RBH_class::load_parameters(Metric_parameters_type Metric_Parameters) {
     }
 
     return false;
-
-}
-
-void RBH_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
-
-
-    if (RBH_Param != Parameter) {
-
-        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'RBH_Param'! Defaulting to it..." << "\n";
-
-    }
-
-    this->Parameter = Param_value;
 
 }

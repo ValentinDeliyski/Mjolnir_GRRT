@@ -135,7 +135,7 @@ void static Seperate_Image_into_orders(int const Max_theta_turning_points,
 }
 
 void static Propagate_Stokes_vector(Radiative_Transfer_Integrator Integrator,
-                                    const Transfer_functions_type const Transfer_functions,
+                                    const Transfer_functions_type Transfer_functions,
                                     double const step, 
                                     double* const Intensity) {
 
@@ -217,7 +217,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
     }
 
-    double* Obs_velocity_contravariant = p_Sim_Context->p_Observer->get_obs_velocity();
+    const double* Obs_velocity_contravariant = p_Sim_Context->p_Observer->get_obs_velocity();
 
     double Total_B_field_contravariant[4]{};
 

@@ -195,7 +195,7 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_initial_conditions_from_file(Initia
 
 }
 
-int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double State_vector[], double Derivatives[]) {
+void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double State_vector[], double Derivatives[]) const {
 
     double& r = State_vector[e_r];
 
@@ -207,7 +207,7 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double State_vector[], double D
     double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
-    double& M  = this->Mass;
+    const double& M = this->Mass;
     double r2 = r * r;
 
     double A_0 = this->Halo_Mass / this->Compactness;
@@ -235,8 +235,6 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double State_vector[], double D
 
     *(Derivatives + e_p_r) = r_term_1 + r_term_2;
 
-    return OK;
-
 }
 
 bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(double State_vector[], double Derivatives[]) {
@@ -261,31 +259,5 @@ bool Black_Hole_w_Dark_Matter_Halo_class::load_parameters(Metric_parameters_type
     }
 
     return false;
-
-}
-
-void Black_Hole_w_Dark_Matter_Halo_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
-
-
-    if (BH_w_DM_Halo_Compactness != Parameter && BH_w_DM_Halo_M_Halo != Parameter) {
-
-        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'BH_w_Dthis->Halo_Mass_Compactness' or 'BH_w_Dthis->Halo_Mass_this->Halo_Mass'! Defaulting to 'BH_w_Dthis->Halo_Mass_this->Halo_Mass'..." << "\n";
-
-        this->Halo_Mass = Param_value;
-
-        return;
-
-    }
-
-    if (BH_w_DM_Halo_M_Halo == Parameter) {
-
-        this->Halo_Mass = Param_value;
-
-    }
-    else {
-
-        this->Compactness = Param_value;
-
-    }
 
 }

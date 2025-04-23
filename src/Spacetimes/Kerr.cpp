@@ -186,7 +186,7 @@ int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Init
     return OK;
 }
 
-int Kerr_class::get_EOM(double State_vector[], double Derivatives[]) {
+void Kerr_class::get_EOM(double State_vector[], double Derivatives[]) const {
 
     double& r = State_vector[e_r];
     double r2 = r * r;
@@ -210,9 +210,9 @@ int Kerr_class::get_EOM(double State_vector[], double Derivatives[]) {
     double& p_t     = State_vector[e_p_t];
 
     *(Derivatives + e_t)     = -1 / delta * (r2 + this->Spin_Param * this->Spin_Param * (1 + 2 * r / rho2 * sin1)) * p_t;
-    *(Derivatives + e_r    ) = delta / rho2 * p_r;
+    *(Derivatives + e_r)     = delta / rho2 * p_r;
     *(Derivatives + e_theta) = 1.0 / rho2 * p_theta;
-    *(Derivatives + e_phi  ) = 1.0 / (delta * rho2) * (P * this->Spin_Param + delta * (J / sin2 - this->Spin_Param));
+    *(Derivatives + e_phi)   = 1.0 / (delta * rho2) * (P * this->Spin_Param + delta * (J / sin2 - this->Spin_Param));
     *(Derivatives + e_p_phi) = 0.0;
     *(Derivatives + e_p_t)   = 0.0;
 
@@ -226,8 +226,6 @@ int Kerr_class::get_EOM(double State_vector[], double Derivatives[]) {
                     - F * (rho2 * (r - this->Mass) + r * delta) / (delta * delta * rho2 * rho2);
 
     *(Derivatives + e_p_r) = r_term_1 + r_term_2;
-
-    return OK;
 
 }
 
@@ -256,18 +254,4 @@ bool Kerr_class::load_parameters(Metric_parameters_type Metric_Parameters) {
     return false;
 
 }
-
-void Kerr_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
-
-
-    if (Spin!= Parameter) {
-
-        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'this->Spin_Param'! Defaulting to it..." << "\n";
-
-    }
-
-    this->Spin_Param = Param_value;
-
-}
-
 

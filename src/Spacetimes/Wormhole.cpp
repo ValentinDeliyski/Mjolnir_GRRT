@@ -175,7 +175,7 @@ int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_
     return 0;
 }
 
-int Wormhole_class::get_EOM(double State_Vector[], double Derivatives[]) {
+void Wormhole_class::get_EOM(double State_Vector[], double Derivatives[]) const{
 
     double sqrt_r2 = sqrt(State_Vector[e_r] * State_Vector[e_r] + this->R_Throat * this->R_Throat);
     double d_ell_r = State_Vector[e_r] / sqrt_r2;
@@ -208,7 +208,6 @@ int Wormhole_class::get_EOM(double State_Vector[], double Derivatives[]) {
 
     *(Derivatives + e_p_r) = term_1 + term_2 + term_3;
 
-    return OK;
 }
 
 bool Wormhole_class::terminate_integration(double State_vector[], double Derivatives[]) {
@@ -242,31 +241,5 @@ bool Wormhole_class::load_parameters(Metric_parameters_type Metric_Parameters) {
     }
 
     return false;
-
-}
-
-void Wormhole_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
-
-
-    if (Spin != Parameter && WH_Redshift != Parameter) {
-
-        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'this->Spin_Param' or 'this->Redshift_Param'! Defaulting to 'this->Redshift_Param'..." << "\n";
-
-        this->Redshift_Param = Param_value;
-
-        return;
-
-    }
-
-    if (Spin == Parameter) {
-
-        this->Spin_Param = Param_value;
-
-    }
-    else {
-
-        this->Redshift_Param = Param_value;
-
-    }
 
 }

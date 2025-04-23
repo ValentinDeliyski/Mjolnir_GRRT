@@ -190,7 +190,7 @@ int Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditions_type
 
 }
 
-int Gauss_Bonnet_class::get_EOM(double State_vector[], double Derivatives[]){
+void Gauss_Bonnet_class::get_EOM(double State_vector[], double Derivatives[]) const{
 
     double& r = State_vector[e_r];
     double& J = State_vector[e_p_phi];
@@ -217,9 +217,6 @@ int Gauss_Bonnet_class::get_EOM(double State_vector[], double Derivatives[]){
     double r_term_2 = 1.0 / r / r / r * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
     *(Derivatives + e_p_r) = r_term_1 + r_term_2;
-
-    return OK;
-
 }
 
 bool Gauss_Bonnet_class::terminate_integration(double State_vector[], double Derivatives[]) {
@@ -253,18 +250,5 @@ bool Gauss_Bonnet_class::load_parameters(Metric_parameters_type Metric_Parameter
     }
 
     return false;
-
-}
-
-void Gauss_Bonnet_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
-
-
-    if (GB_Gamma != Parameter) {
-
-        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'GB_Gamma'! Defaulting to it..." << "\n";
-
-    }
-
-    this->Gamma = Param_value;
 
 }

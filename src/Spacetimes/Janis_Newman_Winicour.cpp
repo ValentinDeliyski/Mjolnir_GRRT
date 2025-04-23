@@ -189,8 +189,7 @@ int JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initi
 
 }
 
-int JNW_class::get_EOM(double State_vector[], double Derivatives[])
-{
+void JNW_class::get_EOM(double State_vector[], double Derivatives[]) const {
 
     double& r = State_vector[e_r];
     double& J = State_vector[e_p_phi];
@@ -220,8 +219,6 @@ int JNW_class::get_EOM(double State_vector[], double Derivatives[])
                     * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
     *(Derivatives + e_p_r) = r_term_1 + r_term_2;
-
-    return OK;
 
 }
 
@@ -259,15 +256,3 @@ bool JNW_class::load_parameters(Metric_parameters_type Metric_Parameters) {
 
 }
 
-void JNW_class::update_parameters(double Param_value, Metric_Parameter_Selector Parameter) {
-
-
-    if (JNW_Gamma != Parameter) {
-
-        std::cout << "Wrong Parameter enum for sim mode 2! -> Can only be 'JNW_Gamma'! Defaulting to it..." << "\n";
-
-    }
-
-    this->Gamma = Param_value;
-    
-}
