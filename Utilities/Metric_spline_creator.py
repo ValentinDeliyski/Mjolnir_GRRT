@@ -1,4 +1,4 @@
-from numpy import array, flip, append, pi, exp, sin, sqrt, log
+from numpy import array, flip, append, pi, exp, sin, sqrt, log, roots
 
 from Support_functions.Surface_Cubic_B_spline import Surface_Cubic_B_spline
 import matplotlib.pyplot as plt
@@ -16,7 +16,7 @@ class Numerical_metric_parser_class():
         
         """ ====================== Initialize the arrays that hold the metric functions ====================== """
         
-        GRID_R_SIZE = 250
+        GRID_R_SIZE = 249
         GRID_THETA_SIZE = 30
         
         x_coord = []
@@ -35,6 +35,10 @@ class Numerical_metric_parser_class():
                 
                 """ Different theta values on the grid are seperated by a "\n" character - parsing it results in an empty list. """
                 if len(Line_contents) == 0:
+                    continue
+                
+                """ Skip parsing the compactified radial coordiante grid point at the horizon (a.e. at x = 0) -> its g_rr diverges there so I can't use it. """
+                if float(Line_contents[0]) == 0:
                     continue
                 
                 """ Skip parsing the compactified radial coordiante grid point at infintiy (a.e. at x = 1) -> its not a useful value. """
@@ -145,8 +149,8 @@ class Numerical_metric_parser_class():
         """ =============================== The radial grid knot points and control vector =============================== """
         """ All the coorinate control vectors SHOULD be identical, so I just intdex the one for the first provided metric component """
         
-        X_coordinate_subelement = ET.SubElement(Grid_subelement, "Compactified_radial_coordinate_grid", units = "[-]", Grid_size = "{}".format(len(X_knot_points[0])))
-        X_grid_knots_subelement = ET.SubElement(X_coordinate_subelement, "Grid_knots")
+        X_coordinate_subelement = ET.SubElement(Grid_subelement, "Compactified_radial_coordinate_grid", units = "[-]")
+        X_grid_knots_subelement = ET.SubElement(X_coordinate_subelement, "Grid_knots", Grid_size = "{}".format(len(X_knot_points[0])))
         for Grid_point_idx, X_point in enumerate(X_knot_points[0]):
             ET.SubElement(X_grid_knots_subelement, "Grid_point_idx_{}".format(Grid_point_idx)).text = "{}".format(X_point)
             
@@ -157,8 +161,8 @@ class Numerical_metric_parser_class():
         """ =============================== The theta grid knot points and control vector =============================== """
         """ All the coorinate control vectors SHOULD be identical, so I just intdex the one for the first provided metric component """
         
-        Theta_coordinate_subelement = ET.SubElement(Grid_subelement, "Theta_coordinate_grid", units = "[Rad]", Grid_size = "{}".format(len(Theta_knot_points.T[0])))
-        Theta_grid_knots_subelement = ET.SubElement(Theta_coordinate_subelement, "Grid_knots")
+        Theta_coordinate_subelement = ET.SubElement(Grid_subelement, "Theta_coordinate_grid", units = "[Rad]")
+        Theta_grid_knots_subelement = ET.SubElement(Theta_coordinate_subelement, "Grid_knots", Grid_size = "{}".format(len(Theta_knot_points.T[0])))
         for Knot_idx, Theta_point in enumerate(Theta_knot_points.T[0]):
             ET.SubElement(Theta_grid_knots_subelement, "Grid_point_idx_{}".format(Knot_idx)).text = "{}".format(Theta_point)
                
@@ -204,14 +208,14 @@ if __name__ == "__main__":
     x_coord, _, r_BL_coord, theta_coord, _, _, _, _ = Numerical_metric_parser.get_parsed_results()
     g_tt, g_tphi, g_rr, g_thth, g_phiphi = Numerical_metric_parser.get_metric_functions()
     
-    x_coord     = x_coord.flatten()[g_rr.flatten() != float("inf")]
-    theta_coord = theta_coord.flatten()[g_rr.flatten() != float("inf")]
+    # x_coord     = x_coord.flatten()[g_rr.flatten() != float("inf")]
+    # theta_coord = theta_coord.flatten()[g_rr.flatten() != float("inf")]
     
-    g_tt     = g_tt.flatten()[g_rr.flatten() != float("inf")]
-    g_tphi   = g_tphi.flatten()[g_rr.flatten() != float("inf")]
-    g_thth   = g_thth.flatten()[g_rr.flatten() != float("inf")]
-    g_phiphi = g_phiphi.flatten()[g_rr.flatten() != float("inf")]
-    g_rr     = g_rr.flatten()[g_rr.flatten() != float("inf")]
+    # g_tt     = g_tt.flatten()[g_rr.flatten() != float("inf")]
+    # g_tphi   = g_tphi.flatten()[g_rr.flatten() != float("inf")]
+    # g_thth   = g_thth.flatten()[g_rr.flatten() != float("inf")]
+    # g_phiphi = g_phiphi.flatten()[g_rr.flatten() != float("inf")]
+    # g_rr     = g_rr.flatten()[g_rr.flatten() != float("inf")]
     
     g_tt_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = g_tt, X_patch_number = 60, Y_patch_number = 249)
     g_rr_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = g_rr, X_patch_number = 60, Y_patch_number = 249)
@@ -241,4 +245,4 @@ if __name__ == "__main__":
     # _, ax1 = plt.subplots(ncols = 1, nrows = 1, subplot_kw = dict(projection = '3d'))
     # ax1.plot_surface(Radial_surface, Theta_surface, Z_surface, color = 'orange') 
     
-    # Numerical_metric_parser.plot_metric_functions("x", radial_coord_cutoff = 10)
+    Numerical_metric_parser.plot_metric_functions("x", radial_coord_cutoff = 10)

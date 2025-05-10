@@ -671,6 +671,194 @@ Return_Values static parse_NT_params(tinyxml2::XMLElement* NT_element, NT_parame
 
 }
 
+Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML, Metric_parameters_type* Metric_params) {
+
+    tinyxml2::XMLElement* g_tt_control_vector;
+    tinyxml2::XMLElement* g_rr_control_vector;
+    tinyxml2::XMLElement* g_thth_control_vector;
+    tinyxml2::XMLElement* g_phiphi_control_vector;
+    tinyxml2::XMLElement* g_tphi_control_vector;
+
+    tinyxml2::XMLElement* compactified_radial_grid;
+    tinyxml2::XMLElement* compactified_radial_grid_control_vector;
+    tinyxml2::XMLElement* theta_grid;
+    tinyxml2::XMLElement* theta_grid_control_vector;
+
+    tinyxml2::XMLElement* temp_param_var;
+
+    // -------------------- The g_tt control vector
+
+    g_tt_control_vector = Spline_XML->FirstChildElement("g_tt")->FirstChildElement("Control_vector");
+    if (g_tt_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_tt control vector node!" << "\n"; return ERROR; }
+
+    /* Parse the length of the controll vector and allocate an array to hold it. */
+    int Control_vector_size = std::stoi(g_tt_control_vector->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.g_tt_control_vector = new double[Control_vector_size];
+    Metric_params->Numerical_metric_params.Control_vector_size = Control_vector_size;
+
+
+    for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
+
+        temp_param_var = g_tt_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_tt control vector component at idx {}! \n", idx) ; return ERROR; }
+
+        Metric_params->Numerical_metric_params.g_tt_control_vector[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The g_rr control vector
+
+    g_rr_control_vector = Spline_XML->FirstChildElement("g_rr")->FirstChildElement("Control_vector");
+    if (g_rr_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_rr control vector node!" << "\n"; return ERROR; }
+
+    /* Parse the length of the controll vector and allocate an array to hold it. */
+    Control_vector_size = std::stoi(g_rr_control_vector->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.g_rr_control_vector = new double[Control_vector_size];
+
+    for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
+
+        temp_param_var = g_rr_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_rr control vector component at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.g_rr_control_vector[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The g_thth control vector
+
+    g_thth_control_vector = Spline_XML->FirstChildElement("g_thth")->FirstChildElement("Control_vector");
+    if (g_thth_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_thth control vector node!" << "\n"; return ERROR; }
+
+    /* Parse the length of the controll vector and allocate an array to hold it. */
+    Control_vector_size = std::stoi(g_thth_control_vector->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.g_thth_control_vector = new double[Control_vector_size];
+
+    for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
+
+        temp_param_var = g_thth_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_thth control vector component at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.g_thth_control_vector[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The g_phiphi control vector
+
+    g_phiphi_control_vector = Spline_XML->FirstChildElement("g_phiphi")->FirstChildElement("Control_vector");
+    if (g_phiphi_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_phiphi control vector node!" << "\n"; return ERROR; }
+
+    /* Parse the length of the controll vector and allocate an array to hold it. */
+    Control_vector_size = std::stoi(g_phiphi_control_vector->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.g_phiphi_control_vector = new double[Control_vector_size];
+
+    for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
+
+        temp_param_var = g_phiphi_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_phiphi control vector component at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.g_phiphi_control_vector[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The g_tphi control vector
+
+    g_tphi_control_vector = Spline_XML->FirstChildElement("g_tphi")->FirstChildElement("Control_vector");
+    if (g_tphi_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_tphi control vector node!" << "\n"; return ERROR; }
+
+    /* Parse the length of the controll vector and allocate an array to hold it. */
+    Control_vector_size = std::stoi(g_tphi_control_vector->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.g_tphi_control_vector = new double[Control_vector_size];
+
+    for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
+
+        temp_param_var = g_tphi_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_tphi control vector component at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.g_tphi_control_vector[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The compactified radial coordinate grid 
+
+    compactified_radial_grid = Spline_XML->FirstChildElement("Coordinate_grid")->FirstChildElement("Compactified_radial_coordinate_grid")->FirstChildElement("Grid_knots");
+    if (compactified_radial_grid == nullptr) { std::cout << "Failed to parse the compactified radial coordinate grid knots node!" << "\n"; return ERROR; }
+
+    /* Parse the length of the controll vector and allocate an array to hold it. */
+    double Grid_size = std::stoi(compactified_radial_grid->Attribute("Grid_size"));
+    Metric_params->Numerical_metric_params.Compactified_radial_grid = new double[Grid_size];
+    Metric_params->Numerical_metric_params.Radial_grid_size = Grid_size;
+
+
+    for (int idx = 0; idx <= Grid_size - 1; idx++) {
+
+        temp_param_var = compactified_radial_grid->FirstChildElement(static_cast<const char*>(("Grid_point_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the compactified radial coordinate knot component at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.Compactified_radial_grid[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The compactified radial coordinate control vector - not strictly needed, 
+    //                      but I use it as a sanity check to make sure the spline does not break somewhere 
+
+    compactified_radial_grid_control_vector = Spline_XML->FirstChildElement("Coordinate_grid")->FirstChildElement("Compactified_radial_coordinate_grid")->FirstChildElement("Control_vector");
+    if (compactified_radial_grid_control_vector == nullptr) { std::cout << "Failed to parse the compactified radial coordinate grid knots node!" << "\n"; return ERROR; }
+
+    /* Parse the length of the controll vector and allocate an array to hold it. */
+    Control_vector_size = std::stoi(compactified_radial_grid_control_vector->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.Compactified_radial_grid_control_vector = new double[Control_vector_size];
+
+    for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
+
+        temp_param_var = compactified_radial_grid_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the compactified radial coordinate control vector component at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.Compactified_radial_grid_control_vector[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The theta grid 
+
+    theta_grid = Spline_XML->FirstChildElement("Coordinate_grid")->FirstChildElement("Theta_coordinate_grid")->FirstChildElement("Grid_knots");
+    if (theta_grid == nullptr) { std::cout << "Failed to parse the theta grid knots node!" << "\n"; return ERROR; }
+
+    /* Parse the length of the controll vector and allocate an array to hold it. */
+    Grid_size = std::stoi(theta_grid->Attribute("Grid_size"));
+    Metric_params->Numerical_metric_params.Theta_grid = new double[Grid_size];
+    Metric_params->Numerical_metric_params.Theta_grid_size = Grid_size;
+
+    for (int idx = 0; idx <= Grid_size - 1; idx++) {
+
+        temp_param_var = theta_grid->FirstChildElement(static_cast<const char*>(("Grid_point_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the theta knot component at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.Theta_grid[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The theta control vector - not strictly needed, 
+    //                      but I use it as a sanity check to make sure the spline does not break somewhere 
+
+    theta_grid_control_vector = Spline_XML->FirstChildElement("Coordinate_grid")->FirstChildElement("Theta_coordinate_grid")->FirstChildElement("Control_vector");
+    if (theta_grid_control_vector == nullptr) { std::cout << "Failed to parse the theta coordinate grid knots node!" << "\n"; return ERROR; }
+
+    /* Parse the length of the controll vector and allocate an array to hold it. */
+    Control_vector_size = std::stoi(theta_grid_control_vector->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.Theta_grid_control_vector = new double[Control_vector_size];
+
+    for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
+
+        temp_param_var = theta_grid_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the theta coordinate control vector component at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.Theta_grid_control_vector[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    return OK;
+
+}
+
 Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_element, Metric_parameters_type* Metric_params) {
 
     tinyxml2::XMLElement* temp_param_var;
@@ -746,12 +934,41 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the dark matter halo mass!" << "\n"; return ERROR; }
         Metric_params->Halo_Mass = std::stod(temp_param_var->GetText());
 
+    }else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Numerical")) {
+
+        Metric_params->e_Spacetime = Numerical;
+
+        temp_param_var = Metric_element->FirstChildElement("Numerical_metric_spline_path");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical metric XML file path!" << "\n"; return ERROR; }
+
+        tinyxml2::XMLDocument Spline_XML;
+        tinyxml2::XMLError e_parse_result = Spline_XML.LoadFile(temp_param_var->GetText());
+        if (e_parse_result != tinyxml2::XML_SUCCESS) { return ERROR; }
+
+        temp_param_var = Spline_XML.FirstChildElement("Metric_spline_coefficients");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric spline coefficients node!" << "\n"; return ERROR; }
+
+        if (OK != parse_numerical_metric_XML(temp_param_var, Metric_params)) { return ERROR; }
+
+        temp_param_var = Metric_element->FirstChildElement("Horizon_radius");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the horizon radius!" << "\n"; return ERROR; }
+        Metric_params->Numerical_metric_params.Horizon_radius = std::stod(temp_param_var->GetText());
+
+        temp_param_var = Metric_element->FirstChildElement("ADM_Mass");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the ADM mass!" << "\n"; return ERROR; }
+        Metric_params->Numerical_metric_params.M_ADM = std::stod(temp_param_var->GetText());
+
+        temp_param_var = Metric_element->FirstChildElement("ADM_ang_momentum");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the ADM angular momentum!" << "\n"; return ERROR; }
+        Metric_params->Numerical_metric_params.a_ADM = std::stod(temp_param_var->GetText());
+
     }
     else { std::cout << "Unsupported metric type!" << "\n"; return ERROR; }
 
     return OK;
 
 }
+
 
 Return_Values static parse_file_manager_params(tinyxml2::XMLElement* File_manager_element, File_manager_parameters* File_manager_params) {
 

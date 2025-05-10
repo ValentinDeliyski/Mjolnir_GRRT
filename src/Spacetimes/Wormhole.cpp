@@ -36,7 +36,7 @@ double* Wormhole_class::get_Photon_Sphere() {
 
 }
 
-Metric_type Wormhole_class::get_metric(const double* const State_Vector) {
+Metric_type Wormhole_class::get_metric(const double* const State_Vector) const {
 
     const double& r = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
@@ -46,23 +46,27 @@ Metric_type Wormhole_class::get_metric(const double* const State_Vector) {
 
     double exponent = -this->Mass / r - this->Redshift_Param * this->Mass * this->Mass / r2;
 
-    memset(&this->s_Metric, 0, sizeof(this->s_Metric));
+    Metric_type s_Metric{};
 
-    this->s_Metric.Lapse_function = exp(exponent);
-    this->s_Metric.Shift_function = 2 * this->Spin_Param * this->Mass * this->Mass / r2 / r;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_Metric.Metric[0][0] = -this->s_Metric.Lapse_function * this->s_Metric.Lapse_function +
-        r2 * this->s_Metric.Shift_function * this->s_Metric.Shift_function * sin_theta * sin_theta;
-    this->s_Metric.Metric[0][3] = -r2 * sin_theta * sin_theta * this->s_Metric.Shift_function;
-    this->s_Metric.Metric[3][0] = this->s_Metric.Metric[0][3];
-    this->s_Metric.Metric[1][1] = 1 / (1 - this->R_Throat / r);
-    this->s_Metric.Metric[2][2] = r2;
-    this->s_Metric.Metric[3][3] = r2 * sin_theta * sin_theta;
+    s_Metric.Lapse_function = exp(exponent);
+    s_Metric.Shift_function = 2 * this->Spin_Param * this->Mass * this->Mass / r2 / r;
 
-    return this->s_Metric;
+    s_Metric.Metric[e_t][e_t] = -s_Metric.Lapse_function * s_Metric.Lapse_function +
+                                r2 * s_Metric.Shift_function * s_Metric.Shift_function * sin_theta * sin_theta;
+
+    s_Metric.Metric[e_t][e_phi]       = -r2 * sin_theta * sin_theta * s_Metric.Shift_function;
+    s_Metric.Metric[e_phi][e_t]       = s_Metric.Metric[e_t][e_phi];
+
+    s_Metric.Metric[e_r][e_r]         = 1 / (1 - this->R_Throat / r);
+    s_Metric.Metric[e_theta][e_theta] = r2;
+    s_Metric.Metric[e_phi][e_phi]     = r2 * sin_theta * sin_theta;
+
+    return s_Metric;
 }
 
-Metric_type Wormhole_class::get_dr_metric(const double* const State_Vector) {
+Metric_type Wormhole_class::get_dr_metric(const double* const State_Vector) const {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
 
@@ -72,27 +76,31 @@ Metric_type Wormhole_class::get_dr_metric(const double* const State_Vector) {
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    memset(&this->s_dr_Metric, 0, sizeof(this->s_dr_Metric));
+    Metric_type s_dr_Metric{};
 
-    this->s_dr_Metric.Lapse_function = this->s_Metric.Lapse_function * (1 / r2 + 2 * this->Redshift_Param / (r2 * r));
-    this->s_dr_Metric.Shift_function = -3 * this->s_Metric.Shift_function / r;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    double& N = this->s_Metric.Lapse_function;
-    double& dr_N = this->s_dr_Metric.Lapse_function;
-    double& omega = this->s_Metric.Shift_function;
-    double& dr_omega = this->s_dr_Metric.Shift_function;
+    s_dr_Metric.Lapse_function = s_Metric.Lapse_function * (1 / r2 + 2 * this->Redshift_Param / (r2 * r));
+    s_dr_Metric.Shift_function = -3 * s_Metric.Shift_function / r;
 
-    this->s_dr_Metric.Metric[0][0] = -2 * N * dr_N + 2 * r * omega * (omega + r * dr_omega) * sin_theta * sin_theta;
-    this->s_dr_Metric.Metric[0][3] = -r * (2 * omega + r * dr_omega) * sin_theta * sin_theta;
-    this->s_dr_Metric.Metric[3][0] = this->s_dtheta_Metric.Metric[0][3];
-    this->s_dr_Metric.Metric[1][1] = -1. / ((1 - this->R_Throat / r) * (1 - this->R_Throat / r)) * (this->R_Throat / r2);
-    this->s_dr_Metric.Metric[2][2] = 2 * r;
-    this->s_dr_Metric.Metric[3][3] = 2 * r * sin_theta * sin_theta;
+    double& N = s_Metric.Lapse_function;
+    double& dr_N = s_dr_Metric.Lapse_function;
+    double& omega = s_Metric.Shift_function;
+    double& dr_omega = s_dr_Metric.Shift_function;
 
-    return this->s_dr_Metric;
+    s_dr_Metric.Metric[e_t][e_t]         = -2 * N * dr_N + 2 * r * omega * (omega + r * dr_omega) * sin_theta * sin_theta;
+    s_dr_Metric.Metric[e_t][e_phi]       = -r * (2 * omega + r * dr_omega) * sin_theta * sin_theta;
+    s_dr_Metric.Metric[e_phi][e_t]       = s_dr_Metric.Metric[e_t][e_phi];
+    s_dr_Metric.Metric[e_r][e_r]         = -1. / ((1 - this->R_Throat / r) * (1 - this->R_Throat / r)) * (this->R_Throat / r2);
+    s_dr_Metric.Metric[e_theta][e_theta] = 2 * r;
+    s_dr_Metric.Metric[e_phi][e_phi]     = 2 * r * sin_theta * sin_theta;
+
+    return s_dr_Metric;
 }
 
-Metric_type Wormhole_class::get_dtheta_metric(const double* const State_Vector) {
+Metric_type Wormhole_class::get_dtheta_metric(const double* const State_Vector) const {
+
+    Metric_type s_Metric = this->get_metric(State_Vector);
 
     const double& r = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
@@ -103,22 +111,19 @@ Metric_type Wormhole_class::get_dtheta_metric(const double* const State_Vector) 
 
     double exponent = -this->Mass / r - this->Redshift_Param * this->Mass * this->Mass / r2;
 
-    memset(&this->s_dtheta_Metric, 0, sizeof(this->s_dtheta_Metric));
+    Metric_type s_dtheta_Metric{};
 
-    this->s_dtheta_Metric.Lapse_function = 0.0;
-    this->s_dtheta_Metric.Shift_function = 0.0;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_dtheta_Metric.Metric[0][0] = 2 * r2 * this->s_Metric.Shift_function * this->s_Metric.Shift_function * sin_theta * cos_theta;
-    this->s_dtheta_Metric.Metric[0][3] = -2 * r2 * sin_theta * cos_theta * this->s_Metric.Shift_function;
-    this->s_dtheta_Metric.Metric[3][0] = this->s_Metric.Metric[0][3];
-    this->s_dtheta_Metric.Metric[1][1] = 0.0;
-    this->s_dtheta_Metric.Metric[2][2] = 0.0;
-    this->s_dtheta_Metric.Metric[3][3] = 2 * r2 * sin_theta * cos_theta;
+    s_dtheta_Metric.Metric[e_t][e_t]     = 2 * r2 * s_Metric.Shift_function * s_Metric.Shift_function * sin_theta * cos_theta;
+    s_dtheta_Metric.Metric[e_t][e_phi]   = -2 * r2 * sin_theta * cos_theta * s_Metric.Shift_function;
+    s_dtheta_Metric.Metric[e_phi][e_t]   = s_dtheta_Metric.Metric[e_t][e_phi];
+    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r2 * sin_theta * cos_theta;
 
-    return this->s_Metric;
+    return s_dtheta_Metric;
 }
 
-Metric_type Wormhole_class::get_d2r_metric(const double* const State_Vector) {
+Metric_type Wormhole_class::get_d2r_metric(const double* const State_Vector) const {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
@@ -129,26 +134,27 @@ Metric_type Wormhole_class::get_d2r_metric(const double* const State_Vector) {
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    double& N = this->s_Metric.Lapse_function;
-    double& dr_N = this->s_dr_Metric.Lapse_function;
-    double& omega = this->s_Metric.Shift_function;
-    double& dr_omega = this->s_dr_Metric.Shift_function;
+    double& N = s_Metric.Lapse_function;
+    double& dr_N = s_dr_Metric.Lapse_function;
+    double& omega = s_Metric.Shift_function;
+    double& dr_omega = s_dr_Metric.Shift_function;
 
-    memset(&this->s_d2r_Metric, 0, sizeof(this->s_d2r_Metric));
+    Metric_type s_d2r_Metric{};
 
-    this->s_d2r_Metric.Lapse_function = dr_N * (1 / r2 + 2 * this->Redshift_Param / (r2 * r)) - N * (2. / (r2 * r) + 6 * this->Redshift_Param / (r2 * r2));
-    this->s_d2r_Metric.Shift_function = -3 * dr_omega / r + 3 * omega / r2;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_d2r_Metric.Metric[0][0] = -2 * dr_N * dr_N - 2 * N * this->s_d2r_Metric.Lapse_function + 2 * ((omega + r * dr_omega) * (omega + r * dr_omega) +
-        r * omega * (dr_omega + dr_omega + r * this->s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
-    this->s_d2r_Metric.Metric[0][3] = -(2 * omega + r * dr_omega + r * (3 * dr_omega + r * this->s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
-    this->s_d2r_Metric.Metric[3][0] = this->s_d2r_Metric.Metric[0][3];
-    this->s_d2r_Metric.Metric[1][1] = 2 / ((1 - this->R_Throat / r) * (1 - this->R_Throat / r)) * ((this->R_Throat / r2) * (this->R_Throat / r2) / (1 - this->R_Throat / r) + this->R_Throat / (r2 * r));
-    this->s_d2r_Metric.Metric[2][2] = 2.0;
-    this->s_d2r_Metric.Metric[3][3] = 2 * sin_theta * sin_theta;
+    s_d2r_Metric.Lapse_function = dr_N * (1 / r2 + 2 * this->Redshift_Param / (r2 * r)) - N * (2. / (r2 * r) + 6 * this->Redshift_Param / (r2 * r2));
+    s_d2r_Metric.Shift_function = -3 * dr_omega / r + 3 * omega / r2;
 
+    s_d2r_Metric.Metric[e_t][e_t] = -2 * dr_N * dr_N - 2 * N * s_d2r_Metric.Lapse_function + 2 * ((omega + r * dr_omega) * (omega + r * dr_omega) +
+                                    r * omega * (dr_omega + dr_omega + r * s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
+    s_d2r_Metric.Metric[e_t][e_phi]       = -(2 * omega + r * dr_omega + r * (3 * dr_omega + r * s_d2r_Metric.Shift_function)) * sin_theta * sin_theta;
+    s_d2r_Metric.Metric[e_phi][e_t]       = s_d2r_Metric.Metric[e_t][e_phi];
+    s_d2r_Metric.Metric[e_r][e_r]         = 2 / ((1 - this->R_Throat / r) * (1 - this->R_Throat / r)) * ((this->R_Throat / r2) * (this->R_Throat / r2) / (1 - this->R_Throat / r) + this->R_Throat / (r2 * r));
+    s_d2r_Metric.Metric[e_theta][e_theta] = 2.0;
+    s_d2r_Metric.Metric[e_phi][e_phi]     = 2 * sin_theta * sin_theta;
 
-    return this->s_d2r_Metric;
+    return s_d2r_Metric;
 }
 
 int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
@@ -227,19 +233,19 @@ bool Wormhole_class::terminate_integration(double State_vector[], double Derivat
     }
 };
 
-bool Wormhole_class::load_parameters(Metric_parameters_type Metric_Parameters) {
+Return_Values Wormhole_class::load_parameters(const Metric_parameters_type* const Metric_Parameters) {
 
-    if (!isnan(Metric_Parameters.Spin) &&
-        !isnan(Metric_Parameters.Redshift_Parameter)) {
+    if (!isnan(Metric_Parameters->Spin) &&
+        !isnan(Metric_Parameters->Redshift_Parameter)) {
 
-        this->Spin_Param = Metric_Parameters.Spin;
-        this->Redshift_Param = Metric_Parameters.Redshift_Parameter;
-        this->Stop_at_Throat = Metric_Parameters.Stop_At_Throat;
+        this->Spin_Param = Metric_Parameters->Spin;
+        this->Redshift_Param = Metric_Parameters->Redshift_Parameter;
+        this->Stop_at_Throat = Metric_Parameters->Stop_At_Throat;
 
-        return true;
+        return OK;
 
     }
 
-    return false;
+    return ERROR;
 
 }

@@ -1,13 +1,11 @@
 import sys
 import os
-import threading
-import time
 
 from Support_functions.Parsers import Units_class
 import xml.etree.cElementTree as ET
 import xml.dom.minidom
 import os
-from numpy import pi
+from numpy import pi, sqrt
 
 """ Add the parent directory of this file to the search path, 
     so this script can be ran from the "Utilities" folder """
@@ -88,6 +86,7 @@ class Metric_parameters():
 
     __slots__ = ("Mass",
                  "Spin",
+                 "Horizon_radius",
                  "WH_redshift",
                  "WH_r_throat", 
                  "WH_stop_at_throat",
@@ -96,7 +95,8 @@ class Metric_parameters():
                  "EGB_gamma", 
                  "Halo_compactness", 
                  "Halo_mass",
-                 "Metric_type")
+                 "Metric_type", 
+                 "Numerical_metric_spline_path")
 
 class Observer():
 
@@ -129,7 +129,12 @@ class NT_model_params():
 
 class File_manager():
 
-    __slots__ = ("Sim_mode_2_input_file_path", "Output_file_directory", "Common_file_names", "Vert_shader_path", "Frag_shader_path", "Truncate_files")
+    __slots__ = ("Sim_mode_2_input_file_path", 
+                 "Output_file_directory", 
+                 "Common_file_names", 
+                 "Vert_shader_path", 
+                 "Frag_shader_path", 
+                 "Truncate_files")
 
 class Simulation_configurator:
 
@@ -242,6 +247,7 @@ class Simulation_configurator:
 
     def _configure_metric_parameters(self, Mass: dict = {"Value": 1.0, "Unit": "[M]"}, 
                                            Spin: dict = {"Value": 0.98, "Unit": "[M]"}, 
+                                           Horizon_radius: dict = {"Value": 2, "Unit": "[M]"}, 
                                            WH_redshift: dict = {"Value": 2.0, "Unit": "[M]"},
                                            WH_r_throat: dict = {"Value": 1.0, "Unit": "[M]"}, 
                                            WH_stop_at_throat: dict = {"Value": 0, "Unit": "[-]"}, 
@@ -250,7 +256,8 @@ class Simulation_configurator:
                                            EGB_gamma: dict = {"Value": 1.15, "Unit": "[M^2]"}, 
                                            Halo_compactness: dict = {"Value": 1e-4, "Unit": "[-]"},
                                            Halo_mass: dict = {"Value": 1e4, "Unit": "[M]"},
-                                           Metric_type: dict = {"Value": "Kerr", "Unit": "[-]"}):
+                                           Metric_type: dict = {"Value": "Kerr", "Unit": "[-]"},
+                                           Numerical_metric_spline_path: str = "",):
 
         self.metric_parameters = Metric_parameters()
 
@@ -265,6 +272,7 @@ class Simulation_configurator:
         self.metric_parameters.Halo_compactness = Halo_compactness
         self.metric_parameters.Halo_mass = Halo_mass
         self.metric_parameters.Metric_type = Metric_type
+        self.metric_parameters.Numerical_metric_spline_path = Numerical_metric_spline_path
 
     def _configure_NT_model(self, r_in: dict = {"Value": 6, "Unit": "[M]"},
                                   r_out: dict = {"Value": 50, "Unit": "[M]"},
@@ -423,7 +431,7 @@ class Simulation_configurator:
         ET.SubElement(XML_root_node, "Sim_mode_3_X_init", units = self.sim_mode_3_X_init["Unit"]).text = "{}".format(self.sim_mode_3_X_init["Value"])
         ET.SubElement(XML_root_node, "Sim_mode_3_Y_init", units = self.sim_mode_3_Y_init["Unit"]).text = "{}".format(self.sim_mode_3_Y_init["Value"])
 
-        # ============ Generate the observer XML section ============ #
+        # ============ Generate the metric XML section ============ #
 
         Metric_subelement = ET.SubElement(XML_root_node, "Metric")
 
@@ -452,10 +460,18 @@ class Simulation_configurator:
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Black-Hole-w-Dark-Matter")
                 ET.SubElement(Metric_subelement, "Halo_compactness", units = "[-]").text = "{}".format(self.metric_parameters.Halo_compactness["Value"])    
                 ET.SubElement(Metric_subelement, "Halo_mass", units = "[M]").text = "{}".format(self.metric_parameters.Halo_mass["Value"]) 
+                
+            case "Numerical":
+                ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Numerical")
+                ET.SubElement(Metric_subelement, "ADM_Mass", units = "[M]").text = "{}".format(self.metric_parameters.Mass["Value"])
+                ET.SubElement(Metric_subelement, "Horizon_radius", units = "[G/c^2]").text = "{}".format(self.metric_parameters.Horizon_radius["Value"])
+                ET.SubElement(Metric_subelement, "ADM_ang_momentum", units = "[M]").text = "{}".format(self.metric_parameters.Spin["Value"])
 
             case _:
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Kerr")
                 ET.SubElement(Metric_subelement, "Spin_parameter", units = "[M]").text = "{}".format(self.metric_parameters.Spin["Value"])
+                
+        ET.SubElement(Metric_subelement, "Numerical_metric_spline_path").text = "{}".format(self.metric_parameters.Numerical_metric_spline_path)
 
         # ============ Generate the observer XML section ============ #
 
@@ -673,6 +689,8 @@ if __name__ == "__main__":
     Units_class_instance = Units_class()
 
     Sim_config = Simulation_configurator()
+    
+    Sim_config.metric_parameters.Numerical_metric_spline_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/test.XML"
 
     Sim_config.simulation_mode = {"Value": 1, "Unit": "[-]"}
 
@@ -680,13 +698,14 @@ if __name__ == "__main__":
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type = {"Value": "Wormhole", "Unit": "[-]"}
-    Sim_config.metric_parameters.Spin        = {"Value": 0, "Unit": "[M]"}
-    Sim_config.metric_parameters.WH_redshift = {"Value": 0, "Unit": "[M]"}
+    Sim_config.metric_parameters.Metric_type    = {"Value": "Numerical", "Unit": "[-]"}
+    Sim_config.metric_parameters.Mass           = {"Value": 0.415, "Unit": "[M]"}
+    Sim_config.metric_parameters.Horizon_radius = {"Value": 0.0662902, "Unit": "[G/c^2]"}
+    Sim_config.metric_parameters.Spin           = {"Value": 0.41399683 / 0.415, "Unit": "[M]"}
     # ================================================== Observer ================================================== #
 
-    Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
-    Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
+    Sim_config.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
+    Sim_config.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
     
     Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
     Sim_config.observer.Inclination = {"Value": 160 * pi / 180, "Unit": "[Rad]"}
@@ -714,7 +733,7 @@ if __name__ == "__main__":
     
     Sim_config.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
     
-    Sim_config.observer.Image_y_min = {"Value": -13.8, "Unit": "[M]"}
+    Sim_config.observer.Image_y_min = {"Value": -13.80, "Unit": "[M]"}
     Sim_config.observer.Image_y_max = {"Value":  13.8, "Unit": "[M]"}
     Sim_config.observer.Image_x_min = {"Value": -13.8, "Unit": "[M]"}
     Sim_config.observer.Image_x_max = {"Value":  13.8, "Unit": "[M]"}

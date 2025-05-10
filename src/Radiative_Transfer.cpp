@@ -250,10 +250,10 @@ static void Get_radiative_transfer_matrix(double* const absorbtion_functions,
 
     /* This part of the implementation is adapted from equation (24) of https://academic.oup.com/mnras/article/475/1/43/4712230 */
 
-    bool math_guard_1 = fabs(alpha[I] * alpha[I] - Lambda[0] * Lambda[0]) >= 0;
-    bool math_guard_2 = fabs(alpha[I] * alpha[I] + Lambda[1] * Lambda[1]) >= 0;
+    bool math_guard_1 = isinf(1.0 / fabs(alpha[I] * alpha[I] - Lambda[0] * Lambda[0]));
+    bool math_guard_2 = isinf(1.0 / fabs(alpha[I] * alpha[I] + Lambda[1] * Lambda[1]));
 
-    if (math_guard_1 && math_guard_2) {
+    if (!math_guard_1 && !math_guard_2) {
 
         double f_1 = 1.0 / (alpha[I] * alpha[I] - Lambda[0] * Lambda[0]);
         double f_2 = 1.0 / (alpha[I] * alpha[I] + Lambda[1] * Lambda[1]);

@@ -9,12 +9,27 @@ double vector_norm(const double* const Vector, const int Vector_size) {
 		norm += Vector[index] * Vector[index];
 
 	}
-
+	
 	norm = sqrt(norm);
 
 	return norm;
 
 };
+
+void matrix_matrix_multiply(const double Mat_A[4][4], const double Mat_B[4][4], double Result[4][4]) {
+
+	for (int row = 0; row < 4; row++) {
+
+		for (int k = 0; k < 4; k++) {
+
+			for (int column = 0; column < 4; column++){
+
+				Result[row][column] += Mat_A[row][k] * Mat_B[k][column];
+
+			}
+		}
+	}
+}
 
 void mat_vec_multiply_4D(double const Matrix[4][4], const double* const Vector, double* const Result) {
 
@@ -29,7 +44,7 @@ void mat_vec_multiply_4D(double const Matrix[4][4], const double* const Vector, 
 		}
 	}
 
-};
+}
 
 double get_max_element(const double* const Vector, int const Element_number) {
 

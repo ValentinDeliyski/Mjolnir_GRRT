@@ -39,7 +39,7 @@ double* Emission_models_class::get_plasma_velocity(const double* const State_Vec
 
     default:
 
-        rho = r_source * sin(theta_source);
+        rho = r_source * fabs(sin(theta_source));
         ell = sqrt(rho * rho * rho) / (1 + rho);
 
         /* I have noticed that this velocity profile becomes ill-defined in some places for the metric in the below "if" clause. 

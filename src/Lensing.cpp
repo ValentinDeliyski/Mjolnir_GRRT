@@ -616,7 +616,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             /* ------------------------------------------------------------------------------------------------------------- */
 
-            Propagate_Stokes_vector(Analytic, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
+            Propagate_Stokes_vector(Implicit_Trapezoid, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
 
             if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization){
 

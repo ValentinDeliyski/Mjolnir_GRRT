@@ -10,7 +10,17 @@ enum Spacetime_enums: std::underlying_type_t <std::byte> {
     Janis_Newman_Winicour = 3,
     Einstein_Gauss_Bonnet = 4,
     BH_w_Dark_Matter      = 5,
-    SPACETIME_NUMBER      = 6
+    Numerical             = 6,
+    SPACETIME_NUMBER      = 7
+
+};
+
+enum Derivative_selector_enums : std::underlying_type_t <std::byte> {
+
+    None = 0,
+    First_radial_derivative = 1,
+    Second_radial_derivative = 2,
+    First_theta_derivative = 3
 
 };
 

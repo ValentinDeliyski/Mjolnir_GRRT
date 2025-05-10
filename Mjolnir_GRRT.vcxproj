@@ -309,6 +309,7 @@
     <ClInclude Include="Libraries\include\tinyxml2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Numerical_metric.cpp" />
     <ClCompile Include="src\Console_printing.cpp" />
     <ClCompile Include="src\Emission_Models.cpp" />
     <ClCompile Include="src\Disk_Models.cpp" />

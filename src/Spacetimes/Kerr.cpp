@@ -25,7 +25,7 @@ double* Kerr_class::get_Photon_Sphere() {
 
 }
 
-Metric_type Kerr_class::get_metric(const double* const State_Vector) {
+Metric_type Kerr_class::get_metric(const double* const State_Vector) const {
 
     const double& M = this->Mass;
     const double& a = this->Spin_Param;
@@ -39,25 +39,29 @@ Metric_type Kerr_class::get_metric(const double* const State_Vector) {
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
-    memset(&this->s_Metric, 0, sizeof(this->s_Metric));
+    Metric_type s_Metric{};
 
-    this->s_Metric.Metric[0][0] = -(1 - 2 * M * r / rho2);
-    this->s_Metric.Metric[0][3] = -2 * M * r * a * sin_theta * sin_theta / rho2;
-    this->s_Metric.Metric[3][0] = this->s_Metric.Metric[0][3];
-    this->s_Metric.Metric[1][1] = rho2 / delta;
-    this->s_Metric.Metric[2][2] = rho2;
-    this->s_Metric.Metric[3][3] = (r2 + a * a + 2 * M * r * a * a / rho2 * sin_theta * sin_theta) * sin_theta * sin_theta;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
+
+    s_Metric.Metric[e_t][e_t]         = -(1 - 2 * M * r / rho2);
+    s_Metric.Metric[e_t][e_phi]       = -2 * M * r * a * sin_theta * sin_theta / rho2;
+    s_Metric.Metric[e_phi][e_t]       = s_Metric.Metric[e_t][e_phi];
+    s_Metric.Metric[e_r][e_r]         = rho2 / delta;
+    s_Metric.Metric[e_theta][e_theta] = rho2;
+    s_Metric.Metric[e_phi][e_phi]     = (r2 + a * a + 2 * M * r * a * a / rho2 * sin_theta * sin_theta) * sin_theta * sin_theta;
 
     double sigma2 = (r2 + a * a) * (r2 + a * a) - a * a * delta * sin_theta * sin_theta;
 
-    this->s_Metric.Lapse_function = sqrt(rho2 * delta / sigma2);
-    this->s_Metric.Shift_function = 2 * a * r / sigma2;
+    s_Metric.Lapse_function = sqrt(rho2 * delta / sigma2);
+    s_Metric.Shift_function = 2 * a * r / sigma2;
 
-    return this->s_Metric;
+    return s_Metric;
 
 };
 
-Metric_type Kerr_class::get_dr_metric(const double* const State_Vector) {
+Metric_type Kerr_class::get_dr_metric(const double* const State_Vector) const {
+
+    Metric_type s_Metric = this->get_metric(State_Vector);
 
     const double& M = this->Mass;
     const double& a = this->Spin_Param;
@@ -71,26 +75,29 @@ Metric_type Kerr_class::get_dr_metric(const double* const State_Vector) {
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
-    memset(&this->s_dr_Metric, 0, sizeof(this->s_dr_Metric));
+    Metric_type s_dr_Metric{};
 
-    this->s_dr_Metric.Metric[0][0] = -2 * M / rho2 * (2 * r2 / rho2 - 1);
-    this->s_dr_Metric.Metric[0][3] = 2 * M * a * sin_theta * sin_theta / rho2 * (2 * r2 / rho2 - 1);
-    this->s_dr_Metric.Metric[3][0] = this->s_dr_Metric.Metric[0][3];
-    this->s_dr_Metric.Metric[1][1] = 2 * r / delta * (1 - rho2 / delta * (1 - M / r));
-    this->s_dr_Metric.Metric[2][2] = 2 * r;
-    this->s_dr_Metric.Metric[3][3] = 2 * (r - M * a * a / rho2 * (2 * r2 / rho2 - 1) * sin_theta * sin_theta) * sin_theta * sin_theta;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    double sigma2 = rho2 * this->s_Metric.Metric[3][3] / sin_theta / sin_theta;
-    double dr_sigma2 = 2 * r * this->s_Metric.Metric[3][3] + rho2 * this->s_dr_Metric.Metric[3][3];
+    s_dr_Metric.Metric[e_t][e_t]         = -2 * M / rho2 * (2 * r2 / rho2 - 1);
+    s_dr_Metric.Metric[e_t][e_phi]       = 2 * M * a * sin_theta * sin_theta / rho2 * (2 * r2 / rho2 - 1);
+    s_dr_Metric.Metric[e_phi][e_t]       = s_dr_Metric.Metric[e_t][e_phi];
+    s_dr_Metric.Metric[e_r][e_r]         = 2 * r / delta * (1 - rho2 / delta * (1 - M / r));
+    s_dr_Metric.Metric[e_theta][e_theta] = 2 * r;
+    s_dr_Metric.Metric[e_phi][e_phi]     = 2 * (r - M * a * a / rho2 * (2 * r2 / rho2 - 1) * sin_theta * sin_theta) * sin_theta * sin_theta;
 
-    this->s_dr_Metric.Lapse_function = this->s_Metric.Lapse_function * (r / rho2 + (r - M) / delta - dr_sigma2 / 2 / sigma2);
-    this->s_dr_Metric.Shift_function = this->s_Metric.Shift_function / r * (1 - r * dr_sigma2 / sigma2);
+    double sigma2 = rho2 * s_Metric.Metric[e_phi][e_phi] / sin_theta / sin_theta;
+    double dr_sigma2 = 2 * r * s_Metric.Metric[e_phi][e_phi] + rho2 * s_dr_Metric.Metric[e_phi][e_phi];
 
+    s_dr_Metric.Lapse_function = s_Metric.Lapse_function * (r / rho2 + (r - M) / delta - dr_sigma2 / 2 / sigma2);
+    s_dr_Metric.Shift_function = s_Metric.Shift_function / r * (1 - r * dr_sigma2 / sigma2);
 
-    return this->s_dr_Metric;
+    return s_dr_Metric;
 }
 
-Metric_type Kerr_class::get_dtheta_metric(const double* const State_Vector) {
+Metric_type Kerr_class::get_dtheta_metric(const double* const State_Vector) const {
+
+    Metric_type s_Metric = this->get_metric(State_Vector);
 
     const double& M = this->Mass;
     const double& a = this->Spin_Param;
@@ -104,26 +111,31 @@ Metric_type Kerr_class::get_dtheta_metric(const double* const State_Vector) {
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
-    memset(&this->s_dtheta_Metric, 0, sizeof(this->s_dtheta_Metric));
+    Metric_type s_dtheta_Metric{};
 
-    this->s_dtheta_Metric.Metric[0][0] = 4 * M / rho2 / rho2 * (a * a * cos_theta * sin_theta);
-    this->s_dtheta_Metric.Metric[0][3] = -4 * M * a * sin_theta * cos_theta / rho2 * (1 - a * a * sin_theta * sin_theta);
-    this->s_dtheta_Metric.Metric[3][0] = this->s_dr_Metric.Metric[0][3];
-    this->s_dtheta_Metric.Metric[1][1] = -2 * a * a * cos_theta * sin_theta / delta;
-    this->s_dtheta_Metric.Metric[2][2] = 0.0;
-    this->s_dtheta_Metric.Metric[3][3] = 4 * M * r * a * a * sin_theta * cos_theta / rho2 * (1 + a * a * sin_theta * sin_theta / rho2) * sin_theta * sin_theta +
-        2 * this->s_Metric.Metric[3][3] / sin_theta * cos_theta;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    double sigma2 = rho2 * this->s_Metric.Metric[3][3] / sin_theta / sin_theta;
+    s_dtheta_Metric.Metric[e_t][e_t]         = 4 * M * r / rho2 / rho2 * (a * a * cos_theta * sin_theta);
+    s_dtheta_Metric.Metric[e_t][e_phi]       = -4 * M * r * a * sin_theta * cos_theta / rho2 * (1 - a * a * sin_theta * sin_theta / rho2);
+    s_dtheta_Metric.Metric[e_phi][e_t]       = s_dtheta_Metric.Metric[e_t][e_phi];
+    s_dtheta_Metric.Metric[e_r][e_r]         = -2 * a * a * cos_theta * sin_theta / delta;
+    s_dtheta_Metric.Metric[e_theta][e_theta] = -2 * a * a * cos_theta * sin_theta;
+    s_dtheta_Metric.Metric[e_phi][e_phi]     = 4 * M * r * a * a * sin_theta * cos_theta / rho2 * (1 + a * a * sin_theta * sin_theta / rho2) * sin_theta * sin_theta +
+                                               2 * s_Metric.Metric[e_phi][e_phi] / sin_theta * cos_theta;
+
+    double sigma2 = rho2 * s_Metric.Metric[e_phi][e_phi] / sin_theta / sin_theta;
     double dtheta_sigma2 = -2 * a * a * delta * sin_theta * cos_theta;
 
-    this->s_dtheta_Metric.Lapse_function = this->s_Metric.Lapse_function * a * a * sin_theta * cos_theta * (delta / sigma2 - 1 / rho2);
-    this->s_dtheta_Metric.Shift_function = -this->s_Metric.Shift_function * dtheta_sigma2 / sigma2;
+    s_dtheta_Metric.Lapse_function = s_Metric.Lapse_function * a * a * sin_theta * cos_theta * (delta / sigma2 - 1 / rho2);
+    s_dtheta_Metric.Shift_function = -s_Metric.Shift_function * dtheta_sigma2 / sigma2;
 
-    return this->s_dtheta_Metric;
+    return s_dtheta_Metric;
 }
 
-Metric_type Kerr_class::get_d2r_metric(const double* const State_Vector) {
+Metric_type Kerr_class::get_d2r_metric(const double* const State_Vector) const {
+
+    Metric_type s_Metric = this->get_metric(State_Vector);
+    Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
 
     const double& M = this->Mass;
     const double& a = this->Spin_Param;
@@ -137,28 +149,30 @@ Metric_type Kerr_class::get_d2r_metric(const double* const State_Vector) {
     double rho2 = r2 + a * a * cos_theta * cos_theta;
     double delta = r2 - 2 * M * r + a * a;
 
-    memset(&this->s_d2r_Metric, 0, sizeof(this->s_d2r_Metric));
+    Metric_type s_d2r_Metric{};
 
-    this->s_d2r_Metric.Metric[0][0] = 4 * M * r / rho2 / rho2 * (4 * r2 / rho2 - 3);
-    this->s_d2r_Metric.Metric[0][3] = -4 * M * a * r * sin_theta * sin_theta / rho2 / rho2 * (4 * r2 / rho2 - 3);
-    this->s_d2r_Metric.Metric[3][0] = this->s_d2r_Metric.Metric[0][3];
-    this->s_d2r_Metric.Metric[1][1] = 2 / delta * (1 - 4 * (r2 - r * M) / delta + rho2 / delta * (2 * (r - M) * (r - M) / delta - 1));
-    this->s_d2r_Metric.Metric[2][2] = 2.0;
-    this->s_d2r_Metric.Metric[3][3] = 2 * (1 + 2 * M * a * a * r / rho2 / rho2 * (4 * r2 / rho2 - 3) * sin_theta * sin_theta) * sin_theta * sin_theta;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    double sigma2 = rho2 * this->s_Metric.Metric[3][3] / sin_theta / sin_theta;
-    double dr_sigma2 = (2 * r * this->s_Metric.Metric[3][3] + rho2 * this->s_dr_Metric.Metric[3][3]) / sin_theta / sin_theta;
-    double d2r_sigma2 = (2 * this->s_Metric.Metric[3][3] + 4 * r * this->s_dr_Metric.Metric[3][3] + rho2 * this->s_d2r_Metric.Metric[3][3]) / sin_theta / sin_theta;
+    s_d2r_Metric.Metric[e_t][e_t]         = 4 * M * r / rho2 / rho2 * (4 * r2 / rho2 - 3);
+    s_d2r_Metric.Metric[e_t][e_phi]       = -4 * M * a * r * sin_theta * sin_theta / rho2 / rho2 * (4 * r2 / rho2 - 3);
+    s_d2r_Metric.Metric[e_phi][e_t]       = s_d2r_Metric.Metric[e_t][e_phi];
+    s_d2r_Metric.Metric[e_r][e_r]         = 2 / delta * (1 - 4 * (r2 - r * M) / delta + rho2 / delta * (4 * (r - M) * (r - M) / delta - 1));
+    s_d2r_Metric.Metric[e_theta][e_theta] = 2.0;
+    s_d2r_Metric.Metric[e_phi][e_phi]     = 2 * (1 + 2 * M * a * a * r / rho2 / rho2 * (4 * r2 / rho2 - 3) * sin_theta * sin_theta) * sin_theta * sin_theta;
 
-    double& N = this->s_Metric.Lapse_function;
-    double& dr_N = this->s_dr_Metric.Lapse_function;
-    this->s_d2r_Metric.Lapse_function = dr_N * dr_N / N + N / rho2 * (1 - 2 * r2 / rho2 + rho2 / delta * (1 - (r - M) * (r - M) / delta) - rho2 / sigma2 / 2 * (d2r_sigma2 - dr_sigma2 * dr_sigma2 / sigma2));
+    double sigma2 = rho2 * s_Metric.Metric[e_phi][e_phi] / sin_theta / sin_theta;
+    double dr_sigma2 = (2 * r * s_Metric.Metric[e_phi][e_phi] + rho2 * s_dr_Metric.Metric[e_phi][e_phi]) / sin_theta / sin_theta;
+    double d2r_sigma2 = (2 * s_Metric.Metric[e_phi][e_phi] + 4 * r * s_dr_Metric.Metric[e_phi][e_phi] + rho2 * s_d2r_Metric.Metric[e_phi][e_phi]) / sin_theta / sin_theta;
 
-    double& omega = this->s_Metric.Shift_function;
-    double& dr_omega = this->s_dr_Metric.Shift_function;
-    this->s_d2r_Metric.Shift_function = -omega / r2 * (1 - r * dr_omega / omega + r * dr_sigma2 / sigma2) * (1 - r * dr_sigma2 / sigma2);
+    double& N = s_Metric.Lapse_function;
+    double& dr_N = s_dr_Metric.Lapse_function;
+    s_d2r_Metric.Lapse_function = dr_N * dr_N / N + N / rho2 * (1 - 2 * r2 / rho2 + rho2 / delta * (1 - (r - M) * (r - M) / delta) - rho2 / sigma2 / 2 * (d2r_sigma2 - dr_sigma2 * dr_sigma2 / sigma2));
 
-    return this->s_d2r_Metric;
+    double& omega = s_Metric.Shift_function;
+    double& dr_omega = s_dr_Metric.Shift_function;
+    s_d2r_Metric.Shift_function = -omega / r2 * (1 - r * dr_omega / omega + r * dr_sigma2 / sigma2) * (1 - r * dr_sigma2 / sigma2);
+
+    return s_d2r_Metric;
 }
 
 int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
@@ -209,7 +223,7 @@ void Kerr_class::get_EOM(double State_vector[], double Derivatives[]) const {
     double& p_theta = State_vector[e_p_theta];
     double& p_t     = State_vector[e_p_t];
 
-    *(Derivatives + e_t)     = -1 / delta * (r2 + this->Spin_Param * this->Spin_Param * (1 + 2 * r / rho2 * sin1)) * p_t;
+    *(Derivatives + e_t)     = -1 / delta * (r2 + this->Spin_Param * this->Spin_Param + 2 * r * this->Spin_Param * this->Spin_Param / rho2 * sin2) * p_t - 2 * r * this->Spin_Param / rho2 / delta * J;
     *(Derivatives + e_r)     = delta / rho2 * p_r;
     *(Derivatives + e_theta) = 1.0 / rho2 * p_theta;
     *(Derivatives + e_phi)   = 1.0 / (delta * rho2) * (P * this->Spin_Param + delta * (J / sin2 - this->Spin_Param));
@@ -241,17 +255,17 @@ bool Kerr_class::terminate_integration(double State_vector[], double Derivatives
 
 };
 
-bool Kerr_class::load_parameters(Metric_parameters_type Metric_Parameters) {
+Return_Values Kerr_class::load_parameters(const Metric_parameters_type* const Metric_Parameters) {
 
-    if (!isnan(Metric_Parameters.Spin)) {
+    if (!isnan(Metric_Parameters->Spin)) {
 
-        this->Spin_Param = Metric_Parameters.Spin;
+        this->Spin_Param = Metric_Parameters->Spin;
 
-        return true;
+        return OK;
 
     }
 
-    return false;
+    return ERROR;
 
 }
 

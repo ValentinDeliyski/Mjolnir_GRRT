@@ -49,6 +49,10 @@ void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
         p_Sim_context->p_Spacetime = new Black_Hole_w_Dark_Matter_Halo_class;
         break;
 
+    case Numerical:
+        p_Sim_context->p_Spacetime = new Numerical_metric;
+        break;
+
     }
 
 }
@@ -90,7 +94,7 @@ int main(int argument_count, char** cmd_line_args) {
     // Populate the Spacetime class instance 
     Allocate_Spacetime_Class(&s_Sim_Context);
 
-    s_Sim_Context.p_Spacetime->load_parameters(s_Sim_Context.p_Init_Conditions->Metric_parameters);
+    s_Sim_Context.p_Spacetime->load_parameters(&s_Sim_Context.p_Init_Conditions->Metric_parameters);
 
     // Get the observer position and populate the Observer class instance.
     s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);

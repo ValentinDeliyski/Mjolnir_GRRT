@@ -12,13 +12,22 @@
   *  @{
   */
 
-/*! @brief Computes the Euclidian norm of the vector "Vector", with "Vector_size" number of elements
+/*! @brief Computes the Euclidian norm of the vector "Vector", with "Vector_size" number of elements.
  *
  *  @param [in] Vector - Pointer to the vector.
  *  @param [in] Vector_size - The number of elements in the vector.
  *  @return The Euclidian norm of the vector "Vector".
  */
 double vector_norm(const double* const Vector, const int Vector_size);
+
+/*! @brief Multiplies two 4D matricies.
+ *
+ *  @param [in] Mat_A - The matrix that gets multiplied on the left.
+ *  @param [in] Mat_B - The matrix that gets multiplied on the right.
+ *	@param [out] Result - the matrix multiplication Mat_A * Mat_B.
+ *  @return Nothing.
+ */
+void matrix_matrix_multiply(const double Mat_A[4][4], const double Mat_B[4][4], double Result[4][4]);
 
 /*! @brief Main Multiplies a 4D vector by a 4x4 matrix.
  *  Multiplies the 4D vector "Vector" by the 4x4 matrix "Matrix", and stores the result in the vector "Result".

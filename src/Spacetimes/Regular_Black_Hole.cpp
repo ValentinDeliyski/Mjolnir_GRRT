@@ -24,7 +24,7 @@ double* RBH_class::get_Photon_Sphere() {
 
 }
 
-Metric_type RBH_class::get_metric(const double* const State_Vector) {
+Metric_type RBH_class::get_metric(const double* const State_Vector) const {
 
     const double& r = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
@@ -33,22 +33,22 @@ Metric_type RBH_class::get_metric(const double* const State_Vector) {
     double sin_theta = sin(theta);
     double rho = sqrt(r2 + this->Parameter * this->Parameter);
 
-    memset(&this->s_Metric, 0, sizeof(this->s_Metric));
+    Metric_type s_Metric{};
 
-    this->s_Metric.Metric[0][0] = -(1 - 2 * this->Mass / rho);
-    this->s_Metric.Metric[0][3] = 0.0;
-    this->s_Metric.Metric[1][1] = -1.0 / this->s_Metric.Metric[0][0];
-    this->s_Metric.Metric[2][2] = rho * rho;
-    this->s_Metric.Metric[3][3] = this->s_Metric.Metric[2][2] * sin_theta * sin_theta;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
-    this->s_Metric.Shift_function = 0.0;
+    s_Metric.Metric[e_t][e_t]         = -(1 - 2 * this->Mass / rho);
+    s_Metric.Metric[e_r][e_r]         = -1.0 / s_Metric.Metric[e_t][e_t];
+    s_Metric.Metric[e_theta][e_theta] = rho * rho;
+    s_Metric.Metric[e_phi][e_phi]     = s_Metric.Metric[e_theta][e_theta] * sin_theta * sin_theta;
 
-    return this->s_Metric;
+    s_Metric.Lapse_function = -s_Metric.Metric[e_t][e_t];
+
+    return s_Metric;
 }
 
 
-Metric_type RBH_class::get_dr_metric(const double* const State_Vector) {
+Metric_type RBH_class::get_dr_metric(const double* const State_Vector) const {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
 
@@ -61,21 +61,22 @@ Metric_type RBH_class::get_dr_metric(const double* const State_Vector) {
     double rho = sqrt(r2 + this->Parameter * this->Parameter);
     double rho3 = rho * rho * rho;
 
-    memset(&this->s_dr_Metric, 0, sizeof(this->s_dr_Metric));
+    Metric_type s_dr_Metric{};
 
-    this->s_dr_Metric.Metric[0][0] = -2 * this->Mass * r / rho3;
-    this->s_dr_Metric.Metric[0][3] = 0.0;
-    this->s_dr_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0];
-    this->s_dr_Metric.Metric[2][2] = 2 * r;
-    this->s_dr_Metric.Metric[3][3] = 2 * r * sin_theta * sin_theta;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_dr_Metric.Lapse_function = -this->s_dr_Metric.Metric[0][0];
-    this->s_dr_Metric.Shift_function = 0.0;
+    s_dr_Metric.Metric[e_t][e_t]         = -2 * this->Mass * r / rho3;
+    s_dr_Metric.Metric[e_r][e_r]         = 1.0 / (s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t]) * s_dr_Metric.Metric[e_t][e_t];
+    s_dr_Metric.Metric[e_theta][e_theta] = 2 * r;
+    s_dr_Metric.Metric[e_phi][e_phi]     = 2 * r * sin_theta * sin_theta;
 
-    return this->s_dr_Metric;
+    s_dr_Metric.Lapse_function = -s_dr_Metric.Metric[e_t][e_t];
+    s_dr_Metric.Shift_function = 0.0;
+
+    return s_dr_Metric;
 }
 
-Metric_type RBH_class::get_dtheta_metric(const double* const State_Vector) {
+Metric_type RBH_class::get_dtheta_metric(const double* const State_Vector) const {
 
     const double& r = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
@@ -83,22 +84,16 @@ Metric_type RBH_class::get_dtheta_metric(const double* const State_Vector) {
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    memset(&this->s_dtheta_Metric, 0, sizeof(this->s_dtheta_Metric));
+    Metric_type s_dtheta_Metric{};
 
-    this->s_dtheta_Metric.Metric[0][0] = 0.0;
-    this->s_dtheta_Metric.Metric[0][3] = 0.0;
-    this->s_dtheta_Metric.Metric[3][0] = this->s_dtheta_Metric.Metric[0][3];
-    this->s_dtheta_Metric.Metric[1][1] = 0.0;
-    this->s_dtheta_Metric.Metric[2][2] = 0.0;
-    this->s_dtheta_Metric.Metric[3][3] = 2 * r * r * sin_theta * cos_theta;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_dtheta_Metric.Lapse_function = 0.0;
-    this->s_dtheta_Metric.Shift_function = 0.0;
+    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * sin_theta * cos_theta;
 
-    return this->s_dtheta_Metric;
+    return s_dtheta_Metric;
 }
 
-Metric_type RBH_class::get_d2r_metric(const double* const State_Vector) {
+Metric_type RBH_class::get_d2r_metric(const double* const State_Vector) const {
 
     Metric_type s_Metric = this->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
@@ -113,19 +108,19 @@ Metric_type RBH_class::get_d2r_metric(const double* const State_Vector) {
     double rho3 = rho * rho * rho;
     double rho5 = rho * rho * rho * rho * rho;
 
-    memset(&this->s_d2r_Metric, 0, sizeof(this->s_d2r_Metric));
+    Metric_type s_d2r_Metric{};
 
-    this->s_d2r_Metric.Metric[0][0] = -2 * this->Mass / rho3 + 6 * this->Mass * r2 / (rho5);
-    this->s_d2r_Metric.Metric[0][3] = 0.0;
-    this->s_d2r_Metric.Metric[1][1] = 1.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_d2r_Metric.Metric[0][0] -
-        2.0 / (this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0] * this->s_Metric.Metric[0][0]) * this->s_dr_Metric.Metric[0][0] * this->s_dr_Metric.Metric[0][0];
-    this->s_d2r_Metric.Metric[2][2] = 2.0;
-    this->s_d2r_Metric.Metric[3][3] = 2 * sin_theta * sin_theta;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_d2r_Metric.Lapse_function = -this->s_d2r_Metric.Metric[0][0];
-    this->s_d2r_Metric.Shift_function = 0.0;
+    s_d2r_Metric.Metric[e_t][e_t]         = -2 * this->Mass / rho3 + 6 * this->Mass * r2 / (rho5);
+    s_d2r_Metric.Metric[e_r][e_r]         = 1.0 / (s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t]) * s_d2r_Metric.Metric[e_t][e_t] - 
+                                            2.0 / (s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t]) * s_dr_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_t][e_t];
+    s_d2r_Metric.Metric[e_theta][e_theta] = 2.0;
+    s_d2r_Metric.Metric[e_phi][e_phi]     = 2 * sin_theta * sin_theta;
 
-    return this->s_d2r_Metric;
+    s_d2r_Metric.Lapse_function = -s_d2r_Metric.Metric[e_t][e_t];
+
+    return s_d2r_Metric;
 }
 
 int RBH_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
@@ -187,16 +182,16 @@ bool RBH_class::terminate_integration(double State_vector[], double Derivatives[
 
 }
 
-bool RBH_class::load_parameters(Metric_parameters_type Metric_Parameters) {
+Return_Values RBH_class::load_parameters(const Metric_parameters_type* const Metric_Parameters) {
 
-    if (!isnan(Metric_Parameters.RBH_Parameter)) {
+    if (!isnan(Metric_Parameters->RBH_Parameter)) {
 
-        this->Parameter = Metric_Parameters.RBH_Parameter;
+        this->Parameter = Metric_Parameters->RBH_Parameter;
 
-        return true;
+        return OK;
 
     }
 
-    return false;
+    return ERROR;
 
 }

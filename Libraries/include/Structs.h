@@ -301,6 +301,39 @@ struct Emission_model_parameters_type {
     double Kappa;
 };
 
+struct Numerical_metric_params_type {
+
+    double M_ADM;
+
+    // NOTE: This is NOT normalized to the mass.
+    double Horizon_radius;
+
+    // NOTE: This IS normalized to the mass.
+    double Horizon_radius_BL;
+
+    // NOTE: This IS normalized to the mass.
+    double a_ADM;
+
+    /* ============ Pointers to the numerical metric control vector arrays ============ = */
+
+    double* g_tt_control_vector;
+    double* g_rr_control_vector;
+    double* g_thth_control_vector;
+    double* g_phiphi_control_vector;
+    double* g_tphi_control_vector;
+    int Control_vector_size;
+
+    /* ============ Pointers to the coordinate grid and its control vector arrays ============ = */
+
+    double* Compactified_radial_grid;
+    double* Compactified_radial_grid_control_vector;
+    int Radial_grid_size;
+
+    double* Theta_grid;
+    double* Theta_grid_control_vector;
+    int Theta_grid_size;
+};
+
 struct Metric_parameters_type {
 
     /*! Enum that specifies the active spacetime. */
@@ -338,6 +371,7 @@ struct Metric_parameters_type {
 
     double Spin; // Only affects Kerr and the Wormhole
 
+    Numerical_metric_params_type Numerical_metric_params;
 };
 
 struct Precomputed_e_pitch_angles_type {

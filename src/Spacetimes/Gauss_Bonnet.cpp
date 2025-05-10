@@ -59,7 +59,7 @@ double* Gauss_Bonnet_class::get_Photon_Sphere() {
 
 };
 
-Metric_type Gauss_Bonnet_class::get_metric(const double* const State_Vector) {
+Metric_type Gauss_Bonnet_class::get_metric(const double* const State_Vector) const {
 
     const double& M = this->Mass;
     const double& r = State_Vector[e_r];
@@ -70,23 +70,22 @@ Metric_type Gauss_Bonnet_class::get_metric(const double* const State_Vector) {
 
     double f = 1. + r2 / this->Gamma / 2. * (1. - sqrt(1. + 8. * this->Gamma * M / r2 / r));
 
-    memset(&this->s_Metric, 0, sizeof(this->s_Metric));
+    Metric_type s_Metric{};
 
-    this->s_Metric.Metric[0][0] = -f;
-    this->s_Metric.Metric[1][1] = 1. / f;
-    this->s_Metric.Metric[2][2] = r2;
-    this->s_Metric.Metric[3][3] = r2 * sin_theta * sin_theta;
-    this->s_Metric.Metric[0][3] = 0.;
-    this->s_Metric.Metric[3][0] = 0.;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_Metric.Lapse_function = -this->s_Metric.Metric[0][0];
-    this->s_Metric.Shift_function = 0.;
+    s_Metric.Metric[e_t][e_t]         = -f;
+    s_Metric.Metric[e_r][e_r]         = 1. / f;
+    s_Metric.Metric[e_theta][e_theta] = r2;
+    s_Metric.Metric[e_phi][e_phi]     = r2 * sin_theta * sin_theta;
 
-    return this->s_Metric;
+    s_Metric.Lapse_function = -s_Metric.Metric[e_t][e_t];
+
+    return s_Metric;
 
 }
 
-Metric_type Gauss_Bonnet_class::get_dr_metric(const double* const State_Vector) {
+Metric_type Gauss_Bonnet_class::get_dr_metric(const double* const State_Vector) const {
 
     const double& M = this->Mass;
     const double& r = State_Vector[e_r];
@@ -98,23 +97,22 @@ Metric_type Gauss_Bonnet_class::get_dr_metric(const double* const State_Vector) 
     double f = 1. + r2 / this->Gamma / 2. * (1. - sqrt(1. + 8. * this->Gamma * M / r2 / r));
     double dr_f = 2. / r * (f - 1.) + 6. * M / sqrt(r2 * r2 + 8. * this->Gamma * M * r);
 
-    memset(&this->s_dr_Metric, 0, sizeof(this->s_dr_Metric));
+    Metric_type s_dr_Metric{};
 
-    this->s_dr_Metric.Metric[0][0] = -dr_f;
-    this->s_dr_Metric.Metric[1][1] = -1. / f / f * dr_f;
-    this->s_dr_Metric.Metric[2][2] = 2. * r;
-    this->s_dr_Metric.Metric[3][3] = 2. * r * sin_theta * sin_theta;
-    this->s_dr_Metric.Metric[0][3] = 0.;
-    this->s_dr_Metric.Metric[3][0] = 0.;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_dr_Metric.Lapse_function = -this->s_dr_Metric.Metric[0][0];
-    this->s_dr_Metric.Shift_function = 0.;
+    s_dr_Metric.Metric[e_t][e_t]         = -dr_f;
+    s_dr_Metric.Metric[e_r][e_r]         = -1. / f / f * dr_f;
+    s_dr_Metric.Metric[e_theta][e_theta] = 2. * r;
+    s_dr_Metric.Metric[e_phi][e_phi]     = 2. * r * sin_theta * sin_theta;
 
-    return this->s_dr_Metric;
+    s_dr_Metric.Lapse_function = -s_dr_Metric.Metric[e_t][e_t];
+
+    return s_dr_Metric;
 
 }
 
-Metric_type Gauss_Bonnet_class::get_dtheta_metric(const double* const State_Vector) {
+Metric_type Gauss_Bonnet_class::get_dtheta_metric(const double* const State_Vector) const {
 
     const double& r = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
@@ -122,22 +120,16 @@ Metric_type Gauss_Bonnet_class::get_dtheta_metric(const double* const State_Vect
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    memset(&this->s_dtheta_Metric, 0, sizeof(this->s_dtheta_Metric));
+    Metric_type s_dtheta_Metric{};
 
-    this->s_dtheta_Metric.Metric[0][0] = 0.0;
-    this->s_dtheta_Metric.Metric[0][3] = 0.0;
-    this->s_dtheta_Metric.Metric[3][0] = this->s_dtheta_Metric.Metric[0][3];
-    this->s_dtheta_Metric.Metric[1][1] = 0.0;
-    this->s_dtheta_Metric.Metric[2][2] = 0.0;
-    this->s_dtheta_Metric.Metric[3][3] = 2 * r * r * sin_theta * cos_theta;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_dtheta_Metric.Lapse_function = 0.0;
-    this->s_dtheta_Metric.Shift_function = 0.0;
+    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * sin_theta * cos_theta;
 
-    return this->s_dtheta_Metric;
+    return s_dtheta_Metric;
 }
 
-Metric_type Gauss_Bonnet_class::get_d2r_metric(const double* const State_Vector) {
+Metric_type Gauss_Bonnet_class::get_d2r_metric(const double* const State_Vector) const {
 
     const double& M = this->Mass;
     const double& r = State_Vector[e_r];
@@ -152,20 +144,18 @@ Metric_type Gauss_Bonnet_class::get_d2r_metric(const double* const State_Vector)
     double dr_f = 2. / r * (f - 1.) + 6 * M / root;
     double d2r_f = -2. / r2 * (f - 1.) + 2. / r * dr_f - 12. * M / root / root / root * (r2 * r + 2. * this->Gamma * M);
 
-    memset(&this->s_d2r_Metric, 0, sizeof(this->s_d2r_Metric));
+    Metric_type s_d2r_Metric{};
 
-    this->s_d2r_Metric.Metric[0][0] = -d2r_f;
-    this->s_d2r_Metric.Metric[1][1] = 2. / f / f / f * dr_f - 1. / f / f * d2r_f;
-    this->s_d2r_Metric.Metric[2][2] = 2.;
-    this->s_d2r_Metric.Metric[3][3] = 2. * sin_theta * sin_theta;
-    this->s_d2r_Metric.Metric[0][3] = 0.;
-    this->s_d2r_Metric.Metric[3][0] = 0.;
+    /* --- Only the non-zero components are exlicitly evaluated. --- */
 
-    this->s_d2r_Metric.Lapse_function = -this->s_d2r_Metric.Metric[0][0];
-    this->s_d2r_Metric.Shift_function = 0.;
+    s_d2r_Metric.Metric[e_t][e_t]         = -d2r_f;
+    s_d2r_Metric.Metric[e_r][e_r]         = 2. / f / f / f * dr_f - 1. / f / f * d2r_f;
+    s_d2r_Metric.Metric[e_theta][e_theta] = 2.;
+    s_d2r_Metric.Metric[e_phi][e_phi]     = 2. * sin_theta * sin_theta;
 
+    s_d2r_Metric.Lapse_function = -s_d2r_Metric.Metric[e_t][e_t];
 
-    return this->s_d2r_Metric;
+    return s_d2r_Metric;
 
 }
 
@@ -221,7 +211,7 @@ void Gauss_Bonnet_class::get_EOM(double State_vector[], double Derivatives[]) co
 
 bool Gauss_Bonnet_class::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
+    bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
 
     bool too_high_order = State_vector[e_phi] * State_vector[e_phi] > 5 * M_PI * 5 * M_PI;
 
@@ -239,16 +229,16 @@ bool Gauss_Bonnet_class::terminate_integration(double State_vector[], double Der
 
 };
 
-bool Gauss_Bonnet_class::load_parameters(Metric_parameters_type Metric_Parameters) {
+Return_Values Gauss_Bonnet_class::load_parameters(const Metric_parameters_type* const Metric_Parameters) {
 
-    if (!isnan(Metric_Parameters.GB_Gamma_Parameter)) {
+    if (!isnan(Metric_Parameters->GB_Gamma_Parameter)) {
 
-        this->Gamma = Metric_Parameters.GB_Gamma_Parameter;
+        this->Gamma = Metric_Parameters->GB_Gamma_Parameter;
 
-        return true;
+        return OK;
 
     }
 
-    return false;
+    return ERROR;
 
 }
