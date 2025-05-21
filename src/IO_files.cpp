@@ -483,13 +483,13 @@ void File_manager_class::write_simulation_metadata() {
                                         << "\n";
 
         *(Output_file + Image_order) << "Distance [M]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_r - 1]
+                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_r]
                                         << "\n"
                                         << "Inclination [Deg]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_theta - 1] * 180.0 / M_PI
+                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_theta] * 180.0 / M_PI
                                         << "\n"
                                         << "Azimuth [Deg]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_phi - 1] * 180.0 / M_PI
+                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_phi] * 180.0 / M_PI
                                         << "\n";
 
         *(Output_file + Image_order) << "Coordinate time offset [M]: " << this->p_Initial_Conditions->Hotspot_params.Coord_time_offset - this->p_Initial_Conditions->Observer_params.distance << "\n";

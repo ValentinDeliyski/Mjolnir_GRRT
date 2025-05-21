@@ -127,20 +127,22 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     }
 
+    Hotspot_params->Position[e_t] = 0.0;
+
     // -------------------- The distance to the hotspot center
     temp_param_var = Hotspot_element->FirstChildElement("Distance");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the distance to the hotspot center!" << "\n"; return ERROR; }
-    Hotspot_params->Position[e_r - 1] = std::stod(temp_param_var->GetText());
+    Hotspot_params->Position[e_r] = std::stod(temp_param_var->GetText());
 
     // -------------------- The hotspot inclination
     temp_param_var = Hotspot_element->FirstChildElement("Inclination");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot inclination!" << "\n"; return ERROR; }
-    Hotspot_params->Position[e_theta - 1] = std::stod(temp_param_var->GetText());
+    Hotspot_params->Position[e_theta] = std::stod(temp_param_var->GetText());
 
     // -------------------- The hotspot azimuth
     temp_param_var = Hotspot_element->FirstChildElement("Azimuth");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot Azimuth!" << "\n"; return ERROR; }
-    Hotspot_params->Position[e_phi - 1] = std::stod(temp_param_var->GetText());
+    Hotspot_params->Position[e_phi] = std::stod(temp_param_var->GetText());
 
     // -------------------- The magnetization
     temp_param_var = Hotspot_element->FirstChildElement("Magnetization");
@@ -686,95 +688,76 @@ Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML
 
     tinyxml2::XMLElement* temp_param_var;
 
-    // -------------------- The g_tt control vector
+    // -------------------- The F_0 control vector
 
-    g_tt_control_vector = Spline_XML->FirstChildElement("g_tt")->FirstChildElement("Control_vector");
-    if (g_tt_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_tt control vector node!" << "\n"; return ERROR; }
+    g_tt_control_vector = Spline_XML->FirstChildElement("F_0")->FirstChildElement("Control_vector");
+    if (g_tt_control_vector == nullptr) { std::cout << "Failed to parse the numerical F_0 potential control vector node!" << "\n"; return ERROR; }
 
     /* Parse the length of the controll vector and allocate an array to hold it. */
     int Control_vector_size = std::stoi(g_tt_control_vector->Attribute("Component_number"));
-    Metric_params->Numerical_metric_params.g_tt_control_vector = new double[Control_vector_size];
+    Metric_params->Numerical_metric_params.F_0_control_vector = new double[Control_vector_size];
     Metric_params->Numerical_metric_params.Control_vector_size = Control_vector_size;
-
 
     for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
 
         temp_param_var = g_tt_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
-        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_tt control vector component at idx {}! \n", idx) ; return ERROR; }
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical F_0 potential control vector component at idx {}! \n", idx) ; return ERROR; }
 
-        Metric_params->Numerical_metric_params.g_tt_control_vector[idx] = std::stod(temp_param_var->GetText());
+        Metric_params->Numerical_metric_params.F_0_control_vector[idx] = std::stod(temp_param_var->GetText());
 
     }
 
     // -------------------- The g_rr control vector
 
-    g_rr_control_vector = Spline_XML->FirstChildElement("g_rr")->FirstChildElement("Control_vector");
-    if (g_rr_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_rr control vector node!" << "\n"; return ERROR; }
+    g_rr_control_vector = Spline_XML->FirstChildElement("F_1")->FirstChildElement("Control_vector");
+    if (g_rr_control_vector == nullptr) { std::cout << "Failed to parse the numerical F_1 potential control vector node!" << "\n"; return ERROR; }
 
     /* Parse the length of the controll vector and allocate an array to hold it. */
     Control_vector_size = std::stoi(g_rr_control_vector->Attribute("Component_number"));
-    Metric_params->Numerical_metric_params.g_rr_control_vector = new double[Control_vector_size];
+    Metric_params->Numerical_metric_params.F_1_control_vector = new double[Control_vector_size];
 
     for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
 
         temp_param_var = g_rr_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
-        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_rr control vector component at idx {}! \n", idx); return ERROR; }
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical F_1 potential control vector component at idx {}! \n", idx); return ERROR; }
 
-        Metric_params->Numerical_metric_params.g_rr_control_vector[idx] = std::stod(temp_param_var->GetText());
+        Metric_params->Numerical_metric_params.F_1_control_vector[idx] = std::stod(temp_param_var->GetText());
 
     }
 
     // -------------------- The g_thth control vector
 
-    g_thth_control_vector = Spline_XML->FirstChildElement("g_thth")->FirstChildElement("Control_vector");
-    if (g_thth_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_thth control vector node!" << "\n"; return ERROR; }
+    g_thth_control_vector = Spline_XML->FirstChildElement("F_2")->FirstChildElement("Control_vector");
+    if (g_thth_control_vector == nullptr) { std::cout << "Failed to parse the numerical F_2 potential control vector node!" << "\n"; return ERROR; }
 
     /* Parse the length of the controll vector and allocate an array to hold it. */
     Control_vector_size = std::stoi(g_thth_control_vector->Attribute("Component_number"));
-    Metric_params->Numerical_metric_params.g_thth_control_vector = new double[Control_vector_size];
+    Metric_params->Numerical_metric_params.F_2_control_vector = new double[Control_vector_size];
 
     for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
 
         temp_param_var = g_thth_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
-        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_thth control vector component at idx {}! \n", idx); return ERROR; }
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical F_2 potential control vector component at idx {}! \n", idx); return ERROR; }
 
-        Metric_params->Numerical_metric_params.g_thth_control_vector[idx] = std::stod(temp_param_var->GetText());
+        Metric_params->Numerical_metric_params.F_2_control_vector[idx] = std::stod(temp_param_var->GetText());
 
     }
 
     // -------------------- The g_phiphi control vector
 
-    g_phiphi_control_vector = Spline_XML->FirstChildElement("g_phiphi")->FirstChildElement("Control_vector");
-    if (g_phiphi_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_phiphi control vector node!" << "\n"; return ERROR; }
+    g_phiphi_control_vector = Spline_XML->FirstChildElement("W")->FirstChildElement("Control_vector");
+    if (g_phiphi_control_vector == nullptr) { std::cout << "Failed to parse the numerical W potential control vector node!" << "\n"; return ERROR; }
 
     /* Parse the length of the controll vector and allocate an array to hold it. */
     Control_vector_size = std::stoi(g_phiphi_control_vector->Attribute("Component_number"));
-    Metric_params->Numerical_metric_params.g_phiphi_control_vector = new double[Control_vector_size];
+    Metric_params->Numerical_metric_params.W_control_vector = new double[Control_vector_size];
 
     for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
 
         temp_param_var = g_phiphi_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
-        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_phiphi control vector component at idx {}! \n", idx); return ERROR; }
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical W potential control vector component at idx {}! \n", idx); return ERROR; }
 
-        Metric_params->Numerical_metric_params.g_phiphi_control_vector[idx] = std::stod(temp_param_var->GetText());
-
-    }
-
-    // -------------------- The g_tphi control vector
-
-    g_tphi_control_vector = Spline_XML->FirstChildElement("g_tphi")->FirstChildElement("Control_vector");
-    if (g_tphi_control_vector == nullptr) { std::cout << "Failed to parse the numerical g_tphi control vector node!" << "\n"; return ERROR; }
-
-    /* Parse the length of the controll vector and allocate an array to hold it. */
-    Control_vector_size = std::stoi(g_tphi_control_vector->Attribute("Component_number"));
-    Metric_params->Numerical_metric_params.g_tphi_control_vector = new double[Control_vector_size];
-
-    for (int idx = 0; idx <= Control_vector_size - 1; idx++) {
-
-        temp_param_var = g_tphi_control_vector->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
-        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical g_tphi control vector component at idx {}! \n", idx); return ERROR; }
-
-        Metric_params->Numerical_metric_params.g_tphi_control_vector[idx] = std::stod(temp_param_var->GetText());
+        Metric_params->Numerical_metric_params.W_control_vector[idx] = std::stod(temp_param_var->GetText());
 
     }
 

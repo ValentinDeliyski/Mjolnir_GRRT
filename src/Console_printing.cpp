@@ -423,13 +423,13 @@ void Console_Printer_class::print_sim_parameters(Initial_conditions_type* p_Init
         << "\n";
 
     std::cout << "Distance [M]: "
-        << p_Initial_Conditions->Hotspot_params.Position[e_r - 1]
+        << p_Initial_Conditions->Hotspot_params.Position[e_r]
         << "\n"
         << "Inclination [Deg]: "
-        << p_Initial_Conditions->Hotspot_params.Position[e_theta - 1] * 180.0 / M_PI
+        << p_Initial_Conditions->Hotspot_params.Position[e_theta] * 180.0 / M_PI
         << "\n"
         << "Azimuth [Deg]: "
-        << p_Initial_Conditions->Hotspot_params.Position[e_phi - 1] * 180.0 / M_PI
+        << p_Initial_Conditions->Hotspot_params.Position[e_phi] * 180.0 / M_PI
         << "\n";
 
 

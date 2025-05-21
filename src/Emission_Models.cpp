@@ -68,6 +68,12 @@ double* Emission_models_class::get_plasma_velocity(const double* const State_Vec
         /* Interpolated contravariant radial velocity component -> Corresponds to equation (10a) from the reference, but beta_r -> 1 - beta_r. */
         u_r = -Radial_velocity_fraction * sqrt((-1 - inv_metric[e_t][e_t]) * inv_metric[e_r][e_r]);
 
+        if (isnan(u_r)) {
+
+            u_r = 0.0;
+
+        }
+
         /* Interpolated azimuthal angular velocity -> Corresponds to equation (10b) from the reference, but with beta_phi = 1 - beta_r. */
         Omega = Plasma_velocity[e_phi] / Plasma_velocity[e_t] + Radial_velocity_fraction * (inv_metric[e_t][e_phi] / inv_metric[e_t][e_t] - Plasma_velocity[e_phi] / Plasma_velocity[e_t]);
 
@@ -475,9 +481,9 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
 /* ============================================ Main "Selector" For The Transfer Functions ============================================ */
 
 void Emission_models_class::get_radiative_transfer_functions(const double* const State_Vector,
-                                                                    const Simulation_Context_type* const p_Sim_Context,
-                                                                    const Emission_medium_enums Emission_medium,
-                                                                    Transfer_functions_type* const p_Transfer_functions) {
+                                                             const Simulation_Context_type* const p_Sim_Context,
+                                                             const Emission_medium_enums Emission_medium,
+                                                             Transfer_functions_type* const p_Transfer_functions) {
 
     /* === Zero out the transfer functions just in case. === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
@@ -495,6 +501,8 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
         this->p_Disk_Model->get_density_and_temperature(State_Vector, &Emission_medium_state);
 
+        if (Emission_medium_state.Density / p_Sim_Context->p_Init_Conditions->Disk_params.Electron_density_scale < 1e-3) { return; };
+
         Emission_medium_state.Ensamble_type = p_Sim_Context->p_Init_Conditions->Disk_params.Ensamble_type;
         Emission_medium_state.Magnetization = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
 
@@ -504,13 +512,14 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     case Hotspot:
 
-        Emission_medium_state.Plasma_Velocity = this->get_plasma_velocity(State_Vector,
+        Emission_medium_state.Plasma_Velocity = this->get_plasma_velocity(this->p_Hotspot_Model->s_Hotspot_params.Position,
                                                                           p_Sim_Context, 
                                                                           p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type,
                                                                           p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
 
-
         this->p_Hotspot_Model->get_density_and_temperature(State_Vector, Emission_medium_state.Plasma_Velocity, &Emission_medium_state);
+
+        if (Emission_medium_state.Density / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale < 1e-3) { return; };
 
         Emission_medium_state.Ensamble_type   = p_Sim_Context->p_Init_Conditions->Hotspot_params.Ensamble_type;
         Emission_medium_state.Magnetization   = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;

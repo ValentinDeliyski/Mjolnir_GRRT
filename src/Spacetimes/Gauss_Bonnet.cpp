@@ -79,7 +79,7 @@ Metric_type Gauss_Bonnet_class::get_metric(const double* const State_Vector) con
     s_Metric.Metric[e_theta][e_theta] = r2;
     s_Metric.Metric[e_phi][e_phi]     = r2 * sin_theta * sin_theta;
 
-    s_Metric.Lapse_function = -s_Metric.Metric[e_t][e_t];
+    s_Metric.Lapse_function = sqrt(-s_Metric.Metric[e_t][e_t]);
 
     return s_Metric;
 
@@ -106,7 +106,7 @@ Metric_type Gauss_Bonnet_class::get_dr_metric(const double* const State_Vector) 
     s_dr_Metric.Metric[e_theta][e_theta] = 2. * r;
     s_dr_Metric.Metric[e_phi][e_phi]     = 2. * r * sin_theta * sin_theta;
 
-    s_dr_Metric.Lapse_function = -s_dr_Metric.Metric[e_t][e_t];
+    s_dr_Metric.Lapse_function = 0;
 
     return s_dr_Metric;
 

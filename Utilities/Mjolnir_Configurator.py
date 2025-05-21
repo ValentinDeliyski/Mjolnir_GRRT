@@ -370,7 +370,7 @@ class Simulation_configurator:
                                        Density_spread: dict = {"Value": 1.0, "Unit": "[M]"},
                                        Temperature_spread: dict = {"Value": 1.0, "Unit": "[M]"},
                                        Temporal_spread: dict = {"Value": 85, "Unit": "[GM/c^3]"},
-                                       Coord_time_at_max: dict = {"Value": 1000, "Unit": "[GM/c^3]"},
+                                       Coord_time_at_max: dict = {"Value": 0, "Unit": "[GM/c^3]"},
                                        Distance: dict = {"Value": 8.0, "Unit": "[M]"},
                                        Inclination: dict = {"Value": pi / 2,  "Unit": "[Rad]"},
                                        Azimuth: dict = {"Value": -pi / 2,  "Unit": "[Rad]"},
@@ -704,13 +704,13 @@ if __name__ == "__main__":
     Sim_config.metric_parameters.Spin           = {"Value": 0.41399683 / 0.415, "Unit": "[M]"}
     # ================================================== Observer ================================================== #
 
-    Sim_config.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
-    Sim_config.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
+    Sim_config.observer.Resolution_x = {"Value": 128, "Unit": "[-]"}
+    Sim_config.observer.Resolution_y = {"Value": 128, "Unit": "[-]"}
     
     Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
-    Sim_config.observer.Inclination = {"Value": 160 * pi / 180, "Unit": "[Rad]"}
+    Sim_config.observer.Inclination = {"Value": 90 * pi / 180, "Unit": "[Rad]"}
     Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
-    Sim_config.observer.Cam_rotation_angle = {"Value": -70 * pi / 180 - pi / 4, "Unit": "[Hz]"}
+    Sim_config.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[Hz]"}
 
     # ================================================== Disk ================================================== #
     Sim_config.disk_model.Ensamble_type       = {"Value": "Thermal",   "Unit": "[-]"}
@@ -733,11 +733,16 @@ if __name__ == "__main__":
     
     Sim_config.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
     
-    Sim_config.observer.Image_y_min = {"Value": -13.80, "Unit": "[M]"}
+    Sim_config.observer.Image_y_min = {"Value": -13.8, "Unit": "[M]"}
     Sim_config.observer.Image_y_max = {"Value":  13.8, "Unit": "[M]"}
     Sim_config.observer.Image_x_min = {"Value": -13.8, "Unit": "[M]"}
     Sim_config.observer.Image_x_max = {"Value":  13.8, "Unit": "[M]"}
         
+    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-13, "Unit": "[-]"}
+    Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
+    Sim_config.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
+    
+    Sim_config.integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
     # ================================================== Hotspot ================================================== #
 
     Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g / cm^3]"}

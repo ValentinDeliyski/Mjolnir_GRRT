@@ -72,54 +72,7 @@ public:
 
     virtual void get_EOM(double State_Vector[], double Derivatives[]) const {
 
-        /* ----------- Temporary matrix, used to store intermediate calculations ----------- */
-        double temp_matrix[4][4]{};
-
-        Metric_type Metric = this->get_metric(State_Vector);
-        Metric_type dr_Metric = this->get_dr_metric(State_Vector);
-        Metric_type dtheta_Metric = this->get_dtheta_metric(State_Vector);
-
-        double inv_metric[4][4]{};
-        invert_metric(inv_metric, Metric.Metric);
-
-        double dr_inv_metric[4][4]{};
-        matrix_matrix_multiply(dr_Metric.Metric, inv_metric, temp_matrix);
-        matrix_matrix_multiply(inv_metric, temp_matrix, dr_inv_metric);
-
-        double dtheta_inv_metric[4][4]{};
-        matrix_matrix_multiply(dtheta_Metric.Metric, inv_metric, temp_matrix);
-        matrix_matrix_multiply(inv_metric, temp_matrix, dtheta_inv_metric);
-
-        /* ----------- There is a minus sign infront of the whole expression for the derivative of an inverse of a matrix ----------- */
-        for (int left_idx = 0; left_idx <= 3; left_idx++) {
-
-            for (int right_idx = 0; right_idx <= 3; right_idx++) {
-
-                dr_inv_metric[left_idx][right_idx] *= -1;
-                dtheta_inv_metric[left_idx][right_idx] *= -1;
-
-            }
-
-        }
-
-        for (int right_idx = 0; right_idx <= 3; right_idx++) {
-
-            *(Derivatives + e_t) += inv_metric[e_t][right_idx] * State_Vector[right_idx + 4];
-            *(Derivatives + e_r) += inv_metric[e_r][right_idx] * State_Vector[right_idx + 4];
-            *(Derivatives + e_theta) += inv_metric[e_theta][right_idx] * State_Vector[right_idx + 4];
-            *(Derivatives + e_phi) += inv_metric[e_phi][right_idx] * State_Vector[right_idx + 4];
-
-            for (int left_idx = 0; left_idx <= 3; left_idx++) {
-
-                *(Derivatives + e_p_r) += -1. / 2 * dr_inv_metric[left_idx][right_idx] * State_Vector[left_idx + 4] * State_Vector[right_idx + 4];
-                *(Derivatives + e_p_theta) += -1. / 2 * dtheta_inv_metric[left_idx][right_idx] * State_Vector[left_idx + 4] * State_Vector[right_idx + 4];
-
-            }
-
-        }
-
-        *(Derivatives + e_p_t) = 0.0;
-        *(Derivatives + e_p_phi) = 0.0;
+        std::cout << "Using Base Spacetime Class - Something Broke!'\n'";
     
     };
 
@@ -375,12 +328,17 @@ private:
     void get_second_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
 
     double evaluate_single_spline(const double Control_point_matrix[4][4], const double Radial_natural_parameter, const double Theta_natural_parameter, Derivative_selector_enums Derivative_selector) const;
-    Metric_type evaluate_all_splines(const double* const State_Vector, Derivative_selector_enums Derivative_selector) const;
-    Metric_type compute_metric_components_from_spline(const double* const State_vector, Derivative_selector_enums Derivative_selector) const;
+
+    Numerical_metric_potentials_type evaluate_all_splines(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
+    Numerical_metric_potentials_type compute_metric_components_from_spline(const double* const State_vector, int radial_grid_idx, int theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
 
     double compactify_radial_coordiante(const double r) const;
     double uncompactify_radial_coordinate(const double x);
 
+    Metric_type get_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
+    Metric_type get_dr_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
+    Metric_type get_dtheta_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
+    Metric_type get_d2r_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
 public:
 
     /* Metric and its derivatives */

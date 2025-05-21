@@ -20,11 +20,11 @@ double Numerical_metric::compactify_radial_coordiante(const double r) const {
 
     /* Computes the shifted radial coordinate used in the paper (they label this with little "r").
        NOTE: The input to this function "r" is normaled to the mass. */
-    double r_shifted_coordinate = this->Parameters.M_ADM * (r - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
+    const double r_shifted_coordinate = this->Parameters.M_ADM * (r - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
 
     /* Comute the other shifted coordinate that the paper uses in the numerical implementation (they label this little "x"). 
        NOTE: The horizon radius here is in the "r_shifted" coordinate system. */
-    double x_uncompactified = sqrt(r_shifted_coordinate * r_shifted_coordinate - this->Parameters.Horizon_radius * this->Parameters.Horizon_radius);
+    const double x_uncompactified = sqrt(r_shifted_coordinate * r_shifted_coordinate - this->Parameters.Horizon_radius * this->Parameters.Horizon_radius);
 
     return x_uncompactified / (1 + x_uncompactified);
 }
@@ -45,7 +45,6 @@ inline void Numerical_metric::get_control_point_matrix(const double* const Contr
         }
 
     }
-
 
 }
 
@@ -129,69 +128,50 @@ double Numerical_metric::evaluate_single_spline(const double Control_point_matri
     double Intermediate_result[4]{};
     mat_vec_multiply_4D(Control_point_matrix, Theta_basis_polynomial, Intermediate_result);
 
-    return dot_product(Radial_basis_polynomial, Intermediate_result, 4) / 36;
+    return dot_product(Radial_basis_polynomial, Intermediate_result, 4) / 36.0;
 
 }
 
-Metric_type Numerical_metric::evaluate_all_splines(const double* const State_Vector, Derivative_selector_enums Derivative_selector) const {
+Numerical_metric_potentials_type Numerical_metric::evaluate_all_splines(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx, Derivative_selector_enums Derivative_selector) const {
 
     /* -------------- The spline works with the compactified radial coordinate, so here I have to convert to that. -------------- */
-    double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
-
-    /* -------------- Get the upper index of the grid interval where the current photon state vector is (in both compactified radial and there directions). --------------*/
-    int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size - 1, r_compactified) - this->Parameters.Compactified_radial_grid;
-    int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size - 1, State_Vector[e_theta]) - this->Parameters.Theta_grid;
-
-    if (0 == Radial_grid_upper_idx) {
-
-        /* If the point we are evaluating the metric at is below the first grid point, snap it to said first grid point. */
-        Radial_grid_upper_idx = 1;
-
-    }
+    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
 
     /* -------------- Compute the natural parameters along the coordinate directions for the given patch. These are the arguments for the polynomial basis vectors. --------------*/
-    double radial_natural_parameter = (r_compactified - this->Parameters.Compactified_radial_grid[Radial_grid_upper_idx - 1]) / (this->Parameters.Compactified_radial_grid[Radial_grid_upper_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_upper_idx - 1]);
-    double theta_narual_parameter = (State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_upper_idx - 1]) / (this->Parameters.Theta_grid[Theta_grid_upper_idx] - this->Parameters.Theta_grid[Theta_grid_upper_idx - 1]);
+    const double radial_natural_parameter = (r_compactified - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]) / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
+    const double theta_narual_parameter = (State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1]) / (this->Parameters.Theta_grid[Theta_grid_idx] - this->Parameters.Theta_grid[Theta_grid_idx - 1]);
 
-    Metric_type Metric{};
+    Numerical_metric_potentials_type s_Metric_potentials{};
 
-    /* -------------- Compute g_tt -------------- */
+    /* -------------- Compute F_0 -------------- */
 
-    double g_tt_control_point_matrix[4][4]{};
-    this->get_control_point_matrix(this->Parameters.g_tt_control_vector, Radial_grid_upper_idx - 1, Theta_grid_upper_idx - 1, g_tt_control_point_matrix);
+    double F_0_control_point_matrix[4][4]{};
+    this->get_control_point_matrix(this->Parameters.F_0_control_vector, Radial_grid_idx - 1, Theta_grid_idx - 1, F_0_control_point_matrix);
 
-    Metric.Metric[e_t][e_t] = this->evaluate_single_spline(g_tt_control_point_matrix, radial_natural_parameter, theta_narual_parameter, Derivative_selector);
+    s_Metric_potentials.F_0 = this->evaluate_single_spline(F_0_control_point_matrix, radial_natural_parameter, theta_narual_parameter, Derivative_selector);
 
-    /* -------------- Compute g_rr -------------- */
+    /* -------------- Compute F_1 -------------- */
 
-    double g_rr_control_point_matrix[4][4]{};
-    this->get_control_point_matrix(this->Parameters.g_rr_control_vector, Radial_grid_upper_idx - 1, Theta_grid_upper_idx - 1, g_rr_control_point_matrix);
+    double F_1_control_point_matrix[4][4]{};
+    this->get_control_point_matrix(this->Parameters.F_1_control_vector, Radial_grid_idx - 1, Theta_grid_idx - 1, F_1_control_point_matrix);
 
-    Metric.Metric[e_r][e_r] = this->evaluate_single_spline(g_rr_control_point_matrix, radial_natural_parameter, theta_narual_parameter, Derivative_selector);
+    s_Metric_potentials.F_1 = this->evaluate_single_spline(F_1_control_point_matrix, radial_natural_parameter, theta_narual_parameter, Derivative_selector);
 
-    /* -------------- Compute g_thth -------------- */
+    /* -------------- Compute F_2 -------------- */
 
-    double g_thth_control_point_matrix[4][4]{};
-    this->get_control_point_matrix(this->Parameters.g_thth_control_vector, Radial_grid_upper_idx - 1, Theta_grid_upper_idx - 1, g_thth_control_point_matrix);
+    double F_2_control_point_matrix[4][4]{};
+    this->get_control_point_matrix(this->Parameters.F_2_control_vector, Radial_grid_idx - 1, Theta_grid_idx - 1, F_2_control_point_matrix);
 
-    Metric.Metric[e_theta][e_theta] = this->evaluate_single_spline(g_thth_control_point_matrix, radial_natural_parameter, theta_narual_parameter, Derivative_selector);
+    s_Metric_potentials.F_2 = this->evaluate_single_spline(F_2_control_point_matrix, radial_natural_parameter, theta_narual_parameter, Derivative_selector);
 
-    /* -------------- Compute g_phiphi -------------- */
+    /* -------------- Compute W -------------- */
 
-    double g_phiphi_control_point_matrix[4][4]{};
-    this->get_control_point_matrix(this->Parameters.g_phiphi_control_vector, Radial_grid_upper_idx - 1, Theta_grid_upper_idx - 1, g_phiphi_control_point_matrix);
+    double W_control_point_matrix[4][4]{};
+    this->get_control_point_matrix(this->Parameters.W_control_vector, Radial_grid_idx - 1, Theta_grid_idx - 1, W_control_point_matrix);
 
-    Metric.Metric[e_phi][e_phi] = this->evaluate_single_spline(g_phiphi_control_point_matrix, radial_natural_parameter, theta_narual_parameter, Derivative_selector);
+    s_Metric_potentials.W = this->evaluate_single_spline(W_control_point_matrix, radial_natural_parameter, theta_narual_parameter, Derivative_selector);
 
-    /* -------------- Compute g_tphi -------------- */
-
-    double g_tphi_control_point_matrix[4][4]{};
-    this->get_control_point_matrix(this->Parameters.g_tphi_control_vector, Radial_grid_upper_idx - 1, Theta_grid_upper_idx - 1, g_tphi_control_point_matrix);
-
-    Metric.Metric[e_t][e_phi] = this->evaluate_single_spline(g_tphi_control_point_matrix, radial_natural_parameter, theta_narual_parameter, Derivative_selector);
-    Metric.Metric[e_phi][e_t] = Metric.Metric[e_t][e_phi];
-
-    return Metric;
+    return s_Metric_potentials;
 
 }
 
@@ -223,7 +203,7 @@ Metric_type Numerical_metric::comute_dr_Minkowski_metric(const double* const Sta
 
     s_dr_Minkowski_metric.Metric[e_t][e_t] = 0;
     s_dr_Minkowski_metric.Metric[e_r][e_r] = 0;
-    s_dr_Minkowski_metric.Metric[e_theta][e_theta] = 2 *r;
+    s_dr_Minkowski_metric.Metric[e_theta][e_theta] = 2 * r;
     s_dr_Minkowski_metric.Metric[e_phi][e_phi] = 2 * r * sin_theta * sin_theta;
 
     s_dr_Minkowski_metric.Lapse_function = 0;
@@ -273,50 +253,18 @@ Metric_type Numerical_metric::comute_d2r_Minkowski_metric(const double* const St
 
 }
 
-Metric_type Numerical_metric::compute_metric_components_from_spline(const double* const State_Vector, Derivative_selector_enums Derivative_selector) const {
+Numerical_metric_potentials_type Numerical_metric::compute_metric_components_from_spline(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx, Derivative_selector_enums Derivative_selector) const {
 
     /* -------------- The spline works with the compactified radial coordinate, so here I have to convert to that. -------------- */
-    double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
-    double r_shifted_coordinate = this->Parameters.M_ADM * (State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
+    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+    const double r_shifted_coordinate = this->Parameters.M_ADM * (State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
 
     /* -------------- Get the upper index of the grid interval where the current photon state vector is (in both compactified radial and there directions). --------------*/
-    int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size - 1, r_compactified) - this->Parameters.Compactified_radial_grid;
-    int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size - 1, State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
-    if (0 == Radial_grid_upper_idx) {
+    Numerical_metric_potentials_type temp_Potentials_1{};
+    Numerical_metric_potentials_type temp_Potentials_2{};
 
-        /* If the point we are evaluating the metric at is below the first grid point, snap it to said first grid point. */
-        Radial_grid_upper_idx = 1;
-
-    }
-    else if (Radial_grid_upper_idx >= this->Parameters.Radial_grid_size - 1) {
-
-        switch (Derivative_selector) {
-
-        case First_radial_derivative:
-
-            return this->comute_dr_Minkowski_metric(State_Vector);
-
-        case Second_radial_derivative:
-
-            return this->comute_d2r_Minkowski_metric(State_Vector);
-
-        case First_theta_derivative:
-
-            return this->comute_dtheta_Minkowski_metric(State_Vector);
-
-        default:
-
-            return this->comute_Minkowski_metric(State_Vector);
-
-        }
-
-    }
-
-    Metric_type temp_Metric_1{};
-    Metric_type temp_Metric_2{};
-
-    Metric_type Corrected_metric{};
+    Numerical_metric_potentials_type Corrected_Potentials{};
 
     double derivative_correction_factor_1 = 1.0;
     double derivative_correction_factor_2 = 1.0;
@@ -325,10 +273,10 @@ Metric_type Numerical_metric::compute_metric_components_from_spline(const double
 
     case First_radial_derivative:
 
-        Corrected_metric = this->evaluate_all_splines(State_Vector, First_radial_derivative);
+        Corrected_Potentials = this->evaluate_all_splines(State_Vector, Radial_grid_idx, Theta_grid_idx, First_radial_derivative);
 
         /* ------- This is correcting by the factor d(natural_parameter)/d(x_compactified) ------- */
-        derivative_correction_factor_1 = 1 / (this->Parameters.Compactified_radial_grid[Radial_grid_upper_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_upper_idx - 1]);
+        derivative_correction_factor_1 = 1 / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
 
         /* ------- This is correcting by the factor d(x_compactified)/d(x_uncompactified) ------- */
         derivative_correction_factor_1 *= (1 - r_compactified) * (1 - r_compactified);
@@ -339,44 +287,34 @@ Metric_type Numerical_metric::compute_metric_components_from_spline(const double
         /* ------- This is correcting by the factor d(r_shifted_coordinate)/d(r_BL) ------- */
         derivative_correction_factor_1 *= this->Parameters.M_ADM;
 
-        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+        Corrected_Potentials.F_0 *= derivative_correction_factor_1;
+        Corrected_Potentials.F_1 *= derivative_correction_factor_1;
+        Corrected_Potentials.F_2 *= derivative_correction_factor_1;
+        Corrected_Potentials.W   *= derivative_correction_factor_1;
 
-            for (int right_idx = 0; right_idx <= 3; right_idx++) {
-
-                Corrected_metric.Metric[left_idx][right_idx] *= derivative_correction_factor_1;
-
-            }
-
-        }
-
-        return Corrected_metric;
+        return Corrected_Potentials;
 
     case First_theta_derivative:
 
-        Corrected_metric = this->evaluate_all_splines(State_Vector, First_theta_derivative);
+        Corrected_Potentials = this->evaluate_all_splines(State_Vector, Radial_grid_idx, Theta_grid_idx, First_theta_derivative);
 
         /* ------- This is correcting by the factor d(natural_parameter)/d(theta) ------- */
-        derivative_correction_factor_1 = 1 / (this->Parameters.Theta_grid[Theta_grid_upper_idx] - this->Parameters.Theta_grid[Theta_grid_upper_idx - 1]);
+        derivative_correction_factor_1 = 1 / (this->Parameters.Theta_grid[Theta_grid_idx] - this->Parameters.Theta_grid[Theta_grid_idx - 1]);
 
-        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+        Corrected_Potentials.F_0 *= derivative_correction_factor_1;
+        Corrected_Potentials.F_1 *= derivative_correction_factor_1;
+        Corrected_Potentials.F_2 *= derivative_correction_factor_1;
+        Corrected_Potentials.W   *= derivative_correction_factor_1;
 
-            for (int right_idx = 0; right_idx <= 3; right_idx++) {
-
-                Corrected_metric.Metric[left_idx][right_idx] *= derivative_correction_factor_1;
-
-            }
-
-        }
-
-        return Corrected_metric;
+        return Corrected_Potentials;
 
     case Second_radial_derivative:
 
-        temp_Metric_1 = this->evaluate_all_splines(State_Vector, Second_radial_derivative);
-        temp_Metric_2 = this->evaluate_all_splines(State_Vector, First_radial_derivative);
+        temp_Potentials_1 = this->evaluate_all_splines(State_Vector, Radial_grid_idx, Theta_grid_idx, Second_radial_derivative);
+        temp_Potentials_2 = this->evaluate_all_splines(State_Vector, Radial_grid_idx, Theta_grid_idx, First_radial_derivative);
 
         /* ------- This is correcting by the factor d(natural_parameter)/d(x_compactified) ------- */
-        derivative_correction_factor_1 = 1 / (this->Parameters.Compactified_radial_grid[Radial_grid_upper_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_upper_idx - 1]);
+        derivative_correction_factor_1 = 1 / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
 
         /* ------- This is correcting by the factor d(x_compactified)/d(x_uncompactified) ------- */
         derivative_correction_factor_1 *= (1 - r_compactified) * (1 - r_compactified);
@@ -391,24 +329,26 @@ Metric_type Numerical_metric::compute_metric_components_from_spline(const double
         derivative_correction_factor_2  = -this->Parameters.M_ADM * ((1 - r_compactified) * (1 - r_compactified) * (1 - r_compactified) + 3 * r_compactified * (1 - r_compactified) * (1 - r_compactified)) / r_compactified / r_compactified * r_shifted_coordinate * derivative_correction_factor_1;
         derivative_correction_factor_2 += this->Parameters.M_ADM * derivative_correction_factor_1 / r_shifted_coordinate;
 
-        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+        temp_Potentials_1.F_0 *= derivative_correction_factor_1 * derivative_correction_factor_1;
+        temp_Potentials_1.F_1 *= derivative_correction_factor_1 * derivative_correction_factor_1;
+        temp_Potentials_1.F_2 *= derivative_correction_factor_1 * derivative_correction_factor_1;
+        temp_Potentials_1.W   *= derivative_correction_factor_1 * derivative_correction_factor_1;
 
-            for (int right_idx = 0; right_idx <= 3; right_idx++) {
+        temp_Potentials_2.F_0 *= derivative_correction_factor_2;
+        temp_Potentials_2.F_1 *= derivative_correction_factor_2;
+        temp_Potentials_2.F_2 *= derivative_correction_factor_2;
+        temp_Potentials_2.W   *= derivative_correction_factor_2;
 
-                temp_Metric_1.Metric[left_idx][right_idx] *= derivative_correction_factor_1 * derivative_correction_factor_1;
-                temp_Metric_2.Metric[left_idx][right_idx] *= derivative_correction_factor_2;
+        Corrected_Potentials.F_0 = temp_Potentials_1.F_0 + temp_Potentials_2.F_0;
+        Corrected_Potentials.F_1 = temp_Potentials_1.F_1 + temp_Potentials_2.F_1;
+        Corrected_Potentials.F_2 = temp_Potentials_1.F_2 + temp_Potentials_2.F_2;
+        Corrected_Potentials.W   = temp_Potentials_1.W   + temp_Potentials_2.W;
 
-                Corrected_metric.Metric[left_idx][right_idx] = temp_Metric_1.Metric[left_idx][right_idx] + temp_Metric_2.Metric[left_idx][right_idx];
-
-            }
-
-        }
-
-        return Corrected_metric;
+        return Corrected_Potentials;
 
     default:
 
-        return this->evaluate_all_splines(State_Vector, None);
+        return this->evaluate_all_splines(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
 
     }
 
@@ -416,23 +356,185 @@ Metric_type Numerical_metric::compute_metric_components_from_spline(const double
 
 Metric_type Numerical_metric::get_metric(const double* const State_Vector) const {
 
-    return this->compute_metric_components_from_spline(State_Vector, None);
+    /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
+
+    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+
+    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+
+    Metric_type s_Metric = this->get_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
+
+    return s_Metric;
+
+}
+
+Metric_type Numerical_metric::get_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
+
+    /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. It works with a shifted radial coordinate, defined in appendix A. */
+
+    const double& r_s = State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
+    const double& theta = State_Vector[e_theta];
+
+    const double sin_theta = sin(theta);
+    const double N = 1 - (this->Parameters.Horizon_radius / this->Parameters.M_ADM) / r_s;
+
+    const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
+
+    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
+    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
+    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
+
+    const double& W = s_Potentials.W * this->Parameters.M_ADM;
+
+    Metric_type s_Metric{};
+
+    s_Metric.Metric[e_t][e_t] = -exp_2F_0 * N + exp_2F_2 * r_s * r_s * sin_theta * sin_theta * W * W;
+    s_Metric.Metric[e_t][e_phi] = -exp_2F_2 * W * r_s * r_s * sin_theta * sin_theta;
+    s_Metric.Metric[e_phi][e_t] = s_Metric.Metric[e_t][e_phi];
+    s_Metric.Metric[e_r][e_r] = exp_2F_1 / N;
+    s_Metric.Metric[e_theta][e_theta] = exp_2F_1 * r_s * r_s;
+    s_Metric.Metric[e_phi][e_phi] = exp_2F_2 * r_s * r_s * sin_theta * sin_theta;
+
+    s_Metric.Lapse_function = sqrt(-s_Metric.Metric[e_t][e_t] + s_Metric.Metric[e_t][e_phi] * s_Metric.Metric[e_t][e_phi] / s_Metric.Metric[e_phi][e_phi]);
+    s_Metric.Shift_function = -s_Metric.Metric[e_t][e_phi] / s_Metric.Metric[e_phi][e_phi];
+
+    return s_Metric;
 
 }
 
 Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector) const {
 
-    return this->compute_metric_components_from_spline(State_Vector, First_radial_derivative);
+    /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
+
+    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+
+    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+
+    Metric_type s_dr_Metric = this->get_dr_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
+
+    return s_dr_Metric;
+
+}
+
+Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
+
+    /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. It works with a shifted radial coordinate, defined in appendix A. */
+
+    const double& r_s = State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
+    const double& theta = State_Vector[e_theta];
+
+    const double sin_theta = sin(theta);
+    const double N = 1 - (this->Parameters.Horizon_radius / this->Parameters.a_ADM) / r_s;
+    const double dr_N = (this->Parameters.Horizon_radius / this->Parameters.a_ADM) / r_s / r_s;
+
+    const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
+
+    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
+    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
+    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
+
+    const double& W = s_Potentials.W * this->Parameters.M_ADM;
+
+    const Numerical_metric_potentials_type s_dr_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, First_radial_derivative);
+
+    const double& dr_W = s_dr_Potentials.W * this->Parameters.M_ADM;
+    const double& dr_F_0 = s_dr_Potentials.F_0;
+    const double& dr_F_1 = s_dr_Potentials.F_1;
+    const double& dr_F_2 = s_dr_Potentials.F_2;
+
+    Metric_type s_dr_Metric{};
+
+    s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * r_s * sin_theta * sin_theta * W * (r_s * W * dr_F_2 + W + r_s * dr_W);
+    s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * sin_theta * sin_theta * (2 * r_s * W * dr_F_2 + 2 * W + r_s * dr_W);
+    s_dr_Metric.Metric[e_phi][e_t] = s_dr_Metric.Metric[e_t][e_phi];
+    s_dr_Metric.Metric[e_r][e_r] = exp_2F_1 / N * (2 * dr_F_1 - dr_N / N);
+    s_dr_Metric.Metric[e_theta][e_theta] = 2 * r_s * exp_2F_1 * (r_s * dr_F_1 + 1);
+    s_dr_Metric.Metric[e_phi][e_phi] = 2 * r_s * exp_2F_2 * (r_s * dr_F_2 + 1) * sin_theta * sin_theta;
+
+    return s_dr_Metric;
+
 }
 
 Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector) const {
 
-    return this->compute_metric_components_from_spline(State_Vector, First_theta_derivative);
+    /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
+
+    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+
+    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+
+    Metric_type s_dtheta_Metric = this->get_dtheta_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
+
+    return s_dtheta_Metric;
+
 }
+
+Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
+
+    /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. It works with a shifted radial coordinate, defined in appendix A. */
+
+    const double& r_s = State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
+    const double& theta = State_Vector[e_theta];
+
+    const double sin_theta = sin(theta);
+    const double cos_theta = cos(theta);
+    const double N = 1 - (this->Parameters.Horizon_radius / this->Parameters.a_ADM) / r_s;
+
+    Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
+
+    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
+    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
+    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
+
+    const double& W = s_Potentials.W * this->Parameters.M_ADM;
+
+    const Numerical_metric_potentials_type s_dtheta_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, First_theta_derivative);
+
+    const double& dtheta_W = s_dtheta_Potentials.W * this->Parameters.M_ADM;
+    const double& dtheta_F_0 = s_dtheta_Potentials.F_0;
+    const double& dtheta_F_1 = s_dtheta_Potentials.F_1;
+    const double& dtheta_F_2 = s_dtheta_Potentials.F_2;
+
+    Metric_type s_dtheta_Metric{};
+
+    s_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * N * dtheta_F_0 + 2 * exp_2F_2 * r_s * r_s * W * sin_theta * (W * sin_theta * dtheta_F_2 + sin_theta * dtheta_W + W * cos_theta);
+    s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * r_s * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
+    s_dtheta_Metric.Metric[e_phi][e_t] = s_dtheta_Metric.Metric[e_t][e_phi];
+    s_dtheta_Metric.Metric[e_r][e_r] = 2 * exp_2F_1 / N * dtheta_F_1;
+    s_dtheta_Metric.Metric[e_theta][e_theta] = 2 * r_s * r_s * exp_2F_1 * dtheta_F_1;
+    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r_s * r_s * exp_2F_2 * sin_theta * (sin_theta * dtheta_F_2 + cos_theta);
+
+    return s_dtheta_Metric;
+
+}
+
 
 Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector) const {
 
-    return this->compute_metric_components_from_spline(State_Vector, Second_radial_derivative);
+    /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
+
+    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+
+    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+
+    Metric_type s_d2r_Metric = this->get_d2r_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
+
+    return s_d2r_Metric;
+
+}
+
+
+Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
+
+    /* =================== TODO ================ */
+
+    Metric_type s_d2r_Metric{};
+
+    return s_d2r_Metric;
 }
 
 int Numerical_metric::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
@@ -442,12 +544,16 @@ int Numerical_metric::get_initial_conditions_from_file(Initial_conditions_type* 
 
 void Numerical_metric::get_EOM(double State_Vector[], double Derivatives[]) const {
 
+    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+    const int Radial_grid_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const int Theta_grid_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+
+    const Metric_type Metric = this->get_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
+    const Metric_type dr_Metric = this->get_dr_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
+    const Metric_type dtheta_Metric = this->get_dtheta_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
+
     /* ----------- Temporary matrix, used to store intermediate calculations ----------- */
     double temp_matrix[4][4]{};
-
-    Metric_type Metric = this->get_metric(State_Vector);
-    Metric_type dr_Metric = this->get_dr_metric(State_Vector);
-    Metric_type dtheta_Metric = this->get_dtheta_metric(State_Vector);
 
     double inv_metric[4][4]{};
     invert_metric(inv_metric, Metric.Metric);
@@ -455,7 +561,7 @@ void Numerical_metric::get_EOM(double State_Vector[], double Derivatives[]) cons
     double dr_inv_metric[4][4]{};
     matrix_matrix_multiply(dr_Metric.Metric, inv_metric, temp_matrix);
     matrix_matrix_multiply(inv_metric, temp_matrix, dr_inv_metric);
-
+    
     double dtheta_inv_metric[4][4]{};
     matrix_matrix_multiply(dtheta_Metric.Metric, inv_metric, temp_matrix);
     matrix_matrix_multiply(inv_metric, temp_matrix, dtheta_inv_metric);
@@ -488,16 +594,13 @@ void Numerical_metric::get_EOM(double State_Vector[], double Derivatives[]) cons
 
     }
 
-    *(Derivatives + e_p_t) = 0.0;
-    *(Derivatives + e_p_phi) = 0.0;
-   
 }
 
 bool Numerical_metric::terminate_integration(double State_vector[], double Derivatives[]) {
 
-    bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
+    const bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
 
-    bool hit_horizon = State_vector[e_r] - this->Parameters.Horizon_radius_BL < 1e-1;
+    const bool hit_horizon = State_vector[e_r] - this->Parameters.Horizon_radius_BL < 1e-1;
 
     return scatter || hit_horizon;
 };

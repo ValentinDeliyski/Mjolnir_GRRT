@@ -42,7 +42,7 @@ Metric_type RBH_class::get_metric(const double* const State_Vector) const {
     s_Metric.Metric[e_theta][e_theta] = rho * rho;
     s_Metric.Metric[e_phi][e_phi]     = s_Metric.Metric[e_theta][e_theta] * sin_theta * sin_theta;
 
-    s_Metric.Lapse_function = -s_Metric.Metric[e_t][e_t];
+    s_Metric.Lapse_function = sqrt(-s_Metric.Metric[e_t][e_t]);
 
     return s_Metric;
 }
@@ -69,9 +69,6 @@ Metric_type RBH_class::get_dr_metric(const double* const State_Vector) const {
     s_dr_Metric.Metric[e_r][e_r]         = 1.0 / (s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t]) * s_dr_Metric.Metric[e_t][e_t];
     s_dr_Metric.Metric[e_theta][e_theta] = 2 * r;
     s_dr_Metric.Metric[e_phi][e_phi]     = 2 * r * sin_theta * sin_theta;
-
-    s_dr_Metric.Lapse_function = -s_dr_Metric.Metric[e_t][e_t];
-    s_dr_Metric.Shift_function = 0.0;
 
     return s_dr_Metric;
 }
@@ -117,8 +114,6 @@ Metric_type RBH_class::get_d2r_metric(const double* const State_Vector) const {
                                             2.0 / (s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t]) * s_dr_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_t][e_t];
     s_d2r_Metric.Metric[e_theta][e_theta] = 2.0;
     s_d2r_Metric.Metric[e_phi][e_phi]     = 2 * sin_theta * sin_theta;
-
-    s_d2r_Metric.Lapse_function = -s_d2r_Metric.Metric[e_t][e_t];
 
     return s_d2r_Metric;
 }

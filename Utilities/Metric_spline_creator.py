@@ -16,7 +16,7 @@ class Numerical_metric_parser_class():
         
         """ ====================== Initialize the arrays that hold the metric functions ====================== """
         
-        GRID_R_SIZE = 249
+        GRID_R_SIZE = 251
         GRID_THETA_SIZE = 30
         
         x_coord = []
@@ -37,13 +37,13 @@ class Numerical_metric_parser_class():
                 if len(Line_contents) == 0:
                     continue
                 
-                """ Skip parsing the compactified radial coordiante grid point at the horizon (a.e. at x = 0) -> its g_rr diverges there so I can't use it. """
-                if float(Line_contents[0]) == 0:
-                    continue
+                # """ Skip parsing the compactified radial coordiante grid point at the horizon (a.e. at x = 0) -> its g_rr diverges there so I can't use it. """
+                # if float(Line_contents[0]) == 0:
+                #     continue
                 
-                """ Skip parsing the compactified radial coordiante grid point at infintiy (a.e. at x = 1) -> its not a useful value. """
-                if float(Line_contents[0]) == 1:
-                    continue
+                # """ Skip parsing the compactified radial coordiante grid point at infintiy (a.e. at x = 1) -> its not a useful value. """
+                # if float(Line_contents[0]) == 1:
+                #     continue
                 
                 x_coord.append(float(Line_contents[0]))
                 theta_coord.append(float(Line_contents[1]))
@@ -54,22 +54,22 @@ class Numerical_metric_parser_class():
                 
         """ The metric is calculated only for theta values in the range [0, pi / 2]. We use the reflection symmetry of the problem to get the rest of the grid. """
         x_coord = array(x_coord).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
-        self.x_coord = append(x_coord, x_coord, axis = 0)
+        self.x_coord = append(x_coord, x_coord[1:], axis = 0)
         
         theta_coord = array(theta_coord).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
-        self.theta_coord = append(theta_coord, theta_coord + pi / 2, axis = 0)
+        self.theta_coord = append(theta_coord, theta_coord[1:] + pi / 2, axis = 0)
         
         F_0 = array(F_0).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
-        self.F_0 = append(F_0, flip(F_0, axis = 0), axis = 0)
+        self.F_0 = append(F_0, flip(F_0[1:], axis = 0), axis = 0)
         
         F_1 = array(F_1).reshape(GRID_THETA_SIZE, GRID_R_SIZE)  
-        self.F_1 = append(F_1, flip(F_1, axis = 0), axis = 0)  
+        self.F_1 = append(F_1, flip(F_1[1:], axis = 0), axis = 0)  
         
         F_2 = array(F_2).reshape(GRID_THETA_SIZE, GRID_R_SIZE) 
-        self.F_2 = append(F_2, flip(F_2, axis = 0), axis = 0)  
+        self.F_2 = append(F_2, flip(F_2[1:], axis = 0), axis = 0)  
         
         W = array(W).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
-        self.W = append(W, flip(W, axis = 0), axis = 0)
+        self.W = append(W, flip(W[1:], axis = 0), axis = 0)
         
         """ Convert the compactified coordinate x to the (mass normalized) unbounded radial coordinate.
             NOTE: This is NOT in Boyer-Linguist coordinates. """
@@ -205,44 +205,47 @@ if __name__ == "__main__":
     # a_ADM = 0.172 / M_ADM**2
 
     Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/configuration-II.dat", M_ADM = M_ADM, a_ADM = a_ADM, r_H = r_H)
-    x_coord, _, r_BL_coord, theta_coord, _, _, _, _ = Numerical_metric_parser.get_parsed_results()
-    g_tt, g_tphi, g_rr, g_thth, g_phiphi = Numerical_metric_parser.get_metric_functions()
-    
-    # x_coord     = x_coord.flatten()[g_rr.flatten() != float("inf")]
-    # theta_coord = theta_coord.flatten()[g_rr.flatten() != float("inf")]
-    
-    # g_tt     = g_tt.flatten()[g_rr.flatten() != float("inf")]
-    # g_tphi   = g_tphi.flatten()[g_rr.flatten() != float("inf")]
-    # g_thth   = g_thth.flatten()[g_rr.flatten() != float("inf")]
-    # g_phiphi = g_phiphi.flatten()[g_rr.flatten() != float("inf")]
-    # g_rr     = g_rr.flatten()[g_rr.flatten() != float("inf")]
-    
-    g_tt_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = g_tt, X_patch_number = 60, Y_patch_number = 249)
-    g_rr_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = g_rr, X_patch_number = 60, Y_patch_number = 249)
-    g_tphi_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = g_tphi, X_patch_number = 60, Y_patch_number = 249)
-    g_thth_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = g_thth, X_patch_number = 60, Y_patch_number = 249)
-    g_phiphi_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = g_phiphi, X_patch_number = 60, Y_patch_number = 249)
+    x_coord, _, r_BL_coord, theta_coord, F_0, F_1, F_2, W = Numerical_metric_parser.get_parsed_results()
+
+    F_0_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_0, X_patch_number = 59, Y_patch_number = 251)
+    F_1_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_1, X_patch_number = 59, Y_patch_number = 251)
+    F_2_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_2, X_patch_number = 59, Y_patch_number = 251)
+    W_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = W, X_patch_number = 59, Y_patch_number = 251)
 
     Numerical_metric_parser.export_spline_to_XML(Metric_name = "Numerical_Kerr_Config_II", 
-                                                 Theta_control_vectors  = [g_tt_spline_instance.Control_vector_X, 
-                                                                           g_rr_spline_instance.Control_vector_X, 
-                                                                           g_tphi_spline_instance.Control_vector_X, 
-                                                                           g_thth_spline_instance.Control_vector_X, 
-                                                                           g_phiphi_spline_instance.Control_vector_X], 
-                                                 Radial_control_vectors = [g_tt_spline_instance.Control_vector_Y, 
-                                                                           g_rr_spline_instance.Control_vector_Y, 
-                                                                           g_tphi_spline_instance.Control_vector_Y, 
-                                                                           g_thth_spline_instance.Control_vector_Y, 
-                                                                           g_phiphi_spline_instance.Control_vector_Y], 
-                                                 Metric_control_vectors = [g_tt_spline_instance.Control_vector_Z, 
-                                                                           g_rr_spline_instance.Control_vector_Z, 
-                                                                           g_tphi_spline_instance.Control_vector_Z, 
-                                                                           g_thth_spline_instance.Control_vector_Z, 
-                                                                           g_phiphi_spline_instance.Control_vector_Z], 
-                                                 Control_vector_order   = ["g_tt", "g_rr", "g_tphi", "g_thth", "g_phiphi"])
+                                                 Theta_control_vectors  = [F_0_spline_instance.Control_vector_X, 
+                                                                           F_1_spline_instance.Control_vector_X, 
+                                                                           F_2_spline_instance.Control_vector_X, 
+                                                                           W_spline_instance.Control_vector_X], 
+                                                 Radial_control_vectors = [F_0_spline_instance.Control_vector_Y, 
+                                                                           F_1_spline_instance.Control_vector_Y, 
+                                                                           F_2_spline_instance.Control_vector_Y, 
+                                                                           W_spline_instance.Control_vector_Y], 
+                                                 Metric_control_vectors = [F_0_spline_instance.Control_vector_Z, 
+                                                                           F_1_spline_instance.Control_vector_Z, 
+                                                                           F_2_spline_instance.Control_vector_Z, 
+                                                                           W_spline_instance.Control_vector_Z], 
+                                                 Control_vector_order   = ["F_0", "F_1", "F_2", "W"])
     
-    # Theta_surface, Radial_surface, Z_surface = g_tt_spline_instance.evaluate_spline(Patch_discretization = 5)
-    # _, ax1 = plt.subplots(ncols = 1, nrows = 1, subplot_kw = dict(projection = '3d'))
-    # ax1.plot_surface(Radial_surface, Theta_surface, Z_surface, color = 'orange') 
+    Theta_surface, Radial_surface, F_0_surface = F_0_spline_instance.evaluate_spline(Patch_discretization = 5)
+    Theta_surface, Radial_surface, F_1_surface = F_1_spline_instance.evaluate_spline(Patch_discretization = 5)
+    Theta_surface, Radial_surface, F_2_surface = F_2_spline_instance.evaluate_spline(Patch_discretization = 5)
+    Theta_surface, Radial_surface, W_surface = W_spline_instance.evaluate_spline(Patch_discretization = 5)
     
-    Numerical_metric_parser.plot_metric_functions("x", radial_coord_cutoff = 10)
+    _, (ax1, ax2, ax3, ax4) = plt.subplots(ncols = 4, nrows = 1, subplot_kw = dict(projection = '3d'))
+    
+    ax1.plot_surface(Radial_surface, Theta_surface, F_0_surface, color = 'orange') 
+    ax1.plot_surface(x_coord, theta_coord, F_0, color = 'blue') 
+    
+    ax2.plot_surface(Radial_surface, Theta_surface, F_1_surface, color = 'orange') 
+    ax2.plot_surface(x_coord, theta_coord, F_1, color = 'blue')
+    
+    ax3.plot_surface(Radial_surface, Theta_surface, F_2_surface, color = 'orange') 
+    ax3.plot_surface(x_coord, theta_coord, F_2, color = 'blue')
+    
+    ax4.plot_surface(Radial_surface, Theta_surface, W_surface, color = 'orange') 
+    ax4.plot_surface(x_coord, theta_coord, W, color = 'blue')
+    
+    plt.show()
+    
+    # Numerical_metric_parser.plot_metric_functions("x", radial_coord_cutoff = 10)

@@ -193,8 +193,8 @@ struct Hotspot_model_parameters_type {
        specified by the "Velocity_profile_type" enum, with a purely radial profile. The range is [0, 1]. */
     double Radial_velocity_fraction;
 
-    /*! The hotspot position, specified as [Distance, Polar Angle, Azimuth Angle] */
-    double Position[3]; 
+    /*! The hotspot position, specified as [Time, Distance, Polar Angle, Azimuth Angle] */
+    double Position[4]; 
 
     /* The hotspot can be modelled as a localized Gaussian overdensity.
      * The density, temperature and overall time evolution profiles are specified with
@@ -301,6 +301,15 @@ struct Emission_model_parameters_type {
     double Kappa;
 };
 
+struct Numerical_metric_potentials_type {
+
+    double F_0;
+    double F_1;
+    double F_2;
+    double W;
+
+};
+
 struct Numerical_metric_params_type {
 
     double M_ADM;
@@ -314,13 +323,12 @@ struct Numerical_metric_params_type {
     // NOTE: This IS normalized to the mass.
     double a_ADM;
 
-    /* ============ Pointers to the numerical metric control vector arrays ============ = */
+    /* ============ Pointers to the numerical metric potentials control vector arrays ============ = */
 
-    double* g_tt_control_vector;
-    double* g_rr_control_vector;
-    double* g_thth_control_vector;
-    double* g_phiphi_control_vector;
-    double* g_tphi_control_vector;
+    double* F_0_control_vector;
+    double* F_1_control_vector;
+    double* F_2_control_vector;
+    double* W_control_vector;
     int Control_vector_size;
 
     /* ============ Pointers to the coordinate grid and its control vector arrays ============ = */

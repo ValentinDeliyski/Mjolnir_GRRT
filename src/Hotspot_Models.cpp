@@ -24,9 +24,9 @@ Hotspot_position_type Hotspot_model_type::get_hotspot_position(const double* con
 
     if (NULL != Hotspot_Velocity) { Hotspot_ang_velocity = Hotspot_Velocity[e_phi] / Hotspot_Velocity[e_t]; }
 
-    Hotspot_position.Distance    = this->s_Hotspot_params.Position[e_r - 1];
+    Hotspot_position.Distance    = this->s_Hotspot_params.Position[e_r];
     Hotspot_position.Inclination = M_PI_2;
-    Hotspot_position.Azimuth     = this->s_Hotspot_params.Position[e_phi - 1] + Hotspot_ang_velocity * (-State_Vector[e_t] - this->s_Hotspot_params.Coord_time_offset);
+    Hotspot_position.Azimuth     = this->s_Hotspot_params.Position[e_phi] + Hotspot_ang_velocity * (-State_Vector[e_t] - this->s_Hotspot_params.Coord_time_offset);
 
     double sin_hotspot_inclination = sin(Hotspot_position.Inclination);
 
@@ -93,7 +93,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     /* ======================= The temporal part of the density profile ======================= */
 
-    Profile_prameters.Gaussian_variable = State_Vector[e_t];
+    Profile_prameters.Gaussian_variable = -State_Vector[e_t];
     Profile_prameters.Gaussian_spread = this->s_Hotspot_params.Temporal_spread;
     Profile_prameters.Gaussian_mean = this->s_Hotspot_params.Coord_time_offset;
 
@@ -113,6 +113,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     /* ======================= The spatial part of the temperature profile ======================= */
 
+    Profile_prameters.Gaussian_variable = State_Vector[e_r];
     Profile_prameters.Gaussian_spread = this->s_Hotspot_params.Temperature_spread;
 
     Spatial_profile = this->get_hotspot_profile(&Profile_prameters, this->s_Hotspot_params.Temperature_profile_type);

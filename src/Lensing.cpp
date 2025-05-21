@@ -552,81 +552,49 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         }
 
-        /* =============== Boolian flags to check if we are inside a non-negligable part of the emission medium =============== */
+        double Tetrad[4][4]{};
+        double inv_Tetrad[4][4]{};
 
-        Emission_medium_state_type Disk_state{};
-        Emission_medium_state_type Hotspot_state{};
+        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
-        p_Sim_Context->p_Emission_Model->p_Disk_Model->get_density_and_temperature(Logged_ray_path, &Disk_state);
+            if (OK == Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path)) {
 
-        Hotspot_state.Plasma_Velocity = p_Sim_Context->p_Emission_Model->get_plasma_velocity(Logged_ray_path, p_Sim_Context,
-                                                                                             p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type, 
-                                                                                             p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
-
-        p_Sim_Context->p_Emission_Model->p_Hotspot_Model->get_density_and_temperature(Logged_ray_path, Hotspot_state.Plasma_Velocity, &Hotspot_state);
-
-        bool Inside_disk    = Disk_state.Density / p_Sim_Context->p_Init_Conditions->Disk_params.Electron_density_scale > 1e-3;
-        bool Inside_hotspot = Hotspot_state.Density / p_Sim_Context->p_Init_Conditions->Hotspot_params.Electron_density_scale > 1e-3;
-
-        if (Inside_disk || Inside_hotspot) {
-
-            double Tetrad[4][4]{};
-            double inv_Tetrad[4][4]{};
-
-            if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
-
-                if (OK == Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path)) {
-
-                    Map_Polarization_Vector_to_Stokes(std::as_const(inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
-
-                }
-            }
-
-            /* ================================= Propagate the radiative transfer equations ================================= */
-
-            Transfer_functions_type total_Transfer_functions{};
-
-            /* Loop trough each emission medium (Disk, Hotspot, Jet and so on) and sum their respective transfer functions */
-            for (int emission_medium = Disk; emission_medium <= Hotspot; emission_medium++){
-
-                if (emission_medium == Disk && !Inside_disk) {
-
-                    continue;
-
-                }
-
-                if (emission_medium == Hotspot && !Inside_hotspot) {
-
-                    continue;
-
-                }
-
-                Transfer_functions_type temp_Transfer_functions{};
-
-                p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(Logged_ray_path,
-                                                                                  p_Sim_Context,
-                                                                                  static_cast<Emission_medium_enums>(emission_medium),
-                                                                                  &temp_Transfer_functions);
-
-                add_4D_vectors(temp_Transfer_functions.Emission_functions,   total_Transfer_functions.Emission_functions,   total_Transfer_functions.Emission_functions);
-                add_4D_vectors(temp_Transfer_functions.Faradey_functions,    total_Transfer_functions.Faradey_functions,    total_Transfer_functions.Faradey_functions);
-                add_4D_vectors(temp_Transfer_functions.Absorbtion_functions, total_Transfer_functions.Absorbtion_functions, total_Transfer_functions.Absorbtion_functions);
+                Map_Polarization_Vector_to_Stokes(std::as_const(inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
 
             }
+        }
 
-            /* ------------------------------------------------------------------------------------------------------------- */
+        /* ================================= Propagate the radiative transfer equations ================================= */
 
-            Propagate_Stokes_vector(Implicit_Trapezoid, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
+        Transfer_functions_type total_Transfer_functions{};
 
-            if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization){
+        /* Loop trough each emission medium (Disk, Hotspot, Jet and so on) and sum their respective transfer functions */
+        for (int emission_medium = Disk; emission_medium <= Hotspot; emission_medium++){
 
-                /* ============================ Convert the stokes vector into a polarization vector ===================== */
+            Transfer_functions_type temp_Transfer_functions{};
 
-                Map_Stokes_to_Polarization_Vector(std::as_const(Stokes_Vector), std::as_const(Tetrad), Coord_Basis_Pol_vec);
+            p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(Logged_ray_path,
+                                                                              p_Sim_Context,
+                                                                              static_cast<Emission_medium_enums>(emission_medium),
+                                                                              &temp_Transfer_functions);
 
-                /* ======================================================================================================= */
+            add_4D_vectors(temp_Transfer_functions.Emission_functions,   total_Transfer_functions.Emission_functions,   total_Transfer_functions.Emission_functions);
+            add_4D_vectors(temp_Transfer_functions.Faradey_functions,    total_Transfer_functions.Faradey_functions,    total_Transfer_functions.Faradey_functions);
+            add_4D_vectors(temp_Transfer_functions.Absorbtion_functions, total_Transfer_functions.Absorbtion_functions, total_Transfer_functions.Absorbtion_functions);
 
-            }
+        }
+
+        /* ------------------------------------------------------------------------------------------------------------- */
+
+        Propagate_Stokes_vector(Implicit_Trapezoid, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
+
+        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization){
+
+            /* ============================ Convert the stokes vector into a polarization vector ===================== */
+
+            Map_Stokes_to_Polarization_Vector(std::as_const(Stokes_Vector), std::as_const(Tetrad), Coord_Basis_Pol_vec);
+
+            /* ======================================================================================================= */
 
         }
 

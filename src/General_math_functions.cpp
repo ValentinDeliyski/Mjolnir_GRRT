@@ -18,11 +18,13 @@ double vector_norm(const double* const Vector, const int Vector_size) {
 
 void matrix_matrix_multiply(const double Mat_A[4][4], const double Mat_B[4][4], double Result[4][4]) {
 
+	memset(Result, 0.0, 16 * sizeof(double));
+
 	for (int row = 0; row < 4; row++) {
 
-		for (int k = 0; k < 4; k++) {
+		for (int column = 0; column < 4; column++){
 
-			for (int column = 0; column < 4; column++){
+			for (int k = 0; k < 4; k++) {
 
 				Result[row][column] += Mat_A[row][k] * Mat_B[k][column];
 
@@ -32,6 +34,8 @@ void matrix_matrix_multiply(const double Mat_A[4][4], const double Mat_B[4][4], 
 }
 
 void mat_vec_multiply_4D(double const Matrix[4][4], const double* const Vector, double* const Result) {
+
+	memset(Result, 0.0, 4 * sizeof(double));
 
 	for (int row = 0; row <= 3; row += 1) {
 

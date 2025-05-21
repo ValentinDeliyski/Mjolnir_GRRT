@@ -73,7 +73,7 @@ Metric_type JNW_class::get_metric(const double* const State_Vector) const {
     s_Metric.Metric[e_theta][e_theta] = pow(1 - r_singularity / r, 1 - this->Gamma) * r2;
     s_Metric.Metric[e_phi][e_phi]     = s_Metric.Metric[e_theta][e_theta] * sin_theta * sin_theta;
 
-    s_Metric.Lapse_function = -s_Metric.Metric[0][0];
+    s_Metric.Lapse_function = sqrt(-s_Metric.Metric[e_t][e_t]);
     s_Metric.Shift_function = 0.;
 
     return s_Metric;
@@ -101,7 +101,7 @@ Metric_type JNW_class::get_dr_metric(const double* const State_Vector) const {
     s_dr_Metric.Metric[e_theta][e_theta] = 2 * r * pow(1 - r_singularity / r, 1 - this->Gamma) + (1 - this->Gamma) * pow(1 - r_singularity / r, -this->Gamma) * r_singularity;
     s_dr_Metric.Metric[e_phi][e_phi]     = s_dr_Metric.Metric[e_theta][e_theta] * sin_theta * sin_theta;
 
-    s_dr_Metric.Lapse_function = -s_dr_Metric.Metric[e_t][e_t];
+    s_dr_Metric.Lapse_function = 0;
 
     return s_dr_Metric;
 

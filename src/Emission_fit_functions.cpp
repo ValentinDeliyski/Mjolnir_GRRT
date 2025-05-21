@@ -136,10 +136,10 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
 
     double power_I = 3 * pow(p_Transfer_args->kappa, -3. / 2);
 
-    if (!isnan(Emission_functions_high[I] / Emission_functions_low[I])) {
+    Emission_functions_low[I]  = Common_factor_low;
+    Emission_functions_high[I] = Common_factor_high;
 
-        Emission_functions_low[I]  = Common_factor_low;
-        Emission_functions_high[I] = Common_factor_high;
+    if (!isnan(Emission_functions_high[I] / Emission_functions_low[I])) {
 
         Emission_functions[I] = Emission_functions_low[I] * pow(1. + pow(Emission_functions_high[I] / Emission_functions_low[I], -power_I), -1. / power_I);
 
@@ -152,20 +152,20 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
 
     double power_Q = 3.7 * pow(p_Transfer_args->kappa, -8. / 5);
 
-    if (!isnan(Emission_functions_high[Q] / Emission_functions_low[Q])) {
+    Emission_functions_low[Q] = -Common_factor_low / 2;
+    Emission_functions_high[Q] = -Common_factor_high * (16.0 / 25 + p_Transfer_args->kappa / 50);
 
-        Emission_functions_low[Q]  = -Common_factor_low / 2;
-        Emission_functions_high[Q] = -Common_factor_high * (16.0 / 25 + p_Transfer_args->kappa / 50);
+    if (!isnan(Emission_functions_high[Q] / Emission_functions_low[Q])) {
 
         Emission_functions[Q] = Emission_functions_low[Q] * pow(1. + pow(Emission_functions_high[Q] / Emission_functions_low[Q], -power_Q), -1. / power_Q);
     }
 
     double power_V = 13. / 5 * pow(p_Transfer_args->kappa, -36. / 25);
 
-    if (!isnan(Emission_functions_high[V] / Emission_functions_low[V])) {
+    Emission_functions_low[V] = -Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1., 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
+    Emission_functions_high[V] = -Common_factor_high * (49.0 / 64 * pow(pow(p_Transfer_args->sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(p_Transfer_args->kappa, -11.0 / 25) / p_Transfer_args->T_electron_dim / p_Transfer_args->sqrt_X;
 
-        Emission_functions_low[V]  = -Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1., 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
-        Emission_functions_high[V] = -Common_factor_high * (49.0 / 64 * pow(pow(p_Transfer_args->sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(p_Transfer_args->kappa, -11.0 / 25) / p_Transfer_args->T_electron_dim / p_Transfer_args->sqrt_X;
+    if (!isnan(Emission_functions_high[V] / Emission_functions_low[V])) {
 
         Emission_functions[V] = Emission_functions_low[V] * pow(1. + pow(Emission_functions_high[V] / Emission_functions_low[V], -power_V), -1. / power_V);
 
