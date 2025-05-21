@@ -1,3 +1,6 @@
+
+#%%
+
 import os
 import sys
 import ehtim as eh
@@ -31,14 +34,14 @@ def run_single_reconstruction(Input_simulation: str, EHT_array: str, Base_recons
     Telescope_array  = eh.array.load_txt(parent_directory + 'Ehtim/Ehtim_Input_Data/arrays/{}.txt'.format(EHT_array))
 
     """ Set the simulated observation parameters - these are the example defaults, because I have no idea how to vary them... """
-    Integration_time        = 5      # [s]
-    Scan_advance_time       = 30     # [s]
+    Integration_time        = 60      # [s]
+    Scan_advance_time       = 120    # [s]
     Observation_start_time  = 0      # [hr GMST]
     Observation_stop_time   = 24     # [hr GMST]
     Observation_bandwidth   = 4e9    # [Hz]
     Include_gain_errors     = True   # Enables telescope gain errors
     Include_phase_errors    = True   # Enables telescope phase calibration errors
-    Include_SgrA_scattering = False  # Include Sgr A scattering
+    Include_SgrA_scattering = True  # Include Sgr A scattering
                             
     Simulated_observation = Ray_Tracer_image.observe(array    = Telescope_array, 
                                                      tint     = Integration_time, 
@@ -91,9 +94,9 @@ def run_single_reconstruction(Input_simulation: str, EHT_array: str, Base_recons
                                               pol = None)
     
     """ NOTE: This is not done in the multifrequency example, but done in others and I dont know why... """
-    Averaging_time = 600 # [s]
-    Simulated_observation.add_amp(avg_time = Averaging_time)
-    Simulated_observation.add_cphase(avg_time = Averaging_time)
+    # Averaging_time = 600 # [s]
+    # Simulated_observation.add_amp(avg_time = Averaging_time)
+    # Simulated_observation.add_cphase(avg_time = Averaging_time)
 
     #==========================================#
     #               Imager runs                #
@@ -110,8 +113,8 @@ def run_single_reconstruction(Input_simulation: str, EHT_array: str, Base_recons
                                                init_im  = Initial_Gaussian, 
                                                prior_im = Initial_Gaussian, 
                                                flux     = Mjolnir_total_flux,
-                                               data_term = {'amp':   amp_coeff, 
-                                                           'cphase': cphase_coeff},
+                                               data_term = {'amp':   amp_coeff,
+                                                            'cphase': cphase_coeff},
                                                reg_term = {'simple': simple_multiplier * simple_coeff,
                                                            'tv2':    tv_multiplier * tv2_coeff, 
                                                            'flux':   flux_coeff, 
@@ -132,7 +135,7 @@ def run_single_reconstruction(Input_simulation: str, EHT_array: str, Base_recons
             Imager_instance.init_next  = Image_output.blur_circ(Observation_Resolution * blur_factor)
             Imager_instance.prior_next = Imager_instance.init_next
             
-            Imager_instance.dat_term_next = {'amp': amp_coeff, 
+            Imager_instance.dat_term_next = {'amp':   amp_coeff,
                                              'cphase': cphase_coeff}
             
             Imager_instance.reg_term_next = {'simple': simple_multiplier * simple_coeff,
@@ -167,10 +170,10 @@ def run_single_reconstruction(Input_simulation: str, EHT_array: str, Base_recons
     Final_output_blur.save_txt(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_blur.txt')
     Final_output_blur.save_fits(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_blur.fits')
 
-    obs_chi_amp    = Simulated_observation.chisq(Final_output, ttype = 'fast', dtype = 'amp')
+    obs_chi_amp    = Simulated_observation.chisq(Final_output, ttype = 'fast', dtype = 'camp')
     obs_chi_cphase = Simulated_observation.chisq(Final_output, ttype = 'fast', dtype = 'cphase')
 
-    msg1 = ("chi2 amp = {}".format(round(obs_chi_amp, 5)))
+    msg1 = ("chi2 camp = {}".format(round(obs_chi_amp, 5)))
     msg2 = ("chi2 cphase = {}".format(round(obs_chi_cphase, 5)))
 
     msg_len = maximum(len(msg1), len(msg2))
@@ -229,7 +232,7 @@ def run_multifrequncy_reconstruction(Input_simulation: str, EHT_array: str, Base
     Observation_bandwidth   = 2e9    # [Hz]
     Include_gain_errors     = True   # Enables telescope gain errors
     Include_phase_errors    = True   # Enables telescope phase calibration errors
-    Include_SgrA_scattering = False  # Include Sgr A scattering
+    Include_SgrA_scattering = True  # Include Sgr A scattering
                             
     Simulated_observation_230_GHz = Ray_Tracer_image_230_GHz.observe(array    = Telescope_array_230_GHz, 
                                                                      tint     = Integration_time, 
@@ -335,13 +338,13 @@ def run_multifrequncy_reconstruction(Input_simulation: str, EHT_array: str, Base
                                                init_im  = Initial_Gaussian_230_GHz, 
                                                prior_im = Initial_Gaussian_230_GHz, 
                                                flux     = Init_image_total_flux_230_GHz,
-                                               data_term = {'amp':   amp_coeff, 
-                                                           'cphase': cphase_coeff},
+                                               data_term = {'amp':   amp_coeff,
+                                                            'cphase': cphase_coeff},
                                                reg_term = {'simple': simple_multiplier * simple_coeff,
                                                            'tv2':    tv_multiplier * tv2_coeff, 
                                                            'flux':   flux_coeff, 
                                                            'cm':     cm_coff, 
-                                                           'l1':     l1_multiplier * l1_coeff},
+                                                           "l1":     l1_multiplier * l1_coeff},
                                                maxit = max_iter, 
                                                ttype = 'fast', 
                                                stop  = 1e-10)
@@ -357,7 +360,7 @@ def run_multifrequncy_reconstruction(Input_simulation: str, EHT_array: str, Base
             Imager_instance.init_next  = Image_output.blur_circ(Observation_Resolution_230_GHz * blur_factor)
             Imager_instance.prior_next = Imager_instance.init_next
             
-            Imager_instance.dat_term_next = {'amp': amp_coeff, 
+            Imager_instance.dat_term_next = {'amp':   amp_coeff,
                                              'cphase': cphase_coeff}
             
             Imager_instance.reg_term_next = {'simple': simple_multiplier * simple_coeff,
@@ -416,15 +419,15 @@ def run_multifrequncy_reconstruction(Input_simulation: str, EHT_array: str, Base
     Final_spectral_index_blur.save_txt(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_specIDX_blur.txt')
     Final_spectral_index_blur.save_fits(parent_directory + 'Ehtim/Ehtim_Output_Data/' + Simulation_name + '/Results_specIDX_blur.fits')
 
-    obs345_chi_amp = Simulated_observation_345_GHz.chisq(Final_output_345_GHz, ttype = 'fast', dtype = 'amp')
-    obs230_chi_amp = Simulated_observation_230_GHz.chisq(Final_output_230_GHz, ttype = 'fast', dtype = 'amp')
+    obs345_chi_amp = Simulated_observation_345_GHz.chisq(Final_output_345_GHz, ttype = 'fast', dtype = 'camp')
+    obs230_chi_amp = Simulated_observation_230_GHz.chisq(Final_output_230_GHz, ttype = 'fast', dtype = 'camp')
 
     obs345_chi_cphase = Simulated_observation_345_GHz.chisq(Final_output_345_GHz, ttype = 'fast', dtype = 'cphase')
     obs230_chi_cphase = Simulated_observation_230_GHz.chisq(Final_output_230_GHz, ttype = 'fast', dtype = 'cphase')
 
     for frequency_idx, (chi2_amp, chi2_cphase) in enumerate(zip([obs230_chi_amp, obs345_chi_amp], [obs230_chi_cphase, obs345_chi_cphase])):
 
-        msg1 = ("chi2 amp = {}".format(round(chi2_amp, 5)))
+        msg1 = ("chi2 camp = {}".format(round(chi2_amp, 5)))
         msg2 = ("chi2 cphase = {}".format(round(chi2_cphase, 5)))
 
         msg_len = maximum(len(msg1), len(msg2))
@@ -465,7 +468,7 @@ def Run_reconstruction_sweep(Input_simulatiaon, EHT_array, Base_reconstruction_p
             
             for l1_multiplier in [0, 1, 10, 100]:
                 
-                for FWHM in [50]:
+                for FWHM in [80]:
                     
                     for Total_flux in [None]:
                         
@@ -502,19 +505,43 @@ if __name__ == "__main__":
     
     Base_reconstruction_params = (Simple_coeffs, TV2_coeffs, Flux_coeffs, CM_coeffs, L1_coeffs, Amp_coeffs, Cphase_coeffs, Max_iterations, Gauss_blur_factor)
        
-    Input_simulations = [["M87_Wormhole_a_0.5_redshift_0", "ngEHT"],
-                         ["M87_Wormhole_a_0.5_redshift_1", "ngEHT"],
-                         ["M87_Wormhole_a_0.5_redshift_2", "ngEHT"],
-                         ["M87_Wormhole_a_0.9_redshift_0", "ngEHT"],
-                         ["M87_Wormhole_a_0.9_redshift_1", "ngEHT"],
-                         ["M87_Wormhole_a_0.9_redshift_2", "ngEHT"],
-                         ["M87_Wormhole_a_0_redshift_0", "ngEHT"],
-                         ["M87_Wormhole_a_0_redshift_1", "ngEHT"],
-                         ["M87_Wormhole_a_0_redshift_2", "ngEHT"]]
-    
+    # Input_simulations = [["Sgr_A_Wormhole_a_0.5_redshift_0", "EHT2017"],
+    #                      ["Sgr_A_Wormhole_a_0.5_redshift_1", "EHT2017"],
+    #                      ["Sgr_A_Wormhole_a_0.5_redshift_2", "EHT2017"],
+    #                      ["Sgr_A_Wormhole_a_0.9_redshift_0", "EHT2017"],
+    #                      ["Sgr_A_Wormhole_a_0.9_redshift_1", "EHT2017"],
+    #                      ["Sgr_A_Wormhole_a_0.9_redshift_2", "EHT2017"],
+    #                      ["Sgr_A_Wormhole_a_0_redshift_0", "EHT2017"],
+    #                      ["Sgr_A_Wormhole_a_0_redshift_1", "EHT2017"],
+    #                      ["Sgr_A_Wormhole_a_0_redshift_2", "EHT2017"]]
+                         
+    Input_simulations = [["Sgr_A_Wormhole_a_0.5_redshift_0", "EHT2022"],
+                         ["Sgr_A_Wormhole_a_0.5_redshift_1", "EHT2022"],
+                         ["Sgr_A_Wormhole_a_0.5_redshift_2", "EHT2022"],
+                         ["Sgr_A_Wormhole_a_0.9_redshift_0", "EHT2022"],
+                         ["Sgr_A_Wormhole_a_0.9_redshift_1", "EHT2022"],
+                         ["Sgr_A_Wormhole_a_0.9_redshift_2", "EHT2022"],
+                         ["Sgr_A_Wormhole_a_0_redshift_0", "EHT2022"],
+                         ["Sgr_A_Wormhole_a_0_redshift_1", "EHT2022"],
+                         ["Sgr_A_Wormhole_a_0_redshift_2", "EHT2022"],
+                         
+                         ["Sgr_A_Wormhole_a_0.5_redshift_0", "EHT2017"],
+                         ["Sgr_A_Wormhole_a_0.5_redshift_1", "EHT2017"],
+                         ["Sgr_A_Wormhole_a_0.5_redshift_2", "EHT2017"],
+                         ["Sgr_A_Wormhole_a_0.9_redshift_0", "EHT2017"],
+                         ["Sgr_A_Wormhole_a_0.9_redshift_1", "EHT2017"],
+                         ["Sgr_A_Wormhole_a_0.9_redshift_2", "EHT2017"],
+                         ["Sgr_A_Wormhole_a_0_redshift_0", "EHT2017"],
+                         ["Sgr_A_Wormhole_a_0_redshift_1", "EHT2017"],
+                         ["Sgr_A_Wormhole_a_0_redshift_2", "EHT2017"]]
+
     for Input_simulation in Input_simulations:
         Input_simulation.append(Base_reconstruction_params) 
     
-    with Pool(9) as pool:
+    with Pool(10) as pool:
         pool.starmap(Run_reconstruction_sweep, Input_simulations)
+    
+    
+    # Run_reconstruction_sweep("Sgr_A_Wormhole_a_0.5_redshift_0", "EHT2017", Base_reconstruction_params)
+
     

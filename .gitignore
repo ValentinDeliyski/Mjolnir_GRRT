@@ -350,3 +350,11 @@ MigrationBackup/
 .ionide/
 
 .rar
+.vscode
+Utilities/
+Sim_Results/
+
+!Utilities/Ehtim/Ehtim_Input_Data/Arrays
+!Utilities/Ehtim/Ehtim_Launcher.py
+*.csv
+*.XML
