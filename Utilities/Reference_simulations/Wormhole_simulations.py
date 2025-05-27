@@ -140,30 +140,30 @@ class Wormhole_simulation_cofigurator:
                     "_input.XML")        
         
         args     = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 0"
-        subprocess.call(args, shell = True)
+        # subprocess.call(args, shell = True)
                 
-        if self.central_object == "M87":
-            Distance = self.Units.M87_DISTANCE_GEOMETRICAL
-        else:
-            Distance = self.Units.SGRA_DISTANCE_GEOMETRICAL
+        # if self.central_object == "M87":
+        #     Distance = self.Units.M87_DISTANCE_GEOMETRICAL
+        # else:
+        #     Distance = self.Units.SGRA_DISTANCE_GEOMETRICAL
                 
-        """ Evaluate the simulataion results """
-        Sim_parser_n0 = Simulation_Parser(parent_directory + "Wormhole_sim_paper\\"+ self.Simulation_configurator.simulation_name["Value"] + "\\Wormhole_n0")
-        Total_flux_n0 = Sim_parser_n0.get_total_flux(obs_pos = Distance, unit = "mJy")
+        # """ Evaluate the simulataion results """
+        # Sim_parser_n0 = Simulation_Parser(parent_directory + "Wormhole_sim_paper\\"+ self.Simulation_configurator.simulation_name["Value"] + "\\Wormhole_n0")
+        # Total_flux_n0 = Sim_parser_n0.get_total_flux(obs_pos = Distance, unit = "mJy")
         
-        Sim_parser_n1 = Simulation_Parser(parent_directory + "Wormhole_sim_paper\\"+ self.Simulation_configurator.simulation_name["Value"] + "\\Wormhole_n1")
-        Total_flux_n1 = Sim_parser_n1.get_total_flux(obs_pos = Distance, unit = "mJy")
+        # Sim_parser_n1 = Simulation_Parser(parent_directory + "Wormhole_sim_paper\\"+ self.Simulation_configurator.simulation_name["Value"] + "\\Wormhole_n1")
+        # Total_flux_n1 = Sim_parser_n1.get_total_flux(obs_pos = Distance, unit = "mJy")
         
-        Sim_parser_n2 = Simulation_Parser(parent_directory + "Wormhole_sim_paper\\"+ self.Simulation_configurator.simulation_name["Value"] + "\\Wormhole_n2")
-        Total_flux_n2 = Sim_parser_n2.get_total_flux(obs_pos = Distance, unit = "mJy")
+        # Sim_parser_n2 = Simulation_Parser(parent_directory + "Wormhole_sim_paper\\"+ self.Simulation_configurator.simulation_name["Value"] + "\\Wormhole_n2")
+        # Total_flux_n2 = Sim_parser_n2.get_total_flux(obs_pos = Distance, unit = "mJy")
         
-        Sim_parser_n3 = Simulation_Parser(parent_directory + "Wormhole_sim_paper\\"+ self.Simulation_configurator.simulation_name["Value"] + "\\Wormhole_n3")
-        Total_flux_n3 = Sim_parser_n3.get_total_flux(obs_pos = Distance, unit = "mJy")
+        # Sim_parser_n3 = Simulation_Parser(parent_directory + "Wormhole_sim_paper\\"+ self.Simulation_configurator.simulation_name["Value"] + "\\Wormhole_n3")
+        # Total_flux_n3 = Sim_parser_n3.get_total_flux(obs_pos = Distance, unit = "mJy")
         
-        Total_flux = Total_flux_n0 + Total_flux_n1 + Total_flux_n2 + Total_flux_n3
+        # Total_flux = Total_flux_n0 + Total_flux_n1 + Total_flux_n2 + Total_flux_n3
         
-        print("Finished simulation {}!".format(self.Simulation_configurator.simulation_name["Value"]))
-        print("Total Flux [mJy] = {}".format(round(Total_flux, 2)))
+        # print("Finished simulation {}!".format(self.Simulation_configurator.simulation_name["Value"]))
+        # print("Total Flux [mJy] = {}".format(round(Total_flux, 2)))
         
 Sim_threads = []
         

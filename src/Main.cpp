@@ -18,7 +18,6 @@
 
 #include "Input_parser.h"
 
-
 void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
 
     // These do not ever get "delete" called on them, because they need to exist for the entire duration of the program
@@ -99,7 +98,7 @@ int main(int argument_count, char** cmd_line_args) {
     // Get the observer position and populate the Observer class instance.
     s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
 
-    double init_state[4] = {0,
+    double init_state[4] = {s_Sim_Context.p_Init_Conditions->Observer_params.init_time,
                             s_Sim_Context.p_Init_Conditions->Observer_params.distance,
                             s_Sim_Context.p_Init_Conditions->Observer_params.inclination,
                             s_Sim_Context.p_Init_Conditions->Observer_params.azimuth };
@@ -138,7 +137,6 @@ int main(int argument_count, char** cmd_line_args) {
     if (s_Sim_Context.p_Init_Conditions->Print_to_console) { 
 
         Console_Printer.print_ASCII_art();
-        Console_Printer.print_sim_parameters(s_Sim_Context.p_Init_Conditions);
 
     }
 

@@ -23,11 +23,15 @@ struct Disk_model_type {
     /*! Computes the accretion disk at the current photon position.
      *
      *   \param [in] State_Vector - Pointer to the current photon state vector.
+     *   \param [in] e_Disk_model - Enum that specifies which model to use for the disk.
      *   \param [out] p_Emission_medium_state - Pointer to the struct that holds the temperature and density of the accretion disk.
      *   \return Nothing.
      */
     void get_density_and_temperature(const double* const State_Vector,
+                                     Disk_model_enums e_Disk_model,
                                      Emission_medium_state_type* const p_Emission_medium_state) const;
 
+
+    bool is_inside_disk(const double* const State_Vector, Disk_model_enums e_Disk_model,Emission_medium_state_type* const Disk_State) const;
 
 };

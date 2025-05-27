@@ -84,7 +84,7 @@ void File_manager_class::write_simulation_metadata() {
         case Wormhole:
 
             *(Output_file + Image_order) << "Spin Parameter [M]: " << Parameters.Spin << "\n"
-                                            << "Redshift Parameter [-]: " << Parameters.Redshift_Parameter << '\n';
+                                         << "Redshift Parameter [-]: " << Parameters.Redshift_Parameter << '\n';
             break;
 
         case Reg_Black_Hole:
@@ -105,7 +105,7 @@ void File_manager_class::write_simulation_metadata() {
         case BH_w_Dark_Matter:
 
             *(Output_file + Image_order) << "Halo Mass [M]: " << Parameters.Halo_Mass << '\n'
-                                            << "Halo Compactness [-]: " << Parameters.Compactness << '\n';
+                                         << "Halo Compactness [-]: " << Parameters.Compactness << '\n';
             break;
         }
 
@@ -120,26 +120,27 @@ void File_manager_class::write_simulation_metadata() {
         }             
      
         *(Output_file + Image_order) << "------------------------------------------------------- Observer Parameters -------------------------------------------------------" << "\n"
-                                        << "Observer Distance [M]: " << p_Initial_Conditions->Observer_params.distance << '\n'
-                                        << "Observer Inclination [Deg]: " << p_Initial_Conditions->Observer_params.inclination * 180.0 / M_PI << '\n'
-                                        << "Observer Azimuth [Deg]: " << p_Initial_Conditions->Observer_params.azimuth * 180.0 / M_PI << '\n'
-                                        << "Observation Frequency [Hz]: " << p_Initial_Conditions->Observer_params.obs_frequency << '\n';
+                                     << "Observervation Time [M]: " << p_Initial_Conditions->Observer_params.init_time << '\n'
+                                     << "Observer Distance [M]: " << p_Initial_Conditions->Observer_params.distance << '\n'
+                                     << "Observer Inclination [Deg]: " << p_Initial_Conditions->Observer_params.inclination * 180.0 / M_PI << '\n'
+                                     << "Observer Azimuth [Deg]: " << p_Initial_Conditions->Observer_params.azimuth * 180.0 / M_PI << '\n'
+                                     << "Observation Frequency [Hz]: " << p_Initial_Conditions->Observer_params.obs_frequency << '\n';
 
         switch (p_Initial_Conditions->Simulation_mode) {
 
         case 1:
 
             *(Output_file + Image_order) << "Observation Window Dimentions (-X,+X,-Y,+Y) [M]: "
-                                            << this->p_Initial_Conditions->Observer_params.x_min << ","
-                                            << this->p_Initial_Conditions->Observer_params.x_max << ","
-                                            << this->p_Initial_Conditions->Observer_params.y_min << ","
-                                            << this->p_Initial_Conditions->Observer_params.y_max
-                                            << '\n'
-                                            << "Simulation Resolutoin: "
-                                            << this->p_Initial_Conditions->Observer_params.resolution_x
-                                            << " x "
-                                            << this->p_Initial_Conditions->Observer_params.resolution_y
-                                            << '\n';
+                                         << this->p_Initial_Conditions->Observer_params.x_min << ","
+                                         << this->p_Initial_Conditions->Observer_params.x_max << ","
+                                         << this->p_Initial_Conditions->Observer_params.y_min << ","
+                                         << this->p_Initial_Conditions->Observer_params.y_max
+                                         << '\n'
+                                         << "Simulation Resolutoin: "
+                                         << this->p_Initial_Conditions->Observer_params.resolution_x
+                                         << " x "
+                                         << this->p_Initial_Conditions->Observer_params.resolution_y
+                                         << '\n';
             break;
 
         case 2:
@@ -159,15 +160,12 @@ void File_manager_class::write_simulation_metadata() {
 
         default:
 
-            *(Output_file + Image_order) << "Unsupported simulation mode!" << "\n";
+            exit(ERROR);
 
         }
+         
 
-
-        *(Output_file + Image_order) << "------------------------------------------------------- Accretion Disk Parameters -------------------------------------------------------"
-                                        << "\n"
-                                        << "--------------------------- Density Model Parameters"
-                                        << "\n";
+        *(Output_file + Image_order) << "------------------------------------------------------- Accretion Disk Parameters -------------------------------------------------------\n" ;
 
         /*
         
@@ -175,101 +173,51 @@ void File_manager_class::write_simulation_metadata() {
         
         */
 
-        switch (this->p_Initial_Conditions->Disk_params.Density_profile_type) {
 
-        case e_Power_law_profile:
+        switch (this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
-            *(Output_file + Image_order) << "Density Profile: Power law"
-                                            << "\n"
-                                            << "Disk Opening Angle [tan(angle)]: "
-                                            << this->p_Initial_Conditions->Disk_params.Power_law_disk_opening_angle
-                                            << "\n"
-                                            << "Density R_0 [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Power_law_density_R_0
-                                            << "\n"
-                                            << "Density R_Cutoff [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Power_law_density_R_cutoff 
-                                            << "\n"
-                                            << "Density Cutoff Scale [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Power_law_density_cutoff_scale
-                                            << "\n";
-                                            
+        case e_Phenom_RIAF_1:
 
+            *(Output_file + Image_order) << "Active disk model: Phenomenological_RIAF_1\n";
             break;
 
-        case e_Exponential_law_profile:
+        case e_Phenom_RIAF_2:
 
-            *(Output_file + Image_order) << "Density Profile: Exponential law"
-                                            << "\n"
-                                            << "Density Height Scale [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Exp_law_density_height_scale
-                                            << "\n"
-                                            << "Density Radial Scale [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Exp_law_density_radial_scale
-                                            << "\n";
-
+            *(Output_file + Image_order) << "Active disk model: Phenomenological_RIAF_2\n";
             break;
 
-        default:
+        case e_Colab_test_1:
 
-            *(Output_file + Image_order) << "Unsupported Density Profile!" << "\n";
-
+            *(Output_file + Image_order) << "Active disk model: Colaboration_test_1\n";
             break;
 
         }
 
-        *(Output_file + Image_order) << "Maximum Density [g / cm^3]: "
-                                        << this->p_Initial_Conditions->Disk_params.Electron_density_scale
-                                        << "\n";
-   
-        /*
-        
-        --------------------------------------- Print the accretion disk temperature parameters ---------------------------------------
-        
-        */
+        if (e_Colab_test_1 != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
-        *(Output_file + Image_order) << "--------------------------- Temperature Model Parameters"
-                                        << "\n";
+            *(Output_file + Image_order) << "--------------------------- Model Parameters\n"
+                                         << "Disk Opening Angle Parameter: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Disk_opening_angle << "\n"
+                                         << "Disk Density power law scale: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Density_power_law_scale << "\n"
+                                         << "Disk Density power law power: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Density_power_law_power << "\n"
+                                         << "Disk Density cutoff radius: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Density_cutoff_radius << "\n"
+                                         << "Disk Density cutoff scale: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Density_cutoff_scale << "\n"
+                                         << "Disk Temperature power law scale: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_power_law_scale << "\n"
+                                         << "Disk Temperature power law power: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_power_law_power << "\n"
+                                         << "Disk Temperature cutoff radius: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_cutoff_radius << "\n"
+                                         << "Disk Temperature cutoff scale: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_cutoff_scale << "\n";
 
-        switch (this->p_Initial_Conditions->Disk_params.Temperature_profile_type) {
+        }
+        else {
 
-        case e_Power_law_profile:
+            *(Output_file + Image_order) << "--------------------------- Model Parameters\n"
+                                         << "Disk Radial Scale: " << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Radial_scale << "\n"
+                                         << "Disk Vertical Scale: " << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Vertical_scale << "\n";
 
-            *(Output_file + Image_order) << "Temperature Profile: Power law"
-                                            << "\n"
-                                            << "Temperature R_0 [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Power_law_temperature_R_0
-                                            << "\n"
-                                            << "Temperature R_Cutoff [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Power_law_temperature_R_cutoff << "\n"
-                                            << "Temperature Cutoff Scale [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Power_law_temperature_cutoff_scale << "\n";
 
-            break;
-
-        case e_Exponential_law_profile:
-
-            *(Output_file + Image_order) << "Temperature Profile: Exponential law"
-                                            << "\n"
-                                            << "Temperature Height Scale [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Exp_law_temperature_height_scale
-                                            << "\n"
-                                            << "Temperature Radial Scale [M]: "
-                                            << this->p_Initial_Conditions->Disk_params.Exp_law_temperature_radial_scale
-                                            << "\n";
-
-            break;
-
-        default:
-
-            *(Output_file + Image_order) << "Unsupported Temperature Profile!" << "\n";
-
-            break;
         }
 
-        *(Output_file + Image_order) << "Maximum Temperature [K]: "
-                                        << this->p_Initial_Conditions->Disk_params.Electron_temperature_scale
-                                        << "\n";
+        *(Output_file + Image_order) << "Maximum Density [g / cm^3]: " << this->p_Initial_Conditions->Disk_params.Electron_density_scale << "\n"
+                                     << "Maximum Temperature [K]: " << this->p_Initial_Conditions->Disk_params.Electron_temperature_scale << "\n";
 
         /*
         
@@ -277,60 +225,92 @@ void File_manager_class::write_simulation_metadata() {
         
         */
 
-        *(Output_file + Image_order) << "--------------------------- Disk Synchrotron Emission Model Parameters"
-                                        << "\n";
-
         switch (this->p_Initial_Conditions->Disk_params.Ensamble_type) {
 
         case e_Phenomenological_ensamble:
 
             *(Output_file + Image_order) << "Disk Ensamble: Phenomenological"
-                                            << "\n"
-                                            << "Emission Power Law Exponent [-]: "
-                                            << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_power_law
-                                            << "\n"
-                                            << "Absorbtion Coefficient [?]: "
-                                            << this->p_Initial_Conditions->Emission_params.Phenomenological_absorbtion_coeff
-                                            << "\n"
-                                            << "Source Function Power Law Exponent [-]: "
-                                            << this->p_Initial_Conditions->Emission_params.Phenomenological_source_f_power_law
-                                            << "\n"
-                                            << "Emission Scale [erg / (cm^3 s sr Hz)]: "
-                                            << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_coeff
-                                            << "\n";
+                                         << "\n"
+                                         << "Emission Power Law Exponent [-]: "
+                                         << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_power_law
+                                         << "\n"
+                                         << "Absorbtion Coefficient [?]: "
+                                         << this->p_Initial_Conditions->Emission_params.Phenomenological_absorbtion_coeff
+                                         << "\n"
+                                         << "Source Function Power Law Exponent [-]: "
+                                         << this->p_Initial_Conditions->Emission_params.Phenomenological_source_f_power_law
+                                         << "\n"
+                                         << "Emission Scale [erg / (cm^3 s sr Hz)]: "
+                                         << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_coeff
+                                         << "\n";
 
             break;
 
         case e_Thermal_ensamble:
 
             *(Output_file + Image_order) << "Disk Ensamble: Thermal"
-                                            << "\n";
+                                         << "\n";
 
             break;
 
         case e_Kappa_ensamble:
             *(Output_file + Image_order) << "Disk Ensamble: Kappa"
-                                            << "\n"
-                                            << "Kappa value [-]: "
-                                            << this->p_Initial_Conditions->Emission_params.Kappa
-                                            << "\n";
+                                         << "\n"
+                                         << "Kappa value [-]: "
+                                         << this->p_Initial_Conditions->Emission_params.Kappa
+                                         << "\n";
 
             break;
 
         default:
 
-            *(Output_file + Image_order) << "Unsupported Ensamble!" << "\n";
+            std::cout << "Unsupported Ensamble!" << "\n";
+            exit(ERROR);
 
             break;
         }
 
-        *(Output_file + Image_order) << "Disk Magnetization [-]: "
-                                        << this->p_Initial_Conditions->Disk_params.Magnetization << "\n"
-                                        << "Disk Magnetic Field Geometry [-]: "
-                                        << "[" << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[0] << " "
-                                        << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[1] << " "
-                                        << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[2] << "]"
-                                        << "\n";
+        *(Output_file + Image_order) << "--------------------------- Magnetic Field Parameters\n";
+
+        *(Output_file + Image_order) << "Disk Magnetization [-]: " << this->p_Initial_Conditions->Disk_params.Magnetization << "\n";
+
+        switch (this->p_Initial_Conditions->Disk_params.e_Mag_field_geometry) {
+
+        case Toroidal:
+
+            *(Output_file + Image_order) << "Magnetic field geometry: Toroidal\n";
+            break;
+
+        case Poloidal:
+
+            *(Output_file + Image_order) << "Magnetic field geometry: Poloidal\n";
+            break;
+
+        case Constant:
+
+            *(Output_file + Image_order) << "Magnetic field geometry: [" << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_r - 1] << " "
+                                                                         << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_theta - 1] << " "
+                                                                         << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_phi - 1] << "]"
+                                                                         << "\n";
+            break;
+
+        }
+
+        switch (this->p_Initial_Conditions->Disk_params.e_Mag_field_magnitude_profile) {
+
+        case Magnetization_based:
+
+            *(Output_file + Image_order) << "Magnetic field magnitude profile: Magnetization based\n";
+            break;
+
+        case Power_law_based:
+
+            *(Output_file + Image_order) << "Magnetic field magnitude profile: Power lawa based\n"
+                                         << "Magnetic field scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_magnitude_scale << "\n"
+                                         << "Magnetic field power law: " << this->p_Initial_Conditions->Disk_params.Mag_field_power << "\n";
+
+            break;
+        }
 
         /*
         
@@ -345,7 +325,7 @@ void File_manager_class::write_simulation_metadata() {
 
         switch (this->p_Initial_Conditions->Hotspot_params.Density_profile_type) {
 
-        case e_Gaussian_profile:
+        case e_Gaussian:
 
             *(Output_file + Image_order) << "Density Profile: Gaussian"
                                             << "\n"
@@ -355,7 +335,7 @@ void File_manager_class::write_simulation_metadata() {
                                             
             break;
 
-        case e_Spherical_profile:
+        case e_Spherical:
 
             *(Output_file + Image_order) << "Density Profile: Spherical"
                                             << "\n"
@@ -387,7 +367,7 @@ void File_manager_class::write_simulation_metadata() {
 
         switch (this->p_Initial_Conditions->Hotspot_params.Temperature_profile_type) {
 
-        case e_Gaussian_profile:
+        case e_Gaussian:
 
             *(Output_file + Image_order) << "Temperature Profile : Gaussian"
                                             << "\n"
@@ -397,7 +377,7 @@ void File_manager_class::write_simulation_metadata() {
                                             
             break;
 
-        case e_Spherical_profile:
+        case e_Spherical:
 
             *(Output_file + Image_order) << "Temperature Profile: Spherical"
                                             << "\n"

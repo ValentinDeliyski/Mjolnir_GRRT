@@ -15,6 +15,21 @@ enum Spacetime_enums: std::underlying_type_t <std::byte> {
 
 };
 
+enum Magnetic_field_geometry_enums: std::underlying_type_t <std::byte> {
+
+    Toroidal = 0,
+    Poloidal = 1,
+    Constant = 2
+
+};
+
+enum Magnetic_field_magnitude_enums: std::underlying_type_t <std::byte>{
+
+    Power_law_based     = 0,
+    Magnetization_based = 1
+
+};
+
 enum Derivative_selector_enums : std::underlying_type_t <std::byte> {
 
     None = 0,
@@ -57,10 +72,23 @@ enum Ensamble_enums: std::underlying_type_t <std::byte> {
 
 enum Profile_enums: std::underlying_type_t <std::byte> {
 
-    e_Power_law_profile       = 0,
-    e_Exponential_law_profile = 1,
-    e_Gaussian_profile        = 2,
-    e_Spherical_profile       = 3,
+    e_Power_law             = 0,
+    e_Gaussian              = 1,
+    e_Hybrid_power_gaussian = 2,
+    e_Spherical             = 3,
+
+};
+
+enum Disk_model_enums : std::underlying_type_t <std::byte> {
+
+    /* This is the model used in https://arxiv.org/pdf/2206.12066, with an added cutoff exponential. */
+    e_Phenom_RIAF_1 = 0,
+
+    /* This is the model used in https://arxiv.org/pdf/2209.09931, with an added cutoff exponential. */
+    e_Phenom_RIAF_2 = 1,
+
+    /* This is the model used in https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6/pdf */
+    e_Colab_test_1 = 2,
 
 };
 

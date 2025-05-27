@@ -187,11 +187,11 @@ int Black_Hole_w_Dark_Matter_Halo_class::get_initial_conditions_from_file(Initia
 
 }
 
-void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double State_vector[], double Derivatives[]) const {
+void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
 
-    double& r = State_vector[e_r];
+    const double& r = State_vector[e_r];
 
-    double& J = State_vector[e_p_phi];
+    const double& J = State_vector[e_p_phi];
 
     double sin1 = sin(State_vector[e_theta]);
     double sin2 = sin1 * sin1;
@@ -215,21 +215,22 @@ void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(double State_vector[], double 
     double m    = M + this->Halo_Mass * r2 / (A_0 + r) / (A_0 + r) * (1 - 2 * M / r) * (1 - 2 * M / r);
     double dr_m = 2 * (1 - 2 * M / r) * ((1 - 2 * M / r) * (1 - r / (r + A_0)) * r + 2 * M) * this->Halo_Mass / (r + A_0) / (r + A_0);
 
-    *(Derivatives + e_r      ) = -1 / f * State_vector[e_p_t];
-    *(Derivatives + e_r      ) = (1 - 2 * m / r) * State_vector[e_p_r];
-    *(Derivatives + e_theta  ) = 1. / (r * r) * State_vector[e_p_theta];
-    *(Derivatives + e_phi    ) = J / (r * r * sin2);
-    *(Derivatives + e_p_phi  ) = 0.0;
-    *(Derivatives + e_p_theta) = cos1 / (r * r * sin1 * sin2) * J * J;
+    Derivatives[e_t] = -1 / f * State_vector[e_p_t];
+    Derivatives[e_r] = (1 - 2 * m / r) * State_vector[e_p_r];
+    Derivatives[e_theta] = 1. / (r * r) * State_vector[e_p_theta];
+    Derivatives[e_phi] = J / (r * r * sin2);
+    Derivatives[e_p_phi] = 0.0;
+    Derivatives[e_p_theta] = cos1 / (r * r * sin1 * sin2) * J * J;
+    Derivatives[e_p_t] = 0.0;
 
     double r_term_1 = -1. / 2 / f / f * dr_f + (dr_m / r - m / r2) * State_vector[e_p_r] * State_vector[e_p_r];
     double r_term_2 = 1.0 / r / r / r * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
-    *(Derivatives + e_p_r) = r_term_1 + r_term_2;
+    Derivatives[e_p_r] = r_term_1 + r_term_2;
 
 }
 
-bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(double State_vector[], double Derivatives[]) {
+bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(const double* const State_vector, const double* const Derivatives) {
 
     bool scatter     = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
     bool hit_horizon = State_vector[e_r] - 2 * this->Mass < 1e-5;

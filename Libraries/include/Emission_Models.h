@@ -131,9 +131,7 @@ public:
                                 double const Radial_velocity_fraction);
     
     //! Computes the magnetic field 4-vector in the coordinate and plasma frames.
-    /*! Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity) in the following frames:
-     *      1) That of a static observer (with 4-velocity n_mu = {1, 0, 0, 0} ) - a.e. the coordinate frame.
-     *      2) The plasma rest frame.
+    /*! Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity) and a static observer (with 4-velocity n_mu = {-1, 0, 0, 0}).
      *
      *    NOTE: The magnitude of the magnetic field in these frames is different, because its not concerved under Lorentz boosts.
      *          In the plasma frame I set the geometry of the field, then scale it by B_Plasma_norm_CGS.

@@ -5,29 +5,24 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     tinyxml2::XMLElement* temp_param_var;
 
+    // -------------------- The threshold relative density
+    temp_param_var = Hotspot_element->FirstChildElement("Threshold_relative_density");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot threshold relative density!" << "\n"; return ERROR; }
+    Hotspot_params->Threshold_relative_density = std::stod(temp_param_var->GetText());
+
     // -------------------- The ensamble type
 
     temp_param_var = Hotspot_element->FirstChildElement("Ensamble_type");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot ensamble type!" << "\n"; return ERROR; }
     std::string Ensamble_type_string = temp_param_var->GetText();
 
-    if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Kappa")) {
+    if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Kappa")) { Hotspot_params->Ensamble_type = e_Kappa_ensamble; }
 
-        Hotspot_params->Ensamble_type = e_Kappa_ensamble;
+    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Thermal")) { Hotspot_params->Ensamble_type = e_Thermal_ensamble; }
 
-    }
-    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Thermal")) {
+    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Phenomenological")) { Hotspot_params->Ensamble_type = e_Phenomenological_ensamble; }
 
-        Hotspot_params->Ensamble_type = e_Thermal_ensamble;
-
-    }
-    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Phenomenological")) {
-         
-        Hotspot_params->Ensamble_type = e_Phenomenological_ensamble;
-
-    }
     else { std::cout << "Unsupported ensamble type for the hotspot!" << "\n"; return ERROR; }
-
     
     // -------------------- The density profile
 
@@ -35,16 +30,10 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot density profile type!" << "\n"; return ERROR; }
     std::string Density_type_string = temp_param_var->GetText();
 
-    if (0 == strcmp(static_cast<const char*>(Density_type_string.c_str()), "Gaussian")) {
+    if (0 == strcmp(static_cast<const char*>(Density_type_string.c_str()), "Gaussian")) { Hotspot_params->Density_profile_type = e_Gaussian; }
 
-        Hotspot_params->Density_profile_type = e_Gaussian_profile;
+    else if (0 == strcmp(static_cast<const char*>(Density_type_string.c_str()), "Sphere")) { Hotspot_params->Density_profile_type = e_Spherical; }
 
-    }
-    else if (0 == strcmp(static_cast<const char*>(Density_type_string.c_str()), "Sphere")) {
-
-        Hotspot_params->Density_profile_type = e_Spherical_profile;
-
-    }
     else { std::cout << "Unsupported density profile type for the hotspot!" << "\n"; return ERROR; }
 
     // -------------------- The temperature profile
@@ -53,16 +42,10 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot temperature profile type!" << "\n"; return ERROR; }
     std::string Temperature_type_string = temp_param_var->GetText();
 
-    if (0 == strcmp(static_cast<const char*>(Temperature_type_string.c_str()), "Gaussian")) {
+    if (0 == strcmp(static_cast<const char*>(Temperature_type_string.c_str()), "Gaussian")) { Hotspot_params->Temperature_profile_type = e_Gaussian; }
 
-        Hotspot_params->Temperature_profile_type = e_Gaussian_profile;
+    else if (0 == strcmp(static_cast<const char*>(Temperature_type_string.c_str()), "Sphere")) { Hotspot_params->Temperature_profile_type = e_Spherical; }
 
-    }
-    else if (0 == strcmp(static_cast<const char*>(Temperature_type_string.c_str()), "Sphere")) {
-
-        Hotspot_params->Temperature_profile_type = e_Spherical_profile;
-
-    }
     else { std::cout << "Unsupported temperature profile type for the hotspot!" << "\n"; return ERROR; }
 
     // -------------------- The velocity profile
@@ -74,16 +57,11 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot velocity profile type!" << "\n"; return ERROR; }
     std::string Velocity_profile_string = temp_param_var->GetText();
 
-    if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Theta Dependant")) {
+    if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Theta Dependant")) { Hotspot_params->Velocity_profile_type = e_Theta_dependant; }
 
-        Hotspot_params->Velocity_profile_type = e_Theta_dependant;
+    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) { Hotspot_params->Velocity_profile_type = e_Keplarian; }
 
-    }
-    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) {
-
-        Hotspot_params->Velocity_profile_type = e_Keplarian;
-
-    }else{std::cout << "Unsupported velocity profile type for the hotspot!" << "\n"; return ERROR; }
+    else{std::cout << "Unsupported velocity profile type for the hotspot!" << "\n"; return ERROR; }
 
     temp_param_var = Hotspot_element->FirstChildElement("Velocity_profile")->FirstChildElement("Radial_velocity_fraction");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the radial velocity fraction!" << "\n"; return ERROR; }
@@ -99,33 +77,20 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the temperature scale factor!" << "\n"; return ERROR; }
     Hotspot_params->Electron_temperature_scale = std::stod(temp_param_var->GetText());
 
-    // -------------------- The magnetic field geometry X component
-    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_X");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry X component!" << "\n"; return ERROR; }
-    Hotspot_params->Mag_field_geometry[0] = std::stod(temp_param_var->GetText());
+    // -------------------- The magnetic field geometry r component
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_r");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry r component!" << "\n"; return ERROR; }
+    Hotspot_params->Mag_field_geometry[e_r - 1] = std::stod(temp_param_var->GetText());
 
-    // -------------------- The magnetic field geometry Y component
-    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_Y");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry Y component!" << "\n"; return ERROR; }
-    Hotspot_params->Mag_field_geometry[1] = std::stod(temp_param_var->GetText());
+    // -------------------- The magnetic field geometry theta component
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_theta");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry theta component!" << "\n"; return ERROR; }
+    Hotspot_params->Mag_field_geometry[e_theta - 1] = std::stod(temp_param_var->GetText());
 
-    // -------------------- The magnetic field geometry Z component
-    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_Z");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry Z component!" << "\n"; return ERROR; }
-    Hotspot_params->Mag_field_geometry[2] = std::stod(temp_param_var->GetText());
-
-    // -------------------- Normalize the magnetic field geometry vector
-
-    double mag_norm  = Hotspot_params->Mag_field_geometry[0] * Hotspot_params->Mag_field_geometry[0];
-           mag_norm += Hotspot_params->Mag_field_geometry[1] * Hotspot_params->Mag_field_geometry[1];
-           mag_norm += Hotspot_params->Mag_field_geometry[2] * Hotspot_params->Mag_field_geometry[2];
-           mag_norm  = sqrt(mag_norm);
-
-    for (int idx = 0; idx <= 2; idx++) {
-
-        Hotspot_params->Mag_field_geometry[idx] /= mag_norm;
-
-    }
+    // -------------------- The magnetic field geometry phi component
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_phi");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry phi component!" << "\n"; return ERROR; }
+    Hotspot_params->Mag_field_geometry[e_phi - 1] = std::stod(temp_param_var->GetText());
 
     Hotspot_params->Position[e_t] = 0.0;
 
@@ -154,7 +119,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     tinyxml2::XMLElement* Gaussian_node = Hotspot_element->FirstChildElement("Gaussian_profile");
     tinyxml2::XMLElement* Spherical_node = Hotspot_element->FirstChildElement("Spherical_profile");
 
-    if (e_Gaussian_profile == Hotspot_params->Density_profile_type) {
+    if (e_Gaussian == Hotspot_params->Density_profile_type) {
 
         if (Gaussian_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
 
@@ -166,7 +131,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     }
 
-    if (e_Gaussian_profile == Hotspot_params->Temperature_profile_type) {
+    if (e_Gaussian == Hotspot_params->Temperature_profile_type) {
 
         if (Gaussian_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
 
@@ -178,7 +143,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     }
 
-    if (e_Spherical_profile == Hotspot_params->Temperature_profile_type || e_Spherical_profile == Hotspot_params->Density_profile_type) {
+    if (e_Spherical == Hotspot_params->Temperature_profile_type || e_Spherical == Hotspot_params->Density_profile_type) {
 
         if (Spherical_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
 
@@ -199,6 +164,50 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the coordiante time at max emission!" << "\n"; return ERROR; }
     Hotspot_params->Coord_time_offset = std::stod(temp_param_var->GetText());
 
+    // -------------------- The disk Magnetic field radial scale
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_radial_scale");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field radial scale!" << "\n"; return ERROR; }
+    Hotspot_params->Mag_field_radial_scale = std::stod(temp_param_var->GetText());
+
+    // -------------------- The disk Magnetic field geometry enum
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field geometry enum!" << "\n"; return ERROR; }
+    std::string Mag_field_geometry_string = temp_param_var->GetText();    
+
+    if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Toroidal")) { Hotspot_params->e_Mag_field_geometry = Toroidal; }
+
+    else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Poloidal")) { Hotspot_params->e_Mag_field_geometry = Poloidal; }
+
+    else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Constant")) { Hotspot_params->e_Mag_field_geometry = Constant; }
+
+    else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
+
+    // -------------------- The hotspot Magnetic field magnitude scale
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_magnitude_scale");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field scale!" << "\n"; return ERROR; }
+    Hotspot_params->Mag_field_magnitude_scale = std::stod(temp_param_var->GetText());
+
+    // -------------------- The hotspot Magnetic field power law power
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_power");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field power law power!" << "\n"; return ERROR; }
+    Hotspot_params->Mag_field_power = std::stod(temp_param_var->GetText());
+
+    // -------------------- The hotspot Magnetic field radial scale
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_radial_scale");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field radial scale!" << "\n"; return ERROR; }
+    Hotspot_params->Mag_field_radial_scale = std::stod(temp_param_var->GetText());
+
+    // -------------------- The hotspot Magnetic field magnitude profile enum
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_magnitude_profile");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field geometry enum!" << "\n"; return ERROR; }
+    std::string Mag_field_magnitude_string = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Mag_field_magnitude_string.c_str()), "Power_law_based")) { Hotspot_params->e_Mag_field_magnitude_profile = Power_law_based; }
+
+    else if (0 == strcmp(static_cast<const char*>(Mag_field_magnitude_string.c_str()), "Magnetization_based")) { Hotspot_params->e_Mag_field_magnitude_profile = Magnetization_based; }
+
+    else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
+
     return OK;
 
 }
@@ -212,67 +221,38 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     tinyxml2::XMLElement* Common_paramaters_element = Accretion_disk_element->FirstChildElement("Common_parameters");
     if (Common_paramaters_element == nullptr) { std::cout << "Failed to find the Common parameters element!" << "\n"; return ERROR; }
 
+    // -------------------- The threshold relative density
+    temp_param_var = Common_paramaters_element->FirstChildElement("Threshold_relative_density");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk threshold relative density!" << "\n"; return ERROR; }
+    Disk_params->Threshold_relative_density = std::stod(temp_param_var->GetText());
+
     // -------------------- The ensamble type
 
     temp_param_var = Common_paramaters_element->FirstChildElement("Ensamble_type");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk ensamble type!" << "\n"; return ERROR; }
     std::string Ensamble_type_string = temp_param_var->GetText();
 
-    if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Kappa")) {
+    if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Kappa")) { Disk_params->Ensamble_type = e_Kappa_ensamble; }
 
-        Disk_params->Ensamble_type = e_Kappa_ensamble;
+    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Thermal")) { Disk_params->Ensamble_type = e_Thermal_ensamble; }
 
-    }
-    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Thermal")) {
+    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Phenomenological")) { Disk_params->Ensamble_type = e_Phenomenological_ensamble; }
 
-        Disk_params->Ensamble_type = e_Thermal_ensamble;
-
-    }
-    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Phenomenological")) {
-
-        Disk_params->Ensamble_type = e_Phenomenological_ensamble;
-
-    }
     else { std::cout << "Unsupported ensamble type for the disk!" << "\n"; return ERROR; }
 
-    // -------------------- The density profile
+    // -------------------- The disk model
 
-    temp_param_var = Common_paramaters_element->FirstChildElement("Density_profile");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk density profile type!" << "\n"; return ERROR; }
+    temp_param_var = Common_paramaters_element->FirstChildElement("Disk_Model");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk model!" << "\n"; return ERROR; }
     std::string Profile_type_string = temp_param_var->GetText();
 
-    if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Power Law")) {
+    if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Phenom_RIAF_1")) { Disk_params->e_Disk_model = e_Phenom_RIAF_1; }
+    
+    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Phenom_RIAF_2")) { Disk_params->e_Disk_model = e_Phenom_RIAF_2; }
 
-        Disk_params->Density_profile_type = e_Power_law_profile;
+    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Colab_test_1")) { Disk_params->e_Disk_model = e_Colab_test_1; }
 
-    }
-    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Exponential Law")) {
-
-
-        Disk_params->Density_profile_type = e_Exponential_law_profile;
-
-    }
-    else { std::cout << "Unsupported density profile type for the disk!" << "\n"; return ERROR; }
-
-    // -------------------- The temperature profile
-
-    temp_param_var = Common_paramaters_element->FirstChildElement("Temperature_profile");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature profile type!" << "\n"; return ERROR; }
-
-    Profile_type_string = temp_param_var->GetText();
-
-    if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Power Law")) {
-
-        Disk_params->Temperature_profile_type = e_Power_law_profile;
-
-    }
-    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Exponential Law")) {
-
-
-        Disk_params->Temperature_profile_type = e_Exponential_law_profile;
-
-    }
-    else { std::cout << "Unsupported temperature profile type for the disk!" << "\n"; return ERROR; }
+    else { std::cout << "Unsupported disk model!" << "\n"; return ERROR; }
 
     // -------------------- The velocity profile
 
@@ -283,16 +263,10 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk velocity profile type!" << "\n"; return ERROR; }
     std::string Velocity_profile_string = temp_param_var->GetText();
 
-    if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Theta Dependant")) {
+    if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Theta Dependant")) { Disk_params->Velocity_profile_type = e_Theta_dependant; }
 
-        Disk_params->Velocity_profile_type = e_Theta_dependant;
+    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) { Disk_params->Velocity_profile_type = e_Keplarian; }
 
-    }
-    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) {
-
-        Disk_params->Velocity_profile_type = e_Keplarian;
-
-    }
     else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
 
     temp_param_var = Common_paramaters_element->FirstChildElement("Velocity_profile")->FirstChildElement("Radial_velocity_fraction");
@@ -309,131 +283,136 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature scale factor!" << "\n"; return ERROR; }
     Disk_params->Electron_temperature_scale = std::stod(temp_param_var->GetText());
 
-    // -------------------- The disk magnetic field geometry X component
-    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_geometry_X");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry!" << "\n"; return ERROR; }
-    Disk_params->Mag_field_geometry[0] = std::stod(temp_param_var->GetText());
+    // -------------------- The disk magnetic field geometry r component
+    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_geometry_r");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry r component!" << "\n"; return ERROR; }
+    Disk_params->Mag_field_geometry[e_r - 1] = std::stod(temp_param_var->GetText());
 
-    // -------------------- The disk magnetic field geometry Y component
-    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_geometry_Y");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry!" << "\n"; return ERROR; }
-    Disk_params->Mag_field_geometry[1] = std::stod(temp_param_var->GetText());
+    // -------------------- The disk magnetic field geometry theta component
+    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_geometry_theta");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry theta component!" << "\n"; return ERROR; }
+    Disk_params->Mag_field_geometry[e_theta - 1] = std::stod(temp_param_var->GetText());
 
-    // -------------------- The disk magnetic field geometry Z component 
-    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_geometry_Z");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry!" << "\n"; return ERROR; }
-    Disk_params->Mag_field_geometry[2] = std::stod(temp_param_var->GetText());
-      
-    // -------------------- Normalize the magnetic field geometry vector    
-     
-    double mag_norm  = Disk_params->Mag_field_geometry[0] * Disk_params->Mag_field_geometry[0];  
-           mag_norm += Disk_params->Mag_field_geometry[1] * Disk_params->Mag_field_geometry[1]; 
-           mag_norm += Disk_params->Mag_field_geometry[2] * Disk_params->Mag_field_geometry[2];
-           mag_norm  = sqrt(mag_norm);
-
-    for (int idx = 0; idx <= 2; idx++) {
-
-        Disk_params->Mag_field_geometry[idx] /= mag_norm;
-
-    }
+    // -------------------- The disk magnetic field geometry phi component 
+    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_geometry_phi");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry phi component!" << "\n"; return ERROR; }
+    Disk_params->Mag_field_geometry[e_phi - 1] = std::stod(temp_param_var->GetText());
 
     // -------------------- The disk magnetization
     temp_param_var = Common_paramaters_element->FirstChildElement("Magnetization"); 
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk Magnetization!" << "\n"; return ERROR; }
     Disk_params->Magnetization = std::stod(temp_param_var->GetText());
-     
-    /* ======================================== Disk profile paramaters ======================================== */
 
-    tinyxml2::XMLElement* Power_law_profile_element = Accretion_disk_element->FirstChildElement("Power_law_profile");
-    tinyxml2::XMLElement* Exponential_law_profile_element = Accretion_disk_element->FirstChildElement("Exponential_law_profile");
+    // -------------------- The disk Magnetic field magnitude scale
+    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_magnitude_scale");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field scale!" << "\n"; return ERROR; }
+    Disk_params->Mag_field_magnitude_scale = std::stod(temp_param_var->GetText());
 
-    if (e_Power_law_profile == Disk_params->Density_profile_type) {
+    // -------------------- The disk Magnetic field power law power
+    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_power");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field power law power!" << "\n"; return ERROR; }
+    Disk_params->Mag_field_power = std::stod(temp_param_var->GetText());
 
-        if (Power_law_profile_element == nullptr) { std::cout << "Failed to find the power law profile element!" << "\n"; return ERROR; }
+    // -------------------- The disk Magnetic field radial scale
+    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_radial_scale");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field radial scale!" << "\n"; return ERROR; }
+    Disk_params->Mag_field_radial_scale = std::stod(temp_param_var->GetText());
+
+    // -------------------- The disk Magnetic field geometry enum
+    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_geometry");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry enum!" << "\n"; return ERROR; }
+    std::string Mag_field_geometry_string = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Toroidal")) { Disk_params->e_Mag_field_geometry = Toroidal;}
+
+    else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Poloidal")) { Disk_params->e_Mag_field_geometry = Poloidal;}
+
+    else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Constant")) {Disk_params->e_Mag_field_geometry = Constant;}
+
+    else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
+
+    // -------------------- The disk Magnetic field magnitude profile enum
+    temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_magnitude_profile");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry enum!" << "\n"; return ERROR; }
+    std::string Mag_field_magnitude_string = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Mag_field_magnitude_string.c_str()), "Power_law_based")) { Disk_params->e_Mag_field_magnitude_profile = Power_law_based; }
+
+    else if (0 == strcmp(static_cast<const char*>(Mag_field_magnitude_string.c_str()), "Magnetization_based")) { Disk_params->e_Mag_field_magnitude_profile = Magnetization_based; }
+
+    else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
+
+    /* ======================================== Disk model parameters ======================================== */
+
+    tinyxml2::XMLElement* Common_RIAF_element = Accretion_disk_element->FirstChildElement("Common_RIAF_profile");
+    tinyxml2::XMLElement* Colab_test_1_element = Accretion_disk_element->FirstChildElement("Colab_test_1_profile");
+
+    if (e_Colab_test_1 != Disk_params->e_Disk_model) {
+
+        if (Common_RIAF_element == nullptr) { std::cout << "Failed to find the common RIAF profile element!" << "\n"; return ERROR; }
 
         // -------------------- The density radial power law
-        temp_param_var = Power_law_profile_element->FirstChildElement("Density_radial_power_law");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk density radial power law!" << "\n"; return ERROR; }
-        Disk_params->Power_law_density_radial_power_law = std::stod(temp_param_var->GetText());
-
-        // -------------------- The density radial cutoff scale
-        temp_param_var = Power_law_profile_element->FirstChildElement("Density_cutoff_scale");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk density radial cutoff scale!" << "\n"; return ERROR; }
-        Disk_params->Power_law_density_cutoff_scale = std::stod(temp_param_var->GetText());
-
-        // -------------------- The density r_cutoff
-        temp_param_var = Power_law_profile_element->FirstChildElement("Density_r_cutoff");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk density r_cutoff!" << "\n"; return ERROR; }
-        Disk_params->Power_law_density_R_cutoff = std::stod(temp_param_var->GetText());
-
-        // -------------------- The density r_0
-        temp_param_var = Power_law_profile_element->FirstChildElement("Density_r_0");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk density r_0!" << "\n"; return ERROR; }
-        Disk_params->Power_law_density_R_0 = std::stod(temp_param_var->GetText());
-
-        // -------------------- The disk opening angle
-        temp_param_var = Power_law_profile_element->FirstChildElement("Opening_angle");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk opening angle!" << "\n"; return ERROR; }
-        Disk_params->Power_law_disk_opening_angle = std::stod(temp_param_var->GetText());
-
-    }
-    else if (e_Exponential_law_profile == Disk_params->Density_profile_type) {
-
-        if (Exponential_law_profile_element == nullptr) { std::cout << "Failed to find the exponential law profile element!" << "\n"; return ERROR; }
-
-        // -------------------- The density height scale
-        temp_param_var = Exponential_law_profile_element->FirstChildElement("Density_exp_height_scale");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk density height scale!" << "\n"; return ERROR; }
-        Disk_params->Exp_law_density_height_scale = std::stod(temp_param_var->GetText());
-
-        // -------------------- The density radial scale
-        temp_param_var = Exponential_law_profile_element->FirstChildElement("Density_exp_radial_scale");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk density radial scale!" << "\n"; return ERROR; }
-        Disk_params->Exp_law_density_radial_scale = std::stod(temp_param_var->GetText());
-
-    }
-
-    if (e_Power_law_profile == Disk_params->Temperature_profile_type) {
-
-        if (Power_law_profile_element == nullptr) { std::cout << "Failed to find the power law profile element!" << "\n"; return ERROR; }
+        temp_param_var = Common_RIAF_element->FirstChildElement("Density_power_law_power");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the common RIAF disk density radial power law!" << "\n"; return ERROR; }
+        Disk_params->Common_RIAF_params.Density_power_law_power = std::stod(temp_param_var->GetText());
 
         // -------------------- The temperature radial power law
-        temp_param_var = Power_law_profile_element->FirstChildElement("Temperature_radial_power_law");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature radial power law!" << "\n"; return ERROR; }
-        Disk_params->Power_law_temperature_radial_power_law = std::stod(temp_param_var->GetText());
+        temp_param_var = Common_RIAF_element->FirstChildElement("Temperature_power_law_power");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the common RIAF disk temperature radial power law!" << "\n"; return ERROR; }
+        Disk_params->Common_RIAF_params.Temperature_power_law_power = std::stod(temp_param_var->GetText());
+
+        // -------------------- The density radial cutoff scale
+        temp_param_var = Common_RIAF_element->FirstChildElement("Density_cutoff_scale");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the common RIAF disk density radial cutoff scale!" << "\n"; return ERROR; }
+        Disk_params->Common_RIAF_params.Density_cutoff_scale = std::stod(temp_param_var->GetText());
 
         // -------------------- The temperature radial cutoff scale
-        temp_param_var = Power_law_profile_element->FirstChildElement("Temperature_cutoff_scale");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature radial cutoff scale!" << "\n"; return ERROR; }
-        Disk_params->Power_law_temperature_cutoff_scale = std::stod(temp_param_var->GetText());
+        temp_param_var = Common_RIAF_element->FirstChildElement("Temperature_cutoff_scale");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the common RIAF disk temperature radial cutoff scale!" << "\n"; return ERROR; }
+        Disk_params->Common_RIAF_params.Temperature_cutoff_scale = std::stod(temp_param_var->GetText());
+
+        // -------------------- The density r_cutoff
+        temp_param_var = Common_RIAF_element->FirstChildElement("Density_cutoff_radius");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the common RIAF disk density r_cutoff!" << "\n"; return ERROR; }
+        Disk_params->Common_RIAF_params.Density_cutoff_radius = std::stod(temp_param_var->GetText());
 
         // -------------------- The temperature r_cutoff
-        temp_param_var = Power_law_profile_element->FirstChildElement("Temperature_r_cutoff");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature r_cutoff!" << "\n"; return ERROR; }
-        Disk_params->Power_law_temperature_R_cutoff = std::stod(temp_param_var->GetText());
+        temp_param_var = Common_RIAF_element->FirstChildElement("Temperature_cutoff_radius");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the common RIAF disk temperature r_cutoff!" << "\n"; return ERROR; }
+        Disk_params->Common_RIAF_params.Temperature_cutoff_radius = std::stod(temp_param_var->GetText());
+
+        // -------------------- The density r_0
+        temp_param_var = Common_RIAF_element->FirstChildElement("Density_power_law_scale");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the common RIAF disk density power law scale!" << "\n"; return ERROR; }
+        Disk_params->Common_RIAF_params.Density_power_law_scale = std::stod(temp_param_var->GetText());
 
         // -------------------- The temperature r_0
-        temp_param_var = Power_law_profile_element->FirstChildElement("Temperature_r_0");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature r_0!" << "\n"; return ERROR; }
-        Disk_params->Power_law_temperature_R_0 = std::stod(temp_param_var->GetText());
+        temp_param_var = Common_RIAF_element->FirstChildElement("Density_power_law_scale");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the common RIAF disk temperature power law scale!" << "\n"; return ERROR; }
+        Disk_params->Common_RIAF_params.Temperature_power_law_scale = std::stod(temp_param_var->GetText());
+
+        // -------------------- The disk opening angle
+        temp_param_var = Common_RIAF_element->FirstChildElement("Opening_angle");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the common RIAF disk opening angle parameter!" << "\n"; return ERROR; }
+        Disk_params->Common_RIAF_params.Disk_opening_angle = std::stod(temp_param_var->GetText());
 
     }
-    else if (e_Exponential_law_profile == Disk_params->Density_profile_type) {
+    else {
 
-        if (Exponential_law_profile_element == nullptr) { std::cout << "Failed to find the exponential law profile element!" << "\n"; return ERROR; }
+        if (Colab_test_1_element == nullptr) { std::cout << "Failed to find the Colab Test 1 profile element !" << "\n"; return ERROR; }
 
-        // -------------------- The temperature height scale
-        temp_param_var = Exponential_law_profile_element->FirstChildElement("Temperature_exp_height_scale");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature height scale!" << "\n"; return ERROR; }
-        Disk_params->Exp_law_temperature_height_scale = std::stod(temp_param_var->GetText());
+        // -------------------- The density radial power law
+        temp_param_var = Common_RIAF_element->FirstChildElement("Radial_scale");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Colab Test 1 disk radial scale!" << "\n"; return ERROR; }
+        Disk_params->Colab_test_1_params.Radial_scale = std::stod(temp_param_var->GetText());
 
-        // -------------------- The temperature radial scale
-        temp_param_var = Exponential_law_profile_element->FirstChildElement("Temperature_exp_radial_scale");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk temperature radial scale!" << "\n"; return ERROR; }
-        Disk_params->Exp_law_temperature_radial_scale = std::stod(temp_param_var->GetText());
+        // -------------------- The density radial power law
+        temp_param_var = Common_RIAF_element->FirstChildElement("Vertical_scale");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Colab Test 1 disk vertical scale!" << "\n"; return ERROR; }
+        Disk_params->Colab_test_1_params.Vertical_scale = std::stod(temp_param_var->GetText());
 
     }
-    
+
     return OK;
 
 }
@@ -583,6 +562,11 @@ Return_Values static parse_observer_parameters(tinyxml2::XMLElement* Observer_el
     tinyxml2::XMLElement* temp_param_var;
 
     // -------------------- Distance
+    temp_param_var = Observer_element->FirstChildElement("Init_time");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observer init_time!" << "\n"; return ERROR; }
+    Observer_params->init_time = std::stod(temp_param_var->GetText());
+
+    // -------------------- Distance
     temp_param_var = Observer_element->FirstChildElement("Distance");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse observer distance!" << "\n"; return ERROR; }
     Observer_params->distance = std::stod(temp_param_var->GetText());
@@ -594,7 +578,7 @@ Return_Values static parse_observer_parameters(tinyxml2::XMLElement* Observer_el
 
     // -------------------- Azimuth
     temp_param_var = Observer_element->FirstChildElement("Azimuth");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse observer inclination!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observer azimuth!" << "\n"; return ERROR; }
     Observer_params->azimuth = std::stod(temp_param_var->GetText());
 
     // -------------------- Camera Rotation Angle

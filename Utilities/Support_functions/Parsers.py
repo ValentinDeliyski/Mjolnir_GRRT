@@ -36,6 +36,7 @@ class Simulation_Parser():
             _ = csvreader.__next__() # Image Order
             _ = csvreader.__next__() # Observer Params 
 
+            self.OBS_TIME = float(csvreader.__next__()[1])
             self.OBS_DISTANCE    = float(csvreader.__next__()[1])
             self.OBS_INCLICATION = float(csvreader.__next__()[1])
 
@@ -57,46 +58,38 @@ class Simulation_Parser():
                 self.Y_PIXEL_COUNT   = int(Resolution_list[3])
 
             _ = csvreader.__next__() # Accretion Disk Parameters Header
-            _ = csvreader.__next__() # Density Model Parameters Header
+            self.ACTIVE_DISK_MODEL = csvreader.__next__()[1] # Active model string
+            
+            _ = csvreader.__next__() # Model parameters header
 
-            self.disk_density_profile = csvreader.__next__()[1][1:]
-            if self.disk_density_profile == "Power law":
+            test = self.ACTIVE_DISK_MODEL[1:-2]
+
+            if self.ACTIVE_DISK_MODEL[1:-2] == "Phenomenological_RIAF":
                 self.disk_opening_angle = float(csvreader.__next__()[1])
-                self.disk_density_R_0 = float(csvreader.__next__()[1])
-                self.disk_density_R_Cutoff = float(csvreader.__next__()[1])
-                self.disk_density_R_Cutoff_Scale = float(csvreader.__next__()[1])
+                self.disk_density_power_law_scale = float(csvreader.__next__()[1])
+                self.disk_density_power_law_power = float(csvreader.__next__()[1])
+                self.disk_density_cutoff_radius = float(csvreader.__next__()[1])
+                self.disk_density_cutoff_scale = float(csvreader.__next__()[1])
+                
+                self.disk_temperature_power_law_scale = float(csvreader.__next__()[1])
+                self.disk_temperature_power_law_power = float(csvreader.__next__()[1])
+                self.disk_temperature_cutoff_radius = float(csvreader.__next__()[1])
+                self.disk_temperature_cutoff_scale = float(csvreader.__next__()[1])
+                
+                self.disk_max_density = float(csvreader.__next__()[1])
+                self.disk_max_temperature = float(csvreader.__next__()[1])
+                
+                self.disk_ensamble = csvreader.__next__()[1]
 
             else:
                 self.disk_density_exp_height_scale = float(csvreader.__next__()[1])
                 self.disk_density_exp_radial_scale = float(csvreader.__next__()[1])
 
-            self.disk_max_density = float(csvreader.__next__()[1])
-
-            _ = csvreader.__next__() # Temperature Model Parameters Header
-
-            self.disk_temperature_profile = csvreader.__next__()[1][1:]
-            if self.disk_temperature_profile == "Power law":
-               self.disk_temperature_R_0 = float(csvreader.__next__()[1])
-               self.disk_temperature_R_Cutoff = float(csvreader.__next__()[1])
-               self.disk_temperature_R_Cutoff_Scale = float(csvreader.__next__()[1])
-
-            else:
-               self.disk_temperature_exp_height_scale   = float(csvreader.__next__()[1])
-               self.disk_temperature_exp_radial_scale   = float(csvreader.__next__()[1])
-
-            self.disk_max_temperature = float(csvreader.__next__()[1])
-
-            _ = csvreader.__next__() # Disk Synchrotron Emission Model Parameters Header
-
-            self.disk_ensamble = str(csvreader.__next__()[1])
-            if self.disk_ensamble == " Phenomenological":
-                self.emission_power_law    = float(csvreader.__next__()[1])
-                self.aborbtion_coefficient = float(csvreader.__next__()[1])
-                self.source_f_power_law    = float(csvreader.__next__()[1])
-                self.emission_scale        = float(csvreader.__next__()[1])
+            _ = csvreader.__next__() # Magnetic field parameters header
 
             self.disk_magnetization = float(csvreader.__next__()[1])
-            self.disk_magnetic_field = csvreader.__next__()[1][1:]
+            self.disk_magnetic_field = csvreader.__next__()[1]
+            self.disk_magnetic_field_magnitude_profile = csvreader.__next__()[1]
 
             _ = csvreader.__next__() # Hotspot Parameters Header
             _ = csvreader.__next__() # Density Model Parameters Header
@@ -217,11 +210,11 @@ class Simulation_Parser():
         
         """ The observation window limits are given in geometric length units, 
             so one divides by the effective observer distance to get the angular size. """
-        Pixel_area = ((self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * 
-                      (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / obs_pos**2)
+        Pixel_area: float = ((self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * 
+                             (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / obs_pos**2)
 
         """ The base flux unit, returned by the ray-tracer is Jy. """
-        Total_Intensity_Jy = sum(self.I_Intensity) * Pixel_area
+        Total_Intensity_Jy: float = float(sum(self.I_Intensity) * Pixel_area)
 
         match unit:
             

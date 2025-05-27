@@ -70,7 +70,7 @@ public:
 
     /* Equations of motion */
 
-    virtual void get_EOM(double State_Vector[], double Derivatives[]) const {
+    virtual void get_EOM(const double* const State_vector, double* const Derivatives) const {
 
         std::cout << "Using Base Spacetime Class - Something Broke!'\n'";
     
@@ -78,7 +78,7 @@ public:
 
     /* Integration Termination Conditions */
 
-    virtual bool terminate_integration(double State_vector[], double Derivatives[]) { 
+    virtual bool terminate_integration(const double* const State_vector, const double* const Derivatives) {
 
         std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -121,11 +121,11 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(double inter_State_vector[], double Derivatives[]) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(double State_vector[], double Derivatives[]) override;
+    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
      
@@ -161,11 +161,11 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(double inter_State_vector[], double Derivatives[]) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(double State_vector[], double Derivatives[]) override;
+    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -196,11 +196,11 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(double inter_State_vector[], double Derivatives[]) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(double State_vector[], double Derivatives[]) override;
+    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -231,11 +231,11 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(double inter_State_vector[], double Derivatives[]) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(double State_vector[], double Derivatives[]) override;
+    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -266,11 +266,11 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(double inter_State_vector[], double Derivatives[]) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(double State_vector[], double Derivatives[]) override;
+    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -300,11 +300,11 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(double inter_State_vector[], double Derivatives[]) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(double State_vector[], double Derivatives[]) override;
+    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -333,12 +333,12 @@ private:
     Numerical_metric_potentials_type compute_metric_components_from_spline(const double* const State_vector, int radial_grid_idx, int theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
 
     double compactify_radial_coordiante(const double r) const;
-    double uncompactify_radial_coordinate(const double x);
 
     Metric_type get_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
     Metric_type get_dr_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
     Metric_type get_dtheta_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
     Metric_type get_d2r_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
+
 public:
 
     /* Metric and its derivatives */
@@ -354,11 +354,11 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(double inter_State_vector[], double Derivatives[]) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(double State_vector[], double Derivatives[]) override;
+    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 

@@ -182,50 +182,73 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
     /* --------------------- Get the three 4-vectors from which we will construct the tetrad --------------------- */
 
+    double Total_B_field_contravariant[4]{};
+
     Emission_medium_state_type Disk_state{};
     Emission_medium_state_type Hotspot_state{};
 
-    // ------------- The magnetic field of the disk
-
-    Disk_state.Plasma_Velocity = p_Sim_Context->p_Emission_Model->get_plasma_velocity(State_vector, p_Sim_Context,
-                                                                                 p_Sim_Context->p_Init_Conditions->Disk_params.Velocity_profile_type, 
-                                                                                 p_Sim_Context->p_Init_Conditions->Disk_params.Radial_velocity_fraction);
-    if (NULL != Disk_state.Plasma_Velocity) {
-
-
-        p_Sim_Context->p_Emission_Model->p_Disk_Model->get_density_and_temperature(State_vector, &Disk_state);
-        Disk_state.Magnetization = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
-        memcpy(Disk_state.Magnetic_fields.Magnetic_field_geometry, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
-
-        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector, p_Sim_Context, &Disk_state);
-
-    }
-
-    // ------------- The magnetic field of the hotspot
+    /* Determine which part of the emission medium we are in -> this determines the local magnetic field. The hotspot and jet models are allowed to have their own 
+       local magneic field, while outside them the field is considered due to the accretion disk. */
 
     Hotspot_state.Plasma_Velocity = p_Sim_Context->p_Emission_Model->get_plasma_velocity(State_vector, p_Sim_Context,
-                                                                                    p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type, 
-                                                                                    p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
+                                                                                        p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type, 
+                                                                                        p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction);
 
-    if (NULL != Hotspot_state.Plasma_Velocity) {
+    Disk_state.Plasma_Velocity = p_Sim_Context->p_Emission_Model->get_plasma_velocity(State_vector, p_Sim_Context,
+                                 p_Sim_Context->p_Init_Conditions->Disk_params.Velocity_profile_type,
+                                 p_Sim_Context->p_Init_Conditions->Disk_params.Radial_velocity_fraction);
+
+    bool In_hotspot = p_Sim_Context->p_Emission_Model->p_Hotspot_Model->is_inside_hotspot(State_vector, Hotspot_state.Plasma_Velocity, &Hotspot_state);
+
+    Disk_model_enums Disk_model = p_Sim_Context->p_Emission_Model->p_Disk_Model->s_Disk_params.e_Disk_model;
+    bool In_disk = p_Sim_Context->p_Emission_Model->p_Disk_Model->is_inside_disk(State_vector, Disk_model, &Disk_state);
+
+    if (In_hotspot && NULL != Hotspot_state.Plasma_Velocity) {
+
+        /* We are inside the hotspot - we assume the dominant magnetic field here is whatever the local field of the spot it - 
+           a.e. inisde the hotspot, the disk magnetic field is "screened" by the spot. */
 
         p_Sim_Context->p_Emission_Model->p_Hotspot_Model->get_density_and_temperature(State_vector, Hotspot_state.Plasma_Velocity, &Hotspot_state);
+
         Hotspot_state.Magnetization = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;
-        memcpy(Hotspot_state.Magnetic_fields.Magnetic_field_geometry, p_Sim_Context->p_Init_Conditions->Hotspot_params.Mag_field_geometry, 3 * sizeof(double));
+        memcpy(Hotspot_state.Magnetic_fields.Mag_field_geometry_vector, p_Sim_Context->p_Init_Conditions->Hotspot_params.Mag_field_geometry, 3 * sizeof(double));
 
-        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector, p_Sim_Context, &Hotspot_state);
+        Hotspot_state.Magnetic_fields.e_Mag_field_geometry          = p_Sim_Context->p_Init_Conditions->Hotspot_params.e_Mag_field_geometry;
+        Hotspot_state.Magnetic_fields.e_Mag_field_magnitude_profile = p_Sim_Context->p_Init_Conditions->Hotspot_params.e_Mag_field_magnitude_profile;
+
+
+        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector, 
+                                                            p_Sim_Context,
+                                                           &Hotspot_state);
+        
+        memcpy(Total_B_field_contravariant, Hotspot_state.Magnetic_fields.B_field_plasma_frame, 4 * sizeof(double));
+
+ 
+    }
+    else if ((!In_hotspot && In_disk) && NULL != Disk_state.Plasma_Velocity){
+
+        /* We are outside the hotspot - we assume the dominant magnetic field here is due to the background accretion disk. */
+
+        p_Sim_Context->p_Emission_Model->p_Disk_Model->get_density_and_temperature(State_vector, Disk_model, &Disk_state);
+
+        Disk_state.Magnetization = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
+        memcpy(Disk_state.Magnetic_fields.Mag_field_geometry_vector, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
+        
+        Disk_state.Magnetic_fields.e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_geometry;
+        Disk_state.Magnetic_fields.e_Mag_field_magnitude_profile = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_magnitude_profile;
+
+
+        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector, 
+                                                            p_Sim_Context,
+                                                           &Disk_state);
+        
+        memcpy(Total_B_field_contravariant, Disk_state.Magnetic_fields.B_field_plasma_frame, 4 * sizeof(double));
 
     }
+    else { return ERROR; }
 
+    //======================================
     const double* Obs_velocity_contravariant = p_Sim_Context->p_Observer->get_obs_velocity();
-
-    double Total_B_field_contravariant[4]{};
-
-    for (int index = 0; index <= 3; index++) {
-
-        Total_B_field_contravariant[index] = Disk_state.Magnetic_fields.B_field_coord_frame[index] + Hotspot_state.Magnetic_fields.B_field_coord_frame[index];
-
-    }
 
     double Wave_Vector_covariant[4] = { State_vector[e_p_t], State_vector[e_p_r], State_vector[e_p_theta], State_vector[e_p_phi] };
 
@@ -557,11 +580,13 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
-            if (OK == Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path)) {
+            /* If a Stokes basis cannot be contstructed, skip the rest of the integration step.
+               NOTE: This should really only happen if the local magnetic field vector vanishes (realistically I look at the emission medium density) <-> there is no emission,
+                     and therefore no need to map the polarization vector to Stokes components. */
+            if (OK != Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path)) { continue; }
 
-                Map_Polarization_Vector_to_Stokes(std::as_const(inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
+            Map_Polarization_Vector_to_Stokes(std::as_const(inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
 
-            }
         }
 
         /* ================================= Propagate the radiative transfer equations ================================= */
@@ -612,7 +637,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     double State_Vector[e_State_Number]{};
     double Old_State_Vector[e_State_Number]{};
 
-    State_Vector[e_t]       = 0;
+    State_Vector[e_t]       = p_Sim_Context->p_Init_Conditions->Observer_params.init_time;
     State_Vector[e_r]       = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
     State_Vector[e_theta]   = p_Sim_Context->p_Init_Conditions->Observer_params.inclination;
     State_Vector[e_phi]     = p_Sim_Context->p_Init_Conditions->Observer_params.azimuth;

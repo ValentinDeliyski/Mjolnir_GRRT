@@ -293,6 +293,7 @@
     <ClInclude Include="Libraries\include\Hotspot_Models.h" />
     <ClInclude Include="Libraries\include\Input_parser.h" />
     <ClInclude Include="Libraries\include\KHR\khrplatform.h" />
+    <ClInclude Include="Libraries\include\Model_Structs.h" />
     <ClInclude Include="Libraries\include\Novikov_Thorne_model.h" />
     <ClInclude Include="Libraries\include\Radiative_Transfer.h" />
     <ClInclude Include="Libraries\include\Spacetimes.h" />

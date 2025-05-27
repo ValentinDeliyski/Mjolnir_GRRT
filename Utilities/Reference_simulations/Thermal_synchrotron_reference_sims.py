@@ -45,15 +45,14 @@ class Thermal_syhnchrotron_reference_sims:
         
         self.Simulation_configurator.disk_model.Magnetization = {"Value": 0.01, "Unit": "[-]"}
         
-        self.Simulation_configurator.disk_model.Density_r_cutoff     = {"Value": 0, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Temperature_r_cutoff = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Density_cutoff_radius     = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Temperature_cutoff_radius = {"Value": 0, "Unit": "[-]"}
         
-        self.Simulation_configurator.disk_model.Ensamble_type       = {"Value": "Thermal",   "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Density_profile     = {"Value": "Power Law", "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Temperature_profile = {"Value": "Power Law", "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Ensamble_type = {"Value": "Thermal",   "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Disk_Model    = {"Value": "Phenom_RIAF_1", "Unit": "[-]"}
         
-        self.Simulation_configurator.disk_model.Density_radial_power_law     = {"Value": 2.0, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Temperature_radial_power_law = {"Value": 1.0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Density_power_law_power     = {"Value": 2.0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Temperature_power_law_power = {"Value": 1.0, "Unit": "[-]"}
         
         self.Simulation_configurator.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
         
@@ -92,8 +91,8 @@ class Thermal_syhnchrotron_reference_sims:
 
         """ Accretion disk setup """
         self.Simulation_configurator.disk_model.Opening_angle = {"Value": 0.1, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Density_r_0 = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
-        self.Simulation_configurator.disk_model.Temperature_r_0 = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Density_power_law_scale     = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Temperature_power_law_scale = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
         
         self.Simulation_configurator.disk_model.Density_scale_factor = {"Value": 1.5e6, "Unit": "[g/cm^3]"}
         
@@ -144,8 +143,8 @@ class Thermal_syhnchrotron_reference_sims:
 
         """ Accretion disk setup """
         self.Simulation_configurator.disk_model.Opening_angle = {"Value": 1, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Density_r_0 = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
-        self.Simulation_configurator.disk_model.Temperature_r_0 = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Density_power_law_scale  = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Temperature_cutoff_scale = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
         
         self.Simulation_configurator.disk_model.Density_scale_factor = {"Value": 0.7e6, "Unit": "[g/cm^3]"}
         

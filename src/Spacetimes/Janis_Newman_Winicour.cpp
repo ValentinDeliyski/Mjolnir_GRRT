@@ -181,10 +181,10 @@ int JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initi
 
 }
 
-void JNW_class::get_EOM(double State_vector[], double Derivatives[]) const {
+void JNW_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
 
-    double& r = State_vector[e_r];
-    double& J = State_vector[e_p_phi];
+    const double& r = State_vector[e_r];
+    const double& J = State_vector[e_p_phi];
 
     double sin1 = sin(State_vector[e_theta]);
     double sin2 = sin1 * sin1;
@@ -197,24 +197,24 @@ void JNW_class::get_EOM(double State_vector[], double Derivatives[]) const {
     double pow_gamma = pow(1 - r_singularity / r, this->Gamma);
     double pow_gamma_minus_1 = pow(1 - r_singularity / r, this->Gamma - 1);
 
-    *(Derivatives + e_t      ) = - 1 / pow_gamma * State_vector[e_p_t];
-    *(Derivatives + e_r      ) = pow_gamma * State_vector[e_p_r];
-    *(Derivatives + e_theta  ) = pow_gamma_minus_1 / (r * r) * State_vector[e_p_theta];
-    *(Derivatives + e_phi    ) = pow_gamma_minus_1 / (r * r * sin2) * J;
-    *(Derivatives + e_p_phi  ) = 0.0;
-    *(Derivatives + e_p_theta) = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
-    *(Derivatives + e_p_t    ) = 0.0;
+    Derivatives[e_t] = - 1 / pow_gamma * State_vector[e_p_t];
+    Derivatives[e_r] = pow_gamma * State_vector[e_p_r];
+    Derivatives[e_theta] = pow_gamma_minus_1 / (r * r) * State_vector[e_p_theta];
+    Derivatives[e_phi] = pow_gamma_minus_1 / (r * r * sin2) * J;
+    Derivatives[e_p_phi] = 0.0;
+    Derivatives[e_p_theta] = pow_gamma_minus_1 * cos1 / (r * r * sin1 * sin2) * J * J;
+    Derivatives[e_p_t] = 0.0;
 
     double r_term_1 = -this->Gamma * r_singularity / 2 / r / r * pow_gamma_minus_1 * (1.0 / pow_gamma / pow_gamma
                     + State_vector[e_p_r] * State_vector[e_p_r]);
     double r_term_2 = 1.0 / r / r / r * pow_gamma_minus_1 * (1 - r_singularity / 2 / r * (this->Gamma - 1) / (1 - r_singularity / r))
                     * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
-    *(Derivatives + e_p_r) = r_term_1 + r_term_2;
+    Derivatives[e_p_r] = r_term_1 + r_term_2;
 
 }
 
-bool JNW_class::terminate_integration(double State_vector[], double Derivatives[]) {
+bool JNW_class::terminate_integration(const double* const State_vector, const double* const Derivatives) {
 
     double r_singularity = 2 / this->Gamma;
 

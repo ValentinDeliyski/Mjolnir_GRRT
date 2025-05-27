@@ -36,5 +36,8 @@ struct Hotspot_model_type {
                                      const double* const Hotspot_Velocity,
                                      Emission_medium_state_type* const p_Emission_medium_state) const;
 
+    bool is_inside_hotspot(const double* const State_Vector, const double* const Hotspot_Velocity, Emission_medium_state_type* const Hotspot_State) const;
+
+
 };
 

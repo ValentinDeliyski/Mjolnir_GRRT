@@ -43,13 +43,15 @@ double Hotspot_model_type::get_hotspot_profile(const Hotspot_profile_parameters_
 
     switch (e_Profile_type) {
 
-    case e_Gaussian_profile:
+    case e_Gaussian:
 
         return exp(-int_power((p_Profile_parameters->Gaussian_variable - p_Profile_parameters->Gaussian_mean) / p_Profile_parameters->Gaussian_spread, 2) / 2);
 
-    case e_Spherical_profile:
+    case e_Spherical:
 
-        if (p_Profile_parameters->Distance_from_sphere_center < p_Profile_parameters->Sphere_radius) { return 1.0; }
+        if (p_Profile_parameters->Distance_from_sphere_center < p_Profile_parameters->Sphere_radius) {
+            return 1.0; 
+        }
         else { return 0.0; }
 
     default:
@@ -97,7 +99,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
     Profile_prameters.Gaussian_spread = this->s_Hotspot_params.Temporal_spread;
     Profile_prameters.Gaussian_mean = this->s_Hotspot_params.Coord_time_offset;
 
-    double Temporal_profile = this->get_hotspot_profile(&Profile_prameters, e_Gaussian_profile);
+    double Temporal_profile = this->get_hotspot_profile(&Profile_prameters, e_Gaussian);
 
     /* ======================= =============================== ======================= */
 
@@ -134,5 +136,13 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
         exit(ERROR);
 
     }
+
+}
+
+bool Hotspot_model_type::is_inside_hotspot(const double* const State_Vector, const double* const Hotspot_Velocity, Emission_medium_state_type* const Hotspot_State) const {
+
+    this->get_density_and_temperature(State_Vector, Hotspot_Velocity, Hotspot_State);
+
+    return (Hotspot_State->Density / this->s_Hotspot_params.Electron_density_scale > this->s_Hotspot_params.Threshold_relative_density);
 
 }

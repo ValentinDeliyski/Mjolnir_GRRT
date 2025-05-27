@@ -1,4 +1,5 @@
 #pragma once
+#include "Model_Structs.h"
 #include "Enumerations.h"
 #include <string>
 
@@ -28,60 +29,41 @@ struct Hotspot_profile_parameters_type {
 
 struct Disk_profile_parameters_type {
 
-    /* ================================ Common profile variables ================================ */
+    /*! The power law variable ~ (power_law_scale / radial_coordinate)^power */
+    double radial_coordinate;
 
-    /*! The radial position. */
-    double r;
+    /*! The power law scale ~ (power_law_scale / radial_coordinate)^power */
+    double power_law_scale;
 
-    /*! The verticical position component. */
-    double z;
-
-    /*! The equatorial position component. */
-    double rho;
-
-    /* ====================== Hybrid power - exponential profile parameters ====================== */
-
-    /*! The power law scale ~ (r_0 / r)^power */
-    double r_0;
-
-    /*! The power law exponent ~ (r_0 / r)^power */
+    /*! The power law exponent ~ (power_law_scale / radial_coordinate)^power */
     double power;
 
-    /*! The disk opening angle ~ exp(-[tan(theta)/tan(opening_angle)]^2 / 2) */
-    double tan_opening_angle;
+    /*! The variable of the vertical gaussian ~ exp(-(gauss_var - gauss_mean)^2 / gauss_std^2 / 2) */
+    double gaussian_variable;
 
-    /*! The cutoff radius ~ exp( -[(r - r_cutoff) / cutoff_scale]^2 ) if r < r_cutoff */
-    double r_cutoff;
+    /*! The mean of the vertical gaussian ~ exp(-(gauss_var - gauss_mean)^2 / gauss_std^2 / 2) */
+    double gaussian_mean;
 
-    /*! The cutoff scale ~ exp( -[(r - r_cutoff) / cutoff_scale]^2 ) if r < r_cutoff */
+    /*! The standard deviation of the vertical gaussian ~ exp(-(gauss_var - gauss_mean)^2 / gauss_std^2 / 2) */
+    double gaussian_std;
+
+    /*! The cutoff radius for the radial gaussian ~ exp(-(r - cutoff_radius)^2 / cutoff_scale^2 / 2) */
+    double cutoff_radius;
+
+    /*! The cutoff scale for the radial gaussian ~ exp(-(r - cutoff_radius)^2 / cutoff_scale^2 / 2) */
     double cutoff_scale;
-
-    /* =========================== Pure exponential profile parameters =========================== */
-
-    /*! The radial scale ~ exp( -[r / exp_radial_scale]^2 ) */
-    double exp_radial_scale;
-
-    /*! The radial scale ~ exp( -[z / exp_height_scale]^2 ) */
-    double exp_height_scale;
 
 };
 
 struct Disk_model_parameters_type {
 
-    /*! Specifies the statistical ensamble of the hotspot. */
+    /*! Specifies the used model of the disk. */
+    Disk_model_enums e_Disk_model;
+
+    /*! Specifies the statistical ensamble of the disk. */
     Ensamble_enums Ensamble_type; 
 
-    /*! Specifies the density profile of the hotspot. The current supported profiles are:
-        - Gaussian
-        - Sphere with a constant Radius  */
-    Profile_enums Density_profile_type; 
-
-    /*! Specifies the temperature profile of the hotspot. The current supported profiles are:
-        - Gaussian
-        - Sphere with a constant Radius */
-    Profile_enums Temperature_profile_type; 
-
-    /*! Specifies the velocity profile of the hotspot. */
+    /*! Specifies the velocity profile of the disk. */
     Velocity_enums Velocity_profile_type;  
 
     /*! Specifies the magnitude of the radial velocity component. I use this to interpolate the circular velocity profile, 
@@ -94,64 +76,34 @@ struct Disk_model_parameters_type {
     /*! The peak temperature value in [K]. */
     double Electron_temperature_scale;
 
-    /*! The hotspot magnetization value [-]. */
+    /*! Specifies the direction of the magnetic field. */
+    Magnetic_field_geometry_enums e_Mag_field_geometry;
+
+    /*! Specifies how the magnitude of the magnetic field is calculated. */
+    Magnetic_field_magnitude_enums e_Mag_field_magnitude_profile;
+
+    /*! The disk magnetization value [-]. */
     double Magnetization;
 
-    /*! The constant magnetic field geometry in the plasma rest frame.
+    /*! The constant magnetic field geometry in the Eularian frame.
         The components are specified as [B_r, B_theta, B_phi].
-        This vector gets normalized when read from the input XML. */
+        This vector gets normalized with the metric before use. */
     double Mag_field_geometry[3];
 
-    /* ========= Power law density profile parameters ========= */
+    double Mag_field_magnitude_scale;
 
-    /*! The vertical density profile scales asa exp(-(cotan(theta) / 2. / opening_angle)^2). */
-    double Power_law_disk_opening_angle;
+    double Mag_field_power;
 
-    /*! The radial density profile scales as pow(r / R_0, radial_power_lawa). */
-    double Power_law_density_R_0;
+    double Mag_field_radial_scale;
 
-    /*! The radial density profile scales as pow(r / R_0, radial_power_lawa). */
-    double Power_law_density_radial_power_law;
+    /*! Specifies the relative density at which we start evaluating the emission of the disk. */
+    double Threshold_relative_density;
 
-    /*! Under the cutoff radius, the radial density profile gains an additional factor of 
-        exp(-(r - r_cutoff)^2 / cutoff_scale^2). */
-    double Power_law_density_R_cutoff;
+    /* ========= The density profile parameters ========= */
 
-    /*! Under the cutoff radius, the radial density profile gains an additional factor of 
-        exp(-(r - r_cutoff)^2 / cutoff_scale^2). */
-    double Power_law_density_cutoff_scale;
+    Common_RIAF_params_type Common_RIAF_params;
 
-    /* ========= Exponential law density profile parameters ========= */
-
-    /*! The vertical density profile scales as exp(-(cos(theta) / height_scale)^2). */
-    double Exp_law_density_height_scale;
-
-    /*! The radial density profile scales as exp(-(r / radial_scale)^2). */
-    double Exp_law_density_radial_scale;
-
-    /* ========= Power law temperature profile parameters ========= */
-
-    /*! The radial temperature profile scales as pow(r / R_0, radial_power_lawa). */
-    double Power_law_temperature_R_0;
-
-    /*! The radial temperature profile scales as pow(r / R_0, radial_power_lawa). */
-    double Power_law_temperature_radial_power_law;
-
-    /*! Under the cutoff radius, the radial temperature profile gains an additional factor of 
-        exp(-(r - r_cutoff)^2 / cutoff_scale^2). */
-    double Power_law_temperature_R_cutoff;
-
-    /* Under the cutoff radius, the radial temperature profile gains an additional factor of 
-       exp(-(r - r_cutoff)^2 / cutoff_scale^2). */
-    double Power_law_temperature_cutoff_scale;
-
-    /* ========= Exponential law temperature profile parameters ========= */
-
-    /*! The vertical temperature profile scales as exp(-(cos(theta) / height_scale)^2). */
-    double Exp_law_temperature_height_scale;
-
-    /*! The radial temperature profile scales as exp(-(r / radial_scale)^2). */
-    double Exp_law_temperature_radial_scale;
+    Colab_test_1_params_type Colab_test_1_params;
 
 };
 
@@ -161,13 +113,23 @@ struct Magnetic_fields_type {
     double B_field_plasma_frame[4];
 
     /*! The magnetic field 4-vector in the coordinate frame in units of [G]. */
-    double B_field_coord_frame[4];
+    double B_field_eularian_frame[4];
 
     /*! Unit vector that specifies the direction of the magnetic field in the plasma frame. */
-    double Magnetic_field_geometry[3];
+    double Mag_field_geometry_vector[3];
 
     /*! The magnitude of the magnetic field in the plasma frame in units of [G]. */
     double B_field_plasma_frame_norm;
+
+    Magnetic_field_geometry_enums e_Mag_field_geometry;
+
+    Magnetic_field_magnitude_enums e_Mag_field_magnitude_profile;
+
+    double Mag_field_magnitude_scale;
+
+    double Mag_field_power;
+
+    double Mag_field_radial_scale;
 
 };
 
@@ -221,14 +183,30 @@ struct Hotspot_model_parameters_type {
     double Electron_density_scale;     
 
     /*! The peak temperature value in [K]. */
-    double Electron_temperature_scale; 
-    
-    double Magnetization; /* The hotspot magnetization value [-]. */
+    double Electron_temperature_scale;
 
-    /*! The constant magnetic field geometry in the plasma rest frame.
+    /*! Specifies the direction of the magnetic field. */
+    Magnetic_field_geometry_enums e_Mag_field_geometry;
+
+    /*! Specifies how the magnitude of the magnetic field is calculated. */
+    Magnetic_field_magnitude_enums e_Mag_field_magnitude_profile;
+    
+    /* The hotspot magnetization value [-]. */
+    double Magnetization; 
+
+    /*! The constant magnetic field geometry in the Eularian frame.
         The components are specified as [B_r, B_theta, B_phi]. 
-        This vector gets normalized when read from the input XML. */
+        This vector gets normalized with the metric before use. */
     double Mag_field_geometry[3];
+
+    /*! The density at which we start evaluating the emission. */
+    double Threshold_relative_density;
+    
+    double Mag_field_magnitude_scale;
+
+    double Mag_field_power;
+
+    double Mag_field_radial_scale;
 
 };
 
@@ -561,6 +539,9 @@ struct Integrator_parameters_type {
 };
 
 struct Observer_parameters_type {
+
+    /*! The moment of observation, relative to the central object dynamics, in geometric units. */
+    double init_time;
 
     /*! The distance to the observer in geometric units. */
     double distance;

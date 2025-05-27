@@ -58,9 +58,9 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.hotspot_model.Distance          = {"Value": 9,           "Unit": "[M]"} 
         self.Simulation_configurator.hotspot_model.Azimuth           = {"Value": -pi/2,       "Unit": "[M]"} 
         self.Simulation_configurator.hotspot_model.Velocity_profile  = {"Value": "Keplarian", "Unit": "[-]"}
-        self.Simulation_configurator.hotspot_model.Mag_field_geometry_X = {"Value": 0, "Unit": "[-]"}
-        self.Simulation_configurator.hotspot_model.Mag_field_geometry_Y = {"Value": 0, "Unit": "[-]"}
-        self.Simulation_configurator.hotspot_model.Mag_field_geometry_Z = {"Value": 1, "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry_r     = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry_theta = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry_phi   = {"Value": 1, "Unit": "[-]"}
         
         """ Observer setup """
         self.Simulation_configurator.observer.Distance    = {"Value": 1e4,           "Unit": "[M]"}
@@ -82,22 +82,22 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
         
         """ Configure the integrator """
-        self.Simulation_configurator.integrator.Step_controller_type = {"Value": "Gustafsson", "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK45_accuracy        = {"Value": 1e-12, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK45_accuracy        = {"Value": 1e-13, "Unit": "[-]"}
+        
+        self.Simulation_configurator.integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
         
         """ The simulation name and input file path """
         
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
 
-        hotspot_azimuth_position_number = 10
+        hotspot_azimuth_position_number = 40
 
         for time_offset in range(0, hotspot_azimuth_position_number):
             
-            self.Simulation_configurator.hotspot_model.Coord_time_at_max = {"Value": 2 * pi / (1 / sqrt(9**3)) * time_offset / hotspot_azimuth_position_number, "Unit": "[GM/c^3]"}
+            self.Simulation_configurator.observer.Init_time = {"Value": 2 * pi / (1 / sqrt(9**3)) * time_offset / hotspot_azimuth_position_number, "Unit": "[GM/c^3]"}
             
             self.Simulation_configurator.simulation_name = {"Value": "Hotspot_Reference_Simulation_{}".format(time_offset), "Unit": "[-]"}
-
-            
 
             self.Simulation_configurator.generate_simulation_input(Path_to_input_dir = "Reference_simulations\\Hotspot_Reference_Simulation",
                                                                    Input_file_name = "Hotspot_Reference_Simulation_input.XML")

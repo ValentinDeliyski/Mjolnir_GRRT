@@ -945,6 +945,9 @@
     <ClInclude Include="Libraries\include\Novikov_Thorne_model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\include\Model_Structs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Libraries\shaders\default.vert">

@@ -180,10 +180,10 @@ int Gauss_Bonnet_class::get_initial_conditions_from_file(Initial_conditions_type
 
 }
 
-void Gauss_Bonnet_class::get_EOM(double State_vector[], double Derivatives[]) const{
+void Gauss_Bonnet_class::get_EOM(const double* const State_vector, double* const Derivatives) const{
 
-    double& r = State_vector[e_r];
-    double& J = State_vector[e_p_phi];
+    const double& r = State_vector[e_r];
+    const double& J = State_vector[e_p_phi];
 
     double sin1 = sin(State_vector[e_theta]);
     double sin2 = sin1 * sin1;
@@ -196,20 +196,21 @@ void Gauss_Bonnet_class::get_EOM(double State_vector[], double Derivatives[]) co
     double f    = 1. + r * r / this->Gamma / 2. * (1. - root);
     double dr_f = 2. / r * (f - 1.) + 6. * this->Mass / root / r / r;
 
-    *(Derivatives + e_t      ) = - 1 / f * State_vector[e_p_t];
-    *(Derivatives + e_r      ) = f * State_vector[e_p_r];
-    *(Derivatives + e_theta  ) = 1. / (r * r) * State_vector[e_p_theta];
-    *(Derivatives + e_phi    ) = J / (r * r * sin2);
-    *(Derivatives + e_p_phi  ) = 0.0;
-    *(Derivatives + e_p_theta) = cos1 / (r * r * sin1 * sin2) * J * J;
+    Derivatives[e_t] = - 1. / f * State_vector[e_p_t];
+    Derivatives[e_r] = f * State_vector[e_p_r];
+    Derivatives[e_theta] = 1. / (r * r) * State_vector[e_p_theta];
+    Derivatives[e_phi] = J / (r * r * sin2);
+    Derivatives[e_p_phi] = 0.0;
+    Derivatives[e_p_theta] = cos1 / (r * r * sin1 * sin2) * J * J;
+    Derivatives[e_p_t] = 0.0;
 
     double r_term_1 = -1. / 2 * (1.0 / f / f + State_vector[e_p_r] * State_vector[e_p_r]) * dr_f;
     double r_term_2 = 1.0 / r / r / r * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
-    *(Derivatives + e_p_r) = r_term_1 + r_term_2;
+    Derivatives[e_p_r] = r_term_1 + r_term_2;
 }
 
-bool Gauss_Bonnet_class::terminate_integration(double State_vector[], double Derivatives[]) {
+bool Gauss_Bonnet_class::terminate_integration(const double* const State_vector, const double* const Derivatives) {
 
     bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
 

@@ -511,7 +511,6 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
 
 }
 
-
 Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector) const {
 
     /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
@@ -527,7 +526,6 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector) c
 
 }
 
-
 Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
 
     /* =================== TODO ================ */
@@ -542,7 +540,7 @@ int Numerical_metric::get_initial_conditions_from_file(Initial_conditions_type* 
     return 0;
 }
 
-void Numerical_metric::get_EOM(double State_Vector[], double Derivatives[]) const {
+void Numerical_metric::get_EOM(const double* const State_Vector, double* const Derivatives) const {
 
     const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
     const int Radial_grid_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
@@ -580,15 +578,15 @@ void Numerical_metric::get_EOM(double State_Vector[], double Derivatives[]) cons
 
     for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
-        *(Derivatives + e_t) += inv_metric[e_t][right_idx] * State_Vector[right_idx + 4];
-        *(Derivatives + e_r) += inv_metric[e_r][right_idx] * State_Vector[right_idx + 4];
-        *(Derivatives + e_theta) += inv_metric[e_theta][right_idx] * State_Vector[right_idx + 4];
-        *(Derivatives + e_phi) += inv_metric[e_phi][right_idx] * State_Vector[right_idx + 4];
+        Derivatives[e_t] += inv_metric[e_t][right_idx] * State_Vector[right_idx + 4];
+        Derivatives[e_r] += inv_metric[e_r][right_idx] * State_Vector[right_idx + 4];
+        Derivatives[e_theta] += inv_metric[e_theta][right_idx] * State_Vector[right_idx + 4];
+        Derivatives[e_phi] += inv_metric[e_phi][right_idx] * State_Vector[right_idx + 4];
 
         for (int left_idx = 0; left_idx <= 3; left_idx++) {
 
-            *(Derivatives + e_p_r) += -1. / 2 * dr_inv_metric[left_idx][right_idx] * State_Vector[left_idx + 4] * State_Vector[right_idx + 4];
-            *(Derivatives + e_p_theta) += -1. / 2 * dtheta_inv_metric[left_idx][right_idx] * State_Vector[left_idx + 4] * State_Vector[right_idx + 4];
+            Derivatives[e_p_r] += -1. / 2 * dr_inv_metric[left_idx][right_idx] * State_Vector[left_idx + 4] * State_Vector[right_idx + 4];
+            Derivatives[e_p_theta] += -1. / 2 * dtheta_inv_metric[left_idx][right_idx] * State_Vector[left_idx + 4] * State_Vector[right_idx + 4];
 
         }
 
@@ -596,7 +594,7 @@ void Numerical_metric::get_EOM(double State_Vector[], double Derivatives[]) cons
 
 }
 
-bool Numerical_metric::terminate_integration(double State_vector[], double Derivatives[]) {
+bool Numerical_metric::terminate_integration(const double* const State_vector, const double* Derivatives) {
 
     const bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
 

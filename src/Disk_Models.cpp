@@ -17,29 +17,31 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
 }
 
 double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* const p_Profile_parameters,
-                                          Profile_enums e_Profile_type) const{
+                                         Profile_enums e_Profile_type) const{
 
-    double Profile = 0.0;
+    double Profile{};
+    double Exponent_arg{};
 
     switch (e_Profile_type) {
 
-    case e_Power_law_profile:
+    case e_Power_law:
 
-        Profile = pow(p_Profile_parameters->r_0 / p_Profile_parameters->r, p_Profile_parameters->power) *
-                  exp(-int_power(p_Profile_parameters->z / p_Profile_parameters->rho / p_Profile_parameters->tan_opening_angle, 2) / 2);
+        Profile = pow(p_Profile_parameters->power_law_scale / p_Profile_parameters->radial_coordinate, p_Profile_parameters->power);
+        break;
 
-        if (p_Profile_parameters->r < p_Profile_parameters->r_cutoff) {
+    case e_Hybrid_power_gaussian:
 
-            Profile *= exp(-int_power((p_Profile_parameters->r - p_Profile_parameters->r_cutoff) / p_Profile_parameters->cutoff_scale, 2));
+        Exponent_arg = (p_Profile_parameters->gaussian_variable - p_Profile_parameters->gaussian_mean) / p_Profile_parameters->gaussian_std;
 
-        }
-        
-        return Profile;
+        Profile = pow(p_Profile_parameters->power_law_scale / p_Profile_parameters->radial_coordinate, p_Profile_parameters->power) * exp(-int_power(Exponent_arg, 2) / 2);
+        break;
 
-    case e_Exponential_law_profile:
+    case e_Gaussian:
 
-        return exp(-int_power(p_Profile_parameters->r / p_Profile_parameters->exp_radial_scale, 2) / 2 - int_power(p_Profile_parameters->z / p_Profile_parameters->exp_height_scale, 2) / 2);
+        Exponent_arg = (p_Profile_parameters->gaussian_variable - p_Profile_parameters->gaussian_mean) / p_Profile_parameters->gaussian_std;
 
+        Profile = exp(-int_power(Exponent_arg, 2) / 2);
+        break;
 
     default:
 
@@ -48,31 +50,138 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
 
     }
 
+    if (p_Profile_parameters->radial_coordinate < p_Profile_parameters->cutoff_radius) {
+
+        double Cutoff_exponent_arg = (p_Profile_parameters->radial_coordinate - p_Profile_parameters->cutoff_radius) / p_Profile_parameters->cutoff_scale;
+
+        Profile *= exp(-int_power(Cutoff_exponent_arg, 2) / 2);
+
+    }
+
+    return Profile;
+
 }
 
 void Disk_model_type::get_density_and_temperature(const double* const State_Vector,
+                                                  Disk_model_enums e_Disk_model,
                                                   Emission_medium_state_type* const p_Emission_medium_state) const {
 
-    Disk_profile_parameters_type Profile_prameters{};
+    Disk_profile_parameters_type Density_profile_params{}, Temperature_profile_params{};
 
-    /* ======================================== The density profile ======================================== */
+    switch (e_Disk_model) {
 
-    Profile_prameters.r   = State_Vector[e_r];
-    Profile_prameters.z   = State_Vector[e_r] * cos(State_Vector[e_theta]);
-    Profile_prameters.rho = State_Vector[e_r] * sin(State_Vector[e_theta]);
+    case e_Phenom_RIAF_1:
 
-    /* The disk opening angle is a common parameter for both density and temperature profiles. */
-    Profile_prameters.tan_opening_angle = this->s_Disk_params.Power_law_disk_opening_angle;
+        /* ============= This is the model used in https://arxiv.org/pdf/2206.12066, with an added cutoff exponential. ============= */
 
-    Profile_prameters.r_0          = this->s_Disk_params.Power_law_density_R_0;
-    Profile_prameters.r_cutoff     = this->s_Disk_params.Power_law_density_R_cutoff;
-    Profile_prameters.cutoff_scale = this->s_Disk_params.Power_law_density_cutoff_scale;
-    Profile_prameters.power        = this->s_Disk_params.Power_law_density_radial_power_law;
+        /* ------------------------------------------------ Get the density profile ------------------------------------------------ */
 
-    Profile_prameters.exp_radial_scale = this->s_Disk_params.Exp_law_density_radial_scale;
-    Profile_prameters.exp_height_scale = this->s_Disk_params.Exp_law_density_height_scale;
+        Density_profile_params.radial_coordinate = State_Vector[e_r];
+        Density_profile_params.power_law_scale   = this->s_Disk_params.Common_RIAF_params.Density_power_law_scale;
+        Density_profile_params.power             = this->s_Disk_params.Common_RIAF_params.Density_power_law_power;
 
-    p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Profile_prameters, this->s_Disk_params.Density_profile_type);
+        Density_profile_params.gaussian_variable = cos(State_Vector[e_theta]) / sin(State_Vector[e_theta]);
+        Density_profile_params.gaussian_mean     = 0.0;
+        Density_profile_params.gaussian_std      = this->s_Disk_params.Common_RIAF_params.Disk_opening_angle;
+
+        Density_profile_params.cutoff_radius = this->s_Disk_params.Common_RIAF_params.Density_cutoff_radius;
+        Density_profile_params.cutoff_scale = this->s_Disk_params.Common_RIAF_params.Density_cutoff_scale;
+
+        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Hybrid_power_gaussian);
+
+        /* ---------------------------------------------- Get the temperature profile ---------------------------------------------- */
+
+        Temperature_profile_params.radial_coordinate = State_Vector[e_r];
+        Temperature_profile_params.power_law_scale   = this->s_Disk_params.Common_RIAF_params.Temperature_power_law_scale;
+        Temperature_profile_params.power             = this->s_Disk_params.Common_RIAF_params.Temperature_power_law_power;
+
+        /* Vertical gaussians are not used for the temperature profile. */
+
+        Temperature_profile_params.gaussian_variable = 0.0;
+        Temperature_profile_params.gaussian_mean     = 0.0;
+        Temperature_profile_params.gaussian_std      = 0.0;
+
+        Temperature_profile_params.cutoff_radius = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_radius;
+        Temperature_profile_params.cutoff_scale = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_scale;
+
+        p_Emission_medium_state->Temperature = this->s_Disk_params.Electron_temperature_scale * this->get_disk_profile(&Temperature_profile_params, e_Power_law);
+
+        break;
+
+    case e_Phenom_RIAF_2:
+
+        /* ============= This is the model used in https://arxiv.org/pdf/2209.09931, with an added cutoff exponential. ============= */
+
+        /* ------------------------------------------------ Get the density profile ------------------------------------------------ */
+
+        Density_profile_params.radial_coordinate = State_Vector[e_r];
+        Density_profile_params.power_law_scale   = this->s_Disk_params.Common_RIAF_params.Density_power_law_scale;
+        Density_profile_params.power             = this->s_Disk_params.Common_RIAF_params.Density_power_law_power;
+
+        Density_profile_params.gaussian_variable = cos(State_Vector[e_theta]);
+        Density_profile_params.gaussian_mean     = 0.0;
+        Density_profile_params.gaussian_std      = this->s_Disk_params.Common_RIAF_params.Disk_opening_angle;
+
+        Density_profile_params.cutoff_radius = this->s_Disk_params.Common_RIAF_params.Density_cutoff_radius;
+        Density_profile_params.cutoff_scale = this->s_Disk_params.Common_RIAF_params.Density_cutoff_scale;
+
+        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Hybrid_power_gaussian);
+
+        /* ---------------------------------------------- Get the temperature profile ---------------------------------------------- */
+
+        Temperature_profile_params.radial_coordinate = State_Vector[e_r];
+        Temperature_profile_params.power_law_scale   = this->s_Disk_params.Common_RIAF_params.Temperature_power_law_scale;
+        Temperature_profile_params.power             = this->s_Disk_params.Common_RIAF_params.Temperature_power_law_power;
+
+        /* Vertical gaussians are not used for the temperature profile. */
+
+        Temperature_profile_params.gaussian_variable = 0.0;
+        Temperature_profile_params.gaussian_mean     = 0.0;
+        Temperature_profile_params.gaussian_std      = 0.0;
+
+        Temperature_profile_params.cutoff_radius = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_radius;
+        Temperature_profile_params.cutoff_scale = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_scale;
+
+        p_Emission_medium_state->Temperature = this->s_Disk_params.Electron_temperature_scale * this->get_disk_profile(&Temperature_profile_params, e_Power_law);
+        
+        break;
+
+    case e_Colab_test_1:
+
+        /* =============== This is the model used in https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6/pdf ============== */
+
+        /* ------------------------------------------------ Get the density profile ------------------------------------------------ */
+
+        Density_profile_params.radial_coordinate = 0.0; // This is not used in this profile, so I set it to zero.
+        Density_profile_params.gaussian_variable = State_Vector[e_r];
+        Density_profile_params.gaussian_mean     = 0.0;
+        Density_profile_params.gaussian_std      = this->s_Disk_params.Colab_test_1_params.Radial_scale;
+
+        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Gaussian);
+
+        /* The above only evaluates the radial part of the profile. Below we evaluate the vertical part (another gaussian). */
+
+        Density_profile_params.radial_coordinate = 0.0; // This is not used in this profile, so I set it to zero.
+        Density_profile_params.gaussian_variable = State_Vector[e_r] * cos(State_Vector[e_theta]);
+        Density_profile_params.gaussian_mean     = 0.0;
+        Density_profile_params.gaussian_std      = this->s_Disk_params.Colab_test_1_params.Vertical_scale;
+
+        /* Note that the two profiles multiply together. */
+        p_Emission_medium_state->Density *= this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Gaussian);
+
+        /* ---------------------------------------------- Get the temperature profile ---------------------------------------------- */
+        /* This model does not specify a temperature profile at all. */
+
+        p_Emission_medium_state->Temperature = 0.0;
+
+        break;
+        
+    default:
+
+        std::cout << "Unsupported disk profile type! \n";
+        exit(ERROR);
+
+    }
 
     if (isnan(p_Emission_medium_state->Density) || isinf(p_Emission_medium_state->Density) || p_Emission_medium_state->Density < 0) {
 
@@ -82,20 +191,6 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
     }
 
-    /* ====================================== The temperature profile ====================================== */
-
-    Profile_prameters.r            = State_Vector[e_r];
-    Profile_prameters.r_0          = this->s_Disk_params.Power_law_temperature_R_0;
-    Profile_prameters.r_cutoff     = this->s_Disk_params.Power_law_temperature_R_cutoff;
-    Profile_prameters.cutoff_scale = this->s_Disk_params.Power_law_temperature_cutoff_scale;
-    Profile_prameters.power        = this->s_Disk_params.Power_law_temperature_radial_power_law;
-
-    /* NOTE: The temperature is modelled to only decrease radially, so I set the opening angle to pi / 2 to get rid of the vertical dependance of the profile.
-       This should be offloaded to the configurator and not hardcoded here! */
-    Profile_prameters.tan_opening_angle = std::numeric_limits<double>::infinity();
-
-    p_Emission_medium_state->Temperature = this->s_Disk_params.Electron_temperature_scale * this->get_disk_profile(&Profile_prameters, this->s_Disk_params.Temperature_profile_type);
-
     if (isnan(p_Emission_medium_state->Temperature) || isinf(p_Emission_medium_state->Temperature) || p_Emission_medium_state->Temperature < 0) {
 
         std::cout << "Invalid disk temperature profile: " << p_Emission_medium_state->Temperature << "\n";
@@ -103,5 +198,14 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         exit(ERROR);
 
     }
+
+
+}
+
+bool Disk_model_type::is_inside_disk(const double* const State_Vector, Disk_model_enums e_Disk_model, Emission_medium_state_type* const Disk_State) const {
+
+    this->get_density_and_temperature(State_Vector, e_Disk_model, Disk_State);
+
+    return (Disk_State->Density / this->s_Disk_params.Electron_density_scale > this->s_Disk_params.Threshold_relative_density);
 
 }

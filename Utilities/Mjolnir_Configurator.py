@@ -33,32 +33,36 @@ class Integrator():
 class Disk_model():
 
     __slots__ = ("Ensamble_type",
-                 "Density_profile",
-                 "Temperature_profile",
+                 "Disk_Model",
                  "Velocity_profile",
                  "Radial_velocity_fraction",
                  "Density_scale_factor",
                  "Temperature_scale_factor",
-                 "Mag_field_geometry_X",
-                 "Mag_field_geometry_Y",
-                 "Mag_field_geometry_Z",
-                 "Opening_angle",
-
-                 "Density_radial_power_law",
-                 "Density_cutoff_scale",
-                 "Density_r_cutoff",
-                 "Density_r_0",
-                 "Temperature_r_0",
-                 "Temperature_r_cutoff",
-                 "Temperature_cutoff_scale",
-                 "Temperature_radial_power_law",
-
-                 "Magnetization",
                  
-                 "Density_exp_height_scale",
-                 "Density_exp_radial_scale",
-                 "Temperature_exp_height_scale",
-                 "Temperature_exp_radial_scale")
+                 "Opening_angle",
+                 "Density_power_law_scale",
+                 "Density_power_law_power",
+                 "Temperature_power_law_scale",
+                 "Temperature_power_law_power",
+                 "Density_cutoff_radius",
+                 "Density_cutoff_scale",
+                 "Temperature_cutoff_radius",
+                 "Temperature_cutoff_scale",
+ 
+                 "Radial_scale",
+                 "Vertical_scale",
+                 
+                 "Magnetization",
+                 "Mag_field_geometry_r",
+                 "Mag_field_geometry_theta",
+                 "Mag_field_geometry_phi",
+                 "Mag_field_magnitude_scale",
+                 "Mag_field_power",
+                 "Mag_field_radial_scale",
+                 "Mag_field_geometry",
+                 "Mag_field_magnitude_profile",
+
+                 "Threshold_relative_density")
     
 class Hotspot_model():
 
@@ -70,9 +74,9 @@ class Hotspot_model():
                  "Density_scale_factor",
                  "Temperature_scale_factor",
                  "Radius",
-                 "Mag_field_geometry_X",
-                 "Mag_field_geometry_Y",
-                 "Mag_field_geometry_Z",
+                 "Mag_field_geometry_r",
+                 "Mag_field_geometry_theta",
+                 "Mag_field_geometry_phi",
                  "Density_spread",
                  "Temperature_spread",
                  "Temporal_spread",
@@ -80,7 +84,8 @@ class Hotspot_model():
                  "Distance",
                  "Inclination",
                  "Azimuth",
-                 "Magnetization")
+                 "Magnetization",
+                 "Threshold_relative_density")
 
 class Metric_parameters():
 
@@ -100,7 +105,8 @@ class Metric_parameters():
 
 class Observer():
 
-    __slots__ = ("Distance",
+    __slots__ = ("Init_time",
+                 "Distance",
                  "Inclination",
                  "Azimuth",
                  "Cam_rotation_angle",
@@ -216,7 +222,8 @@ class Simulation_configurator:
         self.integrator.max_integration_count  = Max_integration_count
         self.integrator.simpson_method_accuracy = simpson_method_accuracy
 
-    def _configure_observer(self, Distance: dict = {"Value": 1e4, "Unit": "[M]"},
+    def _configure_observer(self, Init_time:dict = {"Value": 0, "Unit": "[M]"},
+                                  Distance: dict = {"Value": 1e4, "Unit": "[M]"},
                                   Inclination: dict = {"Value": 160 / 180 * pi, "Unit": "[Rad]"},
                                   Azimuth: dict = {"Value": 0.0, "Unit": "[Rad]"},
                                   Cam_rotation_angle: dict = {"Value": 0.0, "Unit": "[Rad]"},
@@ -231,6 +238,7 @@ class Simulation_configurator:
         
         self.observer = Observer()
 
+        self.observer.Init_time = Init_time
         self.observer.Distance = Distance
         self.observer.Inclination = Inclination
         self.observer.Azimuth = Azimuth
@@ -299,62 +307,72 @@ class Simulation_configurator:
         self.emission_models.Kappa              = Kappa
 
     def _configure_disk_model(self, Ensamble_type: dict = {"Value": "Thermal", "Unit": "[-]"},
-                                    Density_profile: dict = {"Value": "Power Law", "Unit": "[-]"},
-                                    Temperature_profile: dict = {"Value": "Power Law", "Unit": "[-]"},
+                                    Disk_Model: dict = {"Value": "Phenom_RIAF_1", "Unit": "[-]"},
                                     Velocity_profile: dict = {"Value": "Theta Dependant", "Unit": "[-]"},
                                     Radial_velocity_fraction: dict = {"Value": 0, "Unit": "[-]"},
                                     Density_scale_factor: dict = {"Value": 1e5, "Unit": "[g/cm^3]"},
                                     Temperature_scale_factor: dict = {"Value": 1e11, "Unit": "[K]"},
-                                    Mag_field_geometry_X: dict = {"Value": 0.5, "Unit": "[-]"},
-                                    Mag_field_geometry_Y: dict = {"Value": 0, "Unit": "[-]"},
-                                    Mag_field_geometry_Z: dict = {"Value": 0.87, "Unit": "[-]"},
+                                    
                                     Opening_angle: dict = {"Value": 0.1, "Unit": "[tan(angle)]"},
-                                    Density_radial_power_law : dict = {"Value": 2.0, "Unit": "[-]"},
+                                    Density_power_law_scale: dict = {"Value": 5.0, "Unit": "[M]"},
+                                    Density_power_law_power : dict = {"Value": 2.0, "Unit": "[-]"},
+                                    Temperature_power_law_scale: dict = {"Value": 5.0, "Unit": "[M]"},
+                                    Temperature_power_law_power: dict = {"Value": 1.0, "Unit": "[-]"},    
+                                    Density_cutoff_radius: dict = {"Value": 5.0, "Unit": "[M]"},
                                     Density_cutoff_scale: dict = {"Value": 0.4, "Unit": "[M]"},
-                                    Density_r_cutoff: dict = {"Value": 5.0, "Unit": "[M]"},
-                                    Density_r_0: dict = {"Value": 5.0, "Unit": "[M]"},
+                                    Temperature_cutoff_radius: dict = {"Value": 5.0, "Unit": "[M]"},
+                                    Temperature_cutoff_scale: dict = {"Value": 0.4, "Unit": "[M]"},
+                                    
+                                    Radial_scale: dict = {"Value": 0.3, "Unit": "[M]"},
+                                    Vertical_scale: dict = {"Value": 10.0, "Unit": "[M]"},
+                                    
                                     Magnetization: dict = {"Value": 0.01, "Unit": "[-]"},
-                                    Temp_r_0: dict = {"Value": 5.0, "Unit": "[M]"},
-                                    Temp_r_cutoff: dict = {"Value": 5.0, "Unit": "[M]"},
-                                    Temp_cutoff_scale: dict = {"Value": 0.4, "Unit": "[M]"},
-                                    Temp_radial_power_law: dict = {"Value": 1.0, "Unit": "[-]"},
-                                    Density_exp_height_scale: dict = {"Value": 0.3, "Unit": "[M]"},
-                                    Density_exp_radial_scale: dict = {"Value": 10.0, "Unit": "[M]"},
-                                    Temperature_exp_height_scale: dict = {"Value": 0.3, "Unit": "[M]"},
-                                    Temperature_exp_radial_scale: dict = {"Value": 10.0, "Unit": "[M]"}):
+                                    Mag_field_geometry_r: dict = {"Value": 0.5, "Unit": "[-]"},
+                                    Mag_field_geometry_theta: dict = {"Value": 0, "Unit": "[-]"},
+                                    Mag_field_geometry_phi: dict = {"Value": 0.87, "Unit": "[-]"},
+                                    
+                                    Mag_field_magnitude_scale: dict = {"Value": 100, "Unit": "[G]"},
+                                    Mag_field_power: dict = {"Value": -1, "Unit": "[-]"},
+                                    Mag_field_radial_scale: dict = {"Value": 5, "Unit": "[M]"},
+                                    Mag_field_geometry: dict = {"Value": "Constant", "Unit": "[-]"},
+                                    Mag_field_magnitude_profile: dict = {"Value": "Magnetization_based", "Unit": "[-]"},
+                                    
+                                    Threshold_relative_density: dict = {"Value": 1e-3, "Unit": "[-]"}):
         
         self.disk_model = Disk_model()
 
-        self.disk_model.Ensamble_type       = Ensamble_type
-        self.disk_model.Density_profile     = Density_profile
-        self.disk_model.Temperature_profile = Temperature_profile
-        
+        self.disk_model.Ensamble_type  = Ensamble_type
+        self.disk_model.Disk_Model     = Disk_Model
         self.disk_model.Velocity_profile         = Velocity_profile
         self.disk_model.Radial_velocity_fraction = Radial_velocity_fraction
-
         self.disk_model.Density_scale_factor     = Density_scale_factor
         self.disk_model.Temperature_scale_factor = Temperature_scale_factor
 
-        self.disk_model.Mag_field_geometry_X = Mag_field_geometry_X
-        self.disk_model.Mag_field_geometry_Y = Mag_field_geometry_Y
-        self.disk_model.Mag_field_geometry_Z = Mag_field_geometry_Z
-        self.disk_model.Magnetization        = Magnetization
+        self.disk_model.Mag_field_geometry_r     = Mag_field_geometry_r
+        self.disk_model.Mag_field_geometry_theta = Mag_field_geometry_theta
+        self.disk_model.Mag_field_geometry_phi   = Mag_field_geometry_phi
+        self.disk_model.Magnetization            = Magnetization
 
-        self.disk_model.Opening_angle            = Opening_angle
-        self.disk_model.Density_r_0              = Density_r_0
-        self.disk_model.Density_r_cutoff         = Density_r_cutoff
-        self.disk_model.Density_cutoff_scale     = Density_cutoff_scale
-        self.disk_model.Density_radial_power_law = Density_radial_power_law
+        self.disk_model.Opening_angle = Opening_angle
+        self.disk_model.Density_power_law_scale = Density_power_law_scale
+        self.disk_model.Density_power_law_power = Density_power_law_power
+        self.disk_model.Temperature_power_law_scale = Temperature_power_law_scale
+        self.disk_model.Temperature_power_law_power = Temperature_power_law_power
+        self.disk_model.Density_cutoff_radius     = Density_cutoff_radius
+        self.disk_model.Density_cutoff_scale      = Density_cutoff_scale
+        self.disk_model.Temperature_cutoff_radius = Temperature_cutoff_radius
+        self.disk_model.Temperature_cutoff_scale  = Temperature_cutoff_scale
 
-        self.disk_model.Density_exp_height_scale = Density_exp_height_scale
-        self.disk_model.Density_exp_radial_scale = Density_exp_radial_scale
-        self.disk_model.Temperature_exp_height_scale = Temperature_exp_height_scale
-        self.disk_model.Temperature_exp_radial_scale = Temperature_exp_radial_scale
+        self.disk_model.Radial_scale = Radial_scale
+        self.disk_model.Vertical_scale = Vertical_scale
 
-        self.disk_model.Temperature_r_0              = Temp_r_0
-        self.disk_model.Temperature_r_cutoff         = Temp_r_cutoff
-        self.disk_model.Temperature_cutoff_scale     = Temp_cutoff_scale
-        self.disk_model.Temperature_radial_power_law = Temp_radial_power_law
+        self.disk_model.Mag_field_magnitude_scale = Mag_field_magnitude_scale
+        self.disk_model.Mag_field_power        = Mag_field_power
+        self.disk_model.Mag_field_radial_scale = Mag_field_radial_scale
+        self.disk_model.Mag_field_geometry     = Mag_field_geometry
+        self.disk_model.Mag_field_magnitude_profile  = Mag_field_magnitude_profile
+        
+        self.disk_model.Threshold_relative_density = Threshold_relative_density 
 
     def _configure_hotspot_model(self, Ensamble_type: dict = {"Value": "Kappa", "Unit": "[-]"},
                                        Density_profile: dict = {"Value": "Gaussian", "Unit": "[-]"},
@@ -364,9 +382,9 @@ class Simulation_configurator:
                                        Radius: dict = {"Value": 1, "Unit": "[M]"},
                                        Density_scale_factor: dict = {"Value": 1e6, "Unit": "[g/cm^3]"},
                                        Temperature_scale_factor: dict = {"Value": 1e11, "Unit": "[K]"},
-                                       Mag_field_geometry_X: dict = {"Value": 0.5, "Unit": "[-]"},
-                                       Mag_field_geometry_Y: dict = {"Value": 0, "Unit": "[-]"},
-                                       Mag_field_geometry_Z: dict = {"Value": 0.87, "Unit": "[-]"},
+                                       Mag_field_geometry_r: dict = {"Value": 0.5, "Unit": "[-]"},
+                                       Mag_field_geometry_theta: dict = {"Value": 0, "Unit": "[-]"},
+                                       Mag_field_geometry_phi: dict = {"Value": 0.87, "Unit": "[-]"},
                                        Density_spread: dict = {"Value": 1.0, "Unit": "[M]"},
                                        Temperature_spread: dict = {"Value": 1.0, "Unit": "[M]"},
                                        Temporal_spread: dict = {"Value": 85, "Unit": "[GM/c^3]"},
@@ -374,7 +392,8 @@ class Simulation_configurator:
                                        Distance: dict = {"Value": 8.0, "Unit": "[M]"},
                                        Inclination: dict = {"Value": pi / 2,  "Unit": "[Rad]"},
                                        Azimuth: dict = {"Value": -pi / 2,  "Unit": "[Rad]"},
-                                       Magnetization: dict = {"Value": 1.0,  "Unit": "[-]"}):
+                                       Magnetization: dict = {"Value": 1.0,  "Unit": "[-]"},
+                                       Threshold_relative_density: dict = {"Value": 1e-3,  "Unit": "[-]"}):
 
         self.hotspot_model = Hotspot_model()
 
@@ -388,9 +407,9 @@ class Simulation_configurator:
         self.hotspot_model.Density_scale_factor     = Density_scale_factor     
         self.hotspot_model.Temperature_scale_factor = Temperature_scale_factor 
 
-        self.hotspot_model.Mag_field_geometry_X = Mag_field_geometry_X
-        self.hotspot_model.Mag_field_geometry_Y = Mag_field_geometry_Y
-        self.hotspot_model.Mag_field_geometry_Z = Mag_field_geometry_Z
+        self.hotspot_model.Mag_field_geometry_r = Mag_field_geometry_r
+        self.hotspot_model.Mag_field_geometry_theta = Mag_field_geometry_theta
+        self.hotspot_model.Mag_field_geometry_phi = Mag_field_geometry_phi
 
         self.hotspot_model.Density_spread     = Density_spread  
         self.hotspot_model.Temperature_spread = Temperature_spread
@@ -401,13 +420,16 @@ class Simulation_configurator:
         self.hotspot_model.Inclination        = Inclination       
         self.hotspot_model.Azimuth            = Azimuth           
         self.hotspot_model.Magnetization      = Magnetization     
+        
+        self.hotspot_model.Threshold_relative_density = Threshold_relative_density     
+        
 
     def _configure_file_manager(self, Vert_shader_path: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Libraries/shaders/default.vert",
                                       Frag_shader_path: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Libraries/shaders/default.frag",
                                       Output_file_directory: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Sim_Results",
                                       Common_file_names: str = "",
                                       Sim_mode_2_input_file_path: str = "",
-                                      Truncate_files: bool = 1):
+                                      Truncate_files: int = 1):
                             
 
         self.file_manager = File_manager()
@@ -482,24 +504,20 @@ class Simulation_configurator:
 
         # ============ Generate the accretion disk XML section ============ #
 
-        Density_Power_law_slots = ["Density_radial_power_law",
-                                   "Density_cutoff_scale",
-                                   "Density_r_cutoff",
-                                   "Density_r_0",
-                                   "Opening_angle"]
+        Common_RIAF_parameters = ["Opening_angle",
+                                  "Density_power_law_scale",
+                                  "Density_power_law_power",
+                                  "Temperature_power_law_scale",
+                                  "Temperature_power_law_power",
+                                  "Density_cutoff_radius",
+                                  "Density_cutoff_scale",
+                                  "Temperature_cutoff_radius",
+                                  "Temperature_cutoff_scale"]
         
-        Temperature_Power_law_slots = ["Temperature_radial_power_law",
-                                       "Temperature_cutoff_scale",
-                                       "Temperature_r_cutoff",
-                                       "Temperature_r_0"]
-        
-        Density_exponential_law_slots = ["Density_exp_height_scale",
-                                         "Density_exp_radial_scale"]
-        
-        Temperature_exponential_law_slots = ["Temperature_exp_height_scale",
-                                             "Temperature_exp_radial_scale"]
+        Colab_test_1_parameteres = ["Radial_scale",
+                                    "Vertical_scale"]
 
-        Common_slots = [slot for slot in self.disk_model.__slots__ if slot not in Density_Power_law_slots + Temperature_Power_law_slots + Density_exponential_law_slots + Temperature_exponential_law_slots + ["Radial_velocity_fraction"]]
+        Common_slots = [slot for slot in self.disk_model.__slots__ if slot not in Common_RIAF_parameters + Colab_test_1_parameteres + ["Radial_velocity_fraction"]]
 
         Disk_subelement = ET.SubElement(XML_root_node, "Accretion_Disk") 
 
@@ -515,52 +533,23 @@ class Simulation_configurator:
             else:
                 Sub_element.text = "{}".format(Disk_attrib["Value"])
 
-        match self.disk_model.Density_profile["Value"]:
+        match self.disk_model.Disk_Model["Value"]:
 
-            case "Exponential Law":
+            case "Colab_test_1_profile":
 
-                # ------------- Exponential law subsection
-                Exponential_law_subelement = ET.SubElement(Disk_subelement, "Exponential_law_profile") 
-                for Disk_attrib_name in Density_exponential_law_slots:
+                # ------------- Colab test 1 profile subsection
+                Colab_test_1_subelement = ET.SubElement(Disk_subelement, "Colab_test_1_profile") 
+                for Disk_attrib_name in Colab_test_1_parameteres:
                     Disk_attrib = getattr(self.disk_model, Disk_attrib_name)
-                    ET.SubElement(Exponential_law_subelement, Disk_attrib_name, units = Disk_attrib["Unit"]).text = "{}".format(Disk_attrib["Value"])
+                    ET.SubElement(Colab_test_1_subelement, Disk_attrib_name, units = Disk_attrib["Unit"]).text = "{}".format(Disk_attrib["Value"])
 
             case _:
 
-                # ------------- Power law subsection
-                Power_law_subelement = ET.SubElement(Disk_subelement, "Power_law_profile") 
-                for Disk_attrib_name in Density_Power_law_slots:
+                # ------------- Phenomenological RIAF subsection
+                Power_law_subelement = ET.SubElement(Disk_subelement, "Common_RIAF_profile") 
+                for Disk_attrib_name in Common_RIAF_parameters:
                     Disk_attrib = getattr(self.disk_model, Disk_attrib_name)
                     ET.SubElement(Power_law_subelement, Disk_attrib_name, units = Disk_attrib["Unit"]).text = "{}".format(Disk_attrib["Value"])
-
-        match self.disk_model.Temperature_profile["Value"]:
-
-            case "Exponential Law":
-
-                # ------------- Exponential law subsection
-
-                try: 
-                    Exponential_law_subelement
-                except:
-                    Exponential_law_subelement = ET.SubElement(Disk_subelement, "Exponential_law_profile") 
-
-                for Disk_attrib_name in Temperature_exponential_law_slots:
-                    Disk_attrib = getattr(self.disk_model, Disk_attrib_name)
-                    ET.SubElement(Exponential_law_subelement, Disk_attrib_name, units = Disk_attrib["Unit"]).text = "{}".format(Disk_attrib["Value"])
-
-            case _:
-
-                # ------------- Power law subsection
-
-                try: 
-                    Power_law_subelement
-                except:
-                    Power_law_subelement = ET.SubElement(Disk_subelement, "Power_law_profile") 
-
-                for Disk_attrib_name in Temperature_Power_law_slots:
-                    Disk_attrib = getattr(self.disk_model, Disk_attrib_name)
-                    ET.SubElement(Power_law_subelement, Disk_attrib_name, units = Disk_attrib["Unit"]).text = "{}".format(Disk_attrib["Value"])
-
 
         # ============ Generate the hotspot XML section ============ #
 
@@ -581,6 +570,12 @@ class Simulation_configurator:
                 ET.SubElement(Sub_element, "Radial_velocity_fraction", units = "-").text = "{}".format(self.hotspot_model.Radial_velocity_fraction["Value"])
             else:
                 Sub_element.text = "{}".format(Hotspot_attrib["Value"])
+
+        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_geometry", units = "[-]").text = "Constant"
+        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_magnitude_profile", units = "[-]").text = "Magnetization_based"
+        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_magnitude_scale", units = "[-]").text = "0"
+        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_radial_scale", units = "[-]").text = "0"
+        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_power", units = "[-]").text = "0"
 
         match self.hotspot_model.Density_profile["Value"]:
 
@@ -603,27 +598,25 @@ class Simulation_configurator:
 
             case "Gaussian":
                 # ------------- Gaussian profile subsection
-                try: 
-                    Gaussian_subelement
-                except:
+                if "Gaussian_subelement" not in locals():
                     Gaussian_subelement = ET.SubElement(Hotspot_subelement, "Gaussian_profile") 
                 
                 for Hotspot_attrib_name in Gaussian_temperature_slots:
                     Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
-                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"]) # type: ignore
 
             case _:
             
                 # ------------- Spherical profile subsectiontry: 
-                try:
-                    Spherical_subelement
-                except:
+                if "Spherical_subelement" not in locals():
+                    
                     Spherical_subelement = ET.SubElement(Hotspot_subelement, "Spherical_profile") 
                     
                     for Hotspot_attrib_name in Sphere_slots:
                         Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
                         ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
     
+
         # ============ Generate the emission models XML section ============ #
 
         Emission_subelement = ET.SubElement(XML_root_node, "Emission_models")
@@ -698,14 +691,14 @@ if __name__ == "__main__":
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type    = {"Value": "Numerical", "Unit": "[-]"}
+    Sim_config.metric_parameters.Metric_type    = {"Value": "Kerr", "Unit": "[-]"}
     Sim_config.metric_parameters.Mass           = {"Value": 0.415, "Unit": "[M]"}
     Sim_config.metric_parameters.Horizon_radius = {"Value": 0.0662902, "Unit": "[G/c^2]"}
     Sim_config.metric_parameters.Spin           = {"Value": 0.41399683 / 0.415, "Unit": "[M]"}
     # ================================================== Observer ================================================== #
 
-    Sim_config.observer.Resolution_x = {"Value": 128, "Unit": "[-]"}
-    Sim_config.observer.Resolution_y = {"Value": 128, "Unit": "[-]"}
+    Sim_config.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
+    Sim_config.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
     
     Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
     Sim_config.observer.Inclination = {"Value": 90 * pi / 180, "Unit": "[Rad]"}
@@ -713,23 +706,22 @@ if __name__ == "__main__":
     Sim_config.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[Hz]"}
 
     # ================================================== Disk ================================================== #
-    Sim_config.disk_model.Ensamble_type       = {"Value": "Thermal",   "Unit": "[-]"}
-    Sim_config.disk_model.Density_profile     = {"Value": "Power Law", "Unit": "[-]"}
-    Sim_config.disk_model.Temperature_profile = {"Value": "Power Law", "Unit": "[-]"}
+    Sim_config.disk_model.Ensamble_type = {"Value": "Thermal",   "Unit": "[-]"}
+    Sim_config.disk_model.Disk_Model    = {"Value": "Phenom_RIAF_1", "Unit": "[-]"}
     
     Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g/cm^3]"}
     Sim_config.disk_model.Temperature_scale_factor = {"Value": 5.1e+10, "Unit": "[K]"}
             
-    Sim_config.disk_model.Density_r_cutoff = {"Value": 5, "Unit": "[M]"}
-    Sim_config.disk_model.Temperature_r_cutoff = {"Value": 5, "Unit": "[M]"}
+    Sim_config.disk_model.Density_cutoff_radius = {"Value": 5, "Unit": "[M]"}
+    Sim_config.disk_model.Temperature_cutoff_radius = {"Value": 5, "Unit": "[M]"}
 
-    Sim_config.disk_model.Density_r_0     = {"Value": 5, "Unit": "[M]"}
-    Sim_config.disk_model.Temperature_r_0 = {"Value": 5, "Unit": "[M]"}
+    Sim_config.disk_model.Density_power_law_scale     = {"Value": 5, "Unit": "[M]"}
+    Sim_config.disk_model.Temperature_power_law_scale = {"Value": 5, "Unit": "[M]"}
 
-    Sim_config.disk_model.Opening_angle = {"Value": 0.1, "Unit": "[tan(angle)]"}
+    Sim_config.disk_model.Opening_angle = {"Value": 1, "Unit": "[tan(angle)]"}
     
-    Sim_config.disk_model.Density_radial_power_law     = {"Value": 2.0, "Unit": "[-]"}
-    Sim_config.disk_model.Temperature_radial_power_law = {"Value": 1.0, "Unit": "[-]"}
+    Sim_config.disk_model.Density_power_law_power     = {"Value": 2.0, "Unit": "[-]"}
+    Sim_config.disk_model.Temperature_power_law_power = {"Value": 1.0, "Unit": "[-]"}
     
     Sim_config.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
     
@@ -766,4 +758,4 @@ if __name__ == "__main__":
     filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Old_wormhole_sanity_check\\Old_wormhole_sanity_check.xml"
     args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
     
-    subprocess.call(args, shell = True)
+    # subprocess.call(args, shell = True)

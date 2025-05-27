@@ -272,7 +272,7 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
 /* ========================================== Phenomenological Synchrotron Transfer Functions ========================================== */
 
 void Emission_models_class::get_phenomenological_synchrotron_fit_functions(const Phenomenological_transfer_f_arguments_type* const p_Transfer_args,
-                                                                                  Transfer_functions_type* const p_Transfer_functions) const {
+                                                                           Transfer_functions_type* const p_Transfer_functions) const {
 
     /* The reference for this implementation is https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6 - expressions (9) and (11). */
 

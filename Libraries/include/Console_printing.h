@@ -27,6 +27,4 @@ public:
 
     void print_ASCII_art();
 
-    void print_sim_parameters(Initial_conditions_type* p_Initial_Conditions);;
-
 };

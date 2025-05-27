@@ -138,12 +138,12 @@ int RBH_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initi
     return OK;
 }
 
-void RBH_class::get_EOM(double State_vector[], double Derivatives[]) const{
+void RBH_class::get_EOM(const double* const State_vector, double* const Derivatives) const{
 
     double r = State_vector[e_r];
     double rho = sqrt(r * r + this->Parameter * this->Parameter);
 
-    double& J = State_vector[e_p_phi];
+    const double& J = State_vector[e_p_phi];
 
     double sin1 = sin(State_vector[e_theta]);
     double sin2 = sin1 * sin1;
@@ -151,21 +151,22 @@ void RBH_class::get_EOM(double State_vector[], double Derivatives[]) const{
     double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
-    *(Derivatives + e_p_t    ) = - 1 / (1 - 2 * this->Mass / rho) * State_vector[e_p_t];
-    *(Derivatives + e_r      ) = (1 - 2 * this->Mass / rho) * State_vector[e_p_r];
-    *(Derivatives + e_theta  ) = 1.0 / (rho * rho) * State_vector[e_p_theta];
-    *(Derivatives + e_phi    ) = J / (rho * rho * sin2);
-    *(Derivatives + e_p_phi  ) = 0.0;
-    *(Derivatives + e_p_theta) = cos1 / (rho * rho * sin1 * sin2) * J * J;
+    Derivatives[e_p_t] = - 1 / (1 - 2 * this->Mass / rho) * State_vector[e_p_t];
+    Derivatives[e_r] = (1 - 2 * this->Mass / rho) * State_vector[e_p_r];
+    Derivatives[e_theta] = 1.0 / (rho * rho) * State_vector[e_p_theta];
+    Derivatives[e_phi] = J / (rho * rho * sin2);
+    Derivatives[e_p_phi] = 0.0;
+    Derivatives[e_p_theta] = cos1 / (rho * rho * sin1 * sin2) * J * J;
+    Derivatives[e_p_t] = 0.0;
 
     double r_term_1 = -this->Mass * r / (rho * rho * rho) * (1.0 / ((1 - 2 * this->Mass / rho) * (1 - 2 * this->Mass / rho)) + State_vector[e_p_r] * State_vector[e_p_r]);
     double r_term_2 = r / (rho * rho * rho * rho) * (State_vector[e_p_theta] * State_vector[e_p_theta] + J * J / sin2);
 
-    *(Derivatives + e_p_r) = r_term_1 + r_term_2;
+    Derivatives[e_p_r] = r_term_1 + r_term_2;
 
 }
 
-bool RBH_class::terminate_integration(double State_vector[], double Derivatives[]) {
+bool RBH_class::terminate_integration(const double* const State_vector, const double* const Derivatives) {
 
     bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
 

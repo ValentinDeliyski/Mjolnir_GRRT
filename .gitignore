@@ -356,5 +356,7 @@ Sim_Results/
 
 !Utilities/Ehtim/Ehtim_Input_Data/Arrays
 !Utilities/Ehtim/Ehtim_Launcher.py
+!Utilities/Mjolnir_Configurator.py
+!Utilities/Support_functions
 *.csv
 *.XML
