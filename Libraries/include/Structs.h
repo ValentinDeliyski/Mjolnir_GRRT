@@ -25,6 +25,12 @@ struct Hotspot_profile_parameters_type {
     double Distance_from_sphere_center;
     double Sphere_radius;
 
+    /* ======== Power law parameters ======== */
+
+    double Power_law_variable;
+    double Power_law_power;
+    double Power_law_scale;
+
 };
 
 struct Disk_profile_parameters_type {
@@ -155,29 +161,10 @@ struct Hotspot_model_parameters_type {
        specified by the "Velocity_profile_type" enum, with a purely radial profile. The range is [0, 1]. */
     double Radial_velocity_fraction;
 
-    /*! The hotspot position, specified as [Time, Distance, Polar Angle, Azimuth Angle] */
+    /*! The hotspot initial position, specified as [Time, Distance, Polar Angle, Azimuth Angle] */
     double Position[4]; 
 
-    /* The hotspot can be modelled as a localized Gaussian overdensity.
-     * The density, temperature and overall time evolution profiles are specified with
-     * their respective standard deviations.
-     */
-
-     /*! Standard deviation of the Gaussian density profile. */
-    double Density_spread;     
-
-    /*! Standard deviation of the Gaussian temperature profile. */
-    double Temperature_spread; 
-
-    /*! Standard deviation of the Gaussian temporal profile. Setting this to zero ignores the time 
-       evolution of the hotspot profile. */
-    double Temporal_spread;   
-
-    /*! Radius of the hotspot. Only affects the Spherical profile. */
-    double Radius; 
-
-    /*! Coordinate time of maximum hotspot density */
-    double Coord_time_offset; 
+    Hotspot_model_params_type Profile_params;
 
     /*! The peak density value in [g / cm^3]. */
     double Electron_density_scale;     
@@ -677,6 +664,8 @@ struct Initial_conditions_type {
 
     /*! Boolean flag that decides weather to average the emission over the electron pitch angle. */
     bool Average_electron_pitch_angle;
+
+    bool Thermalize_emission_medium;
 
 };
 

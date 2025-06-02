@@ -358,5 +358,8 @@ Sim_Results/
 !Utilities/Ehtim/Ehtim_Launcher.py
 !Utilities/Mjolnir_Configurator.py
 !Utilities/Support_functions
+!Utilities/Reference_simulations/Thermal_synchrotron_reference_sims.py
+!Utilities/Reference_simulations/Hotspot_reference_sims.py
+!Utilities/Reference_simulations/Wormhole_simulations.py
 *.csv
 *.XML

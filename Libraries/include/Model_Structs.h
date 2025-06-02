@@ -29,3 +29,31 @@ struct Colab_test_1_params_type {
 	double Vertical_scale;
 
 };
+
+struct Hotspot_model_params_type {
+
+	double Density_power_law_scale;
+
+	double Density_power_law_power;
+
+	/*! Standard deviation of the Gaussian density profile. */
+	double Density_gaussian_spread;
+
+	double Temperature_power_law_scale;
+
+	double Temperature_power_law_power;
+
+	/*! Standard deviation of the Gaussian temperature profile. */
+	double Temperature_gaussian_spread;
+
+	/*! Standard deviation of the Gaussian temporal profile. Setting this to zero ignores the time
+	   evolution of the hotspot profile. */
+	double Temporal_gaussian_spread;
+
+	/*! Radius of the hotspot. Only affects the Spherical profile. */
+	double Radius;
+
+	/*! Coordinate time of maximum hotspot density */
+	double Coord_time_offset;
+
+};

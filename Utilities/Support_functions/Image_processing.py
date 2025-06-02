@@ -1,10 +1,9 @@
 from numpy import sin, cos, sqrt, exp, arctan2
+from Support_functions.Parsers import VIDA_params_Parser
+from numpy.typing import NDArray
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.colors as cl
-from Support_functions.Parsers import*
 
-def generate_general_gaussian_template(N_pixels: int, VIDA_parser: VIDA_params_Parser, FOV: float) -> np.ndarray:
+def generate_general_gaussian_template(N_pixels: int, VIDA_parser: VIDA_params_Parser, FOV: float) -> NDArray:
 
     elipse_x_offset = VIDA_parser.x0 + FOV / 2
     elipse_y_offset = VIDA_parser.y0 + FOV / 2
@@ -41,7 +40,7 @@ def generate_general_gaussian_template(N_pixels: int, VIDA_parser: VIDA_params_P
     
     return template_image
 
-def get_template_pixel_mask(VIDA_parser: VIDA_params_Parser, FOV, N_pixels, std_scale: float = 1) -> tuple[array, array]:
+def get_template_pixel_mask(VIDA_parser: VIDA_params_Parser, FOV, N_pixels, std_scale: float = 1) -> tuple[NDArray, NDArray]:
 
     elipse_x_offset = VIDA_parser.x0 + FOV / 2
     elipse_y_offset = VIDA_parser.y0 + FOV / 2
@@ -86,7 +85,7 @@ def get_brigness_depression_ratio(ring_mask, dark_spot_mask, Ehtim_intensity) ->
     except:
         return 0.0
 
-def get_template_slices(N_pixels: int, template: np.array, VIDA_parser: VIDA_params_Parser, FOV: float) -> tuple:
+def get_template_slices(N_pixels: int, template: NDArray, VIDA_parser: VIDA_params_Parser, FOV: float) -> tuple:
 
     slice_x_offset = VIDA_parser.x0 + FOV / 2
     slice_y_offset = VIDA_parser.y0 + FOV / 2

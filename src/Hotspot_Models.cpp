@@ -26,7 +26,7 @@ Hotspot_position_type Hotspot_model_type::get_hotspot_position(const double* con
 
     Hotspot_position.Distance    = this->s_Hotspot_params.Position[e_r];
     Hotspot_position.Inclination = M_PI_2;
-    Hotspot_position.Azimuth     = this->s_Hotspot_params.Position[e_phi] + Hotspot_ang_velocity * (-State_Vector[e_t] - this->s_Hotspot_params.Coord_time_offset);
+    Hotspot_position.Azimuth     = this->s_Hotspot_params.Position[e_phi] + Hotspot_ang_velocity * State_Vector[e_t];
 
     double sin_hotspot_inclination = sin(Hotspot_position.Inclination);
 
@@ -39,7 +39,9 @@ Hotspot_position_type Hotspot_model_type::get_hotspot_position(const double* con
 }
 
 double Hotspot_model_type::get_hotspot_profile(const Hotspot_profile_parameters_type* const p_Profile_parameters,
-                                                Profile_enums e_Profile_type) const {
+                                               Profile_enums e_Profile_type) const {
+
+    double exponent_term{};
 
     switch (e_Profile_type) {
 
@@ -53,6 +55,12 @@ double Hotspot_model_type::get_hotspot_profile(const Hotspot_profile_parameters_
             return 1.0; 
         }
         else { return 0.0; }
+
+    case e_Hybrid_power_gaussian:
+
+        exponent_term = exp(-int_power((p_Profile_parameters->Gaussian_variable - p_Profile_parameters->Gaussian_mean) / p_Profile_parameters->Gaussian_spread, 2) / 2);
+
+        return pow(p_Profile_parameters->Power_law_scale / p_Profile_parameters->Power_law_variable, p_Profile_parameters->Power_law_power) * exponent_term;
 
     default:
 
@@ -84,20 +92,24 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     /* ======================= The spatial part of the density profile ======================= */
 
-    Profile_prameters.Gaussian_variable = State_Vector[e_r];
-    Profile_prameters.Gaussian_spread = this->s_Hotspot_params.Density_spread;
-    Profile_prameters.Gaussian_mean = 0.0;
+    Profile_prameters.Gaussian_variable = Distance_to_hotspot_center;
+    Profile_prameters.Gaussian_spread   = this->s_Hotspot_params.Profile_params.Density_gaussian_spread;
+    Profile_prameters.Gaussian_mean     = 0.0;
 
-    Profile_prameters.Sphere_radius = this->s_Hotspot_params.Radius;
+    Profile_prameters.Sphere_radius = this->s_Hotspot_params.Profile_params.Radius;
     Profile_prameters.Distance_from_sphere_center = Distance_to_hotspot_center;
+
+    Profile_prameters.Power_law_variable = State_Vector[e_r];
+    Profile_prameters.Power_law_power = this->s_Hotspot_params.Profile_params.Density_power_law_power;
+    Profile_prameters.Power_law_scale = this->s_Hotspot_params.Profile_params.Density_power_law_scale;
 
     double Spatial_profile = this->get_hotspot_profile(&Profile_prameters, this->s_Hotspot_params.Density_profile_type);
 
     /* ======================= The temporal part of the density profile ======================= */
 
-    Profile_prameters.Gaussian_variable = -State_Vector[e_t];
-    Profile_prameters.Gaussian_spread = this->s_Hotspot_params.Temporal_spread;
-    Profile_prameters.Gaussian_mean = this->s_Hotspot_params.Coord_time_offset;
+    Profile_prameters.Gaussian_variable = State_Vector[e_t];
+    Profile_prameters.Gaussian_spread = this->s_Hotspot_params.Profile_params.Temporal_gaussian_spread;
+    Profile_prameters.Gaussian_mean   = -this->s_Hotspot_params.Profile_params.Coord_time_offset;
 
     double Temporal_profile = this->get_hotspot_profile(&Profile_prameters, e_Gaussian);
 
@@ -115,8 +127,13 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     /* ======================= The spatial part of the temperature profile ======================= */
 
-    Profile_prameters.Gaussian_variable = State_Vector[e_r];
-    Profile_prameters.Gaussian_spread = this->s_Hotspot_params.Temperature_spread;
+    Profile_prameters.Gaussian_variable = Distance_to_hotspot_center;
+    Profile_prameters.Gaussian_spread   = this->s_Hotspot_params.Profile_params.Temperature_gaussian_spread;
+    Profile_prameters.Gaussian_mean     = 0.0;
+
+    Profile_prameters.Power_law_variable = State_Vector[e_r];
+    Profile_prameters.Power_law_power    = this->s_Hotspot_params.Profile_params.Temperature_power_law_power;
+    Profile_prameters.Power_law_scale    = this->s_Hotspot_params.Profile_params.Temperature_power_law_scale;
 
     Spatial_profile = this->get_hotspot_profile(&Profile_prameters, this->s_Hotspot_params.Temperature_profile_type);
 

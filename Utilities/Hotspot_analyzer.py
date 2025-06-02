@@ -48,9 +48,9 @@ if __name__ == "__main__":
     Centroid_X = []
     Centroid_Y = []
     
-    for run in range(50):
+    for run in range(10):
     
-        Hotspot_analyzer_instance = Hotspot_analyzer("Reference_simulations\\Run_3\\Hotspot_Reference_Simulation_{}\\".format(run), "Janis_Newman_Winicour")
+        Hotspot_analyzer_instance = Hotspot_analyzer("Reference_simulations\\Hotspot_Reference_Simulation_{}\\".format(run), "Kerr")
         Hotspot_centroid = Hotspot_analyzer_instance.compute_centroid()
         
         Centroid_X.append(Hotspot_centroid[0])

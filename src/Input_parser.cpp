@@ -34,6 +34,8 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     else if (0 == strcmp(static_cast<const char*>(Density_type_string.c_str()), "Sphere")) { Hotspot_params->Density_profile_type = e_Spherical; }
 
+    else if (0 == strcmp(static_cast<const char*>(Density_type_string.c_str()), "Hybrid_power_law_gaussian")) { Hotspot_params->Density_profile_type = e_Hybrid_power_gaussian; }
+
     else { std::cout << "Unsupported density profile type for the hotspot!" << "\n"; return ERROR; }
 
     // -------------------- The temperature profile
@@ -45,6 +47,8 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     if (0 == strcmp(static_cast<const char*>(Temperature_type_string.c_str()), "Gaussian")) { Hotspot_params->Temperature_profile_type = e_Gaussian; }
 
     else if (0 == strcmp(static_cast<const char*>(Temperature_type_string.c_str()), "Sphere")) { Hotspot_params->Temperature_profile_type = e_Spherical; }
+
+    else if (0 == strcmp(static_cast<const char*>(Temperature_type_string.c_str()), "Hybrid_power_law_gaussian")) { Hotspot_params->Temperature_profile_type = e_Hybrid_power_gaussian; }
 
     else { std::cout << "Unsupported temperature profile type for the hotspot!" << "\n"; return ERROR; }
 
@@ -64,32 +68,32 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     else{std::cout << "Unsupported velocity profile type for the hotspot!" << "\n"; return ERROR; }
 
     temp_param_var = Hotspot_element->FirstChildElement("Velocity_profile")->FirstChildElement("Radial_velocity_fraction");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the radial velocity fraction!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot radial velocity fraction!" << "\n"; return ERROR; }
     Hotspot_params->Radial_velocity_fraction = std::stod(temp_param_var->GetText());
 
     // -------------------- The density sclae factor
     temp_param_var = Hotspot_element->FirstChildElement("Density_scale_factor");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the density scale factor!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot density scale factor!" << "\n"; return ERROR; }
     Hotspot_params->Electron_density_scale = std::stod(temp_param_var->GetText());
 
     // -------------------- The density sclae factor
     temp_param_var = Hotspot_element->FirstChildElement("Temperature_scale_factor");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the temperature scale factor!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot temperature scale factor!" << "\n"; return ERROR; }
     Hotspot_params->Electron_temperature_scale = std::stod(temp_param_var->GetText());
 
     // -------------------- The magnetic field geometry r component
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_r");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry r component!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field geometry r component!" << "\n"; return ERROR; }
     Hotspot_params->Mag_field_geometry[e_r - 1] = std::stod(temp_param_var->GetText());
 
     // -------------------- The magnetic field geometry theta component
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_theta");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry theta component!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field geometry theta component!" << "\n"; return ERROR; }
     Hotspot_params->Mag_field_geometry[e_theta - 1] = std::stod(temp_param_var->GetText());
 
     // -------------------- The magnetic field geometry phi component
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry_phi");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetic field geometry phi component!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field geometry phi component!" << "\n"; return ERROR; }
     Hotspot_params->Mag_field_geometry[e_phi - 1] = std::stod(temp_param_var->GetText());
 
     Hotspot_params->Position[e_t] = 0.0;
@@ -111,58 +115,109 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     // -------------------- The magnetization
     temp_param_var = Hotspot_element->FirstChildElement("Magnetization");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the magnetization!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetization!" << "\n"; return ERROR; }
     Hotspot_params->Magnetization = std::stod(temp_param_var->GetText());
 
     /* ================================== The gaussian profile parameters ================================== */
 
     tinyxml2::XMLElement* Gaussian_node = Hotspot_element->FirstChildElement("Gaussian_profile");
     tinyxml2::XMLElement* Spherical_node = Hotspot_element->FirstChildElement("Spherical_profile");
+    tinyxml2::XMLElement* Hybrid_node = Hotspot_element->FirstChildElement("Hybrid_power_law_gaussian_profile");
 
     if (e_Gaussian == Hotspot_params->Density_profile_type) {
 
-        if (Gaussian_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
+        if (Gaussian_node == nullptr) { std::cout << "Failed to parse the hotspot gaussian profile node!" << "\n"; return ERROR; }
 
         // -------------------- The Gaussian density standard deviation
         temp_param_var = Gaussian_node->FirstChildElement("Density_spread");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the density Gaussian spread!" << "\n"; return ERROR; }
-        Hotspot_params->Density_spread = std::stod(temp_param_var->GetText());
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot density Gaussian spread!" << "\n"; return ERROR; }
+        Hotspot_params->Profile_params.Density_gaussian_spread = std::stod(temp_param_var->GetText());
 
+    }
+    else if (e_Hybrid_power_gaussian == Hotspot_params->Density_profile_type) {
+
+        if (Hybrid_node == nullptr) { std::cout << "Failed to parse the hotspot hybrid profile node!" << "\n"; return ERROR; }
+
+        // -------------------- The Gaussian density standard deviation
+        temp_param_var = Hybrid_node->FirstChildElement("Density_spread");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot density Gaussian spread!" << "\n"; return ERROR; }
+        Hotspot_params->Profile_params.Density_gaussian_spread = std::stod(temp_param_var->GetText());
+
+        // -------------------- The radial power law exponent
+        temp_param_var = Hybrid_node->FirstChildElement("Density_power_law_power");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot density power law exponent!" << "\n"; return ERROR; }
+        Hotspot_params->Profile_params.Density_power_law_power = std::stod(temp_param_var->GetText());
+
+        // -------------------- The radial power law scale
+        temp_param_var = Hybrid_node->FirstChildElement("Density_power_law_scale");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot density power law scale spread!" << "\n"; return ERROR; }
+        Hotspot_params->Profile_params.Density_power_law_scale = std::stod(temp_param_var->GetText());
 
     }
 
     if (e_Gaussian == Hotspot_params->Temperature_profile_type) {
 
-        if (Gaussian_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
+        if (Gaussian_node == nullptr) { std::cout << "Failed to parse the temperature Gaussian profile node!" << "\n"; return ERROR; }
 
         // -------------------- The Gaussian temperature standard devivation
         temp_param_var = Gaussian_node->FirstChildElement("Temperature_spread");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the temperature Gaussian spread!" << "\n"; return ERROR; }
-        Hotspot_params->Temperature_spread = std::stod(temp_param_var->GetText());
+        Hotspot_params->Profile_params.Temperature_gaussian_spread = std::stod(temp_param_var->GetText());
 
+
+    }
+    else if (e_Hybrid_power_gaussian == Hotspot_params->Temperature_profile_type) {
+
+        if (Hybrid_node == nullptr) { std::cout << "Failed to parse the hotspot hybrid profile node!" << "\n"; return ERROR; }
+
+        // -------------------- The Gaussian density standard deviation
+        temp_param_var = Hybrid_node->FirstChildElement("Temperature_spread");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot temperature Gaussian spread!" << "\n"; return ERROR; }
+        Hotspot_params->Profile_params.Temperature_gaussian_spread = std::stod(temp_param_var->GetText());
+
+        // -------------------- The radial power law exponent
+        temp_param_var = Hybrid_node->FirstChildElement("Temperature_power_law_power");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot temperature power law exponent!" << "\n"; return ERROR; }
+        Hotspot_params->Profile_params.Temperature_power_law_power = std::stod(temp_param_var->GetText());
+
+        // -------------------- The radial power law scale
+        temp_param_var = Hybrid_node->FirstChildElement("Temperature_power_law_scale");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot temperature power law scale spread!" << "\n"; return ERROR; }
+        Hotspot_params->Profile_params.Temperature_power_law_scale = std::stod(temp_param_var->GetText());
 
     }
 
     if (e_Spherical == Hotspot_params->Temperature_profile_type || e_Spherical == Hotspot_params->Density_profile_type) {
 
-        if (Spherical_node == nullptr) { std::cout << "Failed to parse the ensamble type!" << "\n"; return ERROR; }
+        if (Spherical_node == nullptr) { std::cout << "Failed to parse the temperature spherical profile node!" << "\n"; return ERROR; }
 
         // -------------------- The Spherical radius
         temp_param_var = Spherical_node->FirstChildElement("Radius");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the Spherical hotspot radius!" << "\n"; return ERROR; }
-        Hotspot_params->Radius = std::stod(temp_param_var->GetText());
+        Hotspot_params->Profile_params.Radius = std::stod(temp_param_var->GetText());
 
     }
 
     // -------------------- The Temporal spread
     temp_param_var = Hotspot_element->FirstChildElement("Temporal_spread");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the temporal spread!" << "\n"; return ERROR; }
-    Hotspot_params->Temporal_spread = std::stod(temp_param_var->GetText());
+    Hotspot_params->Profile_params.Temporal_gaussian_spread = std::stod(temp_param_var->GetText());
 
     // -------------------- The Coordiante time at max emission
     temp_param_var = Hotspot_element->FirstChildElement("Coord_time_at_max");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the coordiante time at max emission!" << "\n"; return ERROR; }
-    Hotspot_params->Coord_time_offset = std::stod(temp_param_var->GetText());
+    Hotspot_params->Profile_params.Coord_time_offset = std::stod(temp_param_var->GetText());
+
+    // -------------------- The hotspot Magnetic field magnitude profile enum
+    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_magnitude_profile");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field geometry enum!" << "\n"; return ERROR; }
+    std::string Mag_field_magnitude_string = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Mag_field_magnitude_string.c_str()), "Power_law_based")) { Hotspot_params->e_Mag_field_magnitude_profile = Power_law_based; }
+
+    else if (0 == strcmp(static_cast<const char*>(Mag_field_magnitude_string.c_str()), "Magnetization_based")) { Hotspot_params->e_Mag_field_magnitude_profile = Magnetization_based; }
+
+    else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
 
     // -------------------- The disk Magnetic field radial scale
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_radial_scale");
@@ -172,7 +227,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     // -------------------- The disk Magnetic field geometry enum
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field geometry enum!" << "\n"; return ERROR; }
-    std::string Mag_field_geometry_string = temp_param_var->GetText();    
+    std::string Mag_field_geometry_string = temp_param_var->GetText();
 
     if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Toroidal")) { Hotspot_params->e_Mag_field_geometry = Toroidal; }
 
@@ -191,22 +246,6 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_power");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field power law power!" << "\n"; return ERROR; }
     Hotspot_params->Mag_field_power = std::stod(temp_param_var->GetText());
-
-    // -------------------- The hotspot Magnetic field radial scale
-    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_radial_scale");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field radial scale!" << "\n"; return ERROR; }
-    Hotspot_params->Mag_field_radial_scale = std::stod(temp_param_var->GetText());
-
-    // -------------------- The hotspot Magnetic field magnitude profile enum
-    temp_param_var = Hotspot_element->FirstChildElement("Mag_field_magnitude_profile");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field geometry enum!" << "\n"; return ERROR; }
-    std::string Mag_field_magnitude_string = temp_param_var->GetText();
-
-    if (0 == strcmp(static_cast<const char*>(Mag_field_magnitude_string.c_str()), "Power_law_based")) { Hotspot_params->e_Mag_field_magnitude_profile = Power_law_based; }
-
-    else if (0 == strcmp(static_cast<const char*>(Mag_field_magnitude_string.c_str()), "Magnetization_based")) { Hotspot_params->e_Mag_field_magnitude_profile = Magnetization_based; }
-
-    else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
 
     return OK;
 
@@ -987,87 +1026,93 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
 
     p_Initial_conditions->File_manager_params.Simulation_name = Root_node->Attribute("Simulation_Name");
 
+    tinyxml2::XMLElement* temp_param_var;
+
     /* ====================================== Parse the average pitch angle flag and sample number ====================================== */
 
-    tinyxml2::XMLElement* Average_pitch_angle_flag_element = Root_node->FirstChildElement("Average_emission_pitch_angle");
-    if (Average_pitch_angle_flag_element == nullptr) { std::cout << "Failed to find the pitch angle averaging flag!" << "\n"; return ERROR; }
-    p_Initial_conditions->Average_electron_pitch_angle = std::stoi(Average_pitch_angle_flag_element->GetText());
+    temp_param_var = Root_node->FirstChildElement("Average_emission_pitch_angle");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the pitch angle averaging flag!" << "\n"; return ERROR; }
+    p_Initial_conditions->Average_electron_pitch_angle = std::stoi(temp_param_var->GetText());
 
-    tinyxml2::XMLElement* Average_pitch_angle_number_element = Root_node->FirstChildElement("Emission_pitch_angle_samples_to_average");
-    if (Average_pitch_angle_number_element == nullptr) { std::cout << "Failed to find the number of pitch angle samples to average!" << "\n"; return ERROR; }
-    p_Initial_conditions->Emission_pitch_angle_samples_to_average = std::stoi(Average_pitch_angle_number_element->GetText());
+    temp_param_var = Root_node->FirstChildElement("Emission_pitch_angle_samples_to_average");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the number of pitch angle samples to average!" << "\n"; return ERROR; }
+    p_Initial_conditions->Emission_pitch_angle_samples_to_average = std::stoi(temp_param_var->GetText());
+
+    temp_param_var = Root_node->FirstChildElement("Thermalize_emission_medium");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the Thermalize_emission_medium flag!" << "\n"; return ERROR; }
+    p_Initial_conditions->Thermalize_emission_medium = std::stoi(temp_param_var->GetText());
 
     /* ====================================== Parse the simulation mode specific settings ====================================== */
 
-    tinyxml2::XMLElement* Simulation_mode_element = Root_node->FirstChildElement("Simulation_mode");
-    if (Simulation_mode_element == nullptr) { std::cout << "Failed to find the simulation mode!" << "\n"; return ERROR; }
-    p_Initial_conditions->Simulation_mode = std::stoi(Simulation_mode_element->GetText());
+    temp_param_var = Root_node->FirstChildElement("Simulation_mode");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the simulation mode!" << "\n"; return ERROR; }
+    p_Initial_conditions->Simulation_mode = std::stoi(temp_param_var->GetText());
 
-    tinyxml2::XMLElement* Sim_mode_2_param_number_element = Root_node->FirstChildElement("Sim_mode_2_param_value_number");
-    if (Sim_mode_2_param_number_element == nullptr) { std::cout << "Failed to find the simulation mode 2 number of metric parameter values!" << "\n"; return ERROR; }
-    p_Initial_conditions->Sim_mode_2_param_value_number = std::stoi(Sim_mode_2_param_number_element->GetText());
+    temp_param_var = Root_node->FirstChildElement("Sim_mode_2_param_value_number");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the simulation mode 2 number of metric parameter values!" << "\n"; return ERROR; }
+    p_Initial_conditions->Sim_mode_2_param_value_number = std::stoi(temp_param_var->GetText());
 
-    tinyxml2::XMLElement* Sim_mode_3_X_init = Root_node->FirstChildElement("Sim_mode_3_X_init");
-    if (Sim_mode_3_X_init == nullptr) { std::cout << "Failed to find sim mode 3 X init!" << "\n"; return ERROR; }
-    p_Initial_conditions->Sim_mode_3_X_init = std::stod(Sim_mode_3_X_init->GetText());
+    temp_param_var = Root_node->FirstChildElement("Sim_mode_3_X_init");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find sim mode 3 X init!" << "\n"; return ERROR; }
+    p_Initial_conditions->Sim_mode_3_X_init = std::stod(temp_param_var->GetText());
 
-    tinyxml2::XMLElement* Sim_mode_3_Y_init = Root_node->FirstChildElement("Sim_mode_3_Y_init");
-    if (Sim_mode_3_Y_init == nullptr) { std::cout << "Failed to find sim mode 3 Y init!" << "\n"; return ERROR; }
-    p_Initial_conditions->Sim_mode_3_Y_init = std::stod(Sim_mode_3_Y_init->GetText());
+    temp_param_var = Root_node->FirstChildElement("Sim_mode_3_Y_init");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find sim mode 3 Y init!" << "\n"; return ERROR; }
+    p_Initial_conditions->Sim_mode_3_Y_init = std::stod(temp_param_var->GetText());
 
     /* ====================================== Parse the central object mass ====================================== */
 
-    tinyxml2::XMLElement* Central_object_mass_element = Root_node->FirstChildElement("Central_object_mass");
-    if (Central_object_mass_element == nullptr) { std::cout << "Failed to find the central object mass!" << "\n"; return ERROR; }
-    p_Initial_conditions->central_object_mass = std::stod(Central_object_mass_element->GetText());
+    temp_param_var = Root_node->FirstChildElement("Central_object_mass");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the central object mass!" << "\n"; return ERROR; }
+    p_Initial_conditions->central_object_mass = std::stod(temp_param_var->GetText());
 
     /* ====================================== Parse the observer parameters ====================================== */
 
-    tinyxml2::XMLElement* Observer_element = Root_node->FirstChildElement("Observer");
-    if (Observer_element == nullptr) { std::cout << "Failed to find the Observer node!" << "\n"; return ERROR; }
-    if (OK != parse_observer_parameters(Observer_element, &p_Initial_conditions->Observer_params)) { return ERROR; }
+    temp_param_var = Root_node->FirstChildElement("Observer");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the Observer node!" << "\n"; return ERROR; }
+    if (OK != parse_observer_parameters(temp_param_var, &p_Initial_conditions->Observer_params)) { return ERROR; }
 
     /* ====================================== Parse the metric parameters ====================================== */
 
-    tinyxml2::XMLElement* Metric_element = Root_node->FirstChildElement("Metric");
-    if (Metric_element == nullptr) { std::cout << "Failed to find the Metric node!" << "\n"; return ERROR; }
-    if (OK != parse_metric_parameters(Metric_element, &p_Initial_conditions->Metric_parameters)) { return ERROR; };
+    temp_param_var = Root_node->FirstChildElement("Metric");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the Metric node!" << "\n"; return ERROR; }
+    if (OK != parse_metric_parameters(temp_param_var, &p_Initial_conditions->Metric_parameters)) { return ERROR; };
 
     /* ====================================== Parse the integrator parameters ====================================== */
 
-    tinyxml2::XMLElement* Integrator_element = Root_node->FirstChildElement("Integrator");
-    if (Integrator_element == nullptr) { std::cout << "Failed to find the Metric node!" << "\n"; return ERROR; }
-    if (OK != parse_integrator_params(Integrator_element, &p_Initial_conditions->Integrator_params)) { return ERROR; };
+    temp_param_var = Root_node->FirstChildElement("Integrator");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the Metric node!" << "\n"; return ERROR; }
+    if (OK != parse_integrator_params(temp_param_var, &p_Initial_conditions->Integrator_params)) { return ERROR; };
 
     /* ====================================== Parse the accretion disk parameters ====================================== */
 
-    tinyxml2::XMLElement* Accretion_disk_element = Root_node->FirstChildElement("Accretion_Disk");
-    if (Accretion_disk_element == nullptr) { std::cout << "Failed to find the Accretion Disk node!" << "\n"; return ERROR; }
-    if (OK != parse_disk_params(Accretion_disk_element, &p_Initial_conditions->Disk_params)) { return ERROR; };
+    temp_param_var = Root_node->FirstChildElement("Accretion_Disk");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the Accretion Disk node!" << "\n"; return ERROR; }
+    if (OK != parse_disk_params(temp_param_var, &p_Initial_conditions->Disk_params)) { return ERROR; };
 
     /* ====================================== Parse the hotspot parameters ====================================== */
 
-    tinyxml2::XMLElement* Hotspot_element = Root_node->FirstChildElement("Hotspot");
-    if (Hotspot_element == nullptr) { std::cout << "Failed to find the Hotspot node!" << "\n"; return ERROR; }
-    if (OK != parse_hotspot_params(Hotspot_element, &p_Initial_conditions->Hotspot_params)) { return ERROR; };
+    temp_param_var = Root_node->FirstChildElement("Hotspot");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the Hotspot node!" << "\n"; return ERROR; }
+    if (OK != parse_hotspot_params(temp_param_var, &p_Initial_conditions->Hotspot_params)) { return ERROR; };
 
     /* ====================================== Parse the emission model parameters ====================================== */
 
-    tinyxml2::XMLElement* Emission_model_element = Root_node->FirstChildElement("Emission_models");
-    if (Emission_model_element == nullptr) { std::cout << "Failed to find the Hotspot node!" << "\n"; return ERROR; }
-    if (OK != parse_emission_model_params(Emission_model_element, p_Initial_conditions)) { return ERROR; };
+    temp_param_var = Root_node->FirstChildElement("Emission_models");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the Hotspot node!" << "\n"; return ERROR; }
+    if (OK != parse_emission_model_params(temp_param_var, p_Initial_conditions)) { return ERROR; };
 
     /* ====================================== Parse the Novikov-Thorne model parameters ====================================== */
 
-    tinyxml2::XMLElement* NT_element = Root_node->FirstChildElement("Novikov_Thorne_disk");
-    if (NT_element == nullptr) { std::cout << "Failed to find the Hotspot node!" << "\n"; return ERROR; }
-    if (OK != parse_NT_params(NT_element, &p_Initial_conditions->NT_params)) { return ERROR; };
+    temp_param_var = Root_node->FirstChildElement("Novikov_Thorne_disk");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the Hotspot node!" << "\n"; return ERROR; }
+    if (OK != parse_NT_params(temp_param_var, &p_Initial_conditions->NT_params)) { return ERROR; };
 
     /* ====================================== Parse the file paths ====================================== */
 
-    tinyxml2::XMLElement* File_manager_element = Root_node->FirstChildElement("File_Manager");
-    if (File_manager_element == nullptr) { std::cout << "Failed to find the File paths node!" << "\n"; return ERROR; }
-    if (OK != parse_file_manager_params(File_manager_element, &p_Initial_conditions->File_manager_params)) { return ERROR; };
+    temp_param_var = Root_node->FirstChildElement("File_Manager");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the File paths node!" << "\n"; return ERROR; }
+    if (OK != parse_file_manager_params(temp_param_var, &p_Initial_conditions->File_manager_params)) { return ERROR; };
 
     return OK;
 

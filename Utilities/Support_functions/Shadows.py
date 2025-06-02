@@ -1,10 +1,10 @@
-import numpy as np
-try:
-    import Spacetimes
-except:
-    from Support_functions import Spacetimes
+from numpy import exp, sin, cos, tan, arctan, sqrt, arcsin, arccos, pi
+from numpy import concatenate, flip, argmax, argmin, linspace
 
-import matplotlib.pyplot as plt
+from numpy.typing import NDArray
+from matplotlib.axes import Axes
+
+from matplotlib.pyplot import figure, show, xlim, ylim
 from scipy.optimize import fsolve
 from scipy.stats import beta
 
@@ -28,12 +28,12 @@ class Wormhole_Shadow:
         self.GRANULARITY = Granularity
         self.R_THROAT = 1
 
-    def get_integrals_of_motion(self, r_ph: np.ndarray) -> tuple:
+    def get_integrals_of_motion(self, r_ph: NDArray | float) -> tuple:
 
         omega   = 2 * self.SPIN / r_ph**3
         dr_omega = -3 * omega / r_ph
 
-        N    = np.exp(-1 / r_ph - self.GAMMA / r_ph**2)
+        N    = exp(-1 / r_ph - self.GAMMA / r_ph**2)
         dr_N = (1 / r_ph**2 + 2 * self.GAMMA / r_ph**3) * N
         
         Sigma = dr_N / N - 1 / r_ph
@@ -43,7 +43,7 @@ class Wormhole_Shadow:
 
         return eta, ksi
     
-    def get_branch_intersection_condition(self, r: float) -> float:
+    def get_branch_intersection_condition(self, r: NDArray) -> float:
 
         eta, ksi = self.get_integrals_of_motion(r)
 
@@ -56,7 +56,7 @@ class Wormhole_Shadow:
     
     def get_branch_intersection_point(self):
 
-        return fsolve(self.get_branch_intersection_condition, x0 = 10, xtol = 1e-6)
+        return fsolve(self.get_branch_intersection_condition, x0 = 10, xtol = 1e-6)[0]
 
     def get_orbital_condition(self, r_ph) -> float:
 
@@ -66,13 +66,13 @@ class Wormhole_Shadow:
 
     def get_retrograde_photon_orbit(self) -> float:
 
-        return fsolve(self.get_orbital_condition, x0 = 10, xtol = 1e-3)
+        return fsolve(self.get_orbital_condition, x0 = 10, xtol = 1e-3)[0]
     
     def get_metric(self, r: float, theta: float):
 
-        N = np.exp(-1 / r - self.GAMMA / r**2)
+        N = exp(-1 / r - self.GAMMA / r**2)
         omega = 2 * self.SPIN / r**3
-        sin_theta = np.sin(theta)
+        sin_theta = sin(theta)
 
         g_tt = -N**2 + omega**2 * r**2 * sin_theta**2
 
@@ -96,10 +96,10 @@ class Wormhole_Shadow:
 
         g2 = g_t_ph**2 - g_tt*g_ph_ph
 
-        inv_lapse  = np.sqrt(g_ph_ph / g2)
+        inv_lapse  = sqrt(g_ph_ph / g2)
         gamma_coef = -g_t_ph / g_ph_ph * inv_lapse
 
-        Theta_potential =  Eta - Ksi**2 / np.sin(self.THETA_OBS)**2
+        Theta_potential =  Eta - Ksi**2 / sin(self.THETA_OBS)**2
         Rad_potential   = -Eta * N**2 / self.R_OBS**2 + (1 - omega * Ksi)**2
 
         #-- Pick out only the array components that have a non-negative Theta potential.
@@ -113,30 +113,30 @@ class Wormhole_Shadow:
         # ================ Local Contravariant Momenta at the observer ================ #
 
         p_t     = inv_lapse - gamma_coef * Ksi
-        p_r     = np.sqrt(Rad_potential) / N / np.sqrt(g_rr)
-        p_theta = np.sqrt(Theta_potential) / np.sqrt(g_th_th)
-        p_phi   = Ksi / np.sqrt(g_ph_ph)
+        p_r     = sqrt(Rad_potential) / N / sqrt(g_rr)
+        p_theta = sqrt(Theta_potential) / sqrt(g_th_th)
+        p_phi   = Ksi / sqrt(g_ph_ph)
 
         # =========================== Celestial coordinates =========================== #
 
-        alpha_coords = np.arctan( p_phi / p_r )
-        beta_coords  = np.arcsin( p_theta / p_t )
+        alpha_coords = arctan( p_phi / p_r )
+        beta_coords  = arcsin( p_theta / p_t )
         
         #-- Get rid of that weird arc that goes "backwards" and does not contribute to the shadow...
 
         if alpha_coords.size != 0:
 
             if self.SPIN > 0:
-                index = np.argmax(alpha_coords)
+                index = argmax(alpha_coords)
             else:
-                index = np.argmin(alpha_coords)
+                index = argmin(alpha_coords)
 
             alpha_coords = alpha_coords[index:]
             beta_coords = beta_coords[index:]
 
         return alpha_coords, beta_coords
 
-    def generate_shadow(self, Subplot, plot_center_cross: bool = False, linestyle: str = "-", Plot_title: bool = False) -> tuple:
+    def generate_shadow(self, Subplot, plot_center_cross: bool = False, linestyle: str = "-", Plot_title: bool = False) -> None:
 
         # =========================================================================================================== #
         # ============================== Branch due to photon orbits outside the throat ============================= #
@@ -147,7 +147,7 @@ class Wormhole_Shadow:
         #-- The beta CDF maps more points in the uniform interval [0, 1] towards 1. Scaling this by the range of possible photon orbits
         #-- results in a distribution that is more "dense" towards higher radii - this "closes" the shadow on the "fat" side a lot better
 
-        r_ph_scan = beta.cdf(x = np.linspace(0, 1, self.GRANULARITY), a = 1, b = 10) * (r_ph_retrograde - self.R_THROAT) + self.R_THROAT
+        r_ph_scan = beta.cdf(x = linspace(0, 1, self.GRANULARITY), a = 1, b = 10) * (r_ph_retrograde - self.R_THROAT) + self.R_THROAT
 
         Eta, Ksi = self.get_integrals_of_motion(r_ph = r_ph_scan)
 
@@ -167,9 +167,9 @@ class Wormhole_Shadow:
 
         # ================================================================================== #
 
-        Ksi_intersect = 1 / (N_throat / self.R_THROAT / np.sin(self.THETA_OBS) + omega_throat)
+        Ksi_intersect = 1 / (N_throat / self.R_THROAT / sin(self.THETA_OBS) + omega_throat)
 
-        Ksi = np.linspace(Ksi_intersect, Ksi_meet, self.GRANULARITY)
+        Ksi = linspace(Ksi_intersect, Ksi_meet, self.GRANULARITY)
         Eta = self.R_THROAT**2 / N_throat**2 * (1 - omega_throat * Ksi)**2
 
         alpha_second_coords, beta_second_coords = self.generate_shadow_rim(Eta, Ksi)
@@ -206,19 +206,19 @@ class Wormhole_Shadow:
 
         if len(beta_second_coords) > 50:
 
-            X_plot_first  = np.concatenate([[min(alpha_second_coords)], alpha_first_coords, np.flip(alpha_first_coords), [min(alpha_second_coords)]]) * self.R_OBS
-            X_plot_second = np.concatenate([np.flip(alpha_second_coords), alpha_second_coords]) * self.R_OBS
+            X_plot_first  = concatenate([[min(alpha_second_coords)], alpha_first_coords, flip(alpha_first_coords), [min(alpha_second_coords)]]) * self.R_OBS
+            X_plot_second = concatenate([flip(alpha_second_coords), alpha_second_coords]) * self.R_OBS
             
-            Y_plot_first  = np.concatenate([[-max(beta_second_coords)], -beta_first_coords, np.flip(beta_first_coords), [max(beta_second_coords)]]) * self.R_OBS
-            Y_plot_second = np.concatenate([-np.flip(beta_second_coords), beta_second_coords]) * self.R_OBS
+            Y_plot_first  = concatenate([[-max(beta_second_coords)], -beta_first_coords, flip(beta_first_coords), [max(beta_second_coords)]]) * self.R_OBS
+            Y_plot_second = concatenate([-flip(beta_second_coords), beta_second_coords]) * self.R_OBS
 
             Subplot.plot(X_plot_first, Y_plot_first, color = "black", linestyle = linestyle)
             Subplot.plot(X_plot_second, Y_plot_second, color = "red", linestyle = linestyle)
 
         else:
             
-            X_plot_first  = np.concatenate([alpha_first_coords, np.flip(alpha_first_coords), [alpha_first_coords[0]]]) * self.R_OBS
-            Y_plot_first  = np.concatenate([-beta_first_coords, np.flip(beta_first_coords), [-beta_first_coords[0]]]) * self.R_OBS
+            X_plot_first  = concatenate([alpha_first_coords, flip(alpha_first_coords), [alpha_first_coords[0]]]) * self.R_OBS
+            Y_plot_first  = concatenate([-beta_first_coords, flip(beta_first_coords), [-beta_first_coords[0]]]) * self.R_OBS
 
             Subplot.plot(X_plot_first, Y_plot_first, color = "black", linestyle = linestyle)
 
@@ -233,23 +233,23 @@ class Wormhole_Shadow:
         # return alpha_coords, beta_coords
 
 
-def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float, figure: plt) -> None:
+def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float, figure: Axes) -> None:
 
     #--- Equatorial Photon Orbits ---#
 
-    r_ph_max = 2*(1 + np.cos(2/3 * np.arccos(-spin)))
-    r_ph_min = 2*(1 + np.cos(2/3 * np.arccos( spin)))
+    r_ph_max = 2*(1 + cos(2/3 * arccos(-spin)))
+    r_ph_min = 2*(1 + cos(2/3 * arccos( spin)))
 
-    r_ph = np.linspace(r_ph_min, r_ph_max, 10000)
+    r_ph = linspace(r_ph_min, r_ph_max, 10000)
 
     #--- Critical Integrals of Motion ---#
 
     J = (spin**2 * (r_ph + 1) + r_ph**3 - 3*r_ph**2)/(spin*(r_ph - 1))
     K = (-9*r_ph**4 + 4*spin**2*r_ph**3 + 6*r_ph**5 - r_ph**6)/(r_ph - 1)**2/spin**2
 
-    cos_0 = np.cos(obs_inclanation)
-    sin_0 = np.sin(obs_inclanation)
-    tan_0 = np.tan(obs_inclanation)
+    cos_0 = cos(obs_inclanation)
+    sin_0 = sin(obs_inclanation)
+    tan_0 = tan(obs_inclanation)
 
     #--- Metric at the Observer ---#
     g_phph = (obs_distance**2 + spin**2 + 2*spin**2*sin_0**2/obs_distance)*sin_0**2
@@ -257,8 +257,8 @@ def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float, fi
     g_tt   = -(1 - 2*obs_distance/(obs_distance**2 + spin**2*cos_0**2))
 
     g2    = g_tph**2 - g_tt*g_phph
-    gamma = -g_tph/g_phph*np.sqrt(g_phph/g2)
-    ksi   = np.sqrt(g_phph/g2)
+    gamma = -g_tph/g_phph*sqrt(g_phph/g2)
+    ksi   = sqrt(g_phph/g2)
 
     rho2  = obs_distance**2 + spin**2*cos_0**2
     delta = obs_distance**2 - 2*obs_distance + spin**2 
@@ -267,25 +267,25 @@ def add_Kerr_Shadow(spin: float, obs_distance: float, obs_inclanation: float, fi
     
     #--- Celestial Coordinates of the Shadow Rim ---#
 
-    alpha = np.arctan(J * np.sqrt(rho2 * delta/Rad_potential/g_phph))
+    alpha = arctan(J * sqrt(rho2 * delta/Rad_potential/g_phph))
 
     #--- This should be non-negative on the shadow rim ---#
     problem_term = (K + spin**2*cos_0**2 - J**2/tan_0**2) * (K + spin**2*cos_0**2 - J**2/tan_0**2 > 0)
-    beta = np.arcsin(np.sqrt(problem_term)/np.sqrt(obs_distance**2 + spin**2*cos_0**2)/(ksi - J*gamma)) 
+    beta = arcsin(sqrt(problem_term)/sqrt(obs_distance**2 + spin**2*cos_0**2)/(ksi - J*gamma)) 
 
     alpha = obs_distance * alpha[(beta != 0)]
     beta  = obs_distance * beta [(beta != 0)]
 
-    alpha = np.concatenate([alpha, np.flip(alpha), [alpha[0]]])
-    beta  = np.concatenate([beta ,-np.flip(beta),  [beta[0]] ])
+    alpha = concatenate([alpha, flip(alpha), [alpha[0]]])
+    beta  = concatenate([beta ,-flip(beta),  [beta[0]] ])
 
     figure.plot(alpha,beta,"k--")
 
 if __name__ == "__main__":
 
-    Fig = plt.figure(figsize = (18, 18))
+    Fig = figure(figsize = (18, 18))
 
-    obs_inclination = np.pi / 2
+    obs_inclination = pi / 2
     Granularity = 100000
 
     Subplot = Fig.add_subplot(331)
@@ -337,4 +337,4 @@ if __name__ == "__main__":
 
     # plt.xlim([-10 / test_class.R_OBS, 10 / test_class.R_OBS])
     # plt.ylim([-10 / test_class.R_OBS, 10 / test_class.R_OBS])
-    plt.show()
+    show()

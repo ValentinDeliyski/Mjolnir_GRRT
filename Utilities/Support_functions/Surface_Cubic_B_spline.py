@@ -1,9 +1,10 @@
-from numpy import array, concatenate, tile, zeros, linspace, meshgrid, einsum, reshape, random, concatenate, tanh, outer
+from numpy import array, concatenate, tile, zeros, linspace, meshgrid, einsum, reshape, concatenate, outer, digitize, dot, sqrt, float64, signedinteger
+from numpy.typing import NDArray
 from numpy.linalg import inv
 
 class Surface_Cubic_B_spline():
     
-    def __init__(self, x_grid: array, y_grid: array, z_grid: array, X_patch_number: int = 5, Y_patch_number: int = 5) -> None:
+    def __init__(self, x_grid: NDArray[float64], y_grid: NDArray[float64], z_grid: NDArray[float64], X_patch_number: int = 5, Y_patch_number: int = 5) -> None:
 
         """ === The source for this script is https://hal.science/hal-03017566/document === """
 
@@ -57,7 +58,7 @@ class Surface_Cubic_B_spline():
         self.Control_vector_Y = 36 * Inverse_mapping_matrix.dot(Knot_vector_Y)
         self.Control_vector_Z = 36 * Inverse_mapping_matrix.dot(Knot_vector_Z)
         
-    def specify_not_a_knot_conditions(self, Mapping_matrix: array) -> None:
+    def specify_not_a_knot_conditions(self, Mapping_matrix: NDArray[float64]) -> None:
         
         """ === Specify the boundary conditions on the [-X, -Y] corner === """    
         Mapping_matrix[self.X_patch_number * self.Y_patch_number, 0] = 1
@@ -155,7 +156,7 @@ class Surface_Cubic_B_spline():
             Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 2 * (self.Y_patch_number + 2) + 3 + self.Y_patch_number + 2 - 5] =  4
             Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 2 * (self.Y_patch_number + 2) + 4 + self.Y_patch_number + 2 - 5] = -1 
         
-    def specify_free_end_conditions(self, Mapping_matrix: array) -> None:
+    def specify_free_end_conditions(self, Mapping_matrix: NDArray[float64]) -> None:
         
         """ === Specify the boundary condition ay -Y === """
         for idx in range(self.X_patch_number):
@@ -201,7 +202,7 @@ class Surface_Cubic_B_spline():
         Mapping_matrix[self.Y_patch_number * self.X_patch_number + 2 * self.X_patch_number + 2 * self.Y_patch_number + 3, (self.X_patch_number + 2) * (self.Y_patch_number + 2) - 1 * (self.Y_patch_number + 2) - 2] = -2
         Mapping_matrix[self.Y_patch_number * self.X_patch_number + 2 * self.X_patch_number + 2 * self.Y_patch_number + 3, (self.X_patch_number + 2) * (self.Y_patch_number + 2) - 0 * (self.Y_patch_number + 2) - 1] =  1
 
-    def get_control_point_matrix(self, Control_vector: array, V_idx: int, U_idx: int) -> array:
+    def get_control_point_matrix(self, Control_vector: NDArray[float64], V_idx: int, U_idx: int) -> NDArray[float64]:
     
         Q_i0_j0 = Control_vector[V_idx + 0 * (self.Y_patch_number + 2) + U_idx * (self.Y_patch_number + 2)]
         Q_i1_j0 = Control_vector[V_idx + 1 * (self.Y_patch_number + 2) + U_idx * (self.Y_patch_number + 2)]
@@ -230,25 +231,25 @@ class Surface_Cubic_B_spline():
         
         return Control_point_matrix
 
-    def evaluate_spline(self, Patch_discretization: int = 15) -> tuple[array, array, array]:
+    def evaluate_spline(self, Patch_discretization: int = 15) -> tuple[NDArray[float64], NDArray[float64], NDArray[float64]]:
         
-        X_surface = array([[]])
-        Y_surface = array([[]])
-        Z_surface = array([[]])
+        X_surface: NDArray[float64] = array([[]])
+        Y_surface: NDArray[float64] = array([[]])
+        Z_surface: NDArray[float64] = array([[]])
         
         U, V = meshgrid(linspace(0, 1, num = Patch_discretization), linspace(0, 1, num = Patch_discretization))
 
         for V_idx in range(0, self.Y_patch_number - 1):
             
-            Partial_X_grid = []
-            Partial_Y_grid = []
-            Partial_Z_grid = []
+            Partial_X_grid: NDArray[float64] = array([])
+            Partial_Y_grid: NDArray[float64] = array([])
+            Partial_Z_grid: NDArray[float64] = array([])
             
-            Patch_X_coords = []
-            Patch_Y_coords = []
-            Patch_Z_coords = []
+            Patch_X_coords: list[float] = []
+            Patch_Y_coords: list[float] = []
+            Patch_Z_coords: list[float] = []
             
-            for U_idx in range (0, self.X_patch_number - 1):
+            for U_idx in range(0, self.X_patch_number - 1):
                 
                 """ === Compute the basis polynomials vectors === """
                 
@@ -277,17 +278,17 @@ class Surface_Cubic_B_spline():
                 Control_point_matrix = self.get_control_point_matrix(Control_vector = self.Control_vector_Z, U_idx = U_idx, V_idx = V_idx)
                 Patch_Z_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
  
-            for Patch_X_coords, Patch_Y_coords, Patch_Z_coords in zip(Patch_X_coords, Patch_Y_coords, Patch_Z_coords):
+            for Patch_X_coords_element, Patch_Y_coords_element, Patch_Z_coords_element in zip(Patch_X_coords, Patch_Y_coords, Patch_Z_coords):
                 
                 try:
-                    Partial_X_grid = concatenate((Partial_X_grid, Patch_X_coords), axis = 1)
-                    Partial_Y_grid = concatenate((Partial_Y_grid, Patch_Y_coords), axis = 1)
-                    Partial_Z_grid = concatenate((Partial_Z_grid, Patch_Z_coords), axis = 1)
+                    Partial_X_grid = concatenate((Partial_X_grid, Patch_X_coords_element), axis = 1)
+                    Partial_Y_grid = concatenate((Partial_Y_grid, Patch_Y_coords_element), axis = 1)
+                    Partial_Z_grid = concatenate((Partial_Z_grid, Patch_Z_coords_element), axis = 1)
                     
                 except:
-                    Partial_X_grid = Patch_X_coords
-                    Partial_Y_grid = Patch_Y_coords
-                    Partial_Z_grid = Patch_Z_coords
+                    Partial_X_grid = array(Patch_X_coords)
+                    Partial_Y_grid = array(Patch_Y_coords)
+                    Partial_Z_grid = array(Patch_Z_coords)
                     
             try:
                 X_surface = concatenate((X_surface, Partial_X_grid), axis = 0)
@@ -295,9 +296,9 @@ class Surface_Cubic_B_spline():
                 Z_surface = concatenate((Z_surface, Partial_Z_grid), axis = 0)
                 
             except:
-                X_surface = Partial_X_grid
-                Y_surface = Partial_Y_grid
-                Z_surface = Partial_Z_grid
+                X_surface = array(Partial_X_grid)
+                Y_surface = array(Partial_Y_grid)
+                Z_surface = array(Partial_Z_grid)
 
         return X_surface, Y_surface, Z_surface
 
@@ -305,6 +306,7 @@ if __name__ == "__main__":
     
     Y_patch_number = 25
     X_patch_number = 25
+    
     """ ==== Setup the fit knot positions - these are the (x, y, z) coordinate pairs of the suraface ==== """
     x_span = linspace(0, 10, X_patch_number)
     y_span = linspace(0, 15, Y_patch_number)
@@ -315,9 +317,8 @@ if __name__ == "__main__":
     # ==== This makes a grid with the y values for each point in the surface domain, then reshapes it into a 1D array
     y_grid = tile(y_span, X_patch_number)
     
-    import numpy as np
     # ==== Placeholder for actual z values -> this will be the actual metric functions
-    z = np.sqrt((outer(x_span, y_span) / 1.254))
+    z = sqrt((outer(x_span, y_span) / 1.254))
     
     Spline_class_instance = Surface_Cubic_B_spline(x_grid = x_grid, y_grid = y_grid, z_grid = z, X_patch_number = X_patch_number, Y_patch_number= Y_patch_number)
 
@@ -331,8 +332,8 @@ if __name__ == "__main__":
     x_test = 1
     y_test = 2.5
 
-    x_bin_idx = np.digitize(x_test,x_span) - 1
-    y_bin_idx = np.digitize(y_test,y_span) - 1
+    x_bin_idx: int = int(digitize(x_test,x_span) - 1)
+    y_bin_idx: int = int(digitize(y_test,y_span) - 1)
      
     V = (y_test - y_span[y_bin_idx]) / (y_span[y_bin_idx + 1] - y_span[y_bin_idx])
     
@@ -353,20 +354,18 @@ if __name__ == "__main__":
     Basis_U_vector = array([U1, U2, U3, U4])
     
     Control_point_matrix = Spline_class_instance.get_control_point_matrix(Spline_class_instance.Control_vector_X, y_bin_idx, x_bin_idx)
-    x_interp = np.dot(Basis_V_vector, np.dot(Control_point_matrix, Basis_U_vector)) / 36
+    x_interp = dot(Basis_V_vector, dot(Control_point_matrix, Basis_U_vector)) / 36
     
     Control_point_matrix = Spline_class_instance.get_control_point_matrix(Spline_class_instance.Control_vector_Y, y_bin_idx, x_bin_idx)
-    y_interp = np.dot(Basis_V_vector, np.dot(Control_point_matrix, Basis_U_vector)) / 36
+    y_interp = dot(Basis_V_vector, dot(Control_point_matrix, Basis_U_vector)) / 36
     
     Control_point_matrix = Spline_class_instance.get_control_point_matrix(Spline_class_instance.Control_vector_Z, y_bin_idx, x_bin_idx)
-    z_interp = np.dot(Basis_V_vector, np.dot(Control_point_matrix, Basis_U_vector)) / 36
-    
-    print(x_interp, y_interp, z_interp, np.sqrt(x_interp * y_interp / 1.254))
+    z_interp = dot(Basis_V_vector, dot(Control_point_matrix, Basis_U_vector)) / 36
     
     X_surface, Y_surface, Z_surface = Spline_class_instance.evaluate_spline(Patch_discretization = 5)
 
     # Surface_subplot.plot_surface(X_surface, Y_surface, Z_surface, color = 'orange', alpha = 0.5) 
-    Surface_subplot.plot_surface(reshape(x_grid, (X_patch_number , Y_patch_number)), 
+    Surface_subplot.plot_surface(reshape(x_grid, (X_patch_number , Y_patch_number)),  # type: ignore
                                  reshape(y_grid, (X_patch_number , Y_patch_number)), 
                                  z, color = 'orange', alpha = 0.5) 
     
@@ -374,6 +373,6 @@ if __name__ == "__main__":
 
     Surface_subplot.set_xlabel('x')
     Surface_subplot.set_ylabel('y')
-    Surface_subplot.set_zlabel('z')
-    Surface_subplot.set_zlim(5,-5)
+    Surface_subplot.set_zlabel('z') # type: ignore
+    Surface_subplot.set_zlim(5,-5)  # type: ignore
     plt.show()

@@ -1,6 +1,7 @@
 from csv import reader
 from dataclasses import dataclass
-from numpy import array, zeros, sum, flip, linspace, vstack, repeat, savetxt, log, pi
+from numpy import array, zeros, sum, flip, linspace, vstack, repeat, savetxt, log, pi, float64
+from numpy.typing import NDArray
 
 class Simulation_Parser():
 
@@ -90,6 +91,11 @@ class Simulation_Parser():
             self.disk_magnetization = float(csvreader.__next__()[1])
             self.disk_magnetic_field = csvreader.__next__()[1]
             self.disk_magnetic_field_magnitude_profile = csvreader.__next__()[1]
+            
+            if("Power law based" == self.disk_magnetic_field_magnitude_profile[1:]):
+                self.disk_magnetic_field_scale = float(csvreader.__next__()[1])
+                self.magnetic_field_radial_scale = float(csvreader.__next__()[1])
+                self.magnetic_field_power_law_power = float(csvreader.__next__()[1])
 
             _ = csvreader.__next__() # Hotspot Parameters Header
             _ = csvreader.__next__() # Density Model Parameters Header
@@ -99,6 +105,10 @@ class Simulation_Parser():
                 self.hotspot_density_spread = float(csvreader.__next__()[1])
             elif self.hotspot_density_profile == "Spherical":
                 self.hotspot_dentiy_radius = float(csvreader.__next__()[1])
+            elif self.hotspot_temperature_profile == "Hybrid power law gaussian":
+                self.hotspot_density_spread = float(csvreader.__next__()[1])  
+                self.hotspot_density_power_law_power = float(csvreader.__next__()[1])  
+                self.hotspot_density_power_law_scale = float(csvreader.__next__()[1])   
             
             self.hotspot_max_density = float(csvreader.__next__()[1])
 
@@ -107,8 +117,12 @@ class Simulation_Parser():
             self.hotspot_temperature_profile = csvreader.__next__()[1][1:]
             if self.hotspot_temperature_profile == "Gaussian":
                 self.hotspot_temperature_spread = float(csvreader.__next__()[1])       
-            elif self.hotspot_density_profile == "Spherical":
+            elif self.hotspot_temperature_profile == "Spherical":
                 self.hotspot_temperature_radius = float(csvreader.__next__()[1])
+            elif self.hotspot_temperature_profile == "Hybrid power law gaussian":
+                self.hotspot_temperature_spread = float(csvreader.__next__()[1])  
+                self.hotspot_temperature_power_law_power = float(csvreader.__next__()[1])  
+                self.hotspot_temperature_power_law_scale = float(csvreader.__next__()[1])   
 
             self.hotspot_max_temperature = float(csvreader.__next__()[1])
 
@@ -118,10 +132,10 @@ class Simulation_Parser():
             if self.hotspot_ensamble == "Kappa":
                 self.kappa = csvreader.__next__()[1][1:]
             elif self.hotspot_ensamble == "Phenomenological":
-                for i in range(4):
+                for _ in range(4):
                     _ = csvreader.__next__()
             elif self.hotspot_ensamble == "Thermal":
-                _
+                pass
 
             self.hotspot_magnetization = float(csvreader.__next__()[1])
             self.hotspot_magnetic_field = csvreader.__next__()[1][1:]
@@ -139,7 +153,7 @@ class Simulation_Parser():
                 self.NT_r_in  = float(csvreader.__next__()[1])
                 self.NT_r_out = float(csvreader.__next__()[1])
             except:
-                _
+                pass
             
             _ = csvreader.__next__() # Simulation Results Header
             self.Legend = csvreader.__next__()
@@ -228,7 +242,7 @@ class Simulation_Parser():
                 print("Unsupported flux unit!")    
                 return 0
 
-    def get_plottable_sim_data(self) -> tuple[array, array, array, array, array, array, array]:
+    def get_plottable_sim_data(self) -> tuple[NDArray[float64], ...]:
 
         """ The arrays first need to be reshaped into 2D ones, then flipped along the x axis, 
             because mpl treats y = 0 as the top, and the ray-tracer (openGL) treats it as the bottom. """
@@ -256,7 +270,7 @@ class Simulation_Parser():
 
         return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, NT_Redshift, NT_Flux, NT_Flux_Shifted
     
-    def export_ehtim_data(self, Spacetime: str, data: array, path: str) -> None:
+    def export_ehtim_data(self, Spacetime: str, data: NDArray, path: str) -> None:
 
         ehtim_x_fov = 2 * 5.000000e-05
         ehtim_y_fov = 2 * 5.000000e-05
@@ -334,7 +348,7 @@ class ehtim_Parser():
 
                 index += 1
 
-    def get_plottable_ehtim_data(self) -> tuple[array, list]:
+    def get_plottable_ehtim_data(self) -> tuple[NDArray, list]:
 
         Intensity = self.Intensity.reshape(self.X_PIXEL_COUNT, self.Y_PIXEL_COUNT)
 
@@ -342,7 +356,7 @@ class ehtim_Parser():
         
         return Intensity, Metadata
     
-    def get_total_flux(self) -> float:
+    def get_total_flux(self) -> float64:
 
         return sum(self.Intensity)
 
@@ -424,8 +438,12 @@ class Units_class():
 
     W_M2_TO_JY: float = 1e26
     J_TO_ERG: float   = 1e7
+    
+    """ ================== Misc =================="""
 
-    def Spectral_density_to_T(self, I_nu: array, frequency: float) -> array:
+    M_ELECTRON_SI = 9.1093837e-31 
+    
+    def Spectral_density_to_T(self, I_nu: NDArray, frequency: float) -> NDArray:
 
         I_nu += 1e-10 # To avoid division by 0 errors
 

@@ -19,9 +19,12 @@ double* Emission_models_class::get_plasma_velocity(const double* const State_Vec
 
     Metric_type s_dr_Metric = p_Sim_Context->p_Spacetime->get_dr_metric(State_Vector);
 
+    double test = p_Sim_Context->p_Spacetime->get_ISCO()[Inner];
+
     switch (Velocity_profile) {
 
     case e_Keplarian:
+
 
         /* This velocity profile is defined only for orbit radii > ISCO. When the ray passes below ISCO I return a NULL pointer, which tells the 
            rest of the code to ignore the emission from this region. */
@@ -189,7 +192,7 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     for (int index = 1; index <= 3; index++) {
 
-        Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] = (Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] + s_Metric.Lapse_function * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Lorentz_factor;
+        Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] = (Emission_medium_state->Magnetic_fields.B_field_eularian_frame[index] + s_Metric.Lapse_function * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Lorentz_factor;
        
     }
 
@@ -206,7 +209,6 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
         break;
 
     default:
-
         std::cout << "Unsupported magnetic field magnitude profile! \n";
         exit(ERROR);
 
@@ -552,8 +554,11 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     Emission_medium_state_type Emission_medium_state{};
 
-    /* The hotspot is assumed to "screen" the magnetic field of the background accretion disk. Therefore the magnetic field with which the emission
-       functions of the disk are evaluated, depends on the position of the hotspot. This is the reason this boolean is calculated outside the Emission_meidum 
+    /* This variable exist for the case where the hotspot and disk are in "Thermalized" mode. */
+    Emission_medium_state_type Hotspot_state{};
+
+    /* The hotspot is assumed to "screen" the magnetic field of the background accretion disk (unless its magnetic field magnitude is specified as "Background"). 
+       Therefore the magnetic field with which the emission functions of the disk are evaluated, depends on the position of the hotspot. This is the reason this boolean is calculated outside the Emission_meidum 
        switch statement. */
     double* Hotspot_velocity = this->get_plasma_velocity(this->p_Hotspot_Model->s_Hotspot_params.Position,
                                                          p_Sim_Context,
@@ -561,11 +566,12 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
                                                          this->p_Hotspot_Model->s_Hotspot_params.Radial_velocity_fraction);
 
     bool Is_inside_hotspot = false;
+    bool Is_inside_disk = false;
 
     if (NULL != Hotspot_velocity) {
 
         /* This function call populates the density and temperature values for the hotspot - this is why they are not populated along with the magnetic field parameters. */
-        Is_inside_hotspot = this->p_Hotspot_Model->is_inside_hotspot(State_Vector, Hotspot_velocity, &Emission_medium_state);
+        Is_inside_hotspot = this->p_Hotspot_Model->is_inside_hotspot(State_Vector, Hotspot_velocity, &Hotspot_state);
 
     };
 
@@ -578,9 +584,31 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
                                                                           this->p_Disk_Model->s_Disk_params.Velocity_profile_type,
                                                                           this->p_Disk_Model->s_Disk_params.Radial_velocity_fraction);
 
-        /* This function call populates the density and temperature values for the disk - this is why they are not populated along with the magnetic field parameters. */
-        if (!this->p_Disk_Model->is_inside_disk(State_Vector, this->p_Disk_Model->s_Disk_params.e_Disk_model, &Emission_medium_state)) { return; };
+        Is_inside_disk = this->p_Disk_Model->is_inside_disk(State_Vector, this->p_Disk_Model->s_Disk_params.e_Disk_model, &Emission_medium_state);
 
+        if (this->Thermalize_emission_medium && (Is_inside_disk || Is_inside_hotspot)) {
+
+            Emission_medium_state.Density     += Hotspot_state.Density;
+            Emission_medium_state.Temperature += Hotspot_state.Temperature;
+
+            /* -------- Set the magnetic field properties of the disk to be equal to their "background" values, regardless of weather we are in the hotspot or not. -------- */
+
+            memcpy(Emission_medium_state.Magnetic_fields.Mag_field_geometry_vector, this->p_Disk_Model->s_Disk_params.Mag_field_geometry, 3 * sizeof(double));
+            Emission_medium_state.Magnetization = this->p_Disk_Model->s_Disk_params.Magnetization;
+
+            Emission_medium_state.Magnetic_fields.e_Mag_field_geometry          = this->p_Disk_Model->s_Disk_params.e_Mag_field_geometry;
+            Emission_medium_state.Magnetic_fields.e_Mag_field_magnitude_profile = this->p_Disk_Model->s_Disk_params.e_Mag_field_magnitude_profile;
+            Emission_medium_state.Magnetic_fields.Mag_field_magnitude_scale     = this->p_Disk_Model->s_Disk_params.Mag_field_magnitude_scale;
+            Emission_medium_state.Magnetic_fields.Mag_field_power               = this->p_Disk_Model->s_Disk_params.Mag_field_power;
+            Emission_medium_state.Magnetic_fields.Mag_field_radial_scale        = this->p_Disk_Model->s_Disk_params.Mag_field_radial_scale;
+
+            break;
+
+        }
+
+        /* This function call populates the density and temperature values for the disk - this is why they are not populated along with the magnetic field parameters. */
+        if (!Is_inside_disk) { return; };
+        
         if (Is_inside_hotspot) {
 
             /* -------- We are inside the hotspot - set the magnetic field properties of the disk to be equal to those of the hotspot. -------- */
@@ -616,24 +644,27 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     case Hotspot:
 
+        if (!Is_inside_hotspot || this->Thermalize_emission_medium) { return; };
+
+        Emission_medium_state.Density = Hotspot_state.Density;
+        Emission_medium_state.Temperature = Hotspot_state.Temperature;
+
         Emission_medium_state.Plasma_Velocity = this->get_plasma_velocity(this->p_Hotspot_Model->s_Hotspot_params.Position,
                                                                           p_Sim_Context, 
                                                                           this->p_Hotspot_Model->s_Hotspot_params.Velocity_profile_type,
                                                                           this->p_Hotspot_Model->s_Hotspot_params.Radial_velocity_fraction);
 
-        if (!Is_inside_hotspot) { return; };
-
         Emission_medium_state.Ensamble_type = this->p_Hotspot_Model->s_Hotspot_params.Ensamble_type;
         Emission_medium_state.Magnetization = this->p_Hotspot_Model->s_Hotspot_params.Magnetization;
-
-        Emission_medium_state.Magnetic_fields.e_Mag_field_geometry          = this->p_Hotspot_Model->s_Hotspot_params.e_Mag_field_geometry;
         Emission_medium_state.Magnetic_fields.e_Mag_field_magnitude_profile = this->p_Hotspot_Model->s_Hotspot_params.e_Mag_field_magnitude_profile;
+        Emission_medium_state.Magnetic_fields.e_Mag_field_geometry          = this->p_Hotspot_Model->s_Hotspot_params.e_Mag_field_geometry;
         Emission_medium_state.Magnetic_fields.Mag_field_magnitude_scale     = this->p_Hotspot_Model->s_Hotspot_params.Mag_field_magnitude_scale;
         Emission_medium_state.Magnetic_fields.Mag_field_power               = this->p_Hotspot_Model->s_Hotspot_params.Mag_field_power;
         Emission_medium_state.Magnetic_fields.Mag_field_radial_scale        = this->p_Hotspot_Model->s_Hotspot_params.Mag_field_radial_scale;
 
         memcpy(Emission_medium_state.Magnetic_fields.Mag_field_geometry_vector, this->p_Hotspot_Model->s_Hotspot_params.Mag_field_geometry, 3 * sizeof(double));
 
+       
         break;
 
     default:
@@ -795,6 +826,7 @@ Emission_models_class::Emission_models_class(Simulation_Context_type* p_Sim_Cont
 
     this->Num_samples_to_avg = p_Sim_Context->p_Init_Conditions->Emission_pitch_angle_samples_to_average;
     this->Include_polarization = p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization;
+    this->Thermalize_emission_medium = p_Sim_Context->p_Init_Conditions->Thermalize_emission_medium;
 
     this->p_Disk_Model = new Disk_model_type(p_Sim_Context);
     this->p_Hotspot_Model = new Hotspot_model_type(p_Sim_Context);

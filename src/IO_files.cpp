@@ -305,8 +305,9 @@ void File_manager_class::write_simulation_metadata() {
 
         case Power_law_based:
 
-            *(Output_file + Image_order) << "Magnetic field magnitude profile: Power lawa based\n"
+            *(Output_file + Image_order) << "Magnetic field magnitude profile: Power law based\n"
                                          << "Magnetic field scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_magnitude_scale << "\n"
+                                         << "Magnetic field radial scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_radial_scale << "\n"
                                          << "Magnetic field power law: " << this->p_Initial_Conditions->Disk_params.Mag_field_power << "\n";
 
             break;
@@ -330,7 +331,7 @@ void File_manager_class::write_simulation_metadata() {
             *(Output_file + Image_order) << "Density Profile: Gaussian"
                                             << "\n"
                                             << "Spread [M]: "
-                                            << this->p_Initial_Conditions->Hotspot_params.Density_spread
+                                            << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_gaussian_spread
                                             << "\n";
                                             
             break;
@@ -340,8 +341,24 @@ void File_manager_class::write_simulation_metadata() {
             *(Output_file + Image_order) << "Density Profile: Spherical"
                                             << "\n"
                                             << "Radius [M]: "
-                                            << this->p_Initial_Conditions->Hotspot_params.Radius
+                                            << this->p_Initial_Conditions->Hotspot_params.Profile_params.Radius
                                             << "\n";            
+
+            break;
+
+        case e_Hybrid_power_gaussian:
+
+            *(Output_file + Image_order) << "Density Profile: Hybrid power law gaussian"
+                                         << "\n"
+                                         << "Spread [M]: "
+                                         << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_gaussian_spread
+                                         << "\n"
+                                         << "Power law power [-]: "
+                                         << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_power_law_power
+                                         << "\n"
+                                         << "Power law scale [-]: "
+                                         << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_power_law_scale
+                                         << "\n";
 
             break;
 
@@ -372,7 +389,7 @@ void File_manager_class::write_simulation_metadata() {
             *(Output_file + Image_order) << "Temperature Profile : Gaussian"
                                             << "\n"
                                             << "Spread [M]: "
-                                            << this->p_Initial_Conditions->Hotspot_params.Temperature_spread
+                                            << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_gaussian_spread
                                             << "\n";
                                             
             break;
@@ -382,8 +399,24 @@ void File_manager_class::write_simulation_metadata() {
             *(Output_file + Image_order) << "Temperature Profile: Spherical"
                                             << "\n"
                                             << "Radius [M]: "
-                                            << this->p_Initial_Conditions->Hotspot_params.Radius
+                                            << this->p_Initial_Conditions->Hotspot_params.Profile_params.Radius
                                             << "\n";
+
+            break;
+
+        case e_Hybrid_power_gaussian:
+
+            *(Output_file + Image_order) << "Temperature Profile: Hybrid power law gaussian"
+                                        << "\n"
+                                        << "Spread [M]: "
+                                        << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_gaussian_spread
+                                        << "\n"
+                                        << "Power law power [-]: "
+                                        << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_power_law_power
+                                        << "\n"
+                                        << "Power law scale [-]: "
+                                        << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_power_law_scale
+                                        << "\n";
 
             break;
 
@@ -472,7 +505,7 @@ void File_manager_class::write_simulation_metadata() {
                                         << this->p_Initial_Conditions->Hotspot_params.Position[e_phi] * 180.0 / M_PI
                                         << "\n";
 
-        *(Output_file + Image_order) << "Coordinate time offset [M]: " << this->p_Initial_Conditions->Hotspot_params.Coord_time_offset - this->p_Initial_Conditions->Observer_params.distance << "\n";
+        *(Output_file + Image_order) << "Coordinate time offset [M]: " << this->p_Initial_Conditions->Hotspot_params.Profile_params.Coord_time_offset - this->p_Initial_Conditions->Observer_params.distance << "\n";
 
         *(Output_file + Image_order) << "------------------------------------------------------- Novikov - Thorne Model Parameters -------------------------------------------------------"
                                         << "\n";

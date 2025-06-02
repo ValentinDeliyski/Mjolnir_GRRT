@@ -71,14 +71,28 @@ class Hotspot_model():
                  "Temperature_profile",
                  "Velocity_profile",
                  "Radial_velocity_fraction",
+                 
                  "Density_scale_factor",
+                 "Density_spread",
+                 "Density_power_law_power",
+                 "Density_power_law_scale",
+                 
                  "Temperature_scale_factor",
+                 "Temperature_spread",
+                 "Temperature_power_law_power",
+                 "Temperature_power_law_scale",
+                 
                  "Radius",
+                 
                  "Mag_field_geometry_r",
                  "Mag_field_geometry_theta",
                  "Mag_field_geometry_phi",
-                 "Density_spread",
-                 "Temperature_spread",
+                 "Mag_field_magnitude_scale",
+                 "Mag_field_power",
+                 "Mag_field_radial_scale",
+                 "Mag_field_geometry",
+                 "Mag_field_magnitude_profile",
+                 
                  "Temporal_spread",
                  "Coord_time_at_max",
                  "Distance",
@@ -154,6 +168,7 @@ class Simulation_configurator:
                  "NT_model_params", 
                  "file_manager", 
                  "average_emission_pitch_angle", 
+                 "thermalize_emission_medium",
                  "emission_pitch_angle_samples_to_average",
                  "object_mass",
                  "simulation_mode",
@@ -162,16 +177,18 @@ class Simulation_configurator:
                  "sim_mode_3_Y_init")
 
     def __init__(self, 
-                 Average_emission_pitch_angle: dict = {"Value": 1, "Unit": "[-]"}, 
-                 emission_pitch_angle_samples_to_average: dict = {"Value": 50, "Units": "[-]"},
-                 object_mass: dict = {"Value": 6.2e9, "Unit": "[M_sun]"},
-                 simulation_name: dict = {"Value": "Test_Simulation", "Unit": "[-]"},
-                 simulation_mode: dict = {"Value": 1, "Unit": "[-]"}, 
-                 sim_mode_2_param_value_number: dict = {"Value": 1, "Unit": "[-]"},
-                 sim_mode_3_X_init: dict = {"Value": 1, "Unit": "[M]"},
-                 sim_mode_3_Y_init: dict = {"Value": 1, "Unit": "[M]"}):
+                 Average_emission_pitch_angle: dict[str, int | str] = {"Value": 1, "Unit": "[-]"}, 
+                 thermalize_emission_medium: dict[str, int | str] = {"Value": 0, "Unit": "[-]"}, 
+                 emission_pitch_angle_samples_to_average: dict[str, int | str] = {"Value": 50, "Units": "[-]"},
+                 object_mass: dict[str, float | str] = {"Value": 6.2e9, "Unit": "[M_sun]"},
+                 simulation_name: dict[str, str] = {"Value": "Test_Simulation", "Unit": "[-]"},
+                 simulation_mode: dict[str, int | str] = {"Value": 1, "Unit": "[-]"}, 
+                 sim_mode_2_param_value_number: dict[str, int | str] = {"Value": 1, "Unit": "[-]"},
+                 sim_mode_3_X_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
+                 sim_mode_3_Y_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"}):
 
         self.average_emission_pitch_angle = Average_emission_pitch_angle
+        self.thermalize_emission_medium = thermalize_emission_medium
         self.emission_pitch_angle_samples_to_average = emission_pitch_angle_samples_to_average
         self.simulation_name = simulation_name
         self.object_mass = object_mass
@@ -189,20 +206,20 @@ class Simulation_configurator:
         self._configure_metric_parameters()
         self._configure_emission_models()
 
-    def _configure_integrator_settings(self, Init_stepsize: dict = {"Value": 1e-5, "Unit": "[M]"},
-                                             RK45_accuracy: dict = {"Value": 1e-13, "Unit": "[-]"},
-                                             Step_controller_type: dict = {"Value": "Gustafsson", "Unit": "[-]"},
-                                             Safety_factor_1: dict = {"Value": 0.8, "Unit": "[-]"},
-                                             Safety_factor_2: dict = {"Value": 1e-25, "Unit": "[-]"},
-                                             Max_rel_step_increase: dict = {"Value": 20, "Unit": "[-]"},
-                                             Min_rel_step_increase: dict = {"Value": 0.1, "Unit": "[-]"},
-                                             Step_controller_I_gain: dict = {"Value": 0.117, "Unit": "[-]"},
-                                             Step_controller_P_gain: dict = {"Value": -0.042, "Unit": "[-]"},
-                                             Step_controller_D_gain: dict = {"Value": 0.02, "Unit": "[-]"},
-                                             Gustafsson_controller_k_1: dict = {"Value": 0.0734, "Unit": "[-]"},
-                                             Gustafsson_controller_k_2: dict = {"Value": 0.1136, "Unit": "[-]"},
-                                             Max_integration_count: dict = {"Value": 1e7, "Unit": "[-]"},
-                                             simpson_method_accuracy: dict = {"Value": 1e-6, "Unit": "[-]"}):
+    def _configure_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
+                                             RK45_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
+                                             Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
+                                             Safety_factor_1: dict[str, float | str] = {"Value": 0.8, "Unit": "[-]"},
+                                             Safety_factor_2: dict[str, float | str] = {"Value": 1e-25, "Unit": "[-]"},
+                                             Max_rel_step_increase: dict[str, float | str] = {"Value": 20, "Unit": "[-]"},
+                                             Min_rel_step_increase: dict[str, float | str] = {"Value": 0.1, "Unit": "[-]"},
+                                             Step_controller_I_gain: dict[str, float | str] = {"Value": 0.117, "Unit": "[-]"},
+                                             Step_controller_P_gain: dict[str, float | str] = {"Value": -0.042, "Unit": "[-]"},
+                                             Step_controller_D_gain: dict[str, float | str] = {"Value": 0.02, "Unit": "[-]"},
+                                             Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.0734, "Unit": "[-]"},
+                                             Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.1136, "Unit": "[-]"},
+                                             Max_integration_count: dict[str, float | str] = {"Value": 1e7, "Unit": "[-]"},
+                                             simpson_method_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"}):
 
         self.integrator = Integrator()
 
@@ -222,19 +239,19 @@ class Simulation_configurator:
         self.integrator.max_integration_count  = Max_integration_count
         self.integrator.simpson_method_accuracy = simpson_method_accuracy
 
-    def _configure_observer(self, Init_time:dict = {"Value": 0, "Unit": "[M]"},
-                                  Distance: dict = {"Value": 1e4, "Unit": "[M]"},
-                                  Inclination: dict = {"Value": 160 / 180 * pi, "Unit": "[Rad]"},
-                                  Azimuth: dict = {"Value": 0.0, "Unit": "[Rad]"},
-                                  Cam_rotation_angle: dict = {"Value": 0.0, "Unit": "[Rad]"},
-                                  Image_y_min: dict = {"Value": -15, "Unit": "[M]"},
-                                  Image_y_max: dict = {"Value":  15, "Unit": "[M]"},
-                                  Image_x_min: dict = {"Value": -15, "Unit": "[M]"},
-                                  Image_x_max: dict = {"Value":  15, "Unit": "[M]"},
-                                  Resolution_y: dict = {"Value": 2048, "Unit": "[-]"},
-                                  Resolution_x: dict = {"Value": 2048, "Unit": "[-]"},
-                                  Observation_frequency: dict = {"Value": 230e9, "Unit": "[Hz]"},
-                                  Include_polarization: dict = {"Value": 0, "Unit": "[-]"}):
+    def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},
+                                  Distance: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
+                                  Inclination: dict[str, float | str] = {"Value": 160 / 180 * pi, "Unit": "[Rad]"},
+                                  Azimuth: dict[str, float | str] = {"Value": 0.0, "Unit": "[Rad]"},
+                                  Cam_rotation_angle: dict[str, float | str] = {"Value": 0.0, "Unit": "[Rad]"},
+                                  Image_y_min: dict[str, float | str] = {"Value": -15, "Unit": "[M]"},
+                                  Image_y_max: dict[str, float | str] = {"Value":  15, "Unit": "[M]"},
+                                  Image_x_min: dict[str, float | str] = {"Value": -15, "Unit": "[M]"},
+                                  Image_x_max: dict[str, float | str] = {"Value":  15, "Unit": "[M]"},
+                                  Resolution_y: dict[str, int | str] = {"Value": 2048, "Unit": "[-]"},
+                                  Resolution_x: dict[str, int | str] = {"Value": 2048, "Unit": "[-]"},
+                                  Observation_frequency: dict[str, float | str] = {"Value": 230e9, "Unit": "[Hz]"},
+                                  Include_polarization: dict[str, int | str] = {"Value": 0, "Unit": "[-]"}):
         
         self.observer = Observer()
 
@@ -253,18 +270,18 @@ class Simulation_configurator:
         self.observer.Include_polarization = Include_polarization
         self.observer.Obs_frequency        = Observation_frequency
 
-    def _configure_metric_parameters(self, Mass: dict = {"Value": 1.0, "Unit": "[M]"}, 
-                                           Spin: dict = {"Value": 0.98, "Unit": "[M]"}, 
-                                           Horizon_radius: dict = {"Value": 2, "Unit": "[M]"}, 
-                                           WH_redshift: dict = {"Value": 2.0, "Unit": "[M]"},
-                                           WH_r_throat: dict = {"Value": 1.0, "Unit": "[M]"}, 
-                                           WH_stop_at_throat: dict = {"Value": 0, "Unit": "[-]"}, 
-                                           RBH_param: dict = {"Value": 0.5, "Unit": "[M]"}, 
-                                           JNW_gamma: dict = {"Value": 0.48, "Unit": "[-]"}, 
-                                           EGB_gamma: dict = {"Value": 1.15, "Unit": "[M^2]"}, 
-                                           Halo_compactness: dict = {"Value": 1e-4, "Unit": "[-]"},
-                                           Halo_mass: dict = {"Value": 1e4, "Unit": "[M]"},
-                                           Metric_type: dict = {"Value": "Kerr", "Unit": "[-]"},
+    def _configure_metric_parameters(self, Mass: dict[str, float | str] = {"Value": 1.0, "Unit": "[M]"}, 
+                                           Spin: dict[str, float | str] = {"Value": 0.98, "Unit": "[M]"}, 
+                                           Horizon_radius: dict[str, float | str] = {"Value": 2, "Unit": "[M]"}, 
+                                           WH_redshift: dict[str, float | str] = {"Value": 2.0, "Unit": "[M]"},
+                                           WH_r_throat: dict[str, float | str] = {"Value": 1.0, "Unit": "[M]"}, 
+                                           WH_stop_at_throat: dict[str, float | str] = {"Value": 0, "Unit": "[-]"}, 
+                                           RBH_param: dict[str, float | str] = {"Value": 0.5, "Unit": "[M]"}, 
+                                           JNW_gamma: dict[str, float | str] = {"Value": 0.48, "Unit": "[-]"}, 
+                                           EGB_gamma: dict[str, float | str] = {"Value": 1.15, "Unit": "[M^2]"}, 
+                                           Halo_compactness: dict[str, float | str] = {"Value": 1e-4, "Unit": "[-]"},
+                                           Halo_mass: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
+                                           Metric_type: dict[str, float | str] = {"Value": "Kerr", "Unit": "[-]"},
                                            Numerical_metric_spline_path: str = "",):
 
         self.metric_parameters = Metric_parameters()
@@ -282,9 +299,9 @@ class Simulation_configurator:
         self.metric_parameters.Metric_type = Metric_type
         self.metric_parameters.Numerical_metric_spline_path = Numerical_metric_spline_path
 
-    def _configure_NT_model(self, r_in: dict = {"Value": 6, "Unit": "[M]"},
-                                  r_out: dict = {"Value": 50, "Unit": "[M]"},
-                                  evaluate_NT_disk: dict = {"Value": 1, "Unit": "[-]"}):
+    def _configure_NT_model(self, r_in: dict[str, float | str] = {"Value": 6, "Unit": "[M]"},
+                                  r_out: dict[str, float | str] = {"Value": 50, "Unit": "[M]"},
+                                  evaluate_NT_disk: dict[str, int | str] = {"Value": 1, "Unit": "[-]"}):
         
         self.NT_model_params = NT_model_params()
 
@@ -292,11 +309,11 @@ class Simulation_configurator:
         self.NT_model_params.r_out = r_out
         self.NT_model_params.Evaluate_NT_disk = evaluate_NT_disk
 
-    def _configure_emission_models(self, Emission_power_law: dict = {"Value": 0.0, "Unit": "[-]"},
-                                         Source_f_power_law: dict = {"Value": 2.5, "Unit": "[-]"},
-                                         Absorbtion_coeff: dict = {"Value": 1e5, "Unit": "[?]"},
-                                         Emission_coeff: dict = {"Value": 3e-18, "Unit": "[erg / (cm^3 s sr Hz)]"},
-                                         Kappa: dict = {"Value": 4.0, "Unit": "[-]"}):
+    def _configure_emission_models(self, Emission_power_law: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Source_f_power_law: dict[str, float | str] = {"Value": 2.5, "Unit": "[-]"},
+                                         Absorbtion_coeff: dict[str, float | str] = {"Value": 1e5, "Unit": "[?]"},
+                                         Emission_coeff: dict[str, float | str] = {"Value": 3e-18, "Unit": "[erg / (cm^3 s sr Hz)]"},
+                                         Kappa: dict[str, float | str] = {"Value": 4.0, "Unit": "[-]"}):
         
         self.emission_models = Emission_models()
 
@@ -306,38 +323,38 @@ class Simulation_configurator:
         self.emission_models.Emission_coeff     = Emission_coeff
         self.emission_models.Kappa              = Kappa
 
-    def _configure_disk_model(self, Ensamble_type: dict = {"Value": "Thermal", "Unit": "[-]"},
-                                    Disk_Model: dict = {"Value": "Phenom_RIAF_1", "Unit": "[-]"},
-                                    Velocity_profile: dict = {"Value": "Theta Dependant", "Unit": "[-]"},
-                                    Radial_velocity_fraction: dict = {"Value": 0, "Unit": "[-]"},
-                                    Density_scale_factor: dict = {"Value": 1e5, "Unit": "[g/cm^3]"},
-                                    Temperature_scale_factor: dict = {"Value": 1e11, "Unit": "[K]"},
+    def _configure_disk_model(self, Ensamble_type: dict[str, str] = {"Value": "Thermal", "Unit": "[-]"},
+                                    Disk_Model: dict[str, str] = {"Value": "Phenom_RIAF_1", "Unit": "[-]"},
+                                    Velocity_profile: dict[str, str] = {"Value": "Theta Dependant", "Unit": "[-]"},
+                                    Radial_velocity_fraction: dict[str, float | str] = {"Value": 0, "Unit": "[-]"},
+                                    Density_scale_factor: dict[str, float | str] = {"Value": 1e5, "Unit": "[g/cm^3]"},
+                                    Temperature_scale_factor: dict[str, float | str] = {"Value": 1e11, "Unit": "[K]"},
                                     
-                                    Opening_angle: dict = {"Value": 0.1, "Unit": "[tan(angle)]"},
-                                    Density_power_law_scale: dict = {"Value": 5.0, "Unit": "[M]"},
-                                    Density_power_law_power : dict = {"Value": 2.0, "Unit": "[-]"},
-                                    Temperature_power_law_scale: dict = {"Value": 5.0, "Unit": "[M]"},
-                                    Temperature_power_law_power: dict = {"Value": 1.0, "Unit": "[-]"},    
-                                    Density_cutoff_radius: dict = {"Value": 5.0, "Unit": "[M]"},
-                                    Density_cutoff_scale: dict = {"Value": 0.4, "Unit": "[M]"},
-                                    Temperature_cutoff_radius: dict = {"Value": 5.0, "Unit": "[M]"},
-                                    Temperature_cutoff_scale: dict = {"Value": 0.4, "Unit": "[M]"},
+                                    Opening_angle: dict[str, float | str] = {"Value": 0.1, "Unit": "[tan(angle)]"},
+                                    Density_power_law_scale: dict[str, float | str] = {"Value": 5.0, "Unit": "[M]"},
+                                    Density_power_law_power : dict[str, float | str] = {"Value": 2.0, "Unit": "[-]"},
+                                    Temperature_power_law_scale: dict[str, float | str] = {"Value": 5.0, "Unit": "[M]"},
+                                    Temperature_power_law_power: dict[str, float | str] = {"Value": 1.0, "Unit": "[-]"},    
+                                    Density_cutoff_radius: dict[str, float | str] = {"Value": 5.0, "Unit": "[M]"},
+                                    Density_cutoff_scale: dict[str, float | str] = {"Value": 0.4, "Unit": "[M]"},
+                                    Temperature_cutoff_radius: dict[str, float | str] = {"Value": 5.0, "Unit": "[M]"},
+                                    Temperature_cutoff_scale: dict[str, float | str] = {"Value": 0.4, "Unit": "[M]"},
                                     
-                                    Radial_scale: dict = {"Value": 0.3, "Unit": "[M]"},
-                                    Vertical_scale: dict = {"Value": 10.0, "Unit": "[M]"},
+                                    Radial_scale: dict[str, float | str] = {"Value": 0.3, "Unit": "[M]"},
+                                    Vertical_scale: dict[str, float | str] = {"Value": 10.0, "Unit": "[M]"},
                                     
-                                    Magnetization: dict = {"Value": 0.01, "Unit": "[-]"},
-                                    Mag_field_geometry_r: dict = {"Value": 0.5, "Unit": "[-]"},
-                                    Mag_field_geometry_theta: dict = {"Value": 0, "Unit": "[-]"},
-                                    Mag_field_geometry_phi: dict = {"Value": 0.87, "Unit": "[-]"},
+                                    Magnetization: dict[str, float | str] = {"Value": 0.01, "Unit": "[-]"},
+                                    Mag_field_geometry_r: dict[str, float | str] = {"Value": 0.5, "Unit": "[-]"},
+                                    Mag_field_geometry_theta: dict[str, float | str] = {"Value": 0, "Unit": "[-]"},
+                                    Mag_field_geometry_phi: dict[str, float | str] = {"Value": 0.87, "Unit": "[-]"},
                                     
-                                    Mag_field_magnitude_scale: dict = {"Value": 100, "Unit": "[G]"},
-                                    Mag_field_power: dict = {"Value": -1, "Unit": "[-]"},
-                                    Mag_field_radial_scale: dict = {"Value": 5, "Unit": "[M]"},
-                                    Mag_field_geometry: dict = {"Value": "Constant", "Unit": "[-]"},
-                                    Mag_field_magnitude_profile: dict = {"Value": "Magnetization_based", "Unit": "[-]"},
+                                    Mag_field_magnitude_scale: dict[str, float | str] = {"Value": 100, "Unit": "[G]"},
+                                    Mag_field_power: dict[str, float | str] = {"Value": 1, "Unit": "[-]"},
+                                    Mag_field_radial_scale: dict[str, float | str] = {"Value": 5, "Unit": "[M]"},
+                                    Mag_field_geometry: dict[str, str] = {"Value": "Constant", "Unit": "[-]"},
+                                    Mag_field_magnitude_profile: dict[str, str] = {"Value": "Magnetization_based", "Unit": "[-]"},
                                     
-                                    Threshold_relative_density: dict = {"Value": 1e-3, "Unit": "[-]"}):
+                                    Threshold_relative_density: dict[str, float | str] = {"Value": 1e-3, "Unit": "[-]"}):
         
         self.disk_model = Disk_model()
 
@@ -374,26 +391,39 @@ class Simulation_configurator:
         
         self.disk_model.Threshold_relative_density = Threshold_relative_density 
 
-    def _configure_hotspot_model(self, Ensamble_type: dict = {"Value": "Kappa", "Unit": "[-]"},
-                                       Density_profile: dict = {"Value": "Gaussian", "Unit": "[-]"},
-                                       Temperature_profile: dict = {"Value": "Gaussian", "Unit": "[-]"},
-                                       Velocity_profile: dict = {"Value": "Theta Dependant", "Unit": "[-]"},
-                                       Radial_velocity_fraction: dict = {"Value": 0, "Unit": "[-]"},
-                                       Radius: dict = {"Value": 1, "Unit": "[M]"},
-                                       Density_scale_factor: dict = {"Value": 1e6, "Unit": "[g/cm^3]"},
-                                       Temperature_scale_factor: dict = {"Value": 1e11, "Unit": "[K]"},
-                                       Mag_field_geometry_r: dict = {"Value": 0.5, "Unit": "[-]"},
-                                       Mag_field_geometry_theta: dict = {"Value": 0, "Unit": "[-]"},
-                                       Mag_field_geometry_phi: dict = {"Value": 0.87, "Unit": "[-]"},
-                                       Density_spread: dict = {"Value": 1.0, "Unit": "[M]"},
-                                       Temperature_spread: dict = {"Value": 1.0, "Unit": "[M]"},
-                                       Temporal_spread: dict = {"Value": 85, "Unit": "[GM/c^3]"},
-                                       Coord_time_at_max: dict = {"Value": 0, "Unit": "[GM/c^3]"},
-                                       Distance: dict = {"Value": 8.0, "Unit": "[M]"},
-                                       Inclination: dict = {"Value": pi / 2,  "Unit": "[Rad]"},
-                                       Azimuth: dict = {"Value": -pi / 2,  "Unit": "[Rad]"},
-                                       Magnetization: dict = {"Value": 1.0,  "Unit": "[-]"},
-                                       Threshold_relative_density: dict = {"Value": 1e-3,  "Unit": "[-]"}):
+    def _configure_hotspot_model(self, Ensamble_type: dict[str, str] = {"Value": "Kappa", "Unit": "[-]"},
+                                       Density_profile: dict[str, str] = {"Value": "Gaussian", "Unit": "[-]"},
+                                       Temperature_profile: dict[str, str] = {"Value": "Gaussian", "Unit": "[-]"},
+                                       Velocity_profile: dict[str, str] = {"Value": "Theta Dependant", "Unit": "[-]"},
+                                       Radial_velocity_fraction: dict[str, float | str] = {"Value": 0, "Unit": "[-]"},
+                                       
+                                       Radius: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
+                                       Temporal_spread: dict[str, float | str] = {"Value": 85, "Unit": "[GM/c^3]"},
+                                       Density_spread: dict[str, float | str] = {"Value": 1.0, "Unit": "[M]"},
+                                       Density_power_law_power: dict[str, float | str] = {"Value": 0.0, "Unit": "[M]"}, 
+                                       Density_power_law_scale: dict[str, float | str] = {"Value": 1.0, "Unit": "[M]"}, 
+                                       Temperature_spread: dict[str, float | str] = {"Value": 1.0, "Unit": "[M]"},
+                                       Temperature_power_law_power: dict[str, float | str] = {"Value": 0.0, "Unit": "[M]"}, 
+                                       Temperature_power_law_scale: dict[str, float | str] = {"Value": 1.0, "Unit": "[M]"}, 
+                                       
+                                       Density_scale_factor: dict[str, float | str] = {"Value": 1e6, "Unit": "[g/cm^3]"},
+                                       Temperature_scale_factor: dict[str, float | str] = {"Value": 1e11, "Unit": "[K]"},
+                                       
+                                       Mag_field_magnitude_profile: dict[str, str] = {"Value": "Magnetization_based", "Unit": "[-]"},
+                                       Mag_field_geometry_r: dict[str, float | str] = {"Value": 0.5, "Unit": "[-]"},
+                                       Mag_field_geometry_theta: dict[str, float | str] = {"Value": 0, "Unit": "[-]"},
+                                       Mag_field_geometry_phi: dict[str, float | str] = {"Value": 0.87, "Unit": "[-]"},
+                                       Mag_field_magnitude_scale: dict[str, float | str] = {"Value": 100, "Unit": "[G]"},
+                                       Mag_field_power: dict[str, float | str] = {"Value": 1, "Unit": "[-]"},
+                                       Mag_field_radial_scale: dict[str, float | str] = {"Value": 5, "Unit": "[M]"},
+                                       Mag_field_geometry: dict[str, str] = {"Value": "Constant", "Unit": "[-]"},
+                                       Magnetization: dict[str, float | str] = {"Value": 1.0,  "Unit": "[-]"},
+                                       
+                                       Coord_time_at_max: dict[str, float | str] = {"Value": 0, "Unit": "[GM/c^3]"},
+                                       Distance: dict[str, float | str] = {"Value": 8.0, "Unit": "[M]"},
+                                       Inclination: dict[str, float | str] = {"Value": pi / 2,  "Unit": "[Rad]"},
+                                       Azimuth: dict[str, float | str] = {"Value": 0,  "Unit": "[Rad]"},
+                                       Threshold_relative_density: dict[str, float | str] = {"Value": 1e-3,  "Unit": "[-]"}):
 
         self.hotspot_model = Hotspot_model()
 
@@ -405,11 +435,20 @@ class Simulation_configurator:
         self.hotspot_model.Radial_velocity_fraction = Radial_velocity_fraction
 
         self.hotspot_model.Density_scale_factor     = Density_scale_factor     
-        self.hotspot_model.Temperature_scale_factor = Temperature_scale_factor 
+        self.hotspot_model.Density_power_law_power  = Density_power_law_power
+        self.hotspot_model.Density_power_law_scale  = Density_power_law_scale
+        self.hotspot_model.Temperature_scale_factor = Temperature_scale_factor  
+        self.hotspot_model.Temperature_power_law_power  = Temperature_power_law_power
+        self.hotspot_model.Temperature_power_law_scale  = Temperature_power_law_scale
 
+        self.hotspot_model.Mag_field_magnitude_profile = Mag_field_magnitude_profile
         self.hotspot_model.Mag_field_geometry_r = Mag_field_geometry_r
         self.hotspot_model.Mag_field_geometry_theta = Mag_field_geometry_theta
         self.hotspot_model.Mag_field_geometry_phi = Mag_field_geometry_phi
+        self.hotspot_model.Mag_field_magnitude_scale = Mag_field_magnitude_scale
+        self.hotspot_model.Mag_field_power = Mag_field_power
+        self.hotspot_model.Mag_field_radial_scale = Mag_field_radial_scale
+        self.hotspot_model.Mag_field_geometry = Mag_field_geometry
 
         self.hotspot_model.Density_spread     = Density_spread  
         self.hotspot_model.Temperature_spread = Temperature_spread
@@ -445,13 +484,14 @@ class Simulation_configurator:
 
         Encoding = 'UTF-8'
         XML_root_node = ET.Element("Simulation_Input", {"Simulation_Name": self.simulation_name["Value"]})
-        ET.SubElement(XML_root_node, "Simulation_mode", units = self.simulation_mode["Unit"]).text = "{}".format(self.simulation_mode["Value"])
+        ET.SubElement(XML_root_node, "Simulation_mode", units = str(self.simulation_mode["Unit"])).text = "{}".format(self.simulation_mode["Value"])
+        ET.SubElement(XML_root_node, "Thermalize_emission_medium", units = "[-]").text = "{}".format(self.thermalize_emission_medium["Value"])
         ET.SubElement(XML_root_node, "Average_emission_pitch_angle", units = "[-]").text = "{}".format(self.average_emission_pitch_angle["Value"])
         ET.SubElement(XML_root_node, "Emission_pitch_angle_samples_to_average", units = "[-]").text = "{}".format(self.emission_pitch_angle_samples_to_average["Value"])
-        ET.SubElement(XML_root_node, "Central_object_mass", units = self.object_mass["Unit"]).text = "{}".format(self.object_mass["Value"])
-        ET.SubElement(XML_root_node, "Sim_mode_2_param_value_number", units = self.sim_mode_2_param_value_number["Unit"]).text = "{}".format(self.sim_mode_2_param_value_number["Value"])
-        ET.SubElement(XML_root_node, "Sim_mode_3_X_init", units = self.sim_mode_3_X_init["Unit"]).text = "{}".format(self.sim_mode_3_X_init["Value"])
-        ET.SubElement(XML_root_node, "Sim_mode_3_Y_init", units = self.sim_mode_3_Y_init["Unit"]).text = "{}".format(self.sim_mode_3_Y_init["Value"])
+        ET.SubElement(XML_root_node, "Central_object_mass", units = str(self.object_mass["Unit"])).text = "{}".format(self.object_mass["Value"])
+        ET.SubElement(XML_root_node, "Sim_mode_2_param_value_number", units = str(self.sim_mode_2_param_value_number["Unit"])).text = "{}".format(self.sim_mode_2_param_value_number["Value"])
+        ET.SubElement(XML_root_node, "Sim_mode_3_X_init", units = str(self.sim_mode_3_X_init["Unit"])).text = "{}".format(self.sim_mode_3_X_init["Value"])
+        ET.SubElement(XML_root_node, "Sim_mode_3_Y_init", units = str(self.sim_mode_3_Y_init["Unit"])).text = "{}".format(self.sim_mode_3_Y_init["Value"])
 
         # ============ Generate the metric XML section ============ #
 
@@ -499,8 +539,8 @@ class Simulation_configurator:
 
         Observer_subelement = ET.SubElement(XML_root_node, "Observer")
         for Obs_attrib_name in self.observer.__slots__:
-            Obs_attrib = getattr(self.observer, Obs_attrib_name)
-            ET.SubElement(Observer_subelement, Obs_attrib_name, units = Obs_attrib["Unit"]).text = "{}".format(Obs_attrib["Value"])
+            Obs_attrib: dict[str, str | int | float] = getattr(self.observer, Obs_attrib_name)
+            ET.SubElement(Observer_subelement, Obs_attrib_name, units = str(Obs_attrib["Unit"])).text = "{}".format(Obs_attrib["Value"])
 
         # ============ Generate the accretion disk XML section ============ #
 
@@ -524,8 +564,8 @@ class Simulation_configurator:
         # ------------- Common subsection
         Common_subelement = ET.SubElement(Disk_subelement, "Common_parameters") 
         for Disk_attrib_name in Common_slots:
-            Disk_attrib = getattr(self.disk_model, Disk_attrib_name)
-            Sub_element = ET.SubElement(Common_subelement, Disk_attrib_name, units = Disk_attrib["Unit"])
+            Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
+            Sub_element = ET.SubElement(Common_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"]))
             
             if Disk_attrib_name == "Velocity_profile":
                 ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Disk_attrib["Value"])
@@ -540,30 +580,38 @@ class Simulation_configurator:
                 # ------------- Colab test 1 profile subsection
                 Colab_test_1_subelement = ET.SubElement(Disk_subelement, "Colab_test_1_profile") 
                 for Disk_attrib_name in Colab_test_1_parameteres:
-                    Disk_attrib = getattr(self.disk_model, Disk_attrib_name)
-                    ET.SubElement(Colab_test_1_subelement, Disk_attrib_name, units = Disk_attrib["Unit"]).text = "{}".format(Disk_attrib["Value"])
+                    Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
+                    ET.SubElement(Colab_test_1_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
 
             case _:
 
                 # ------------- Phenomenological RIAF subsection
                 Power_law_subelement = ET.SubElement(Disk_subelement, "Common_RIAF_profile") 
                 for Disk_attrib_name in Common_RIAF_parameters:
-                    Disk_attrib = getattr(self.disk_model, Disk_attrib_name)
-                    ET.SubElement(Power_law_subelement, Disk_attrib_name, units = Disk_attrib["Unit"]).text = "{}".format(Disk_attrib["Value"])
+                    Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
+                    ET.SubElement(Power_law_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
 
         # ============ Generate the hotspot XML section ============ #
 
         Gaussian_density_slots = ["Density_spread"]
         Gaussian_temperature_slots = ["Temperature_spread"]
         
+        Hybrid_density_slots = ["Density_spread", "Density_power_law_power", "Density_power_law_scale"]
+        Hybrid_temperature_slots = ["Temperature_spread", "Temperature_power_law_power", "Temperature_power_law_scale"]
+        
         Sphere_slots = ["Radius"]
 
-        Common_slots = [slot for slot in self.hotspot_model.__slots__ if slot not in Gaussian_density_slots + Gaussian_temperature_slots + Sphere_slots + ["Radial_velocity_fraction"]]
+        Common_slots = [slot for slot in self.hotspot_model.__slots__ if slot not in Gaussian_density_slots + 
+                                                                                     Gaussian_temperature_slots + 
+                                                                                     Sphere_slots + 
+                                                                                     Hybrid_density_slots +
+                                                                                     Hybrid_temperature_slots + 
+                                                                                   ["Radial_velocity_fraction"]]
         
         Hotspot_subelement = ET.SubElement(XML_root_node, "Hotspot") 
         for Hotspot_attrib_name in Common_slots:
-            Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
-            Sub_element = ET.SubElement(Hotspot_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"])
+            Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+            Sub_element = ET.SubElement(Hotspot_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"]))
  
             if Hotspot_attrib_name == "Velocity_profile":
                 ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Hotspot_attrib["Value"])
@@ -571,28 +619,28 @@ class Simulation_configurator:
             else:
                 Sub_element.text = "{}".format(Hotspot_attrib["Value"])
 
-        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_geometry", units = "[-]").text = "Constant"
-        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_magnitude_profile", units = "[-]").text = "Magnetization_based"
-        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_magnitude_scale", units = "[-]").text = "0"
-        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_radial_scale", units = "[-]").text = "0"
-        Sub_element = ET.SubElement(Hotspot_subelement, "Mag_field_power", units = "[-]").text = "0"
-
         match self.hotspot_model.Density_profile["Value"]:
 
             case "Gaussian":
                 # ------------- Gaussian profile subsection
                 Gaussian_subelement = ET.SubElement(Hotspot_subelement, "Gaussian_profile") 
                 for Hotspot_attrib_name in Gaussian_density_slots:
-                    Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
-                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
 
-            case _:
+            case "Hybrid_power_law_gaussian":
+                # ------------- Hybrid profile subsection
+                Hybrid_subelement = ET.SubElement(Hotspot_subelement, "Hybrid_power_law_gaussian_profile") 
+                for Hotspot_attrib_name in Hybrid_density_slots:
+                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                    ET.SubElement(Hybrid_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
             
+            case _:
                 # ------------- Spherical profile subsection
                 Spherical_subelement = ET.SubElement(Hotspot_subelement, "Spherical_profile") 
                 for Hotspot_attrib_name in Sphere_slots:
-                    Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
-                    ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                    ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
 
         match self.hotspot_model.Temperature_profile["Value"]:
 
@@ -602,8 +650,18 @@ class Simulation_configurator:
                     Gaussian_subelement = ET.SubElement(Hotspot_subelement, "Gaussian_profile") 
                 
                 for Hotspot_attrib_name in Gaussian_temperature_slots:
-                    Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
-                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"]) # type: ignore
+                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"]) # type: ignore
+
+            case "Hybrid_power_law_gaussian":
+                
+                if "Hybrid_subelement" not in locals():
+                    Hybrid_subelement = ET.SubElement(Hotspot_subelement, "Hybrid_power_law_gaussian_profile") 
+
+                # ------------- Hybrid profile subsection
+                for Hotspot_attrib_name in Hybrid_temperature_slots:
+                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                    ET.SubElement(Hybrid_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"]) # type: ignore
 
             case _:
             
@@ -613,8 +671,8 @@ class Simulation_configurator:
                     Spherical_subelement = ET.SubElement(Hotspot_subelement, "Spherical_profile") 
                     
                     for Hotspot_attrib_name in Sphere_slots:
-                        Hotspot_attrib = getattr(self.hotspot_model, Hotspot_attrib_name)
-                        ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = Hotspot_attrib["Unit"]).text = "{}".format(Hotspot_attrib["Value"])
+                        Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                        ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
     
 
         # ============ Generate the emission models XML section ============ #
@@ -627,8 +685,8 @@ class Simulation_configurator:
             for Emission_attrib_name in self.emission_models.__slots__:
 
                 if Emission_attrib_name != "Kappa":
-                    Emission_attrib = getattr(self.emission_models, Emission_attrib_name)
-                    ET.SubElement(Emission_subelement, Emission_attrib_name, units = Emission_attrib["Unit"]).text = "{}".format(Emission_attrib["Value"])
+                    Emission_attrib: dict[str, str | int | float] = getattr(self.emission_models, Emission_attrib_name)
+                    ET.SubElement(Emission_subelement, Emission_attrib_name, units = str(Emission_attrib["Unit"])).text = "{}".format(Emission_attrib["Value"])
 
         if ((self.hotspot_model.Ensamble_type["Value"] == "Kappa" and self.hotspot_model.Density_scale_factor["Value"] != 0) 
             or (self.disk_model.Ensamble_type["Value"] == "Kappa" and self.disk_model.Density_scale_factor["Value"] != 0)):
@@ -639,28 +697,28 @@ class Simulation_configurator:
 
         NT_subelement = ET.SubElement(XML_root_node, "Novikov_Thorne_disk")
 
-        NT_attrib = getattr(self.NT_model_params, "Evaluate_NT_disk")
-        ET.SubElement(NT_subelement, "Evaluate_NT_disk", units = NT_attrib["Unit"]).text = "{}".format(NT_attrib["Value"])
+        NT_attrib: dict[str, str | int | float] = getattr(self.NT_model_params, "Evaluate_NT_disk")
+        ET.SubElement(NT_subelement, "Evaluate_NT_disk", units = str(NT_attrib["Unit"])).text = "{}".format(NT_attrib["Value"])
 
         if self.NT_model_params.Evaluate_NT_disk["Value"]:
 
             NT_attrib = getattr(self.NT_model_params, "r_in")
-            ET.SubElement(NT_subelement, "r_in", units = NT_attrib["Unit"]).text = "{}".format(NT_attrib["Value"])
+            ET.SubElement(NT_subelement, "r_in", units = str(NT_attrib["Unit"])).text = "{}".format(NT_attrib["Value"])
             NT_attrib = getattr(self.NT_model_params, "r_out")
-            ET.SubElement(NT_subelement, "r_out", units = NT_attrib["Unit"]).text = "{}".format(NT_attrib["Value"])
+            ET.SubElement(NT_subelement, "r_out", units = str(NT_attrib["Unit"])).text = "{}".format(NT_attrib["Value"])
 
         # ============ Generate the integrator XML section ============ #
 
         Integrator_subelement = ET.SubElement(XML_root_node, "Integrator")
         for Integrator_attrib_name in self.integrator.__slots__:
-            Integrator_attrib = getattr(self.integrator, Integrator_attrib_name)
-            ET.SubElement(Integrator_subelement, Integrator_attrib_name, units = Integrator_attrib["Unit"]).text = "{}".format(Integrator_attrib["Value"])
+            Integrator_attrib: dict[str, str | int | float] = getattr(self.integrator, Integrator_attrib_name)
+            ET.SubElement(Integrator_subelement, Integrator_attrib_name, units = str(Integrator_attrib["Unit"])).text = "{}".format(Integrator_attrib["Value"])
 
         # ============ Generate the file paths XML section ============ #
 
         Files_subelement = ET.SubElement(XML_root_node, "File_Manager")
         for Files_attrib_name in self.file_manager.__slots__:
-            Files_attrib = getattr(self.file_manager, Files_attrib_name)
+            Files_attrib: dict[str, str | int | float] = getattr(self.file_manager, Files_attrib_name)
             ET.SubElement(Files_subelement, Files_attrib_name).text = "{}".format(Files_attrib)
 
         # ========================================================== #

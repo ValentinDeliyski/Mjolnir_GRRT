@@ -1,7 +1,5 @@
 import sys
 import os
-import threading
-import time
 
 """ Add the parent directory of this file to the search path, 
     so this script can be ran from the "Utilities" folder """
@@ -11,7 +9,11 @@ sys.path.append(parent_directory)
 
 from Mjolnir_Configurator import Simulation_configurator
 from Support_functions.Parsers import Units_class, Simulation_Parser
-from numpy import pi, tan, sqrt
+
+from numpy import pi, tan, sqrt, linspace
+from numpy.typing import NDArray
+
+from multiprocessing import Pool
 import subprocess
 
 class bcolors:
@@ -51,12 +53,14 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.hotspot_model.Density_profile     = {"Value": "Sphere", "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Temperature_profile = {"Value": "Sphere", "Unit": "[-]"}
         
-        self.Simulation_configurator.hotspot_model.Temporal_spread   = {"Value": 850000,      "Unit": "[GM/c^3]"}
-        self.Simulation_configurator.hotspot_model.Magnetization     = {"Value": 0.01,        "Unit": "[-]"}
-        self.Simulation_configurator.emission_models.Kappa           = {"Value": 5,           "Unit": "[-]"}
-        self.Simulation_configurator.hotspot_model.Ensamble_type     = {"Value": "Kappa",     "Unit": "[-]"}
-        self.Simulation_configurator.hotspot_model.Distance          = {"Value": 9,           "Unit": "[M]"} 
-        self.Simulation_configurator.hotspot_model.Azimuth           = {"Value": -pi/2,       "Unit": "[M]"} 
+        self.Simulation_configurator.hotspot_model.Temporal_spread   = {"Value": 85,      "Unit": "[GM/c^3]"}
+        self.Simulation_configurator.hotspot_model.Magnetization     = {"Value": 0.01,    "Unit": "[-]"}
+        self.Simulation_configurator.emission_models.Kappa           = {"Value": 5,       "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Ensamble_type     = {"Value": "Kappa", "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Distance          = {"Value": 9,       "Unit": "[M]"} 
+        
+        """ This value for the initial hotspot azimuth makes it appear on the anti-beaming size at t_obs = 0. This makes the light curve look nicer. """
+        self.Simulation_configurator.hotspot_model.Azimuth           = {"Value": -pi * 0.6,  "Unit": "[M]"} 
         self.Simulation_configurator.hotspot_model.Velocity_profile  = {"Value": "Keplarian", "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Mag_field_geometry_r     = {"Value": 0, "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Mag_field_geometry_theta = {"Value": 0, "Unit": "[-]"}
@@ -75,8 +79,8 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.observer.Image_x_min = {"Value": -(self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         self.Simulation_configurator.observer.Image_x_max = {"Value":  (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         
-        self.Simulation_configurator.observer.Resolution_x = {"Value": 512, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 512, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
        
         """ Kill the Novikov-Thorne disk """
         self.Simulation_configurator.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
@@ -91,37 +95,39 @@ class Hotspot_reference_sims:
         
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
 
-        hotspot_azimuth_position_number = 40
+    def run_simulation(self, obs_time: float, idx: int):
+        
+        self.Simulation_configurator.simulation_name = {"Value": "Hotspot_Reference_Simulation_{}".format(idx), "Unit": "[-]"}
+        
+        """ This observation time offset is to synch the hotspot temporal profile with its azimuth coordinate and get the maximum emission right at
+            the beaming point (on the left side of the image). """
+        self.Simulation_configurator.observer.Init_time = {"Value": obs_time - 70, "Unit": "[GM/c^3]"}
+            
+        self.Simulation_configurator.generate_simulation_input(Path_to_input_dir = "Reference_simulations\\Hotspot_Reference_Simulation_{}".format(idx),
+                                                               Input_file_name = "Hotspot_Reference_Simulation_input.XML")
+            
+        """ Run the simulation """
+        filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Hotspot_Reference_Simulation_{}\\Hotspot_Reference_Simulation_input.xml".format(idx)
+        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 0"
+        subprocess.call(args, shell = True)          
 
-        for time_offset in range(0, hotspot_azimuth_position_number):
-            
-            self.Simulation_configurator.observer.Init_time = {"Value": 2 * pi / (1 / sqrt(9**3)) * time_offset / hotspot_azimuth_position_number, "Unit": "[GM/c^3]"}
-            
-            self.Simulation_configurator.simulation_name = {"Value": "Hotspot_Reference_Simulation_{}".format(time_offset), "Unit": "[-]"}
+if __name__ == "__main__":
+        
+    Hotspot_reference_sims_instance = Hotspot_reference_sims()
 
-            self.Simulation_configurator.generate_simulation_input(Path_to_input_dir = "Reference_simulations\\Hotspot_Reference_Simulation",
-                                                                   Input_file_name = "Hotspot_Reference_Simulation_input.XML")
-            
-            """ Run the simulation """
-            filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Hotspot_Reference_Simulation\\Hotspot_Reference_Simulation_input.xml"
-            args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
-            subprocess.call(args, shell = True)
-                    
-            """ Evaluate the simulataion results """
-            Sim_parser_n0 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation_{}".format(time_offset) + "\\Kerr_n0")
-            Total_flux_n0 = Sim_parser_n0.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
-            
-            Sim_parser_n1 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation_{}".format(time_offset) + "\\Kerr_n1")
-            Total_flux_n1 = Sim_parser_n1.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
-            
-            Sim_parser_n2 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation_{}".format(time_offset) + "\\Kerr_n2")
-            Total_flux_n2 = Sim_parser_n2.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
-            
-            Sim_parser_n3 = Simulation_Parser(parent_directory + "Reference_simulations\\Hotspot_Reference_Simulation_{}".format(time_offset) + "\\Kerr_n3")
-            Total_flux_n3 = Sim_parser_n3.get_total_flux(self.Units.SGRA_DISTANCE_GEOMETRICAL, unit = "mJy")
-            
-            Total_flux = Total_flux_n0 + Total_flux_n1 + Total_flux_n2 + Total_flux_n3
-            
-            print(Total_flux / 15)
+    Spot_period: float = 2 * pi * Hotspot_reference_sims_instance.Simulation_configurator.hotspot_model.Distance["Value"]**(3 / 2)     
+     
+    Hotspot_number: int = 40
+    
+    Obs_times: NDArray = linspace(0, Spot_period, Hotspot_number)
+    File_idx: NDArray  = linspace(0, Hotspot_number - 1, Hotspot_number)
 
-Hotspot_reference_sims_instance = Hotspot_reference_sims()
+    Sim_args: list[list[float | int]] = []
+
+    for t_obs, idx in zip(Obs_times, File_idx):
+        Sim_args.append([t_obs, int(idx)])
+        
+    with Pool(10) as pool:
+        pool.starmap(Hotspot_reference_sims_instance.run_simulation, Sim_args)
+    
+    

@@ -276,8 +276,8 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
     double sqrt_determinant = sqrt(-metric_determinant);
 
     double C_coeff = -Wave_vec_dot_B_field / Wave_vec_dot_Plasma_vel - Plasma_vel_dot_B_field;
-    double N_coeff = sqrt(B_field_norm_squared + Plasma_vel_dot_B_field * Plasma_vel_dot_B_field - C_coeff * C_coeff);
-
+    double N_coeff = (B_field_norm_squared + Plasma_vel_dot_B_field * Plasma_vel_dot_B_field - C_coeff * C_coeff);
+    N_coeff = sqrt(N_coeff);
     /* --- Perform checks on these coefficients, because for very low plasma densities they blow up --- */
 
     if (isnan(N_coeff) || isinf(1.0 / N_coeff) || isnan(C_coeff) || isinf(1.0 / C_coeff)) {
@@ -414,12 +414,17 @@ void static Parallel_Transport_Polarization_Vector(double State_Vector[],
 
   /* ========================== Construct the full CONTRVARIANT photon wave vector ========================== */
 
-    double p_t_contravariant     = inv_Metric[e_t][e_t] * State_Vector[e_p_t] + inv_Metric[e_t][e_phi] * State_Vector[e_p_phi];
-    double p_r_contravariant     = inv_Metric[e_r][e_r] * State_Vector[e_p_r];
-    double p_theta_contravariant = inv_Metric[e_theta][e_theta] * State_Vector[e_p_theta];
-    double p_phi_contravariant   = inv_Metric[e_phi][e_phi] * State_Vector[e_p_phi] + inv_Metric[e_phi][e_t] * State_Vector[e_p_t];
+    double photon_wave_vector[4]{};
 
-    double photon_wave_vector[4] = {p_t_contravariant, p_r_contravariant, p_theta_contravariant, p_phi_contravariant};
+    for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+        for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+            photon_wave_vector[left_idx] += inv_Metric[left_idx][right_idx] * State_Vector[right_idx + e_p_t];
+
+        }
+
+    }
 
   /* ========================== Compute the derivative of the polarization vector from the parallel transport ========================== */
 

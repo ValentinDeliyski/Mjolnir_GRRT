@@ -26,7 +26,7 @@ enum Magnetic_field_geometry_enums: std::underlying_type_t <std::byte> {
 enum Magnetic_field_magnitude_enums: std::underlying_type_t <std::byte>{
 
     Power_law_based     = 0,
-    Magnetization_based = 1
+    Magnetization_based = 1,
 
 };
 

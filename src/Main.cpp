@@ -88,7 +88,7 @@ int main(int argument_count, char** cmd_line_args) {
     if (ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)){ exit(ERROR); }
 
     s_Sim_Context.p_Init_Conditions->Print_to_console = print_to_console;
-    s_Sim_Context.p_Init_Conditions->Hotspot_params.Coord_time_offset += s_Sim_Context.p_Init_Conditions->Observer_params.distance;
+    s_Sim_Context.p_Init_Conditions->Hotspot_params.Profile_params.Coord_time_offset += s_Sim_Context.p_Init_Conditions->Observer_params.distance;
 
     // Populate the Spacetime class instance 
     Allocate_Spacetime_Class(&s_Sim_Context);

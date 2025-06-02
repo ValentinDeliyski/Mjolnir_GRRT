@@ -30,6 +30,9 @@ private:
     /* Flag that controls weather to include the polarization calculations. */
     bool Include_polarization{};
 
+    /* Flag that controls weather we simulate in the "Thermalized" mode where we add densities and temperatuers, rather than emission functions. */
+    bool Thermalize_emission_medium{};
+
     // ====================== Thermally Distributed synchrotron Fit Functions ====================== //
 
        //! Evaluates the thermal sychrotron emission fit functions.
