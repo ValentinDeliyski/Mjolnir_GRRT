@@ -134,7 +134,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
 
     // ------------------------------------------------------------------------ Bridging function ------------------------------------------------------------------------ //
 
-    double power_I = 3 * pow(p_Transfer_args->kappa, -3. / 2);
+    double power_I = 3 * pow(p_Transfer_args->kappa, -3. / 2.);
 
     Emission_functions_low[I]  = Common_factor_low;
     Emission_functions_high[I] = Common_factor_high;
@@ -150,7 +150,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
     /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
 
-    double power_Q = 3.7 * pow(p_Transfer_args->kappa, -8. / 5);
+    double power_Q = 3.7 * pow(p_Transfer_args->kappa, -8. / 5.);
 
     Emission_functions_low[Q] = -Common_factor_low / 2;
     Emission_functions_high[Q] = -Common_factor_high * (16.0 / 25 + p_Transfer_args->kappa / 50);

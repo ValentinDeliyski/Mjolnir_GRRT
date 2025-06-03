@@ -28,7 +28,7 @@ Hotspot_position_type Hotspot_model_type::get_hotspot_position(const double* con
     Hotspot_position.Inclination = M_PI_2;
     Hotspot_position.Azimuth     = this->s_Hotspot_params.Position[e_phi] + Hotspot_ang_velocity * State_Vector[e_t];
 
-    double sin_hotspot_inclination = sin(Hotspot_position.Inclination);
+   double sin_hotspot_inclination = sin(Hotspot_position.Inclination);
 
     Hotspot_position.x = Hotspot_position.Distance * sin_hotspot_inclination * cos(Hotspot_position.Azimuth);
     Hotspot_position.y = Hotspot_position.Distance * sin_hotspot_inclination * sin(Hotspot_position.Azimuth);

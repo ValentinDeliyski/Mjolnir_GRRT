@@ -46,8 +46,7 @@ struct Hotspot_model_params_type {
 	/*! Standard deviation of the Gaussian temperature profile. */
 	double Temperature_gaussian_spread;
 
-	/*! Standard deviation of the Gaussian temporal profile. Setting this to zero ignores the time
-	   evolution of the hotspot profile. */
+	/*! Standard deviation of the Gaussian temporal profile. */
 	double Temporal_gaussian_spread;
 
 	/*! Radius of the hotspot. Only affects the Spherical profile. */

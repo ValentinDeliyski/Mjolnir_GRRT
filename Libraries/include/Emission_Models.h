@@ -140,14 +140,14 @@ public:
      *          In the plasma frame I set the geometry of the field, then scale it by B_Plasma_norm_CGS.
      *
      *    NOTE: The magnitudes of the magnetic fields in these frames are given in [G].
-     *
+     * 
      *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
-     *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to call the metric function for dot products.
+     *   \param [in] p_Metric - Pointer to the metric that should be used in the calculations.
      *   \param [out] Emission_medium_state - Pointer to the struct that holds the emission medium state.
      *   \return Nothing.
      */
     void get_magnetic_field(const double* const State_Vector,
-                            const Simulation_Context_type* const p_Sim_Context,
+                            const Metric_type* const Metric,
                             Emission_medium_state_type* const p_Emission_medium_state) ;
     
     //! Main "Selector" For The Transfer Functions.

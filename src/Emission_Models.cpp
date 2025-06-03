@@ -19,12 +19,9 @@ double* Emission_models_class::get_plasma_velocity(const double* const State_Vec
 
     Metric_type s_dr_Metric = p_Sim_Context->p_Spacetime->get_dr_metric(State_Vector);
 
-    double test = p_Sim_Context->p_Spacetime->get_ISCO()[Inner];
-
     switch (Velocity_profile) {
 
     case e_Keplarian:
-
 
         /* This velocity profile is defined only for orbit radii > ISCO. When the ray passes below ISCO I return a NULL pointer, which tells the 
            rest of the code to ignore the emission from this region. */
@@ -118,8 +115,8 @@ double* Emission_models_class::get_plasma_velocity(const double* const State_Vec
 
 }
 
-void Emission_models_class::get_magnetic_field(const double* const State_Vector,
-                                               const Simulation_Context_type* const p_Sim_Context,
+void Emission_models_class::get_magnetic_field(const double* const State_Vector, 
+                                               const Metric_type* const p_Metric,
                                                Emission_medium_state_type* const Emission_medium_state)  {
 
     /*
@@ -158,8 +155,6 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     }
 
-    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
-
     /* --------------- Normalize the magnetic vector in the Eularian frame. --------------- */
 
     double Mag_field_eularian_norm{};
@@ -168,7 +163,8 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
         for (int right_idx = 1; right_idx <= 3; right_idx++) {
 
-            Mag_field_eularian_norm += s_Metric.Metric[left_idx][right_idx] * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[left_idx] * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[right_idx];
+            Mag_field_eularian_norm += p_Metric->Metric[left_idx][right_idx] * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[left_idx] * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[right_idx];
+
         }
 
     }
@@ -179,20 +175,21 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     }
 
-    const double Lorentz_factor = Emission_medium_state->Plasma_Velocity[e_t] * s_Metric.Lapse_function;
+    const double Lorentz_factor = Emission_medium_state->Plasma_Velocity[e_t] * p_Metric->Lapse_function;
 
-    for (int left_idx = 0; left_idx <= 3; left_idx++) {
+    /* The two indecies start from 1, because the t component of the magnetic field, measured by the Eularian observer is zero. */
+    for (int left_idx = 1; left_idx <= 3; left_idx++) {
 
-        for (int right_idx = 0; right_idx <= 3; right_idx++) {
+        for (int right_idx = 1; right_idx <= 3; right_idx++) {
 
-            Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] += s_Metric.Metric[left_idx][right_idx] * Emission_medium_state->Plasma_Velocity[left_idx] * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[right_idx] / s_Metric.Lapse_function;
+            Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] += p_Metric->Metric[left_idx][right_idx] * Emission_medium_state->Plasma_Velocity[left_idx] * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[right_idx] / p_Metric->Lapse_function;
         }
 
     }
 
     for (int index = 1; index <= 3; index++) {
 
-        Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] = (Emission_medium_state->Magnetic_fields.B_field_eularian_frame[index] + s_Metric.Lapse_function * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Lorentz_factor;
+        Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] = (Emission_medium_state->Magnetic_fields.B_field_eularian_frame[index] + p_Metric->Lapse_function * Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Lorentz_factor;
        
     }
 
@@ -557,6 +554,9 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
     /* This variable exist for the case where the hotspot and disk are in "Thermalized" mode. */
     Emission_medium_state_type Hotspot_state{};
 
+    /* When evaluating the hotspot emission, the metric needs to be evaluated at the point where the hotspot 4-velocity is evlatuated - a.e. at the spot center.*/
+    Metric_type Metric{};
+
     /* The hotspot is assumed to "screen" the magnetic field of the background accretion disk (unless its magnetic field magnitude is specified as "Background"). 
        Therefore the magnetic field with which the emission functions of the disk are evaluated, depends on the position of the hotspot. This is the reason this boolean is calculated outside the Emission_meidum 
        switch statement. */
@@ -584,6 +584,8 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
                                                                           this->p_Disk_Model->s_Disk_params.Velocity_profile_type,
                                                                           this->p_Disk_Model->s_Disk_params.Radial_velocity_fraction);
 
+        Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
+
         Is_inside_disk = this->p_Disk_Model->is_inside_disk(State_Vector, this->p_Disk_Model->s_Disk_params.e_Disk_model, &Emission_medium_state);
 
         if (this->Thermalize_emission_medium && (Is_inside_disk || Is_inside_hotspot)) {
@@ -593,7 +595,6 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
             /* -------- Set the magnetic field properties of the disk to be equal to their "background" values, regardless of weather we are in the hotspot or not. -------- */
 
-            memcpy(Emission_medium_state.Magnetic_fields.Mag_field_geometry_vector, this->p_Disk_Model->s_Disk_params.Mag_field_geometry, 3 * sizeof(double));
             Emission_medium_state.Magnetization = this->p_Disk_Model->s_Disk_params.Magnetization;
 
             Emission_medium_state.Magnetic_fields.e_Mag_field_geometry          = this->p_Disk_Model->s_Disk_params.e_Mag_field_geometry;
@@ -601,6 +602,8 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
             Emission_medium_state.Magnetic_fields.Mag_field_magnitude_scale     = this->p_Disk_Model->s_Disk_params.Mag_field_magnitude_scale;
             Emission_medium_state.Magnetic_fields.Mag_field_power               = this->p_Disk_Model->s_Disk_params.Mag_field_power;
             Emission_medium_state.Magnetic_fields.Mag_field_radial_scale        = this->p_Disk_Model->s_Disk_params.Mag_field_radial_scale;
+
+            memcpy(Emission_medium_state.Magnetic_fields.Mag_field_geometry_vector, this->p_Disk_Model->s_Disk_params.Mag_field_geometry, 3 * sizeof(double));
 
             break;
 
@@ -613,7 +616,6 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
             /* -------- We are inside the hotspot - set the magnetic field properties of the disk to be equal to those of the hotspot. -------- */
 
-            memcpy(Emission_medium_state.Magnetic_fields.Mag_field_geometry_vector, this->p_Hotspot_Model->s_Hotspot_params.Mag_field_geometry, 3 * sizeof(double));
             Emission_medium_state.Magnetization = this->p_Hotspot_Model->s_Hotspot_params.Magnetization;
 
             Emission_medium_state.Magnetic_fields.e_Mag_field_geometry          = this->p_Hotspot_Model->s_Hotspot_params.e_Mag_field_geometry;
@@ -622,12 +624,13 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
             Emission_medium_state.Magnetic_fields.Mag_field_power               = this->p_Hotspot_Model->s_Hotspot_params.Mag_field_power;
             Emission_medium_state.Magnetic_fields.Mag_field_radial_scale        = this->p_Hotspot_Model->s_Hotspot_params.Mag_field_radial_scale;
 
+            memcpy(Emission_medium_state.Magnetic_fields.Mag_field_geometry_vector, this->p_Hotspot_Model->s_Hotspot_params.Mag_field_geometry, 3 * sizeof(double));
+
         }
         else {
 
             /* -------- We are outside the hotspot - set the magnetic field properties of the disk to be equal to their "background" values. -------- */
 
-            memcpy(Emission_medium_state.Magnetic_fields.Mag_field_geometry_vector, this->p_Disk_Model->s_Disk_params.Mag_field_geometry, 3 * sizeof(double));
             Emission_medium_state.Magnetization = this->p_Disk_Model->s_Disk_params.Magnetization;
 
             Emission_medium_state.Magnetic_fields.e_Mag_field_geometry          = this->p_Disk_Model->s_Disk_params.e_Mag_field_geometry;
@@ -636,6 +639,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
             Emission_medium_state.Magnetic_fields.Mag_field_power               = this->p_Disk_Model->s_Disk_params.Mag_field_power;
             Emission_medium_state.Magnetic_fields.Mag_field_radial_scale        = this->p_Disk_Model->s_Disk_params.Mag_field_radial_scale;
 
+            memcpy(Emission_medium_state.Magnetic_fields.Mag_field_geometry_vector, this->p_Disk_Model->s_Disk_params.Mag_field_geometry, 3 * sizeof(double));
         }
 
         Emission_medium_state.Ensamble_type = this->p_Disk_Model->s_Disk_params.Ensamble_type;
@@ -645,6 +649,9 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
     case Hotspot:
 
         if (!Is_inside_hotspot || this->Thermalize_emission_medium) { return; };
+
+
+        Metric = p_Sim_Context->p_Spacetime->get_metric(this->p_Hotspot_Model->s_Hotspot_params.Position);
 
         Emission_medium_state.Density = Hotspot_state.Density;
         Emission_medium_state.Temperature = Hotspot_state.Temperature;
@@ -656,6 +663,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
         Emission_medium_state.Ensamble_type = this->p_Hotspot_Model->s_Hotspot_params.Ensamble_type;
         Emission_medium_state.Magnetization = this->p_Hotspot_Model->s_Hotspot_params.Magnetization;
+
         Emission_medium_state.Magnetic_fields.e_Mag_field_magnitude_profile = this->p_Hotspot_Model->s_Hotspot_params.e_Mag_field_magnitude_profile;
         Emission_medium_state.Magnetic_fields.e_Mag_field_geometry          = this->p_Hotspot_Model->s_Hotspot_params.e_Mag_field_geometry;
         Emission_medium_state.Magnetic_fields.Mag_field_magnitude_scale     = this->p_Hotspot_Model->s_Hotspot_params.Mag_field_magnitude_scale;
@@ -679,7 +687,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     if (NULL == Emission_medium_state.Plasma_Velocity) { return; }
 
-    this->get_magnetic_field(State_Vector, p_Sim_Context, &Emission_medium_state);
+    this->get_magnetic_field(State_Vector, &Metric, &Emission_medium_state);
 
     switch (Emission_medium_state.Ensamble_type) {
 

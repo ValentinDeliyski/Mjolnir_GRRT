@@ -52,7 +52,7 @@ Metric_type Kerr_class::get_metric(const double* const State_Vector) const {
 
     double sigma2 = (r2 + a * a) * (r2 + a * a) - a * a * delta * sin_theta * sin_theta;
 
-    s_Metric.Lapse_function = sqrt(rho2 * delta / sigma2);
+    s_Metric.Lapse_function = sqrt(-s_Metric.Metric[e_t][e_t] + s_Metric.Metric[e_t][e_phi] * s_Metric.Metric[e_t][e_phi] / s_Metric.Metric[e_phi][e_phi]);
     s_Metric.Shift_function = 2 * a * r / sigma2;
 
     return s_Metric;
@@ -223,7 +223,7 @@ void Kerr_class::get_EOM(const double* const State_vector, double* const Derivat
     const double& p_theta = State_vector[e_p_theta];
     const double& p_t     = State_vector[e_p_t];
 
-    Derivatives[e_t] = -1 / delta * (r2 + this->Spin_Param * this->Spin_Param + 2 * r * this->Spin_Param * this->Spin_Param / rho2 * sin2) * p_t - 2 * r * this->Spin_Param / rho2 / delta * J;
+    Derivatives[e_t] = ((r2 + this->Spin_Param * this->Spin_Param) / delta * P - this->Spin_Param * (this->Spin_Param * sin2 - J)) / rho2;
     Derivatives[e_r] = delta / rho2 * p_r;
     Derivatives[e_theta] = 1.0 / rho2 * p_theta;
     Derivatives[e_phi] = 1.0 / (delta * rho2) * (P * this->Spin_Param + delta * (J / sin2 - this->Spin_Param));

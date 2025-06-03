@@ -187,6 +187,8 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
     Emission_medium_state_type Disk_state{};
     Emission_medium_state_type Hotspot_state{};
 
+    Metric_type Metric{};
+
     /* Determine which part of the emission medium we are in -> this determines the local magnetic field. The hotspot and jet models are allowed to have their own 
        local magneic field, while outside them the field is considered due to the accretion disk. */
 
@@ -216,10 +218,8 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
         Hotspot_state.Magnetic_fields.e_Mag_field_geometry          = p_Sim_Context->p_Init_Conditions->Hotspot_params.e_Mag_field_geometry;
         Hotspot_state.Magnetic_fields.e_Mag_field_magnitude_profile = p_Sim_Context->p_Init_Conditions->Hotspot_params.e_Mag_field_magnitude_profile;
 
-
-        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector, 
-                                                            p_Sim_Context,
-                                                           &Hotspot_state);
+        Metric = p_Sim_Context->p_Spacetime->get_metric(p_Sim_Context->p_Init_Conditions->Hotspot_params.Position);
+        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector,&Metric, &Hotspot_state);
         
         memcpy(Total_B_field_contravariant, Hotspot_state.Magnetic_fields.B_field_plasma_frame, 4 * sizeof(double));
 
@@ -237,10 +237,8 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
         Disk_state.Magnetic_fields.e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_geometry;
         Disk_state.Magnetic_fields.e_Mag_field_magnitude_profile = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_magnitude_profile;
 
-
-        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector, 
-                                                            p_Sim_Context,
-                                                           &Disk_state);
+        Metric = p_Sim_Context->p_Spacetime->get_metric(State_vector);
+        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_vector, &Metric, &Disk_state);
         
         memcpy(Total_B_field_contravariant, Disk_state.Magnetic_fields.B_field_plasma_frame, 4 * sizeof(double));
 

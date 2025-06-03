@@ -31,11 +31,11 @@ class Hotspot_reference_sims:
     
     def __init__(self):
         
-        """ These parameters correspond to the ones in table 2 of https://arxiv.org/pdf/2301.11874. """
+        """ These parameters correspond to the ones in table 1 of https://arxiv.org/pdf/2309.10053. """
         
         self.Units = Units_class()
         self.Simulation_configurator = Simulation_configurator()
-        self.Simulation_configurator.average_emission_pitch_angle = {"Value": 1, "Unit": "[-]"}
+        self.Simulation_configurator.average_emission_pitch_angle = {"Value": 0, "Unit": "[-]"}
         
         """ Central black hole setup"""
         self.Simulation_configurator.metric_parameters.Metric_type = {"Value": "Kerr",  "Unit": "[-]"}
@@ -43,29 +43,37 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.metric_parameters.Spin        = {"Value": 0.000, "Unit": "[M]"}
         self.Object_distance                                       = {"Value": 8.277e3, "Unit": "[Pc]"}
         
-        """ Kill the accretion disk setup """   
+        """ Kill the accretion disk """   
         self.Simulation_configurator.disk_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
 
         """ Hotspot setup """
-        self.Simulation_configurator.hotspot_model.Density_scale_factor     = {"Value": 1.05e7, "Unit": "[g/cm^3]"}
-        self.Simulation_configurator.hotspot_model.Temperature_scale_factor = {"Value": 9.03e10,  "Unit": "[K]"}
+        self.Simulation_configurator.hotspot_model.Density_scale_factor     = {"Value": 2e6, "Unit": "[g/cm^3]"}
+        self.Simulation_configurator.hotspot_model.Temperature_scale_factor = {"Value": 1e11,  "Unit": "[K]"}
         
-        self.Simulation_configurator.hotspot_model.Density_profile     = {"Value": "Sphere", "Unit": "[-]"}
-        self.Simulation_configurator.hotspot_model.Temperature_profile = {"Value": "Sphere", "Unit": "[-]"}
-
+        self.Simulation_configurator.hotspot_model.Density_profile     = {"Value": "Gaussian", "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Temperature_profile = {"Value": "Gaussian", "Unit": "[-]"}
+        
+        self.Simulation_configurator.hotspot_model.Density_spread = {"Value": 1, "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Temperature_spread = {"Value": 1, "Unit": "[-]"}
+        
         self.Simulation_configurator.hotspot_model.Temporal_spread   = {"Value": 60000000000,      "Unit": "[GM/c^3]"}
-        self.Simulation_configurator.hotspot_model.Magnetization     = {"Value": 0.01,    "Unit": "[-]"}
-        self.Simulation_configurator.emission_models.Kappa           = {"Value": 5,       "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Magnetization     = {"Value": 1,       "Unit": "[-]"}
+        self.Simulation_configurator.emission_models.Kappa           = {"Value": 4,       "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Ensamble_type     = {"Value": "Kappa", "Unit": "[-]"}
-        self.Simulation_configurator.hotspot_model.Distance          = {"Value": 9,       "Unit": "[M]"} 
+        self.Simulation_configurator.hotspot_model.Distance          = {"Value": 8,       "Unit": "[M]"} 
+        
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry       = {"Value": "Constant", "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry_r     = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry_theta = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry_phi   = {"Value": 1, "Unit": "[-]"}
         
         """ This value for the initial hotspot azimuth makes it appear on the anti-beaming size at t_obs = 0. This makes the light curve look nicer. """
-        self.Simulation_configurator.hotspot_model.Azimuth           = {"Value": -pi * 0.50,  "Unit": "[M]"} 
+        self.Simulation_configurator.hotspot_model.Azimuth           = {"Value": pi * 0.50,  "Unit": "[M]"} 
         self.Simulation_configurator.hotspot_model.Velocity_profile  = {"Value": "Keplarian", "Unit": "[-]"}
         
         """ Observer setup """
         self.Simulation_configurator.observer.Distance    = {"Value": 1e4,           "Unit": "[M]"}
-        self.Simulation_configurator.observer.Inclination = {"Value": 20 * pi / 180, "Unit": "[Rad]"}
+        self.Simulation_configurator.observer.Inclination = {"Value": 170 * pi / 180, "Unit": "[Rad]"}
         self.Simulation_configurator.observer.Azimuth     = {"Value": 0,             "Unit": "[Rad]"}
         
         self.Simulation_configurator.observer.Obs_frequency = {"Value": Units_class().C_LIGHT_SI / 2.2e-6, "Unit": "[Hz]"}
