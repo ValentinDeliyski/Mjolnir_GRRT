@@ -6,7 +6,7 @@
 #include "General_GR_functions.h"
 #include "General_math_functions.h"
 
-class Novikov_Thorne_Model_class {
+class Page_Thorne_Model_class {
 
     private:
 
@@ -34,58 +34,59 @@ class Novikov_Thorne_Model_class {
          *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct.
          *   \return Nothing.
          */
-        Novikov_Thorne_Model_class(Simulation_Context_type* p_Sim_Context);
+        Page_Thorne_Model_class(Simulation_Context_type* p_Sim_Context);
 
-        //! Evaluates the Keplarian angular velocity of the Novikov-Thorne disk model.
-        /*! Evaluates the Keplarian angular velocity of the Novikov-Thorne disk model.
+        //! Evaluates the Keplarian angular velocity of the Page-Thorne disk model.
+        /*! Evaluates the Keplarian angular velocity of the Page-Thorne disk model.
          *
          *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
          *   \return The Keplarian angular velocity.
          */
         double Keplerian_angular_velocity(const double* const State_vector);
 
-        //! Evaluates the radial derivative of the Keplarian angular velocity of the Novikov-Thorne disk model.
-        /*! Evaluates the radial derivative of the Keplarian angular velocity of the Novikov-Thorne disk model.
+        //! Evaluates the radial derivative of the Keplarian angular velocity of the Page-Thorne disk model.
+        /*! Evaluates the radial derivative of the Keplarian angular velocity of the Page-Thorne disk model.
          *
          *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
          *   \return The radial derivative of the Keplarian angular velocity.
          */
         double dr_Keplerian_angular_velocity(const double* const State_vector);
 
-        //! Evaluates the redshift of the Novikov-Thorne disk model.
-        /*! Evaluates the redshift of the Novikov-Thorne disk model.
+        //! Evaluates the redshift of the Page-Thorne disk model.
+        /*! Evaluates the redshift of the Page-Thorne disk model.
          *
          *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
+         *   \param [in] p_Observer - Pointer to the observer class.
          *   \return The redshift.
          */
-        double Redshift(const double* const State_vector, double r_obs, double theta_obs);
+        double Redshift(const double* const State_vector, Observer_class* const p_Observer);
 
-        //! Evaluates the energy of the Novikov-Thorne disk model.
-        /*! Evaluates the energy of the Novikov-Thorne disk model.
+        //! Evaluates the energy of the Page-Thorne disk model.
+        /*! Evaluates the energy of the Page-Thorne disk model.
          *
          *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
          *   \return The energy.
          */
         double disk_Energy(const double* const State_vector);
 
-        //! Evaluates the angular momentum magnitude of the Novikov-Thorne disk model.
-        /*! Evaluates the angular momentum magnitude of the Novikov-Thorne disk model.
+        //! Evaluates the angular momentum magnitude of the Page-Thorne disk model.
+        /*! Evaluates the angular momentum magnitude of the Page-Thorne disk model.
          *
          *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
          *   \return The magnitude of the angular momentum.
          */
         double disk_Angular_Momentum(const double* const State_vector);
 
-        //! Evaluates the integrand of the integral that appears in the flux expression of the Novikov-Thorne disk model.
-        /*! Evaluates the integrand of the integral that appears in the flux expression of the Novikov-Thorne disk model.
+        //! Evaluates the integrand of the integral that appears in the flux expression of the Page-Thorne disk model.
+        /*! Evaluates the integrand of the integral that appears in the flux expression of the Page-Thorne disk model.
          *
          *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
          *   \return The value of the integrand.
          */
         double Flux_integrand(const double* const State_vector);
 
-        //! Evaluates the integral that appears in the flux expression of the Novikov-Thorne disk model.
-        /*! Evaluates the integral that appears in the flux expression of the Novikov-Thorne disk model, using the adaptive Simpson method.
+        //! Evaluates the integral that appears in the flux expression of the Page-Thorne disk model.
+        /*! Evaluates the integral that appears in the flux expression of the Page-Thorne disk model, using the adaptive Simpson method.
          *
          *   \param [in] r_in - The lower bound for the integral in units [M]
          *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
@@ -93,11 +94,11 @@ class Novikov_Thorne_Model_class {
          */
         double solve_Flux_integral(double r_in, const double* const State_Vector, double tolerance);
 
-        //! Evaluates the flux of the Novikov-Thorne disk model
-        /*! Evaluates the flux of the Novikov-Thorne disk model
+        //! Evaluates the flux of the Page-Thorne disk model
+        /*! Evaluates the flux of the Page-Thorne disk model
          *
          *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
-         *   \return The Novikov-Thorne flux in units [M_dot / M^2].
+         *   \return The Page-Thorne flux in units [M_dot / M^2].
          */
         double get_flux(const double* const State_vector);
 

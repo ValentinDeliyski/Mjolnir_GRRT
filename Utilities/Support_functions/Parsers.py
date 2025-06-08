@@ -63,8 +63,6 @@ class Simulation_Parser():
             
             _ = csvreader.__next__() # Model parameters header
 
-            test = self.ACTIVE_DISK_MODEL[1:-2]
-
             if self.ACTIVE_DISK_MODEL[1:-2] == "Phenomenological_RIAF":
                 self.disk_opening_angle = float(csvreader.__next__()[1])
                 self.disk_density_power_law_scale = float(csvreader.__next__()[1])
@@ -81,80 +79,80 @@ class Simulation_Parser():
                 self.disk_max_temperature = float(csvreader.__next__()[1])
                 
                 self.disk_ensamble = csvreader.__next__()[1]
-
+                
+            elif self.ACTIVE_DISK_MODEL[1:] == "Page-Thorne":
+                self.NT_r_in  = float(csvreader.__next__()[1])
+                self.NT_r_out = float(csvreader.__next__()[1])
+                
             else:
                 self.disk_density_exp_height_scale = float(csvreader.__next__()[1])
                 self.disk_density_exp_radial_scale = float(csvreader.__next__()[1])
 
             _ = csvreader.__next__() # Magnetic field parameters header
 
-            self.disk_magnetization = float(csvreader.__next__()[1])
-            self.disk_magnetic_field = csvreader.__next__()[1]
-            self.disk_magnetic_field_magnitude_profile = csvreader.__next__()[1]
+            if self.ACTIVE_DISK_MODEL[1:] == "Page-Thorne":
+                self.disk_magnetic_field = csvreader.__next__()[1][1:]
+                
+            else:
+                self.disk_magnetization = float(csvreader.__next__()[1])
+                self.disk_magnetic_field = csvreader.__next__()[1]
+                self.disk_magnetic_field_magnitude_profile = csvreader.__next__()[1]
             
-            if("Power law based" == self.disk_magnetic_field_magnitude_profile[1:]):
-                self.disk_magnetic_field_scale = float(csvreader.__next__()[1])
-                self.magnetic_field_radial_scale = float(csvreader.__next__()[1])
-                self.magnetic_field_power_law_power = float(csvreader.__next__()[1])
+                if("Power law based" == self.disk_magnetic_field_magnitude_profile[1:]):
+                    self.disk_magnetic_field_scale = float(csvreader.__next__()[1])
+                    self.magnetic_field_radial_scale = float(csvreader.__next__()[1])
+                    self.magnetic_field_power_law_power = float(csvreader.__next__()[1])
 
-            _ = csvreader.__next__() # Hotspot Parameters Header
-            _ = csvreader.__next__() # Density Model Parameters Header
+                _ = csvreader.__next__() # Hotspot Parameters Header
+                _ = csvreader.__next__() # Density Model Parameters Header
 
-            self.hotspot_density_profile = csvreader.__next__()[1][1:]
-            if self.hotspot_density_profile == "Gaussian":
-                self.hotspot_density_spread = float(csvreader.__next__()[1])
-            elif self.hotspot_density_profile == "Spherical":
-                self.hotspot_dentiy_radius = float(csvreader.__next__()[1])
-            elif self.hotspot_temperature_profile == "Hybrid power law gaussian":
-                self.hotspot_density_spread = float(csvreader.__next__()[1])  
-                self.hotspot_density_power_law_power = float(csvreader.__next__()[1])  
-                self.hotspot_density_power_law_scale = float(csvreader.__next__()[1])   
-            
-            self.hotspot_max_density = float(csvreader.__next__()[1])
+                self.hotspot_density_profile = csvreader.__next__()[1][1:]
+                if self.hotspot_density_profile == "Gaussian":
+                    self.hotspot_density_spread = float(csvreader.__next__()[1])
+                elif self.hotspot_density_profile == "Spherical":
+                    self.hotspot_dentiy_radius = float(csvreader.__next__()[1])
+                elif self.hotspot_temperature_profile == "Hybrid power law gaussian":
+                    self.hotspot_density_spread = float(csvreader.__next__()[1])  
+                    self.hotspot_density_power_law_power = float(csvreader.__next__()[1])  
+                    self.hotspot_density_power_law_scale = float(csvreader.__next__()[1])   
+                
+                self.hotspot_max_density = float(csvreader.__next__()[1])
 
-            _ = csvreader.__next__() # Temperature Model Parameters Header
+                _ = csvreader.__next__() # Temperature Model Parameters Header
 
-            self.hotspot_temperature_profile = csvreader.__next__()[1][1:]
-            if self.hotspot_temperature_profile == "Gaussian":
-                self.hotspot_temperature_spread = float(csvreader.__next__()[1])       
-            elif self.hotspot_temperature_profile == "Spherical":
-                self.hotspot_temperature_radius = float(csvreader.__next__()[1])
-            elif self.hotspot_temperature_profile == "Hybrid power law gaussian":
-                self.hotspot_temperature_spread = float(csvreader.__next__()[1])  
-                self.hotspot_temperature_power_law_power = float(csvreader.__next__()[1])  
-                self.hotspot_temperature_power_law_scale = float(csvreader.__next__()[1])   
+                self.hotspot_temperature_profile = csvreader.__next__()[1][1:]
+                if self.hotspot_temperature_profile == "Gaussian":
+                    self.hotspot_temperature_spread = float(csvreader.__next__()[1])       
+                elif self.hotspot_temperature_profile == "Spherical":
+                    self.hotspot_temperature_radius = float(csvreader.__next__()[1])
+                elif self.hotspot_temperature_profile == "Hybrid power law gaussian":
+                    self.hotspot_temperature_spread = float(csvreader.__next__()[1])  
+                    self.hotspot_temperature_power_law_power = float(csvreader.__next__()[1])  
+                    self.hotspot_temperature_power_law_scale = float(csvreader.__next__()[1])   
 
-            self.hotspot_max_temperature = float(csvreader.__next__()[1])
+                self.hotspot_max_temperature = float(csvreader.__next__()[1])
 
-            _ = csvreader.__next__() # Hotspot Synchrotron Emission Model Parameters Header
+                _ = csvreader.__next__() # Hotspot Synchrotron Emission Model Parameters Header
 
-            self.hotspot_ensamble = csvreader.__next__()[1][1:]
-            if self.hotspot_ensamble == "Kappa":
-                self.kappa = csvreader.__next__()[1][1:]
-            elif self.hotspot_ensamble == "Phenomenological":
-                for _ in range(4):
-                    _ = csvreader.__next__()
-            elif self.hotspot_ensamble == "Thermal":
-                pass
+                self.hotspot_ensamble = csvreader.__next__()[1][1:]
+                if self.hotspot_ensamble == "Kappa":
+                    self.kappa = csvreader.__next__()[1][1:]
+                elif self.hotspot_ensamble == "Phenomenological":
+                    for _ in range(4):
+                        _ = csvreader.__next__()
+                elif self.hotspot_ensamble == "Thermal":
+                    pass
 
-            self.hotspot_magnetization = float(csvreader.__next__()[1])
-            self.hotspot_magnetic_field = csvreader.__next__()[1][1:]
+                self.hotspot_magnetization = float(csvreader.__next__()[1])
+                self.hotspot_magnetic_field = csvreader.__next__()[1][1:]
 
-            _ = csvreader.__next__() # Hotspot Position Header
+                _ = csvreader.__next__() # Hotspot Position Header
 
-            self.hotspot_distance    = float(csvreader.__next__()[1])
-            self.hotspot_inclination = float(csvreader.__next__()[1])
-            self.hotspot_azimuth     = float(csvreader.__next__()[1])
-            self.coord_time_offset   = float(csvreader.__next__()[1])
+                self.hotspot_distance    = float(csvreader.__next__()[1])
+                self.hotspot_inclination = float(csvreader.__next__()[1])
+                self.hotspot_azimuth     = float(csvreader.__next__()[1])
+                self.coord_time_offset   = float(csvreader.__next__()[1])
 
-            _ = csvreader.__next__() # Novikov - Thorner Model Parameters Header
-
-            try:
-                self.NT_r_in  = float(csvreader.__next__()[1])
-                self.NT_r_out = float(csvreader.__next__()[1])
-            except:
-                pass
-            
             _ = csvreader.__next__() # Simulation Results Header
             self.Legend = csvreader.__next__()
 

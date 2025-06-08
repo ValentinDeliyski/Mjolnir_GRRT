@@ -62,7 +62,10 @@ class Disk_model():
                  "Mag_field_geometry",
                  "Mag_field_magnitude_profile",
 
-                 "Threshold_relative_density")
+                 "Threshold_relative_density",
+                 
+                 "r_in_PT_disk",
+                 "r_out_PT_disk")
     
 class Hotspot_model():
 
@@ -141,12 +144,6 @@ class Emission_models():
                  "Emission_coeff",
                  "Kappa")  
 
-class NT_model_params():
-
-    __slots__ = ("r_in", 
-                 "r_out", 
-                 "Evaluate_NT_disk")
-
 class File_manager():
 
     __slots__ = ("Sim_mode_2_input_file_path", 
@@ -199,7 +196,6 @@ class Simulation_configurator:
 
         self._configure_integrator_settings()
         self._configure_observer()
-        self._configure_NT_model()
         self._configure_disk_model()
         self._configure_hotspot_model()
         self._configure_file_manager()
@@ -299,16 +295,6 @@ class Simulation_configurator:
         self.metric_parameters.Metric_type = Metric_type
         self.metric_parameters.Numerical_metric_spline_path = Numerical_metric_spline_path
 
-    def _configure_NT_model(self, r_in: dict[str, float | str] = {"Value": 6, "Unit": "[M]"},
-                                  r_out: dict[str, float | str] = {"Value": 50, "Unit": "[M]"},
-                                  evaluate_NT_disk: dict[str, int | str] = {"Value": 1, "Unit": "[-]"}):
-        
-        self.NT_model_params = NT_model_params()
-
-        self.NT_model_params.r_in = r_in
-        self.NT_model_params.r_out = r_out
-        self.NT_model_params.Evaluate_NT_disk = evaluate_NT_disk
-
     def _configure_emission_models(self, Emission_power_law: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
                                          Source_f_power_law: dict[str, float | str] = {"Value": 2.5, "Unit": "[-]"},
                                          Absorbtion_coeff: dict[str, float | str] = {"Value": 1e5, "Unit": "[?]"},
@@ -354,7 +340,10 @@ class Simulation_configurator:
                                     Mag_field_geometry: dict[str, str] = {"Value": "Constant", "Unit": "[-]"},
                                     Mag_field_magnitude_profile: dict[str, str] = {"Value": "Magnetization_based", "Unit": "[-]"},
                                     
-                                    Threshold_relative_density: dict[str, float | str] = {"Value": 1e-3, "Unit": "[-]"}):
+                                    Threshold_relative_density: dict[str, float | str] = {"Value": 1e-3, "Unit": "[-]"},
+                                    
+                                    r_in_PT_disk: dict[str, float | str] = {"Value": 6, "Unit": "[M]"},
+                                    r_out_PT_disk: dict[str, float | str] = {"Value": 25, "Unit": "[M]"}):
         
         self.disk_model = Disk_model()
 
@@ -390,6 +379,9 @@ class Simulation_configurator:
         self.disk_model.Mag_field_magnitude_profile  = Mag_field_magnitude_profile
         
         self.disk_model.Threshold_relative_density = Threshold_relative_density 
+        
+        self.disk_model.r_in_PT_disk = r_in_PT_disk
+        self.disk_model.r_out_PT_disk = r_out_PT_disk
 
     def _configure_hotspot_model(self, Ensamble_type: dict[str, str] = {"Value": "Kappa", "Unit": "[-]"},
                                        Density_profile: dict[str, str] = {"Value": "Gaussian", "Unit": "[-]"},
@@ -543,6 +535,9 @@ class Simulation_configurator:
             ET.SubElement(Observer_subelement, Obs_attrib_name, units = str(Obs_attrib["Unit"])).text = "{}".format(Obs_attrib["Value"])
 
         # ============ Generate the accretion disk XML section ============ #
+        
+        Page_Thorne_parameters = ["r_in",
+                                  "r_out"]
 
         Common_RIAF_parameters = ["Opening_angle",
                                   "Density_power_law_scale",
@@ -557,39 +552,50 @@ class Simulation_configurator:
         Colab_test_1_parameteres = ["Radial_scale",
                                     "Vertical_scale"]
 
-        Common_slots = [slot for slot in self.disk_model.__slots__ if slot not in Common_RIAF_parameters + Colab_test_1_parameteres + ["Radial_velocity_fraction"]]
+        Common_slots = [slot for slot in self.disk_model.__slots__ if slot not in Common_RIAF_parameters + Colab_test_1_parameteres + ["Radial_velocity_fraction"] + Page_Thorne_parameters + ["Disk_Model"]]
 
         Disk_subelement = ET.SubElement(XML_root_node, "Accretion_Disk") 
-
-        # ------------- Common subsection
-        Common_subelement = ET.SubElement(Disk_subelement, "Common_parameters") 
-        for Disk_attrib_name in Common_slots:
-            Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
-            Sub_element = ET.SubElement(Common_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"]))
+        
+        Sub_element = ET.SubElement(Disk_subelement, "Disk_Model", units = "[-]").text = "{}".format(self.disk_model.Disk_Model["Value"])
+        
+        if self.disk_model.Disk_Model["Value"] == "Page-Thorne":     
+            Sub_element = ET.SubElement(Disk_subelement, "r_in", units = "[M]").text = "{}".format(self.disk_model.r_in_PT_disk["Value"])
+            Sub_element = ET.SubElement(Disk_subelement, "r_out", units = "[M]").text = "{}".format(self.disk_model.r_out_PT_disk["Value"])
+            Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry", units = "[-]").text = "{}".format(self.disk_model.Mag_field_geometry["Value"])
+            Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry_r", units = "[M]").text = "{}".format(self.disk_model.Mag_field_geometry_r["Value"])
+            Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry_theta", units = "[M]").text = "{}".format(self.disk_model.Mag_field_geometry_theta["Value"])
+            Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry_phi", units = "[M]").text = "{}".format(self.disk_model.Mag_field_geometry_phi["Value"])
             
-            if Disk_attrib_name == "Velocity_profile":
-                ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Disk_attrib["Value"])
-                ET.SubElement(Sub_element, "Radial_velocity_fraction", units = "-").text = "{}".format(self.disk_model.Radial_velocity_fraction["Value"])
-            else:
-                Sub_element.text = "{}".format(Disk_attrib["Value"])
+        else:
+            # ------------- Common subsection
+            Common_subelement = ET.SubElement(Disk_subelement, "Common_parameters") 
+            for Disk_attrib_name in Common_slots:
+                Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
+                Sub_element = ET.SubElement(Common_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"]))
+                
+                if Disk_attrib_name == "Velocity_profile":
+                    ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Disk_attrib["Value"])
+                    ET.SubElement(Sub_element, "Radial_velocity_fraction", units = "-").text = "{}".format(self.disk_model.Radial_velocity_fraction["Value"])
+                else:
+                    Sub_element.text = "{}".format(Disk_attrib["Value"])
 
-        match self.disk_model.Disk_Model["Value"]:
+            match self.disk_model.Disk_Model["Value"]:
 
-            case "Colab_test_1_profile":
+                case "Colab_test_1_profile":
 
-                # ------------- Colab test 1 profile subsection
-                Colab_test_1_subelement = ET.SubElement(Disk_subelement, "Colab_test_1_profile") 
-                for Disk_attrib_name in Colab_test_1_parameteres:
-                    Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
-                    ET.SubElement(Colab_test_1_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
+                    # ------------- Colab test 1 profile subsection
+                    Colab_test_1_subelement = ET.SubElement(Disk_subelement, "Colab_test_1_profile") 
+                    for Disk_attrib_name in Colab_test_1_parameteres:
+                        Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
+                        ET.SubElement(Colab_test_1_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
 
-            case _:
+                case _:
 
-                # ------------- Phenomenological RIAF subsection
-                Power_law_subelement = ET.SubElement(Disk_subelement, "Common_RIAF_profile") 
-                for Disk_attrib_name in Common_RIAF_parameters:
-                    Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
-                    ET.SubElement(Power_law_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
+                    # ------------- Phenomenological RIAF subsection
+                    Power_law_subelement = ET.SubElement(Disk_subelement, "Common_RIAF_profile") 
+                    for Disk_attrib_name in Common_RIAF_parameters:
+                        Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
+                        ET.SubElement(Power_law_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
 
         # ============ Generate the hotspot XML section ============ #
 
@@ -693,20 +699,6 @@ class Simulation_configurator:
             
             ET.SubElement(Emission_subelement, "Kappa", units = "[-]").text = "{}".format(getattr(self.emission_models, "Kappa")["Value"])
 
-        # ============ Generate the Novikov-Thorne models XML section ============ #
-
-        NT_subelement = ET.SubElement(XML_root_node, "Novikov_Thorne_disk")
-
-        NT_attrib: dict[str, str | int | float] = getattr(self.NT_model_params, "Evaluate_NT_disk")
-        ET.SubElement(NT_subelement, "Evaluate_NT_disk", units = str(NT_attrib["Unit"])).text = "{}".format(NT_attrib["Value"])
-
-        if self.NT_model_params.Evaluate_NT_disk["Value"]:
-
-            NT_attrib = getattr(self.NT_model_params, "r_in")
-            ET.SubElement(NT_subelement, "r_in", units = str(NT_attrib["Unit"])).text = "{}".format(NT_attrib["Value"])
-            NT_attrib = getattr(self.NT_model_params, "r_out")
-            ET.SubElement(NT_subelement, "r_out", units = str(NT_attrib["Unit"])).text = "{}".format(NT_attrib["Value"])
-
         # ============ Generate the integrator XML section ============ #
 
         Integrator_subelement = ET.SubElement(XML_root_node, "Integrator")
@@ -752,20 +744,24 @@ if __name__ == "__main__":
     Sim_config.metric_parameters.Metric_type    = {"Value": "Kerr", "Unit": "[-]"}
     Sim_config.metric_parameters.Mass           = {"Value": 0.415, "Unit": "[M]"}
     Sim_config.metric_parameters.Horizon_radius = {"Value": 0.0662902, "Unit": "[G/c^2]"}
-    Sim_config.metric_parameters.Spin           = {"Value": 0.41399683 / 0.415, "Unit": "[M]"}
+    Sim_config.metric_parameters.Spin           = {"Value": 0.98, "Unit": "[M]"}
     # ================================================== Observer ================================================== #
 
-    Sim_config.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
-    Sim_config.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
+    Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
+    Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
     
     Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
-    Sim_config.observer.Inclination = {"Value": 90 * pi / 180, "Unit": "[Rad]"}
+    Sim_config.observer.Inclination = {"Value": 85 * pi / 180, "Unit": "[Rad]"}
     Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
     Sim_config.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[Hz]"}
 
     # ================================================== Disk ================================================== #
     Sim_config.disk_model.Ensamble_type = {"Value": "Thermal",   "Unit": "[-]"}
-    Sim_config.disk_model.Disk_Model    = {"Value": "Phenom_RIAF_1", "Unit": "[-]"}
+    Sim_config.disk_model.Disk_Model    = {"Value": "Page-Thorne", "Unit": "[-]"}
+    Sim_config.disk_model.Mag_field_geometry = {"Value": "Constant", "Unit": "[-]"}
+    
+    Sim_config.disk_model.r_in_PT_disk = {"Value": 1.615, "Unit": "[M]"}
+    Sim_config.disk_model.r_out_PT_disk = {"Value": 50, "Unit": "[M]"}
     
     Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g/cm^3]"}
     Sim_config.disk_model.Temperature_scale_factor = {"Value": 5.1e+10, "Unit": "[K]"}
@@ -783,10 +779,10 @@ if __name__ == "__main__":
     
     Sim_config.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
     
-    Sim_config.observer.Image_y_min = {"Value": -13.8, "Unit": "[M]"}
-    Sim_config.observer.Image_y_max = {"Value":  13.8, "Unit": "[M]"}
-    Sim_config.observer.Image_x_min = {"Value": -13.8, "Unit": "[M]"}
-    Sim_config.observer.Image_x_max = {"Value":  13.8, "Unit": "[M]"}
+    Sim_config.observer.Image_y_min = {"Value": -25, "Unit": "[M]"}
+    Sim_config.observer.Image_y_max = {"Value":  25, "Unit": "[M]"}
+    Sim_config.observer.Image_x_min = {"Value": -25, "Unit": "[M]"}
+    Sim_config.observer.Image_x_max = {"Value":  25, "Unit": "[M]"}
         
     Sim_config.integrator.RK45_accuracy      = {"Value": 1e-13, "Unit": "[-]"}
     Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
@@ -796,10 +792,6 @@ if __name__ == "__main__":
     # ================================================== Hotspot ================================================== #
 
     Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g / cm^3]"}
-
-    # ================================================== Novikov - Thorne Disk ================================================== #
-    
-    Sim_config.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
     
     """ The simulation name and input file path """
     Sim_config.simulation_name = {"Value": "Reference_Simulation_2", "Unit": "[-]"}
@@ -816,4 +808,4 @@ if __name__ == "__main__":
     filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Old_wormhole_sanity_check\\Old_wormhole_sanity_check.xml"
     args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
     
-    # subprocess.call(args, shell = True)
+    subprocess.call(args, shell = True)

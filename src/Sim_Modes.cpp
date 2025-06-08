@@ -70,6 +70,48 @@ void static Rendering_function(std::stop_token stop_token, Rendering_engine* Ren
 
 }
 
+void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray_results, Rendering_engine* const Renderer) {
+
+    if (e_Page_Thorne == Disk_model) {
+
+        if (p_Ray_results->Flux_PT[e_direct] > std::numeric_limits<double>::min()) {
+
+            Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT[e_direct] * pow(p_Ray_results->Redshift_PT[e_direct], 4);
+
+        }
+        else if (p_Ray_results->Flux_PT[e_direct] < std::numeric_limits<double>::min() &&
+                 p_Ray_results->Flux_PT[e_first] > std::numeric_limits<double>::min()) {
+
+            Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT[e_first] * pow(p_Ray_results->Redshift_PT[e_first], 4);
+
+        }
+        else if (p_Ray_results->Flux_PT[e_direct] < std::numeric_limits<double>::min() &&
+                 p_Ray_results->Flux_PT[e_first] < std::numeric_limits<double>::min() && 
+                 p_Ray_results->Flux_PT[e_second] > std::numeric_limits<double>::min()) {
+
+            Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT[e_second] * pow(p_Ray_results->Redshift_PT[e_second], 4);
+
+        }
+        else {
+
+            Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT[e_third] * pow(p_Ray_results->Redshift_PT[e_third], 4);
+
+        }
+
+    }
+    else {
+
+        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Intensity[e_direct][I] +
+                                                                         p_Ray_results->Intensity[e_first][I] +
+                                                                         p_Ray_results->Intensity[e_second][I] +
+                                                                         p_Ray_results->Intensity[e_third][I];
+
+    }
+
+    Renderer->texture_indexer += 3;
+
+}
+
 void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, Rendering_engine* const Renderer, Results_type* const p_Ray_results) {
         
         /*
@@ -126,55 +168,26 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
             for (int H_pixel_num = 0; H_pixel_num <= X_resolution - 1; H_pixel_num++) {
 
-                /*
-
-                This function polulates the initial momentum inside the s_Initial_Conditions struct
-
-                */
-
+                /*  ------------------ This function polulates the initial momentum inside the s_Initial_Conditions struct ------------------ */
                 get_intitial_conditions_from_angles(p_Sim_Context->p_Init_Conditions,
                                                     Y_angle_min + V_pixel_num * Y_scan_step,
                                                     X_angle_max - H_pixel_num * X_scan_step);
                 
-                /*
-                
-                Ray propagation happens here
-                
-                */
-                
+                /* ------------------  Ray propagation happens here ------------------ */
                 Propagate_ray(p_Sim_Context, p_Ray_results);
                 
-                /*
-                
-                Updating the visualization happens here
-                
-                */
+                /* ------------------ Updating the visualization happens here ------------------ */
+                Update_render(p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model, p_Ray_results, Renderer);
 
-                Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Intensity[e_direct][I] +
-                                                                                 p_Ray_results->Intensity[e_first][I] +
-                                                                                 p_Ray_results->Intensity[e_second][I] +
-                                                                                 p_Ray_results->Intensity[e_third][I];
-
-                Renderer->texture_indexer += 3;
-
-                /*
-                
-                Results logging happens here
-                
-                */
-
+                /* ------------------ Results logging happens here ------------------ */
                 p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
 
 
-                /*
-                
-                The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), and therefore not automatically re - initialized to 0s!
-                
-                */
-
+                /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), 
+                   and therefore not automatically reinitialized to 0s. I have to manually do it. */
                 memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(e_order_number * e_Stokes_param_num) * sizeof(double));
-                memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
-                memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
+                memset(p_Ray_results->Flux_PT,         0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
+                memset(p_Ray_results->Redshift_PT,     0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
                 memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(e_order_number * 3) * sizeof(double));
                 memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(e_order_number * 3) * sizeof(double));
 
@@ -271,8 +284,8 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
         */
 
         memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(e_order_number * e_Stokes_param_num) * sizeof(double));
-        memset(p_Ray_results->Flux_NT,         0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
-        memset(p_Ray_results->Redshift_NT,     0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
+        memset(p_Ray_results->Flux_PT,         0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
+        memset(p_Ray_results->Redshift_PT,     0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
         memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(e_order_number * 4) * sizeof(double));
         memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(e_order_number * 4) * sizeof(double));
 

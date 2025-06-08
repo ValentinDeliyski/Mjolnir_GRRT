@@ -140,6 +140,14 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
         break;
 
+    case Vertical:
+
+        Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_r]     =  cos(State_Vector[e_theta]);
+        Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_theta] = -sin(State_Vector[e_theta]);
+        Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_phi] = 0;
+
+        break;
+
     case Toroidal:
 
         Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_r]     = 0;
@@ -192,6 +200,11 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
         Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] = (Emission_medium_state->Magnetic_fields.B_field_eularian_frame[index] + p_Metric->Lapse_function * Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Lorentz_factor;
        
     }
+
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_r] = cos(State_Vector[e_theta]);
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_theta] = -sin(State_Vector[e_theta]);
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_phi] = 0;
+
 
     switch (Emission_medium_state->Magnetic_fields.e_Mag_field_magnitude_profile) {
 

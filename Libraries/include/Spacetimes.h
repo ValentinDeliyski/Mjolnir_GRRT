@@ -377,6 +377,6 @@ public:
 
     Observer_parameters_type get_parameters() const;
 
-    const double* get_obs_velocity() const;
+    const double* const get_obs_velocity() const;
 
 };

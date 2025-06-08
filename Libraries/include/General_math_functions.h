@@ -65,14 +65,12 @@ double get_max_relative_error(const double* const Error_state, const double* con
  *
  *  @param [in] State_Vector - Pointer to the current state vector.
  *  @param [in] Old_State_Vector - Pointer to the previous state vector.
- *  @param [out] Crossing_coords - Pointer to the three-vector that holds the coordinates of the crossing point.
- *  @param [out] Crossing_coords - Pointer to the three-vector that holds the three-momentum of the ray at the crossing point.
+ *  @param [out] Crossing_State - Pointer to interpolated state vector at the equator crossing point.
  *  @return A boolian flag for weather the equator has been crossed or not.
  */
 bool interpolate_crossing(const double* const State_Vector, 
-						  const double* const Old_State_Vector, 
-						  double* const Crossing_coords, 
-						  double* const crossing_momenta);
+						  const double* const Old_State_Vector,  
+						  double* const Crossing_State);
 
 /*! @brief Computes a simple Eucliduan dot product between two vectors with element numbers "Vector_size".
  *
@@ -91,7 +89,7 @@ double dot_product(const double* const Vector_1, const double* const Vector_2, i
  *  @param [in] Cartesian_Coords - Pointer to the vector expressed in carrtesian coordinates.
  *  @return Nothing.
  */
-void convert_spherical_to_cartesian(double* Spherical_Coords, double* Cartesian_Coords);
+void convert_spherical_to_cartesian(const double* const Spherical_Coords, double* const Cartesian_Coords);
  
 /*! @brief Converts vector from cartesian coordinates to spherical.
  *  Converts vector, stored in an array pointed to by "Cartesian_Coords", from cartesian coordinates to spherical, and stores
@@ -101,18 +99,19 @@ void convert_spherical_to_cartesian(double* Spherical_Coords, double* Cartesian_
  *  @param [in] Spherical_Coords - Pointer to the vector expressed in spherical coordinates.
  *  @return Nothing.
  */
-void convert_cartesian_to_spherical(double* Cartesian_Coords, double* Spherical_Coords);
+void convert_cartesian_to_spherical(const double* const Cartesian_Coords, double* const Spherical_Coords);
 
-/*! @brief Adds two 4-vectors.
- *	Adds two 4-vectors, stored in the arrays pointed to by "vec_1" and "vec_2", and store the result in the 
+/*! @brief Adds two vectors.
+ *	Adds two vectors, stored in the arrays pointed to by "vec_1" and "vec_2", and store the result in the 
  *  array pointed to by "Result"
  *
  *  @param [in] Vec_1 - Pointer to the first vector.
  *  @param [in] Vec_2 - Pointer to the second vector.
+ *  @param [in] size - the number of components in the vector.
  *  @param [out] Result - Pointer to the result vector
  *  @return Nothing.
  */
-void add_4D_vectors(const double* const vec_1, const double* const vec_2, double* const Result);
+void add_vectors(const double* const vec_1, const double* const vec_2, const int size, double* const Result);
 
 /*! @brief Raises a base to an integer power.
  *	Raaises the "base" variable to the integer power "exponent". 

@@ -5,7 +5,7 @@
 #include "Constants.h"
 #include "Spacetimes.h"
 
-#include "Novikov_Thorne_model.h"
+#include "Page_Thorne_model.h"
 #include "Emission_Models.h"
 #include "Disk_Models.h"
 
@@ -60,54 +60,38 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
                                      const double* const Old_state, 
                                      int N_theta_turning_points) {
 
-    double crossing_coords[4]{}, crossing_momenta[4]{};
+    /* ------------ The number of components is e_State_Number - 1 because we do not include the integration step. */
+    double Crossing_State[e_State_Number - 1]{};
     double& R_throat = p_Sim_Context->p_Init_Conditions->Metric_parameters.R_throat;
 
-    if (interpolate_crossing(State_vector, Old_state, crossing_coords, crossing_momenta)) {
+    if (interpolate_crossing(State_vector, Old_state, Crossing_State)) {
 
         int Image_Order = compute_image_order(N_theta_turning_points, p_Sim_Context->p_Init_Conditions);
 
-        double r_crossing_squared = crossing_coords[x] * crossing_coords[x] + crossing_coords[y] * crossing_coords[y];
-
         if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
-            // The wormhole metric uses the global coordinate ell = r^2 - r_throat^2
+            // The wormhole metric uses the global coordinate ell^2 = r^2 - r_throat^2
             // Here I convert back to the r coordinate for the NT model evaluation
 
-            r_crossing_squared = r_crossing_squared - R_throat * R_throat;
+            Crossing_State[e_r] = sqrt(Crossing_State[e_r] * Crossing_State[e_r] - R_throat * R_throat);
 
         }
 
-        double interpolated_state_vector[e_State_Number]{};
-        memcpy(interpolated_state_vector, State_vector, e_State_Number * sizeof(double));
+        double& r_in = p_Sim_Context->p_Init_Conditions->Disk_params.Page_Thorne_params.r_in;
+        double& r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Page_Thorne_params.r_out;
 
-        interpolated_state_vector[e_r] = sqrt(r_crossing_squared);
-        interpolated_state_vector[e_theta] = M_PI_2;
+        if (Crossing_State[e_r] < r_out && Crossing_State[e_r] > r_in){
 
-        double r_in = p_Sim_Context->p_Init_Conditions->NT_params.r_in;
-        double r_out = p_Sim_Context->p_Init_Conditions->NT_params.r_out;
-
-        if (p_Sim_Context->p_Init_Conditions->NT_params.evaluate_NT_disk  
-            && r_crossing_squared < (r_out * r_out) 
-            && r_crossing_squared > (r_in  * r_in)){
-
-            s_Ray_results->Redshift_NT[Image_Order] = p_Sim_Context->p_NT_model->Redshift(interpolated_state_vector, 
-                                                                                          p_Sim_Context->p_Init_Conditions->Observer_params.distance, 
-                                                                                          p_Sim_Context->p_Init_Conditions->Observer_params.inclination);
-
-            if (s_Ray_results->Redshift_NT[Image_Order] > std::numeric_limits<double>::min()) {
-
-                s_Ray_results->Flux_NT[Image_Order] = p_Sim_Context->p_NT_model->get_flux(interpolated_state_vector);
-
-            }
+            s_Ray_results->Redshift_PT[Image_Order] = p_Sim_Context->p_PT_model->Redshift(Crossing_State, p_Sim_Context->p_Observer);
+            s_Ray_results->Flux_PT[Image_Order]     = p_Sim_Context->p_PT_model->get_flux(Crossing_State);
 
         }
 
-        s_Ray_results->Source_Coords[e_r][Image_Order] = interpolated_state_vector[e_r];
-        s_Ray_results->Source_Coords[e_phi][Image_Order] = State_vector[e_phi];
+        s_Ray_results->Source_Coords[e_r][Image_Order]   = Crossing_State[e_r];
+        s_Ray_results->Source_Coords[e_phi][Image_Order] = Crossing_State[e_phi];
 
-        s_Ray_results->Photon_Momentum[e_r][Image_Order] = crossing_momenta[e_r];
-        s_Ray_results->Photon_Momentum[e_theta][Image_Order] = crossing_momenta[e_theta];
+        s_Ray_results->Photon_Momentum[e_r][Image_Order]     = Crossing_State[e_p_r];
+        s_Ray_results->Photon_Momentum[e_theta][Image_Order] = Crossing_State[e_p_theta];
     }
 
 }
@@ -207,7 +191,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
     if (In_hotspot && NULL != Hotspot_state.Plasma_Velocity) {
 
-        /* We are inside the hotspot - we assume the dominant magnetic field here is whatever the local field of the spot it - 
+        /* We are inside the hotspot - we assume the dominant magnetic field here is whatever the local field of the spot is - 
            a.e. inisde the hotspot, the disk magnetic field is "screened" by the spot. */
 
         p_Sim_Context->p_Emission_Model->p_Hotspot_Model->get_density_and_temperature(State_vector, Hotspot_state.Plasma_Velocity, &Hotspot_state);
@@ -597,18 +581,18 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
         Transfer_functions_type total_Transfer_functions{};
 
         /* Loop trough each emission medium (Disk, Hotspot, Jet and so on) and sum their respective transfer functions */
-        for (int emission_medium = Disk; emission_medium <= Hotspot; emission_medium++){
+        for (int emission_medium = Disk; emission_medium <= Hotspot; emission_medium++) {
 
             Transfer_functions_type temp_Transfer_functions{};
 
             p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(Logged_ray_path,
-                                                                              p_Sim_Context,
-                                                                              static_cast<Emission_medium_enums>(emission_medium),
-                                                                              &temp_Transfer_functions);
+                p_Sim_Context,
+                static_cast<Emission_medium_enums>(emission_medium),
+                &temp_Transfer_functions);
 
-            add_4D_vectors(temp_Transfer_functions.Emission_functions,   total_Transfer_functions.Emission_functions,   total_Transfer_functions.Emission_functions);
-            add_4D_vectors(temp_Transfer_functions.Faradey_functions,    total_Transfer_functions.Faradey_functions,    total_Transfer_functions.Faradey_functions);
-            add_4D_vectors(temp_Transfer_functions.Absorbtion_functions, total_Transfer_functions.Absorbtion_functions, total_Transfer_functions.Absorbtion_functions);
+            add_vectors(temp_Transfer_functions.Emission_functions, total_Transfer_functions.Emission_functions, e_Stokes_param_num, total_Transfer_functions.Emission_functions);
+            add_vectors(temp_Transfer_functions.Faradey_functions, total_Transfer_functions.Faradey_functions, e_Stokes_param_num, total_Transfer_functions.Faradey_functions);
+            add_vectors(temp_Transfer_functions.Absorbtion_functions, total_Transfer_functions.Absorbtion_functions, e_Stokes_param_num, total_Transfer_functions.Absorbtion_functions);
 
         }
 
@@ -616,7 +600,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         Propagate_Stokes_vector(Implicit_Trapezoid, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
 
-        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization){
+        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
             /* ============================ Convert the stokes vector into a polarization vector ===================== */
 
@@ -629,7 +613,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
         log_ray_emission(Stokes_Vector, Optical_Depth, p_Ray_results, log_index);
 
         Seperate_Image_into_orders(Max_theta_turning_points, *N_theta_turning_points, p_Sim_Context->p_Init_Conditions, p_Ray_results, Stokes_Vector);
-         
+
     }
 
 }
@@ -652,10 +636,10 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     // Set the Old State Vector to the Initial State Vector
     memcpy(Old_State_Vector, State_Vector, e_State_Number * sizeof(double));
 
-    for (int Image_order = e_direct; Image_order <= e_order_number - 1; Image_order += 1) {
+    for (int Image_order = e_direct; Image_order < e_order_number; Image_order += 1) {
 
         p_Ray_results->Photon_Momentum[e_phi][Image_order] = State_Vector[e_p_phi];
-        p_Ray_results->Photon_Momentum[e_t][Image_order] = State_Vector[e_p_t];
+        p_Ray_results->Photon_Momentum[e_t][Image_order]   = State_Vector[e_p_t];
 
     }
 
@@ -676,7 +660,6 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
         RK45(State_Vector, &controller, p_Sim_Context);
 
-        // If the error estimate, returned from RK45 < RK45_ACCURACY
         if (controller.continue_integration) {
 
             integration_count += 1;
@@ -686,7 +669,15 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
             N_theta_turning_points += Check_for_theta_turning_point(State_Vector, Old_State_Vector);
 
-            Evaluate_Equatorial_Disk(p_Sim_Context, p_Ray_results, State_Vector, Old_State_Vector, N_theta_turning_points);
+            /* ======================================== Evaluate the thin disk models ======================================== */
+
+            if (e_Page_Thorne == p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model) {
+
+                Evaluate_Equatorial_Disk(p_Sim_Context, p_Ray_results, State_Vector, Old_State_Vector, N_theta_turning_points);
+
+            }
+
+            /* ============================================================================================================== */
 
             memcpy(Old_State_Vector, State_Vector, e_State_Number * sizeof(double));
 
@@ -696,12 +687,16 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     if (integration_count >= controller.Parameters.Max_integration_count) { std::cout << "Max iterations reached!" << '\n'; }
 
-    p_Ray_results->Ray_log_struct.Log_length = integration_count;
+    p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset;
 
-    /* =========== Integrate the radiative transfer equations forward along the ray =========== */
+    /* =========== Integrate the radiative transfer equations forward along the ray for the RIAF models =========== */
 
-    Propagate_forward_emission(p_Sim_Context, p_Ray_results, &N_theta_turning_points);
+    if (e_Page_Thorne != p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model) {
 
-    /* ======================================================================================== */
+        Propagate_forward_emission(p_Sim_Context, p_Ray_results, &N_theta_turning_points);
+
+    }
+
+    /* ============================================================================================================ */
 
 }

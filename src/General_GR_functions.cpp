@@ -141,8 +141,8 @@ void get_image_coordinates(Initial_conditions_type* p_Initial_Conditions, double
     double& J    = p_Initial_Conditions->Init_Momentum[e_phi];
     double& p_th = p_Initial_Conditions->Init_Momentum[e_theta];
 
-    Image_coords[x] = -r_0 *  J   / (ksi - gamma * J) / sqrt(metric[3][3]);
-    Image_coords[y] =  r_0 * p_th / (ksi - gamma * J) / sqrt(metric[2][2]);
+    Image_coords[e_x] = -r_0 *  J   / (ksi - gamma * J) / sqrt(metric[3][3]);
+    Image_coords[e_y] =  r_0 * p_th / (ksi - gamma * J) / sqrt(metric[2][2]);
 
 }
 

@@ -231,7 +231,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Toroidal")) { Hotspot_params->e_Mag_field_geometry = Toroidal; }
 
-    else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Poloidal")) { Hotspot_params->e_Mag_field_geometry = Poloidal; }
+    else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Vertical")) { Hotspot_params->e_Mag_field_geometry = Vertical; }
 
     else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Constant")) { Hotspot_params->e_Mag_field_geometry = Constant; }
 
@@ -254,6 +254,65 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_element, Disk_model_parameters_type* Disk_params) {
 
     tinyxml2::XMLElement* temp_param_var;
+
+    // -------------------- The disk model
+
+    temp_param_var = Accretion_disk_element->FirstChildElement("Disk_Model");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk model!" << "\n"; return ERROR; }
+    std::string Profile_type_string = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Phenom_RIAF_1")) { Disk_params->e_Disk_model = e_Phenom_RIAF_1; }
+
+    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Phenom_RIAF_2")) { Disk_params->e_Disk_model = e_Phenom_RIAF_2; }
+
+    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Colab_test_1")) { Disk_params->e_Disk_model = e_Colab_test_1; }
+
+    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Page-Thorne")) { Disk_params->e_Disk_model = e_Page_Thorne; }
+
+    else { std::cout << "Unsupported disk model!" << "\n"; return ERROR; }
+
+    // ----------------- Parse the Page-Thorne parameters
+
+    if (e_Page_Thorne == Disk_params->e_Disk_model) {
+
+        temp_param_var = Accretion_disk_element->FirstChildElement("r_in");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the inner Page-Thorne radius!" << "\n"; return ERROR; }
+        Disk_params->Page_Thorne_params.r_in = std::stod(temp_param_var->GetText());
+
+        temp_param_var = Accretion_disk_element->FirstChildElement("r_out");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the inner Page-Thorne radius!" << "\n"; return ERROR; }
+        Disk_params->Page_Thorne_params.r_out = std::stod(temp_param_var->GetText());
+
+        temp_param_var = Accretion_disk_element->FirstChildElement("Mag_field_geometry");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry enum!" << "\n"; return ERROR; }
+        std::string Mag_field_geometry_string = temp_param_var->GetText();
+
+        if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Toroidal")) { Disk_params->e_Mag_field_geometry = Toroidal; }
+
+        else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Vertical")) { Disk_params->e_Mag_field_geometry = Vertical; }
+
+        else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Constant")) { Disk_params->e_Mag_field_geometry = Constant; }
+
+        else { std::cout << "Unsupported magnetic field profile type for the disk!" << "\n"; return ERROR; }
+
+        // -------------------- The disk magnetic field geometry r component
+        temp_param_var = Accretion_disk_element->FirstChildElement("Mag_field_geometry_r");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry r component!" << "\n"; return ERROR; }
+        Disk_params->Mag_field_geometry[e_r - 1] = std::stod(temp_param_var->GetText());
+
+        // -------------------- The disk magnetic field geometry theta component
+        temp_param_var = Accretion_disk_element->FirstChildElement("Mag_field_geometry_theta");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry theta component!" << "\n"; return ERROR; }
+        Disk_params->Mag_field_geometry[e_theta - 1] = std::stod(temp_param_var->GetText());
+
+        // -------------------- The disk magnetic field geometry phi component 
+        temp_param_var = Accretion_disk_element->FirstChildElement("Mag_field_geometry_phi");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry phi component!" << "\n"; return ERROR; }
+        Disk_params->Mag_field_geometry[e_phi - 1] = std::stod(temp_param_var->GetText());
+
+        return OK;
+
+    }
 
     /* ======================================== Common paramaters ======================================== */
 
@@ -278,20 +337,6 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Phenomenological")) { Disk_params->Ensamble_type = e_Phenomenological_ensamble; }
 
     else { std::cout << "Unsupported ensamble type for the disk!" << "\n"; return ERROR; }
-
-    // -------------------- The disk model
-
-    temp_param_var = Common_paramaters_element->FirstChildElement("Disk_Model");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk model!" << "\n"; return ERROR; }
-    std::string Profile_type_string = temp_param_var->GetText();
-
-    if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Phenom_RIAF_1")) { Disk_params->e_Disk_model = e_Phenom_RIAF_1; }
-    
-    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Phenom_RIAF_2")) { Disk_params->e_Disk_model = e_Phenom_RIAF_2; }
-
-    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Colab_test_1")) { Disk_params->e_Disk_model = e_Colab_test_1; }
-
-    else { std::cout << "Unsupported disk model!" << "\n"; return ERROR; }
 
     // -------------------- The velocity profile
 
@@ -364,7 +409,7 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Toroidal")) { Disk_params->e_Mag_field_geometry = Toroidal;}
 
-    else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Poloidal")) { Disk_params->e_Mag_field_geometry = Poloidal;}
+    else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Vertical")) { Disk_params->e_Mag_field_geometry = Vertical;}
 
     else if (0 == strcmp(static_cast<const char*>(Mag_field_geometry_string.c_str()), "Constant")) {Disk_params->e_Mag_field_geometry = Constant;}
 
@@ -532,12 +577,12 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
 
     if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "Gustafsson")) {
 
-        Integrator_params->Simpson_accuracy = Gustafsson;
+        Integrator_params->Controller_type = Gustafsson;
 
     }
     else if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "PID")) {
 
-        Integrator_params->Simpson_accuracy = PID;
+        Integrator_params->Controller_type = PID;
 
     }
     else {
@@ -664,33 +709,6 @@ Return_Values static parse_observer_parameters(tinyxml2::XMLElement* Observer_el
     temp_param_var = Observer_element->FirstChildElement("Include_polarization");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the polarization flag!" << "\n"; return ERROR; }
     Observer_params->include_polarization = std::stoi(temp_param_var->GetText());
-
-    return OK;
-
-}
-
-Return_Values static parse_NT_params(tinyxml2::XMLElement* NT_element, NT_parameters_type* NT_params) {
-
-    tinyxml2::XMLElement* temp_param_var;
-
-    // -------------------- Evaluation flag
-    temp_param_var = NT_element->FirstChildElement("Evaluate_NT_disk");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the NT disk evaluation flag!" << "\n"; return ERROR; }
-    NT_params->evaluate_NT_disk = std::stoi(temp_param_var->GetText());
-
-    if (NT_params->evaluate_NT_disk) {
-
-        // -------------------- Inner disk radius
-        temp_param_var = NT_element->FirstChildElement("r_in");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the inner NT disk radius!" << "\n"; return ERROR; }
-        NT_params->r_in = std::stod(temp_param_var->GetText());
-
-        // -------------------- Outer disk radius
-        temp_param_var = NT_element->FirstChildElement("r_out");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the outer NT disk radius!" << "\n"; return ERROR; }
-        NT_params->r_out = std::stod(temp_param_var->GetText());
-
-    }
 
     return OK;
 
@@ -1081,7 +1099,7 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     /* ====================================== Parse the integrator parameters ====================================== */
 
     temp_param_var = Root_node->FirstChildElement("Integrator");
-    if (temp_param_var == nullptr) { std::cout << "Failed to find the Metric node!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the integrator node!" << "\n"; return ERROR; }
     if (OK != parse_integrator_params(temp_param_var, &p_Initial_conditions->Integrator_params)) { return ERROR; };
 
     /* ====================================== Parse the accretion disk parameters ====================================== */
@@ -1101,12 +1119,6 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     temp_param_var = Root_node->FirstChildElement("Emission_models");
     if (temp_param_var == nullptr) { std::cout << "Failed to find the Hotspot node!" << "\n"; return ERROR; }
     if (OK != parse_emission_model_params(temp_param_var, p_Initial_conditions)) { return ERROR; };
-
-    /* ====================================== Parse the Novikov-Thorne model parameters ====================================== */
-
-    temp_param_var = Root_node->FirstChildElement("Novikov_Thorne_disk");
-    if (temp_param_var == nullptr) { std::cout << "Failed to find the Hotspot node!" << "\n"; return ERROR; }
-    if (OK != parse_NT_params(temp_param_var, &p_Initial_conditions->NT_params)) { return ERROR; };
 
     /* ====================================== Parse the file paths ====================================== */
 

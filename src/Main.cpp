@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "Emission_Models.h"
-#include "Novikov_Thorne_model.h"
+#include "Page_Thorne_model.h"
 #include "General_GR_functions.h"
 #include "Lensing.h"
 
@@ -111,8 +111,8 @@ int main(int argument_count, char** cmd_line_args) {
     s_Sim_Context.p_Emission_Model = new Emission_models_class(&s_Sim_Context);
     s_Sim_Context.p_Emission_Model->precompute_electron_pitch_angles(s_Sim_Context.p_Init_Conditions);
 
-    // Allocate the Novikov-Thorne Model class
-     s_Sim_Context.p_NT_model = new Novikov_Thorne_Model_class(&s_Sim_Context);
+    // Allocate the Page-Thorne Model class
+    s_Sim_Context.p_PT_model = new Page_Thorne_Model_class(&s_Sim_Context);
 
     // Populate the File Manager class instance
     s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions);

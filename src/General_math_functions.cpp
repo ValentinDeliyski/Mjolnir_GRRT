@@ -90,58 +90,52 @@ double get_max_relative_error(const double* const Error_state, const double* con
 
 bool interpolate_crossing(const double* const State_Vector, 
 						  const double* const Old_State_Vector, 
-						  double* const Crossing_coords, 
-						  double* const Crossing_momenta) {
+						  double* const Crossing_State) {
 
 	// Check weather the equator has been crossed
-	if ((State_Vector[e_theta] - M_PI_2) * (Old_State_Vector[e_theta] - M_PI_2) > 0)
-	{
+	if ((State_Vector[e_theta] - M_PI_2) * (Old_State_Vector[e_theta] - M_PI_2) > 0) { return false; }
 
-		memset(Crossing_coords, 0, 3 * sizeof(double));
-		memset(Crossing_momenta, 0, 3 * sizeof(double));
+	/* ---------- Interpolate the equatorial crossing coorinates between the two photon state vectors (including the coordinate time) ----------  */
 
-		return false;
+	double Current_position_cartesian[3]{};
+	double Previous_position_cartesian[3]{};
+	double Crossing_state_cartesian[3]{};
+
+	convert_spherical_to_cartesian(State_Vector, Current_position_cartesian);
+	convert_spherical_to_cartesian(Old_State_Vector, Previous_position_cartesian);
+
+	double Direction_vector[3]{};
+
+	for (int idx = e_x; idx <= e_z; idx++) {
+		
+		Direction_vector[idx] = Current_position_cartesian[idx] - Previous_position_cartesian[idx]; 
+	
+	}
+
+	const double crossing_param_position = -Previous_position_cartesian[e_z] / Direction_vector[e_z];
+
+	for (int idx = e_x; idx <= e_z; idx++) {
+		
+		Crossing_state_cartesian[idx] = Previous_position_cartesian[idx] + crossing_param_position * Direction_vector[idx];
+	
+	}
+
+	Crossing_State[e_t] = Old_State_Vector[e_t] + crossing_param_position * (State_Vector[e_t] - Old_State_Vector[e_t]);
+
+	/* ---------- The crossing coordinates are currently in cartesian form -> convert them to spherical ---------- */
+
+	convert_cartesian_to_spherical(Crossing_state_cartesian, Crossing_State);
+
+	/* ---------- Interpolate the covariant momenta at those coorinates ---------- */
+
+	const double crossing_param_momentum = (M_PI_2 - Old_State_Vector[e_theta]) / (State_Vector[e_theta] - Old_State_Vector[e_theta]);
+
+	for (int index = e_p_t; index <= e_p_phi; index++) {
+
+		Crossing_State[index] = crossing_param_momentum * State_Vector[index] + (1 - crossing_param_momentum) * Old_State_Vector[index];
 
 	}
 
-	/*
-	
-	Interpolate the equatorial crossing coorinates
-	
-	*/
-
-	double x = State_Vector[e_r] * sin(State_Vector[e_theta]) * cos(State_Vector[e_phi]);
-	double y = State_Vector[e_r] * sin(State_Vector[e_theta]) * sin(State_Vector[e_phi]);
-	double z = State_Vector[e_r] * cos(State_Vector[e_theta]);
-
-	double x_old = Old_State_Vector[e_r] * sin(Old_State_Vector[e_theta]) * cos(Old_State_Vector[e_phi]);
-	double y_old = Old_State_Vector[e_r] * sin(Old_State_Vector[e_theta]) * sin(Old_State_Vector[e_phi]);
-	double z_old = Old_State_Vector[e_r] * cos(Old_State_Vector[e_theta]);
-
-	double gradient[3]   = { x - x_old, y - y_old, z - z_old };
-	double const_term[3] = { x_old, y_old, z_old };
-
-	double crossing_param = -const_term[2] / gradient[2];
-
-	for (int index = 0; index <= 2; index++) {
-
-		Crossing_coords[index] = gradient[index] * crossing_param + const_term[index];
-
-	}
-
-	/*
-	
-	Interpolate the covariant momenta at those coorinates
-	
-	*/
-
-	double momentum_param = (M_PI_2 - Old_State_Vector[e_theta]) / (State_Vector[e_theta] - Old_State_Vector[e_theta]);
-
-	for (int index = e_t; index <= e_phi; index++) {
-
-		Crossing_momenta[index] = momentum_param * State_Vector[e_p_t + index] + (1 - momentum_param) * Old_State_Vector[e_p_t + index];
-	}
-	
 	return true;
 }
 
@@ -159,7 +153,7 @@ double dot_product(const double* const Vector_1, const double* const Vector_2, i
 
 }
 
-void convert_spherical_to_cartesian(double* Spherical_Coords, double* Cartesian_Coords) {
+void convert_spherical_to_cartesian(const double* const Spherical_Coords, double* const Cartesian_Coords) {
 
 	double sin_theta = sin(Spherical_Coords[e_theta]);
 	double cos_theta = cos(Spherical_Coords[e_theta]);
@@ -167,28 +161,28 @@ void convert_spherical_to_cartesian(double* Spherical_Coords, double* Cartesian_
 	double sin_phi = sin(Spherical_Coords[e_phi]);
 	double cos_phi = cos(Spherical_Coords[e_phi]);
 
-	Cartesian_Coords[x] = Spherical_Coords[e_r] * sin_theta * cos_phi;
-	Cartesian_Coords[y] = Spherical_Coords[e_r] * sin_theta * sin_phi;
-	Cartesian_Coords[z] = Spherical_Coords[e_r] * cos_theta;
+	Cartesian_Coords[e_x] = Spherical_Coords[e_r] * sin_theta * cos_phi;
+	Cartesian_Coords[e_y] = Spherical_Coords[e_r] * sin_theta * sin_phi;
+	Cartesian_Coords[e_z] = Spherical_Coords[e_r] * cos_theta;
 
 }
 
-void convert_cartesian_to_spherical(double* Cartesian_Coords, double* Spherical_Coords) {
+void convert_cartesian_to_spherical(const double* const Cartesian_Coords, double* const Spherical_Coords) {
 
-	Spherical_Coords[e_r]  = Cartesian_Coords[x] * Cartesian_Coords[x];
-	Spherical_Coords[e_r] += Cartesian_Coords[y] * Cartesian_Coords[y];
-	Spherical_Coords[e_r] += Cartesian_Coords[z] * Cartesian_Coords[z];
+	Spherical_Coords[e_r]  = Cartesian_Coords[e_x] * Cartesian_Coords[e_x];
+	Spherical_Coords[e_r] += Cartesian_Coords[e_y] * Cartesian_Coords[e_y];
+	Spherical_Coords[e_r] += Cartesian_Coords[e_z] * Cartesian_Coords[e_z];
 	Spherical_Coords[e_r]  = sqrt(Spherical_Coords[e_r]);
 
-	Spherical_Coords[e_theta] = acos(Cartesian_Coords[z] / Spherical_Coords[e_r]);
+	Spherical_Coords[e_theta] = acos(Cartesian_Coords[e_z] / Spherical_Coords[e_r]);
 
-	Spherical_Coords[e_phi] = atan2(Cartesian_Coords[y], Cartesian_Coords[x]);
+	Spherical_Coords[e_phi] = atan2(Cartesian_Coords[e_y], Cartesian_Coords[e_x]);
 
 }
 
-void add_4D_vectors(const double* const Vec_1, const double* const Vec_2, double* const Result) {
+void add_vectors(const double* const Vec_1, const double* const Vec_2, const int size, double* const Result) {
 
-	for (int idx = 0; idx <= 3; idx++) {
+	for (int idx = 0; idx < size; idx++) {
 
 		Result[idx] = Vec_1[idx] + Vec_2[idx];
 

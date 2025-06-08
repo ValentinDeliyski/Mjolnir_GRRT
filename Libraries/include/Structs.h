@@ -8,7 +8,7 @@
 
 class Spacetime_Base_Class;
 class Emission_models_class;
-class Novikov_Thorne_Model_class;
+class Page_Thorne_Model_class;
 class Observer_class;
 class File_manager_class;
 
@@ -110,6 +110,8 @@ struct Disk_model_parameters_type {
     Common_RIAF_params_type Common_RIAF_params;
 
     Colab_test_1_params_type Colab_test_1_params;
+
+    Page_Thorne_params_type Page_Thorne_params;
 
 };
 
@@ -514,7 +516,7 @@ struct Integrator_parameters_type {
     /*! A additive factor <<1 that ensures no "division by 0" problems occur when calculating the new stepsizes. */
     double Safety_2;
 
-    /*! The error theshold parameter for the Simpson integral solving method. Currently this is only used in the Novikov-Thorne flux integral. */
+    /*! The error theshold parameter for the Simpson integral solving method. Currently this is only used in the Page-Thorne flux integral. */
     double Simpson_accuracy;
 
     /*! The maximum allowed attempted integration steps. */
@@ -565,19 +567,6 @@ struct Observer_parameters_type {
 
     /*! Flag that decides weather to include polarization in the radiative transfer. */
     bool include_polarization;
-
-};
-
-struct NT_parameters_type {
-
-    /*! The inner radius of the disk. */
-    double r_in;
-
-    /* The outer radius of teh disk. */
-    double r_out;
-
-    /* Flag that decides weather to evaluate the Novikov-Thorne model. */
-    bool evaluate_NT_disk;
 
 };
 
@@ -633,9 +622,6 @@ struct Initial_conditions_type {
     /*! Struct that holds the emission model parameters. */
     Emission_model_parameters_type Emission_params;
 
-    /*! Struct that holds the Novikov-Thorne model parameters. */
-    NT_parameters_type NT_params;
-
     /*! Initial condition for simulation mode 3. The image X coordiante is used to compute the initial azimuthal momentum. */
     double Sim_mode_3_X_init;
 
@@ -683,8 +669,8 @@ struct Simulation_Context_type {
     /*! Pointer to the class that holds all the emission medium related functions. */
     Emission_models_class* p_Emission_Model;
 
-    /*! Pointer to the class that holds all the Novikov-Thorne related functions. */
-    Novikov_Thorne_Model_class* p_NT_model;
+    /*! Pointer to the class that holds all the Page-Thorne related functions. */
+    Page_Thorne_Model_class* p_PT_model;
 
     /*! Pointer to the class that holds all the file manager related functions. */
     File_manager_class* File_manager;
@@ -719,19 +705,19 @@ struct Results_type {
     /* Array that holds the integrated intensity for each image order and polarization. */
     double Intensity[e_order_number][e_Stokes_param_num]{};
 
-    /* Array that holds the source coordinates from the Novikov-Thorne disk for each image order.
+    /* Array that holds the source coordinates from the Page-Thorne disk for each image order.
        This exists for use in simulation mode 2. */
     double Source_Coords[4][e_order_number]{};
 
-    /* Array that holds the photon momentum at the source from the Novikov-Thorne disk for each image order.
+    /* Array that holds the photon momentum at the source from the Page-Thorne disk for each image order.
        This exists for use in simulation mode 2. */
     double Photon_Momentum[4][e_order_number]{};
 
-    /* Array that holds the Novikov-Thorne disk flux for each image order. */
-    double Flux_NT[e_order_number]{};
+    /* Array that holds the Page-Thorne disk flux for each image order. */
+    double Flux_PT[e_order_number]{};
 
-    /* Array that holds the Novikov-Thorne disk redshift for each image order. */
-    double Redshift_NT[e_order_number]{};
+    /* Array that holds the Page-Thorne disk redshift for each image order. */
+    double Redshift_PT[e_order_number]{};
 
     /* Placeholder for an array that will hold the integrated optical depth for each image order and polarization. */
     double Optical_Depth{};

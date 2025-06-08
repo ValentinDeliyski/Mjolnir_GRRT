@@ -56,3 +56,11 @@ struct Hotspot_model_params_type {
 	double Coord_time_offset;
 
 };
+
+struct Page_Thorne_params_type {
+
+	double r_in;
+
+	double r_out;
+
+};

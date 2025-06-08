@@ -294,7 +294,7 @@
     <ClInclude Include="Libraries\include\Input_parser.h" />
     <ClInclude Include="Libraries\include\KHR\khrplatform.h" />
     <ClInclude Include="Libraries\include\Model_Structs.h" />
-    <ClInclude Include="Libraries\include\Novikov_Thorne_model.h" />
+    <ClInclude Include="Libraries\include\Page_Thorne_model.h" />
     <ClInclude Include="Libraries\include\Radiative_Transfer.h" />
     <ClInclude Include="Libraries\include\Spacetimes.h" />
     <ClInclude Include="Libraries\include\Structs.h" />
@@ -321,7 +321,7 @@
     <ClCompile Include="src\Input_parser.cpp" />
     <ClCompile Include="src\IO_files.cpp" />
     <ClCompile Include="src\Lensing.cpp" />
-    <ClCompile Include="src\Novikov_Thorne_disk_model.cpp" />
+    <ClCompile Include="src\Page_Thorne_disk_model.cpp" />
     <ClCompile Include="src\Numerical_metric.cpp" />
     <ClCompile Include="src\Radiative_Transfer.cpp" />
     <ClCompile Include="src\Main.cpp" />

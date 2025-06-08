@@ -26,7 +26,7 @@ Observer_class::Observer_class(Simulation_Context_type* p_Sim_Context) {
 
 Observer_parameters_type Observer_class::get_parameters() const { return this->obs_params; }
 
-const double* Observer_class::get_obs_velocity() const {
+const double* const Observer_class::get_obs_velocity() const {
 
     return this->obs_velocity;
 

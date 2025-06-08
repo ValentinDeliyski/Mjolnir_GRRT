@@ -18,8 +18,9 @@ enum Spacetime_enums: std::underlying_type_t <std::byte> {
 enum Magnetic_field_geometry_enums: std::underlying_type_t <std::byte> {
 
     Toroidal = 0,
-    Poloidal = 1,
-    Constant = 2
+    Radial   = 1,
+    Vertical = 2,
+    Constant = 3
 
 };
 
@@ -90,6 +91,9 @@ enum Disk_model_enums : std::underlying_type_t <std::byte> {
     /* This is the model used in https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6/pdf */
     e_Colab_test_1 = 2,
 
+    /* This is the model from https://articles.adsabs.harvard.edu/pdf/1974ApJ...191..499P */
+    e_Page_Thorne = 3
+
 };
 
 enum Velocity_enums: std::underlying_type_t <std::byte> {
@@ -119,9 +123,9 @@ enum State_enums: std::underlying_type_t <std::byte> {
 
 enum XYZ_enums: std::underlying_type_t <std::byte> {
 
-    x = 0,
-    y = 1,
-    z = 2
+    e_x = 0,
+    e_y = 1,
+    e_z = 2
 
 };
 

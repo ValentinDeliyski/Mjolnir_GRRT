@@ -191,9 +191,14 @@ void File_manager_class::write_simulation_metadata() {
             *(Output_file + Image_order) << "Active disk model: Colaboration_test_1\n";
             break;
 
+        case e_Page_Thorne:
+
+            *(Output_file + Image_order) << "Active disk model: Page-Thorne\n";
+            break;
         }
 
-        if (e_Colab_test_1 != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+        if (e_Phenom_RIAF_1 == this->p_Initial_Conditions->Disk_params.e_Disk_model ||
+            e_Phenom_RIAF_2 == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
             *(Output_file + Image_order) << "--------------------------- Model Parameters\n"
                                          << "Disk Opening Angle Parameter: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Disk_opening_angle << "\n"
@@ -207,6 +212,17 @@ void File_manager_class::write_simulation_metadata() {
                                          << "Disk Temperature cutoff scale: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_cutoff_scale << "\n";
 
         }
+        else if (e_Page_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+
+
+            *(Output_file + Image_order) << "--------------------------- Model Parameters\n" 
+                                         << "Inner Disk Radius [M]: "
+                                         << this->p_Initial_Conditions->Disk_params.Page_Thorne_params.r_in
+                                         << "\n"
+                                         << "Outer Disk Radius [M]: "
+                                         << this->p_Initial_Conditions->Disk_params.Page_Thorne_params.r_out
+                                         << "\n";
+        }
         else {
 
             *(Output_file + Image_order) << "--------------------------- Model Parameters\n"
@@ -216,63 +232,70 @@ void File_manager_class::write_simulation_metadata() {
 
         }
 
-        *(Output_file + Image_order) << "Maximum Density [g / cm^3]: " << this->p_Initial_Conditions->Disk_params.Electron_density_scale << "\n"
-                                     << "Maximum Temperature [K]: " << this->p_Initial_Conditions->Disk_params.Electron_temperature_scale << "\n";
+        if (e_Page_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model){
 
-        /*
+            *(Output_file + Image_order) << "Maximum Density [g / cm^3]: " << this->p_Initial_Conditions->Disk_params.Electron_density_scale << "\n"
+                                         << "Maximum Temperature [K]: " << this->p_Initial_Conditions->Disk_params.Electron_temperature_scale << "\n";
+
+            /*
         
-        --------------------------------------- Print the disk ensamble parameters ---------------------------------------
+            --------------------------------------- Print the disk ensamble parameters ---------------------------------------
         
-        */
+            */
 
-        switch (this->p_Initial_Conditions->Disk_params.Ensamble_type) {
+            switch (this->p_Initial_Conditions->Disk_params.Ensamble_type) {
 
-        case e_Phenomenological_ensamble:
+            case e_Phenomenological_ensamble:
 
-            *(Output_file + Image_order) << "Disk Ensamble: Phenomenological"
-                                         << "\n"
-                                         << "Emission Power Law Exponent [-]: "
-                                         << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_power_law
-                                         << "\n"
-                                         << "Absorbtion Coefficient [?]: "
-                                         << this->p_Initial_Conditions->Emission_params.Phenomenological_absorbtion_coeff
-                                         << "\n"
-                                         << "Source Function Power Law Exponent [-]: "
-                                         << this->p_Initial_Conditions->Emission_params.Phenomenological_source_f_power_law
-                                         << "\n"
-                                         << "Emission Scale [erg / (cm^3 s sr Hz)]: "
-                                         << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_coeff
-                                         << "\n";
+                *(Output_file + Image_order) << "Disk Ensamble: Phenomenological"
+                                             << "\n"
+                                             << "Emission Power Law Exponent [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_power_law
+                                             << "\n"
+                                             << "Absorbtion Coefficient [?]: "
+                                             << this->p_Initial_Conditions->Emission_params.Phenomenological_absorbtion_coeff
+                                             << "\n"
+                                             << "Source Function Power Law Exponent [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Phenomenological_source_f_power_law
+                                             << "\n"
+                                             << "Emission Scale [erg / (cm^3 s sr Hz)]: "
+                                             << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_coeff
+                                             << "\n";
 
-            break;
+                break;
 
-        case e_Thermal_ensamble:
+            case e_Thermal_ensamble:
 
-            *(Output_file + Image_order) << "Disk Ensamble: Thermal"
-                                         << "\n";
+                *(Output_file + Image_order) << "Disk Ensamble: Thermal"
+                                             << "\n";
 
-            break;
+                break;
 
-        case e_Kappa_ensamble:
-            *(Output_file + Image_order) << "Disk Ensamble: Kappa"
-                                         << "\n"
-                                         << "Kappa value [-]: "
-                                         << this->p_Initial_Conditions->Emission_params.Kappa
-                                         << "\n";
+            case e_Kappa_ensamble:
+                *(Output_file + Image_order) << "Disk Ensamble: Kappa"
+                                             << "\n"
+                                             << "Kappa value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Kappa
+                                             << "\n";
 
-            break;
+                break;
 
-        default:
+            default:
 
-            std::cout << "Unsupported Ensamble!" << "\n";
-            exit(ERROR);
+                std::cout << "Unsupported Ensamble!" << "\n";
+                exit(ERROR);
 
-            break;
+                break;
+        }
         }
 
         *(Output_file + Image_order) << "--------------------------- Magnetic Field Parameters\n";
 
-        *(Output_file + Image_order) << "Disk Magnetization [-]: " << this->p_Initial_Conditions->Disk_params.Magnetization << "\n";
+        if (e_Page_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+
+            *(Output_file + Image_order) << "Disk Magnetization [-]: " << this->p_Initial_Conditions->Disk_params.Magnetization << "\n";
+
+        }
 
         switch (this->p_Initial_Conditions->Disk_params.e_Mag_field_geometry) {
 
@@ -281,9 +304,9 @@ void File_manager_class::write_simulation_metadata() {
             *(Output_file + Image_order) << "Magnetic field geometry: Toroidal\n";
             break;
 
-        case Poloidal:
+        case Vertical:
 
-            *(Output_file + Image_order) << "Magnetic field geometry: Poloidal\n";
+            *(Output_file + Image_order) << "Magnetic field geometry: Vertical\n";
             break;
 
         case Constant:
@@ -296,238 +319,220 @@ void File_manager_class::write_simulation_metadata() {
 
         }
 
-        switch (this->p_Initial_Conditions->Disk_params.e_Mag_field_magnitude_profile) {
+        if (e_Page_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model){
 
-        case Magnetization_based:
+            switch (this->p_Initial_Conditions->Disk_params.e_Mag_field_magnitude_profile) {
 
-            *(Output_file + Image_order) << "Magnetic field magnitude profile: Magnetization based\n";
-            break;
+            case Magnetization_based:
 
-        case Power_law_based:
+                *(Output_file + Image_order) << "Magnetic field magnitude profile: Magnetization based\n";
+                break;
 
-            *(Output_file + Image_order) << "Magnetic field magnitude profile: Power law based\n"
-                                         << "Magnetic field scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_magnitude_scale << "\n"
-                                         << "Magnetic field radial scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_radial_scale << "\n"
-                                         << "Magnetic field power law: " << this->p_Initial_Conditions->Disk_params.Mag_field_power << "\n";
+            case Power_law_based:
 
-            break;
-        }
+                *(Output_file + Image_order) << "Magnetic field magnitude profile: Power law based\n"
+                                             << "Magnetic field scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_magnitude_scale << "\n"
+                                             << "Magnetic field radial scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_radial_scale << "\n"
+                                             << "Magnetic field power law: " << this->p_Initial_Conditions->Disk_params.Mag_field_power << "\n";
 
-        /*
+                break;
+            }
         
-        ================================================ Print the hotspot density parameters ================================================
+
+            /*
         
-        */
+            ================================================ Print the hotspot density parameters ================================================
+        
+            */
 
-        *(Output_file + Image_order) << "------------------------------------------------------- Hotspot Parameters -------------------------------------------------------"
-                                        << "\n" 
-                                        << "--------------------------- Density Model Parameters"
-                                        << "\n";
 
-        switch (this->p_Initial_Conditions->Hotspot_params.Density_profile_type) {
-
-        case e_Gaussian:
-
-            *(Output_file + Image_order) << "Density Profile: Gaussian"
-                                            << "\n"
-                                            << "Spread [M]: "
-                                            << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_gaussian_spread
+            *(Output_file + Image_order) << "------------------------------------------------------- Hotspot Parameters -------------------------------------------------------"
+                                            << "\n" 
+                                            << "--------------------------- Density Model Parameters"
                                             << "\n";
+
+            switch (this->p_Initial_Conditions->Hotspot_params.Density_profile_type) {
+
+            case e_Gaussian:
+
+                *(Output_file + Image_order) << "Density Profile: Gaussian"
+                                                << "\n"
+                                                << "Spread [M]: "
+                                                << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_gaussian_spread
+                                                << "\n";
                                             
-            break;
+                break;
 
-        case e_Spherical:
+            case e_Spherical:
 
-            *(Output_file + Image_order) << "Density Profile: Spherical"
-                                            << "\n"
-                                            << "Radius [M]: "
-                                            << this->p_Initial_Conditions->Hotspot_params.Profile_params.Radius
-                                            << "\n";            
+                *(Output_file + Image_order) << "Density Profile: Spherical"
+                                                << "\n"
+                                                << "Radius [M]: "
+                                                << this->p_Initial_Conditions->Hotspot_params.Profile_params.Radius
+                                                << "\n";            
 
-            break;
+                break;
 
-        case e_Hybrid_power_gaussian:
+            case e_Hybrid_power_gaussian:
 
-            *(Output_file + Image_order) << "Density Profile: Hybrid power law gaussian"
-                                         << "\n"
-                                         << "Spread [M]: "
-                                         << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_gaussian_spread
-                                         << "\n"
-                                         << "Power law power [-]: "
-                                         << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_power_law_power
-                                         << "\n"
-                                         << "Power law scale [-]: "
-                                         << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_power_law_scale
-                                         << "\n";
+                *(Output_file + Image_order) << "Density Profile: Hybrid power law gaussian"
+                                             << "\n"
+                                             << "Spread [M]: "
+                                             << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_gaussian_spread
+                                             << "\n"
+                                             << "Power law power [-]: "
+                                             << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_power_law_power
+                                             << "\n"
+                                             << "Power law scale [-]: "
+                                             << this->p_Initial_Conditions->Hotspot_params.Profile_params.Density_power_law_scale
+                                             << "\n";
 
-            break;
+                break;
 
-        default:
+            default:
 
-            *(Output_file + Image_order) << "Unsupported Density Profile!" << "\n";
+                *(Output_file + Image_order) << "Unsupported Density Profile!" << "\n";
 
-            break;
-        }
+                break;
+            }
 
-        *(Output_file + Image_order) << "Maximum Density [g / cm^3]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Electron_density_scale
-                                        << "\n";
+            *(Output_file + Image_order) << "Maximum Density [g / cm^3]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Electron_density_scale
+                                            << "\n";
 
-        /*
+            /*
 
-        --------------------------------------- Print the hotspot temperature parameters ---------------------------------------
+            --------------------------------------- Print the hotspot temperature parameters ---------------------------------------
 
-        */
+            */
 
-        *(Output_file + Image_order) << "--------------------------- Temperature Model Parameters"
-                                        << "\n";
+            *(Output_file + Image_order) << "--------------------------- Temperature Model Parameters"
+                                            << "\n";
 
-        switch (this->p_Initial_Conditions->Hotspot_params.Temperature_profile_type) {
+            switch (this->p_Initial_Conditions->Hotspot_params.Temperature_profile_type) {
 
-        case e_Gaussian:
+            case e_Gaussian:
 
-            *(Output_file + Image_order) << "Temperature Profile : Gaussian"
+                *(Output_file + Image_order) << "Temperature Profile : Gaussian"
+                                                << "\n"
+                                                << "Spread [M]: "
+                                                << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_gaussian_spread
+                                                << "\n";
+                                            
+                break;
+
+            case e_Spherical:
+
+                *(Output_file + Image_order) << "Temperature Profile: Spherical"
+                                                << "\n"
+                                                << "Radius [M]: "
+                                                << this->p_Initial_Conditions->Hotspot_params.Profile_params.Radius
+                                                << "\n";
+
+                break;
+
+            case e_Hybrid_power_gaussian:
+
+                *(Output_file + Image_order) << "Temperature Profile: Hybrid power law gaussian"
                                             << "\n"
                                             << "Spread [M]: "
                                             << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_gaussian_spread
-                                            << "\n";
-                                            
-            break;
-
-        case e_Spherical:
-
-            *(Output_file + Image_order) << "Temperature Profile: Spherical"
                                             << "\n"
-                                            << "Radius [M]: "
-                                            << this->p_Initial_Conditions->Hotspot_params.Profile_params.Radius
+                                            << "Power law power [-]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_power_law_power
+                                            << "\n"
+                                            << "Power law scale [-]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_power_law_scale
                                             << "\n";
 
-            break;
+                break;
 
-        case e_Hybrid_power_gaussian:
+            default:
 
-            *(Output_file + Image_order) << "Temperature Profile: Hybrid power law gaussian"
-                                        << "\n"
-                                        << "Spread [M]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_gaussian_spread
-                                        << "\n"
-                                        << "Power law power [-]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_power_law_power
-                                        << "\n"
-                                        << "Power law scale [-]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Profile_params.Temperature_power_law_scale
-                                        << "\n";
+                *(Output_file + Image_order) << "Unsupported Temperature Profile!" << "\n";
 
-            break;
+                break;
+            }
 
-        default:
+            *(Output_file + Image_order) << "Maximum Temperature [K]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Electron_temperature_scale
+                                            << "\n";
 
-            *(Output_file + Image_order) << "Unsupported Temperature Profile!" << "\n";
-
-            break;
-        }
-
-        *(Output_file + Image_order) << "Maximum Temperature [K]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Electron_temperature_scale
-                                        << "\n";
-
-        /*
+            /*
         
-        --------------------------------------- Print the hotspot ensamble parameters ---------------------------------------
+            --------------------------------------- Print the hotspot ensamble parameters ---------------------------------------
         
-        */
+            */
 
-        *(Output_file + Image_order) << "--------------------------- Hotspot Synchrotron Emission Model Parameters"
-                                        << "\n";
-
-        switch (this->p_Initial_Conditions->Hotspot_params.Ensamble_type) {
-
-        case e_Phenomenological_ensamble:
-
-            *(Output_file + Image_order) << "Hotspot Ensamble: Phenomenological"
-                                            << "\n"
-                                            << "Emission Power Law Exponent [-]: "
-                                            << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_power_law
-                                            << "\n"
-                                            << "Absorbtion Coefficient [?]: "
-                                            << this->p_Initial_Conditions->Emission_params.Phenomenological_absorbtion_coeff
-                                            << "\n"
-                                            << "Source Function Power Law Exponent [-]: "
-                                            << this->p_Initial_Conditions->Emission_params.Phenomenological_source_f_power_law
-                                            << "\n"
-                                            << "Emission Scale [erg / (cm^3 s sr Hz)]: "
-                                            << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_coeff
+            *(Output_file + Image_order) << "--------------------------- Hotspot Synchrotron Emission Model Parameters"
                                             << "\n";
 
-            break;
+            switch (this->p_Initial_Conditions->Hotspot_params.Ensamble_type) {
 
-        case e_Thermal_ensamble:
+            case e_Phenomenological_ensamble:
 
-            *(Output_file + Image_order) << "Hotspot Ensamble: Thermal"
+                *(Output_file + Image_order) << "Hotspot Ensamble: Phenomenological"
+                                                << "\n"
+                                                << "Emission Power Law Exponent [-]: "
+                                                << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_power_law
+                                                << "\n"
+                                                << "Absorbtion Coefficient [?]: "
+                                                << this->p_Initial_Conditions->Emission_params.Phenomenological_absorbtion_coeff
+                                                << "\n"
+                                                << "Source Function Power Law Exponent [-]: "
+                                                << this->p_Initial_Conditions->Emission_params.Phenomenological_source_f_power_law
+                                                << "\n"
+                                                << "Emission Scale [erg / (cm^3 s sr Hz)]: "
+                                                << this->p_Initial_Conditions->Emission_params.Phenomenological_emission_coeff
+                                                << "\n";
+
+                break;
+
+            case e_Thermal_ensamble:
+
+                *(Output_file + Image_order) << "Hotspot Ensamble: Thermal"
+                                                << "\n";
+
+                break;
+
+            case e_Kappa_ensamble:
+                *(Output_file + Image_order) << "Hotspot Ensamble: Kappa"
+                                                << "\n"
+                                                << "Kappa value [-]: "
+                                                << this->p_Initial_Conditions->Emission_params.Kappa
+                                                << "\n";
+
+                break;
+
+            default:
+
+                *(Output_file + Image_order) << "Unsupported Ensamble!" << "\n";
+
+                break;
+            }
+
+            *(Output_file + Image_order) << "Hotspot Magnetization [-]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Magnetization << "\n"
+                                            << "Hotspot Magnetic Field Geometry [-]: "
+                                            << "[" << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[0] << " "
+                                            << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[1] << " "
+                                            << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[2] << "]"
                                             << "\n";
 
-            break;
+            *(Output_file + Image_order) << "--------------------------- Hotspot Position"
+                                            << "\n";
 
-        case e_Kappa_ensamble:
-            *(Output_file + Image_order) << "Hotspot Ensamble: Kappa"
+            *(Output_file + Image_order) << "Distance [M]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Position[e_r]
                                             << "\n"
-                                            << "Kappa value [-]: "
-                                            << this->p_Initial_Conditions->Emission_params.Kappa
-                                            << "\n";
-
-            break;
-
-        default:
-
-            *(Output_file + Image_order) << "Unsupported Ensamble!" << "\n";
-
-            break;
-        }
-
-        *(Output_file + Image_order) << "Hotspot Magnetization [-]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Magnetization << "\n"
-                                        << "Hotspot Magnetic Field Geometry [-]: "
-                                        << "[" << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[0] << " "
-                                        << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[1] << " "
-                                        << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[2] << "]"
-                                        << "\n";
-
-        *(Output_file + Image_order) << "--------------------------- Hotspot Position"
-                                        << "\n";
-
-        *(Output_file + Image_order) << "Distance [M]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_r]
-                                        << "\n"
-                                        << "Inclination [Deg]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_theta] * 180.0 / M_PI
-                                        << "\n"
-                                        << "Azimuth [Deg]: "
-                                        << this->p_Initial_Conditions->Hotspot_params.Position[e_phi] * 180.0 / M_PI
-                                        << "\n";
-
-        *(Output_file + Image_order) << "Coordinate time offset [M]: " << this->p_Initial_Conditions->Hotspot_params.Profile_params.Coord_time_offset - this->p_Initial_Conditions->Observer_params.distance << "\n";
-
-        *(Output_file + Image_order) << "------------------------------------------------------- Novikov - Thorne Model Parameters -------------------------------------------------------"
-                                        << "\n";
-
-        /*
-        
-        --------------------------------------- Novikov - Thorne Disk Parameters ---------------------------------------
-        
-        */
-
-        if (this->p_Initial_Conditions->NT_params.evaluate_NT_disk){
-
-            *(Output_file + Image_order) << "Inner Disk Radius [M]: "
-                                            << this->p_Initial_Conditions->NT_params.r_in
+                                            << "Inclination [Deg]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Position[e_theta] * 180.0 / M_PI
                                             << "\n"
-                                            << "Outer Disk Radius [M]: "
-                                            << this->p_Initial_Conditions->NT_params.r_out
+                                            << "Azimuth [Deg]: "
+                                            << this->p_Initial_Conditions->Hotspot_params.Position[e_phi] * 180.0 / M_PI
                                             << "\n";
-        }
-        else {
 
-            *(Output_file + Image_order) << "Novikov - Thorne Disk Evaluation Is Disabled." << "\n";
+            *(Output_file + Image_order) << "Coordinate time offset [M]: " << this->p_Initial_Conditions->Hotspot_params.Profile_params.Coord_time_offset - this->p_Initial_Conditions->Observer_params.distance << "\n";
 
         }
 
@@ -738,13 +743,13 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
     for (int Image_order = e_direct; Image_order <= e_order_number - 1; Image_order += 1) {
 
-        Image_Output_files[Image_order] << s_Ray_results->Image_Coords[x]
+        Image_Output_files[Image_order] << s_Ray_results->Image_Coords[e_x]
                                         << " "
-                                        << s_Ray_results->Image_Coords[y]
+                                        << s_Ray_results->Image_Coords[e_y]
                                         << " "
-                                        << s_Ray_results->Redshift_NT[Image_order]
+                                        << s_Ray_results->Redshift_PT[Image_order]
                                         << " "
-                                        << s_Ray_results->Flux_NT[Image_order]
+                                        << s_Ray_results->Flux_PT[Image_order]
                                         << " "
                                         << s_Ray_results->Intensity[Image_order][I] * CGS_TO_JANSKY
                                         << " "
