@@ -86,7 +86,7 @@ double dot_product(const double* const Vector_1, const double* const Vector_2, i
  *	the results in the array, pointed to by "Cartesian_Coords".
  *
  *  @param [in] Spherical_Coords - Pointer to the vector expressed in spherical coordinates.
- *  @param [in] Cartesian_Coords - Pointer to the vector expressed in carrtesian coordinates.
+ *  @param [out] Cartesian_Coords - Pointer to the vector expressed in carrtesian coordinates.
  *  @return Nothing.
  */
 void convert_spherical_to_cartesian(const double* const Spherical_Coords, double* const Cartesian_Coords);
@@ -96,7 +96,7 @@ void convert_spherical_to_cartesian(const double* const Spherical_Coords, double
  *  the results in the array, pointed to by "Spherical_Coords".
  *
  *  @param [in] Cartesian_Coords - Pointer to the vector expressed in carrtesian coordinates.
- *  @param [in] Spherical_Coords - Pointer to the vector expressed in spherical coordinates.
+ *  @param [out] Spherical_Coords - Pointer to the vector expressed in spherical coordinates.
  *  @return Nothing.
  */
 void convert_cartesian_to_spherical(const double* const Cartesian_Coords, double* const Spherical_Coords);

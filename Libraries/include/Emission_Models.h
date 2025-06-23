@@ -128,10 +128,11 @@ public:
      *   \param [in] Velocity_profile - Enum for the type of velocity profile
      *   \return Pointer to the 4-velocity vector
      */
-    double* get_plasma_velocity(const double* const State_Vector, 
-                                const Simulation_Context_type* const p_Sim_Context, 
-                                Velocity_enums const Velocity_profile,
-                                double const Radial_velocity_fraction);
+    void get_plasma_velocity(const double* const State_Vector, 
+                             const Simulation_Context_type* const p_Sim_Context, 
+                             Velocity_enums const Velocity_profile,
+                             double const Radial_velocity_fraction,
+                             double* Plasma_Velocity);
     
     //! Computes the magnetic field 4-vector in the coordinate and plasma frames.
     /*! Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity) and a static observer (with 4-velocity n_mu = {-1, 0, 0, 0}).

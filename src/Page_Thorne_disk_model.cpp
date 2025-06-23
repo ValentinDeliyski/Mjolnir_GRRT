@@ -37,21 +37,16 @@ double Page_Thorne_Model_class::dr_Keplerian_angular_velocity(const double* cons
 
 double Page_Thorne_Model_class::Redshift(const double* const State_Vector, Observer_class* const p_Observer) {
 
-    const double& r_source = State_Vector[e_r];
+    const double& r_source  = State_Vector[e_r];
     const double& theta_source = State_Vector[e_theta];
-
 
     const double* U_obs = p_Observer->get_obs_velocity();
 
-    /*
-    Get the source 4-velocity
-    */
-
+    /* Get the source 4-velocity */
     Metric_type s_Metric_source = this->p_Spacetime->get_metric(State_Vector);
 
     double Kepler = this->Keplerian_angular_velocity(State_Vector);
-
-    double Gamma = 1 / sqrt(-s_Metric_source.Metric[0][0] - 2 * s_Metric_source.Metric[0][3] * Kepler - s_Metric_source.Metric[3][3] * Kepler * Kepler);
+    double Gamma  = 1 / sqrt(-s_Metric_source.Metric[0][0] - 2 * s_Metric_source.Metric[0][3] * Kepler - s_Metric_source.Metric[3][3] * Kepler * Kepler);
 
     if (isnan(Gamma) || isinf(Gamma) || isnan(Kepler) || isinf(Kepler)) {
 

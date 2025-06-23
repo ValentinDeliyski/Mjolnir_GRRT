@@ -211,7 +211,7 @@ struct Emission_medium_state_type {
     double Magnetization;
 
     /*! Pointer to the plasma velocity array at the current point in geometric units. */
-    double* Plasma_Velocity;
+    double Plasma_Velocity[4];
 
     /*! Struct that holds the magnetic field. */
     Magnetic_fields_type Magnetic_fields;

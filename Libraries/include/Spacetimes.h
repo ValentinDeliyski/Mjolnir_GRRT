@@ -370,6 +370,7 @@ private:
 
     Observer_parameters_type obs_params;
     double obs_velocity[4];
+    double fiducial_obs_velocity[4];
 
 public:
 
@@ -378,5 +379,7 @@ public:
     Observer_parameters_type get_parameters() const;
 
     const double* const get_obs_velocity() const;
+
+    const double* const get_fiducial_obs_velocity(Metric_type* p_Metric);
 
 };

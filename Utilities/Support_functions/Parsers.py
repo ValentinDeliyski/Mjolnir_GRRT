@@ -1,6 +1,6 @@
 from csv import reader
 from dataclasses import dataclass
-from numpy import array, zeros, sum, flip, linspace, vstack, repeat, savetxt, log, pi, float64
+from numpy import array, zeros, sum, flip, linspace, vstack, repeat, savetxt, log, pi, float64, sqrt
 from numpy.typing import NDArray
 
 class Simulation_Parser():
@@ -227,6 +227,28 @@ class Simulation_Parser():
 
         """ The base flux unit, returned by the ray-tracer is Jy. """
         Total_Intensity_Jy: float = float(sum(self.I_Intensity) * Pixel_area)
+
+        match unit:
+            
+            case "Jy":
+                return Total_Intensity_Jy
+            
+            case "mJy":
+              return 1e3 * Total_Intensity_Jy
+        
+            case _:
+                print("Unsupported flux unit!")    
+                return 0
+            
+    def get_polarized_flux(self, obs_pos: float, unit: str = "Jy") -> float:
+        
+        """ The observation window limits are given in geometric length units, 
+            so one divides by the effective observer distance to get the angular size. """
+        Pixel_area: float = ((self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * 
+                             (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / obs_pos**2)
+
+        """ The base flux unit, returned by the ray-tracer is Jy. """
+        Total_Intensity_Jy: float = float(sum(sqrt(self.Q_Intensity**2 + self.U_Intensity**2)) * Pixel_area)
 
         match unit:
             

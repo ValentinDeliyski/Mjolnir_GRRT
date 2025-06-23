@@ -284,7 +284,7 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
    /* ------------------------------------------------------------------ Г^r_{t,r} coefficients ------------------------------------------------------------------ */
 
     Connectrion_Coeffs[e_r][e_t][e_r] = 0.0;
-    Connectrion_Coeffs[e_r][e_r][e_t] = 0.0;
+    Connectrion_Coeffs[e_r][e_r][e_t] = Connectrion_Coeffs[e_r][e_t][e_r];
 
    /* ------------------------------------------------------------------ Г^r_{theta,r} coefficients -------------------------------------------------------------- */
 
@@ -294,24 +294,24 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
    /* ------------------------------------------------------------------ Г^r_{r,phi} coefficients ---------------------------------------------------------------- */
 
     Connectrion_Coeffs[e_r][e_r][e_phi] = 0.0;
-    Connectrion_Coeffs[e_r][e_phi][e_r] = 0.0;
+    Connectrion_Coeffs[e_r][e_phi][e_r] = Connectrion_Coeffs[e_r][e_r][e_phi];
 
    /* ------------------------------------------------------------------ Г^r_{t,theta} coefficients -------------------------------------------------------------- */
 
     Connectrion_Coeffs[e_r][e_t][e_theta] = 0.0;
-    Connectrion_Coeffs[e_r][e_theta][e_t] = 0.0;
+    Connectrion_Coeffs[e_r][e_theta][e_t] = Connectrion_Coeffs[e_r][e_t][e_theta];
      
    /* ------------------------------------------------------------------ Г^r_{phi,theta} coefficients ------------------------------------------------------------ */
 
     Connectrion_Coeffs[e_r][e_phi][e_theta] = 0.0;
-    Connectrion_Coeffs[e_r][e_theta][e_phi] = 0.0;
+    Connectrion_Coeffs[e_r][e_theta][e_phi] = Connectrion_Coeffs[e_r][e_phi][e_theta];
 
     /* ==================================================================== Г^theta_{..} coefficients ================================================================ */
 
-    Connectrion_Coeffs[e_theta][e_t][e_t] = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_t][e_t] / 2;
-    Connectrion_Coeffs[e_theta][e_r][e_r] = 0.0;
-    Connectrion_Coeffs[e_theta][e_theta][e_theta] = inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_theta][e_theta] / 2;
-    Connectrion_Coeffs[e_theta][e_phi][e_phi] = 0.0;
+    Connectrion_Coeffs[e_theta][e_t][e_t]         = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_t][e_t] / 2;
+    Connectrion_Coeffs[e_theta][e_r][e_r]         = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_r][e_r] / 2;
+    Connectrion_Coeffs[e_theta][e_theta][e_theta] =  inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_theta][e_theta] / 2;
+    Connectrion_Coeffs[e_theta][e_phi][e_phi]     = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_phi][e_phi] / 2;
 
     /* ------------------------------------------------------------------ Г^theta_{t,phi} coefficients ---------------------------------------------------------------- */
 
@@ -359,7 +359,7 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
 
     Connectrion_Coeffs[e_phi][e_r][e_phi] = inv_metric[e_phi][e_phi] * s_dr_metric.Metric[e_phi][e_phi] / 2 + 
                                             inv_metric[e_phi][e_t] * s_dr_metric.Metric[e_phi][e_t] / 2;
-    Connectrion_Coeffs[e_phi][e_phi][e_r] = Connectrion_Coeffs[e_r][e_r][e_phi];
+    Connectrion_Coeffs[e_phi][e_phi][e_r] = Connectrion_Coeffs[e_phi][e_r][e_phi];
 
    /* ------------------------------------------------------------------ Г^phi_{theta,phi} coefficients ------------------------------------------------------------ */
 
@@ -376,7 +376,7 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
    /* ------------------------------------------------------------------ Г^phi_{theta,r} coefficients -------------------------------------------------------------- */
 
     Connectrion_Coeffs[e_phi][e_theta][e_r] = 0.0;
-    Connectrion_Coeffs[e_phi][e_r][e_theta] = 0.0;
+    Connectrion_Coeffs[e_phi][e_r][e_theta] = Connectrion_Coeffs[e_phi][e_theta][e_r];
     
    /* ------------------------------------------------------------------ Г^phi_{t,r} coefficients ------------------------------------------------------------------ */
 

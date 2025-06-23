@@ -13,14 +13,19 @@ Observer_class::Observer_class(Simulation_Context_type* p_Sim_Context) {
 
     /*
 
-    Obs_velocity is given in contravatiant components
+    The velocities are given in contravatiant components
 
     */
 
-    obs_velocity[0] = 1.0 / s_init_Metric.Lapse_function;
-    obs_velocity[1] = 0;
-    obs_velocity[2] = 0;
-    obs_velocity[3] = s_init_Metric.Shift_function / s_init_Metric.Lapse_function;
+    this->obs_velocity[e_t]     = 1.0 / s_init_Metric.Lapse_function;
+    this->obs_velocity[e_r]     = 0;
+    this->obs_velocity[e_theta] = 0;
+    this->obs_velocity[e_phi]   = s_init_Metric.Shift_function / s_init_Metric.Lapse_function;
+
+    this->fiducial_obs_velocity[e_t]     = obs_velocity[e_t];
+    this->fiducial_obs_velocity[e_r]     = obs_velocity[e_r];
+    this->fiducial_obs_velocity[e_theta] = obs_velocity[e_theta];
+    this->fiducial_obs_velocity[e_phi]   = obs_velocity[e_phi];
 
 }
 
@@ -30,4 +35,14 @@ const double* const Observer_class::get_obs_velocity() const {
 
     return this->obs_velocity;
 
+}
+
+const double* const Observer_class::get_fiducial_obs_velocity(Metric_type* p_Metric){
+
+    this->fiducial_obs_velocity[e_t]     = 1.0 / p_Metric->Lapse_function;
+    this->fiducial_obs_velocity[e_r]     = 0;
+    this->fiducial_obs_velocity[e_theta] = 0;
+    this->fiducial_obs_velocity[e_phi]   = p_Metric->Shift_function / p_Metric->Lapse_function;
+
+    return this->fiducial_obs_velocity;
 }
