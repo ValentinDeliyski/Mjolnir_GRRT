@@ -170,15 +170,3 @@ enum Radiative_Transfer_Integrator: std::underlying_type_t <std::byte> {
 
 };
 
-enum Metric_Parameter_Selector: std::underlying_type_t <std::byte> {
-
-    Spin = 0,
-    WH_Redshift = 1,
-    JNW_Gamma = 2,
-    GB_Gamma = 3,
-    RBH_Param = 4,
-    BH_w_DM_Halo_Compactness = 5,
-    BH_w_DM_Halo_M_Halo = 6
-
-};
-

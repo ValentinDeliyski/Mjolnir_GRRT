@@ -96,22 +96,24 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
 
 }
 
-void static Seperate_Image_into_orders(int const Max_theta_turning_points, 
-                                       int const N_theta_turning_points,
-                                       Initial_conditions_type* const s_Initial_Conditions, 
-                                       Results_type* const p_Ray_results,
-                                       double const Intensity[e_Stokes_param_num]) {
+void static Seperate_Image_into_orders(const int Max_order,
+                                       const double Stokes_Vector_offset[e_Stokes_param_num][e_order_number],
+                                       Results_type* const p_Ray_results) {
 
-    int Image_Order = compute_image_order(Max_theta_turning_points - N_theta_turning_points, s_Initial_Conditions);
-    
     for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
     
-        p_Ray_results->Intensity[Image_Order][stokes_idx] = Intensity[stokes_idx] * p_Ray_results->Intensity_scale;
-    
-        for (int order_scan = Image_Order; order_scan < compute_image_order(Max_theta_turning_points, s_Initial_Conditions); order_scan++) {
-    
-            p_Ray_results->Intensity[Image_Order][stokes_idx] -= p_Ray_results->Intensity[order_scan + 1][stokes_idx];
-    
+        for (int order_scan = 0; order_scan <= Max_order; order_scan++) {
+
+            p_Ray_results->Intensity[order_scan][stokes_idx] = Stokes_Vector_offset[stokes_idx][order_scan];
+
+            if (order_scan + 1 <= Max_order) {
+
+                p_Ray_results->Intensity[order_scan][stokes_idx] -= Stokes_Vector_offset[stokes_idx][order_scan + 1];
+
+            }
+
+            p_Ray_results->Intensity[order_scan][stokes_idx] *= p_Ray_results->Intensity_scale;
+
         }
     
     }
@@ -597,10 +599,12 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                                        Results_type* const p_Ray_results,
                                        int* const N_theta_turning_points) {
 
-    int const Max_theta_turning_points = *N_theta_turning_points;
-    *N_theta_turning_points = 0;
+    int Current_theta_turning_points = *N_theta_turning_points;
+    const int Max_order = compute_image_order(*N_theta_turning_points, p_Sim_Context->p_Init_Conditions);
+    int Current_order = Max_order;
 
     double Stokes_Vector[e_Stokes_param_num]{};
+    double Stokes_Vector_offset[e_Stokes_param_num][e_order_number]{};
 
     std::complex<double> Coord_Basis_Pol_vec[4]{};
 
@@ -612,6 +616,20 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
         /* =============== Pick out the ray position / momenta from the Log, at the given log index =============== */
 
         double* Logged_ray_path = &(p_Ray_results->Ray_log_struct.Ray_path_log[log_index * e_State_Number]);
+
+        Current_theta_turning_points -= Check_for_theta_turning_point(Logged_ray_path, Logged_ray_path - e_State_Number);
+
+        if (Current_order != compute_image_order(Current_theta_turning_points, p_Sim_Context->p_Init_Conditions)) {
+
+            for (int Stokes_idx = 0; Stokes_idx <= e_Stokes_param_num - 1; Stokes_idx++) {
+
+                Stokes_Vector_offset[Stokes_idx][Current_order] = Stokes_Vector[Stokes_idx];
+
+            }
+
+            Current_order = compute_image_order(Current_theta_turning_points, p_Sim_Context->p_Init_Conditions);
+
+        }
 
         /* ====================================== Parallel transport the polarization vector ====================================== */
 
@@ -662,10 +680,18 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         log_ray_emission(Stokes_Vector, Optical_Depth, p_Ray_results, log_index);
 
-        *N_theta_turning_points += Check_for_theta_turning_point(Logged_ray_path, Logged_ray_path - e_State_Number);
-        Seperate_Image_into_orders(Max_theta_turning_points, *N_theta_turning_points, p_Sim_Context->p_Init_Conditions, p_Ray_results, Stokes_Vector);
+
+
+        
+    }
+
+    for (int Stokes_idx = 0; Stokes_idx <= e_Stokes_param_num - 1; Stokes_idx++) {
+
+        Stokes_Vector_offset[Stokes_idx][e_direct] = Stokes_Vector[Stokes_idx];
 
     }
+
+    Seperate_Image_into_orders(Max_order, Stokes_Vector_offset, p_Ray_results);
 
 }
 
