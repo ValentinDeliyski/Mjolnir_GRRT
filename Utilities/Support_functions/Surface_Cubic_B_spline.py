@@ -286,9 +286,9 @@ class Surface_Cubic_B_spline():
                     Partial_Z_grid = concatenate((Partial_Z_grid, Patch_Z_coords_element), axis = 1)
                     
                 except:
-                    Partial_X_grid = array(Patch_X_coords)
-                    Partial_Y_grid = array(Patch_Y_coords)
-                    Partial_Z_grid = array(Patch_Z_coords)
+                    Partial_X_grid = array(Patch_X_coords_element)
+                    Partial_Y_grid = array(Patch_Y_coords_element)
+                    Partial_Z_grid = array(Patch_Z_coords_element)
                     
             try:
                 X_surface = concatenate((X_surface, Partial_X_grid), axis = 0)

@@ -143,8 +143,6 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
 
         Emission_functions[I] = Emission_functions_low[I] * pow(1. + pow(Emission_functions_high[I] / Emission_functions_low[I], -power_I), -1. / power_I);
 
-        //Emission_functions[I] = Emission_functions_high[I];
-
     }
 
     /* Return if the simulataion does not include polarization components */
@@ -238,7 +236,6 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
 
         Absorbtion_functions[I] = Absorbtion_functions_low[I] * pow(1. + pow(Absorbtion_functions_high[I] / Absorbtion_functions_low[I], -power_I), -1.0 / power_I);
 
-        //Absorbtion_functions[I] = Absorbtion_functions_high[I];
     }
 
     /* Return if the simulataion does not include polarization components */

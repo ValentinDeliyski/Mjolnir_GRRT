@@ -221,7 +221,7 @@ int compute_image_order(const int N_theta_turning_points, Initial_conditions_typ
 
 }
 
-void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s_dr_metric, const Metric_type s_dtheta_metric, double Connectrion_Coeffs[4][4][4]) {
+void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s_dr_metric, const Metric_type s_dtheta_metric, double Connection_Coeffs[4][4][4]) {
 
     double inv_metric[4][4]{};
 
@@ -229,159 +229,159 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
 
   /* ==================================================================== Г^t_{..} coefficients ================================================================ */
 
-    Connectrion_Coeffs[e_t][e_t][e_t]         = 0.0;
-    Connectrion_Coeffs[e_t][e_r][e_r]         = 0.0;
-    Connectrion_Coeffs[e_t][e_theta][e_theta] = 0.0;
-    Connectrion_Coeffs[e_t][e_phi][e_phi]     = 0.0;
+    Connection_Coeffs[e_t][e_t][e_t]         = 0.0;
+    Connection_Coeffs[e_t][e_r][e_r]         = 0.0;
+    Connection_Coeffs[e_t][e_theta][e_theta] = 0.0;
+    Connection_Coeffs[e_t][e_phi][e_phi]     = 0.0;
 
     /* ------------------------------------------------------------------ Г^t_{t,r} coefficients --------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_t][e_t][e_r] = inv_metric[e_t][e_t] * s_dr_metric.Metric[e_t][e_t] / 2 + 
-                                        inv_metric[e_t][e_phi] * s_dr_metric.Metric[e_t][e_phi] / 2;
-    Connectrion_Coeffs[e_t][e_r][e_t] = Connectrion_Coeffs[e_t][e_t][e_r];
+    Connection_Coeffs[e_t][e_t][e_r] = inv_metric[e_t][e_t] * s_dr_metric.Metric[e_t][e_t] / 2 + 
+                                       inv_metric[e_t][e_phi] * s_dr_metric.Metric[e_t][e_phi] / 2;
+    Connection_Coeffs[e_t][e_r][e_t] = Connection_Coeffs[e_t][e_t][e_r];
 
     /* ------------------------------------------------------------------ Г^t_{t,phi} coefficients ------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_t][e_t][e_phi] = 0.0;
-    Connectrion_Coeffs[e_t][e_phi][e_t] = 0.0;
+    Connection_Coeffs[e_t][e_t][e_phi] = 0.0;
+    Connection_Coeffs[e_t][e_phi][e_t] = 0.0;
 
     /* ------------------------------------------------------------------ Г^t_{t,theta} coefficients ----------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_t][e_t][e_theta] = inv_metric[e_t][e_t]   * s_dtheta_metric.Metric[e_t][e_t] / 2 + 
-                                            inv_metric[e_t][e_phi] * s_dtheta_metric.Metric[e_t][e_phi] / 2;
-    Connectrion_Coeffs[e_t][e_theta][e_t] = Connectrion_Coeffs[e_t][e_t][e_theta];
+    Connection_Coeffs[e_t][e_t][e_theta] = inv_metric[e_t][e_t]   * s_dtheta_metric.Metric[e_t][e_t] / 2 + 
+                                           inv_metric[e_t][e_phi] * s_dtheta_metric.Metric[e_t][e_phi] / 2;
+    Connection_Coeffs[e_t][e_theta][e_t] = Connection_Coeffs[e_t][e_t][e_theta];
 
    /* ------------------------------------------------------------------ Г^t_{phi,r} coefficients -------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_t][e_phi][e_r] = inv_metric[e_t][e_t]   * s_dr_metric.Metric[e_t][e_phi] / 2 + 
-                                          inv_metric[e_t][e_phi] * s_dr_metric.Metric[e_phi][e_phi] / 2;
-    Connectrion_Coeffs[e_t][e_r][e_phi] = Connectrion_Coeffs[e_t][e_phi][e_r];
+    Connection_Coeffs[e_t][e_phi][e_r] = inv_metric[e_t][e_t]   * s_dr_metric.Metric[e_t][e_phi] / 2 + 
+                                         inv_metric[e_t][e_phi] * s_dr_metric.Metric[e_phi][e_phi] / 2;
+    Connection_Coeffs[e_t][e_r][e_phi] = Connection_Coeffs[e_t][e_phi][e_r];
 
    /* ------------------------------------------------------------------ Г^t_{phi,theta} coefficients ---------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_t][e_phi][e_theta] = inv_metric[e_t][e_t]   * s_dtheta_metric.Metric[e_t][e_phi] / 2 + 
-                                              inv_metric[e_t][e_phi] * s_dtheta_metric.Metric[e_phi][e_phi] / 2;
-    Connectrion_Coeffs[e_t][e_theta][e_phi] = Connectrion_Coeffs[e_t][e_phi][e_theta];
+    Connection_Coeffs[e_t][e_phi][e_theta] = inv_metric[e_t][e_t]   * s_dtheta_metric.Metric[e_t][e_phi] / 2 + 
+                                             inv_metric[e_t][e_phi] * s_dtheta_metric.Metric[e_phi][e_phi] / 2;
+    Connection_Coeffs[e_t][e_theta][e_phi] = Connection_Coeffs[e_t][e_phi][e_theta];
 
    /* ------------------------------------------------------------------ Г^t_{r,theta} coefficients ------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_t][e_theta][e_r] = 0.0;
-    Connectrion_Coeffs[e_t][e_r][e_theta] = 0.0;
+    Connection_Coeffs[e_t][e_theta][e_r] = 0.0;
+    Connection_Coeffs[e_t][e_r][e_theta] = 0.0;
 
 
   /* ==================================================================== Г^r_{..} coefficients ==================================================================== */
 
-    Connectrion_Coeffs[e_r][e_t][e_t]         = -inv_metric[e_r][e_r] * s_dr_metric.Metric[e_t][e_t] / 2;
-    Connectrion_Coeffs[e_r][e_r][e_r]         =  inv_metric[e_r][e_r] * s_dr_metric.Metric[e_r][e_r] / 2;
-    Connectrion_Coeffs[e_r][e_theta][e_theta] = -inv_metric[e_r][e_r] * s_dr_metric.Metric[e_theta][e_theta] / 2;
-    Connectrion_Coeffs[e_r][e_phi][e_phi]     = -inv_metric[e_r][e_r] * s_dr_metric.Metric[e_phi][e_phi] / 2;
+    Connection_Coeffs[e_r][e_t][e_t]         = -inv_metric[e_r][e_r] * s_dr_metric.Metric[e_t][e_t] / 2;
+    Connection_Coeffs[e_r][e_r][e_r]         =  inv_metric[e_r][e_r] * s_dr_metric.Metric[e_r][e_r] / 2;
+    Connection_Coeffs[e_r][e_theta][e_theta] = -inv_metric[e_r][e_r] * s_dr_metric.Metric[e_theta][e_theta] / 2;
+    Connection_Coeffs[e_r][e_phi][e_phi]     = -inv_metric[e_r][e_r] * s_dr_metric.Metric[e_phi][e_phi] / 2;
 
    /* ------------------------------------------------------------------ Г^r_{t,phi} coefficients ---------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_r][e_t][e_phi] = -inv_metric[e_r][e_r] * s_dr_metric.Metric[e_t][e_phi] / 2;
-    Connectrion_Coeffs[e_r][e_phi][e_t] = Connectrion_Coeffs[e_r][e_t][e_phi];
+    Connection_Coeffs[e_r][e_t][e_phi] = -inv_metric[e_r][e_r] * s_dr_metric.Metric[e_t][e_phi] / 2;
+    Connection_Coeffs[e_r][e_phi][e_t] = Connection_Coeffs[e_r][e_t][e_phi];
 
    /* ------------------------------------------------------------------ Г^r_{t,r} coefficients ------------------------------------------------------------------ */
 
-    Connectrion_Coeffs[e_r][e_t][e_r] = 0.0;
-    Connectrion_Coeffs[e_r][e_r][e_t] = Connectrion_Coeffs[e_r][e_t][e_r];
+    Connection_Coeffs[e_r][e_t][e_r] = 0.0;
+    Connection_Coeffs[e_r][e_r][e_t] = Connection_Coeffs[e_r][e_t][e_r];
 
    /* ------------------------------------------------------------------ Г^r_{theta,r} coefficients -------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_r][e_theta][e_r] = inv_metric[e_r][e_r] * s_dtheta_metric.Metric[e_r][e_r] / 2;
-    Connectrion_Coeffs[e_r][e_r][e_theta] = Connectrion_Coeffs[e_r][e_theta][e_r];
+    Connection_Coeffs[e_r][e_theta][e_r] = inv_metric[e_r][e_r] * s_dtheta_metric.Metric[e_r][e_r] / 2;
+    Connection_Coeffs[e_r][e_r][e_theta] = Connection_Coeffs[e_r][e_theta][e_r];
 
    /* ------------------------------------------------------------------ Г^r_{r,phi} coefficients ---------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_r][e_r][e_phi] = 0.0;
-    Connectrion_Coeffs[e_r][e_phi][e_r] = Connectrion_Coeffs[e_r][e_r][e_phi];
+    Connection_Coeffs[e_r][e_r][e_phi] = 0.0;
+    Connection_Coeffs[e_r][e_phi][e_r] = Connection_Coeffs[e_r][e_r][e_phi];
 
    /* ------------------------------------------------------------------ Г^r_{t,theta} coefficients -------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_r][e_t][e_theta] = 0.0;
-    Connectrion_Coeffs[e_r][e_theta][e_t] = Connectrion_Coeffs[e_r][e_t][e_theta];
+    Connection_Coeffs[e_r][e_t][e_theta] = 0.0;
+    Connection_Coeffs[e_r][e_theta][e_t] = Connection_Coeffs[e_r][e_t][e_theta];
      
    /* ------------------------------------------------------------------ Г^r_{phi,theta} coefficients ------------------------------------------------------------ */
 
-    Connectrion_Coeffs[e_r][e_phi][e_theta] = 0.0;
-    Connectrion_Coeffs[e_r][e_theta][e_phi] = Connectrion_Coeffs[e_r][e_phi][e_theta];
+    Connection_Coeffs[e_r][e_phi][e_theta] = 0.0;
+    Connection_Coeffs[e_r][e_theta][e_phi] = Connection_Coeffs[e_r][e_phi][e_theta];
 
     /* ==================================================================== Г^theta_{..} coefficients ================================================================ */
 
-    Connectrion_Coeffs[e_theta][e_t][e_t]         = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_t][e_t] / 2;
-    Connectrion_Coeffs[e_theta][e_r][e_r]         = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_r][e_r] / 2;
-    Connectrion_Coeffs[e_theta][e_theta][e_theta] =  inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_theta][e_theta] / 2;
-    Connectrion_Coeffs[e_theta][e_phi][e_phi]     = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_phi][e_phi] / 2;
+    Connection_Coeffs[e_theta][e_t][e_t]         = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_t][e_t] / 2;
+    Connection_Coeffs[e_theta][e_r][e_r]         = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_r][e_r] / 2;
+    Connection_Coeffs[e_theta][e_theta][e_theta] =  inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_theta][e_theta] / 2;
+    Connection_Coeffs[e_theta][e_phi][e_phi]     = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_phi][e_phi] / 2;
 
     /* ------------------------------------------------------------------ Г^theta_{t,phi} coefficients ---------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_theta][e_t][e_phi] = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_t][e_phi] / 2;
-    Connectrion_Coeffs[e_theta][e_phi][e_t] = Connectrion_Coeffs[e_theta][e_t][e_phi];
+    Connection_Coeffs[e_theta][e_t][e_phi] = -inv_metric[e_theta][e_theta] * s_dtheta_metric.Metric[e_t][e_phi] / 2;
+    Connection_Coeffs[e_theta][e_phi][e_t] = Connection_Coeffs[e_theta][e_t][e_phi];
 
     /* ------------------------------------------------------------------ Г^theta_{t,r} coefficients ------------------------------------------------------------------ */
 
-    Connectrion_Coeffs[e_theta][e_t][e_r] = 0.0;
-    Connectrion_Coeffs[e_theta][e_r][e_t] = 0.0;
+    Connection_Coeffs[e_theta][e_t][e_r] = 0.0;
+    Connection_Coeffs[e_theta][e_r][e_t] = 0.0;
 
     /* ------------------------------------------------------------------ Г^theta_{theta,r} coefficients -------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_theta][e_theta][e_r] = inv_metric[e_theta][e_theta] * s_dr_metric.Metric[e_theta][e_theta] / 2;
-    Connectrion_Coeffs[e_theta][e_r][e_theta] = Connectrion_Coeffs[e_theta][e_theta][e_r];
+    Connection_Coeffs[e_theta][e_theta][e_r] = inv_metric[e_theta][e_theta] * s_dr_metric.Metric[e_theta][e_theta] / 2;
+    Connection_Coeffs[e_theta][e_r][e_theta] = Connection_Coeffs[e_theta][e_theta][e_r];
 
     /* ------------------------------------------------------------------ Г^theta_{r,phi} coefficients ---------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_theta][e_r][e_phi] = 0.0;
-    Connectrion_Coeffs[e_theta][e_phi][e_r] = 0.0;
+    Connection_Coeffs[e_theta][e_r][e_phi] = 0.0;
+    Connection_Coeffs[e_theta][e_phi][e_r] = 0.0;
 
     /* ------------------------------------------------------------------ Г^theta_{t,theta} coefficients -------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_theta][e_t][e_theta] = 0.0;
-    Connectrion_Coeffs[e_theta][e_theta][e_t] = 0.0;
+    Connection_Coeffs[e_theta][e_t][e_theta] = 0.0;
+    Connection_Coeffs[e_theta][e_theta][e_t] = 0.0;
 
     /* ------------------------------------------------------------------ Г^theta_{phi,theta} coefficients ------------------------------------------------------------ */
 
-    Connectrion_Coeffs[e_theta][e_phi][e_theta] = 0.0;
-    Connectrion_Coeffs[e_theta][e_theta][e_phi] = 0.0;
+    Connection_Coeffs[e_theta][e_phi][e_theta] = 0.0;
+    Connection_Coeffs[e_theta][e_theta][e_phi] = 0.0;
 
   /* ==================================================================== Г^phi_{..} coefficients ==================================================================== */
 
-    Connectrion_Coeffs[e_phi][e_t][e_t] = 0.0;
-    Connectrion_Coeffs[e_phi][e_r][e_r] = 0.0;
-    Connectrion_Coeffs[e_phi][e_theta][e_theta] = 0.0;
-    Connectrion_Coeffs[e_phi][e_phi][e_phi] = 0.0;
+    Connection_Coeffs[e_phi][e_t][e_t] = 0.0;
+    Connection_Coeffs[e_phi][e_r][e_r] = 0.0;
+    Connection_Coeffs[e_phi][e_theta][e_theta] = 0.0;
+    Connection_Coeffs[e_phi][e_phi][e_phi] = 0.0;
 
    /* ------------------------------------------------------------------ Г^phi_{t,phi} coefficients ---------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_phi][e_t][e_phi] = 0.0;
-    Connectrion_Coeffs[e_phi][e_phi][e_t] = 0.0;
+    Connection_Coeffs[e_phi][e_t][e_phi] = 0.0;
+    Connection_Coeffs[e_phi][e_phi][e_t] = 0.0;
 
    /* ------------------------------------------------------------------ Г^phi_{r,phi} coefficients ---------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_phi][e_r][e_phi] = inv_metric[e_phi][e_phi] * s_dr_metric.Metric[e_phi][e_phi] / 2 + 
-                                            inv_metric[e_phi][e_t] * s_dr_metric.Metric[e_phi][e_t] / 2;
-    Connectrion_Coeffs[e_phi][e_phi][e_r] = Connectrion_Coeffs[e_phi][e_r][e_phi];
+    Connection_Coeffs[e_phi][e_r][e_phi] = inv_metric[e_phi][e_phi] * s_dr_metric.Metric[e_phi][e_phi] / 2 + 
+                                           inv_metric[e_phi][e_t] * s_dr_metric.Metric[e_phi][e_t] / 2;
+    Connection_Coeffs[e_phi][e_phi][e_r] = Connection_Coeffs[e_phi][e_r][e_phi];
 
    /* ------------------------------------------------------------------ Г^phi_{theta,phi} coefficients ------------------------------------------------------------ */
 
-    Connectrion_Coeffs[e_phi][e_theta][e_phi] = inv_metric[e_phi][e_phi] * s_dtheta_metric.Metric[e_phi][e_phi] / 2 +
-                                                inv_metric[e_phi][e_t] * s_dtheta_metric.Metric[e_phi][e_t] / 2;
-    Connectrion_Coeffs[e_phi][e_phi][e_theta] = Connectrion_Coeffs[e_phi][e_theta][e_phi];
+    Connection_Coeffs[e_phi][e_theta][e_phi] = inv_metric[e_phi][e_phi] * s_dtheta_metric.Metric[e_phi][e_phi] / 2 +
+                                               inv_metric[e_phi][e_t] * s_dtheta_metric.Metric[e_phi][e_t] / 2;
+    Connection_Coeffs[e_phi][e_phi][e_theta] = Connection_Coeffs[e_phi][e_theta][e_phi];
     
    /* ------------------------------------------------------------------ Г^phi_{t,r} coefficients ------------------------------------------------------------------ */
 
-    Connectrion_Coeffs[e_phi][e_t][e_r] = inv_metric[e_phi][e_phi] * s_dr_metric.Metric[e_phi][e_t] / 2 +
-                                          inv_metric[e_phi][e_t] * s_dr_metric.Metric[e_t][e_t] / 2;
-    Connectrion_Coeffs[e_phi][e_r][e_t] = Connectrion_Coeffs[e_phi][e_t][e_r];
+    Connection_Coeffs[e_phi][e_t][e_r] = inv_metric[e_phi][e_phi] * s_dr_metric.Metric[e_phi][e_t] / 2 +
+                                         inv_metric[e_phi][e_t] * s_dr_metric.Metric[e_t][e_t] / 2;
+    Connection_Coeffs[e_phi][e_r][e_t] = Connection_Coeffs[e_phi][e_t][e_r];
 
    /* ------------------------------------------------------------------ Г^phi_{theta,r} coefficients -------------------------------------------------------------- */
 
-    Connectrion_Coeffs[e_phi][e_theta][e_r] = 0.0;
-    Connectrion_Coeffs[e_phi][e_r][e_theta] = Connectrion_Coeffs[e_phi][e_theta][e_r];
+    Connection_Coeffs[e_phi][e_theta][e_r] = 0.0;
+    Connection_Coeffs[e_phi][e_r][e_theta] = Connection_Coeffs[e_phi][e_theta][e_r];
     
-   /* ------------------------------------------------------------------ Г^phi_{t,r} coefficients ------------------------------------------------------------------ */
+   /* ------------------------------------------------------------------ Г^phi_{t,theta} coefficients ------------------------------------------------------------------ */
 
-    Connectrion_Coeffs[e_phi][e_t][e_theta] = inv_metric[e_phi][e_phi] * s_dtheta_metric.Metric[e_phi][e_t] / 2 +
-                                              inv_metric[e_phi][e_t] * s_dtheta_metric.Metric[e_t][e_t] / 2;
-    Connectrion_Coeffs[e_phi][e_theta][e_t] = Connectrion_Coeffs[e_phi][e_t][e_theta];
+    Connection_Coeffs[e_phi][e_t][e_theta] = inv_metric[e_phi][e_phi] * s_dtheta_metric.Metric[e_phi][e_t] / 2 +
+                                             inv_metric[e_phi][e_t] * s_dtheta_metric.Metric[e_t][e_t] / 2;
+    Connection_Coeffs[e_phi][e_theta][e_t] = Connection_Coeffs[e_phi][e_t][e_theta];
 
 }

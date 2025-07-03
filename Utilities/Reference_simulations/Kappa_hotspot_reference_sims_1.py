@@ -36,6 +36,8 @@ class Hotspot_reference_sims:
         self.Units = Units_class()
         self.Simulation_configurator = Simulation_configurator()
         self.Simulation_configurator.average_emission_pitch_angle = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Include_polarization = {"Value": 1, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[-]"}
         
         """ Central black hole setup"""
         self.Simulation_configurator.metric_parameters.Metric_type = {"Value": "Kerr",  "Unit": "[-]"}
@@ -62,19 +64,21 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.hotspot_model.Ensamble_type     = {"Value": "Kappa", "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Distance          = {"Value": 8,       "Unit": "[M]"} 
         
-        self.Simulation_configurator.hotspot_model.Mag_field_geometry       = {"Value": "Constant", "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Mag_field_geometry       = {"Value": "Vertical", "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Mag_field_geometry_r     = {"Value": 0, "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Mag_field_geometry_theta = {"Value": 0, "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Mag_field_geometry_phi   = {"Value": 1, "Unit": "[-]"}
+        
+        self.Simulation_configurator.hotspot_model.Threshold_relative_density   = {"Value": 1e-6, "Unit": "[-]"}
         
         """ This value for the initial hotspot azimuth makes it appear on the anti-beaming size at t_obs = 0. This makes the light curve look nicer. """
         self.Simulation_configurator.hotspot_model.Azimuth           = {"Value": pi * 0.50,  "Unit": "[M]"} 
         self.Simulation_configurator.hotspot_model.Velocity_profile  = {"Value": "Keplarian", "Unit": "[-]"}
         
         """ Observer setup """
-        self.Simulation_configurator.observer.Distance    = {"Value": 1e4,           "Unit": "[M]"}
-        self.Simulation_configurator.observer.Inclination = {"Value": 170 * pi / 180, "Unit": "[Rad]"}
-        self.Simulation_configurator.observer.Azimuth     = {"Value": 0,             "Unit": "[Rad]"}
+        self.Simulation_configurator.observer.Distance    = {"Value": 1e4,            "Unit": "[M]"}
+        self.Simulation_configurator.observer.Inclination = {"Value": 150 * pi / 180, "Unit": "[Rad]"}
+        self.Simulation_configurator.observer.Azimuth     = {"Value": 0,              "Unit": "[Rad]"}
         
         self.Simulation_configurator.observer.Obs_frequency = {"Value": Units_class().C_LIGHT_SI / 2.2e-6, "Unit": "[Hz]"}
         self.Observer_FOV = {"Value": 200, "Unit": "[micro-arcsec]"}
@@ -84,20 +88,17 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.observer.Image_x_min = {"Value": -(self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         self.Simulation_configurator.observer.Image_x_max = {"Value":  (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         
-        self.Simulation_configurator.observer.Resolution_x = {"Value": 512, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 512, "Unit": "[-]"}
-       
-        """ Kill the Novikov-Thorne disk """
-        self.Simulation_configurator.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_x = {"Value": 128, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": 128, "Unit": "[-]"}
         
         """ Configure the integrator """
         self.Simulation_configurator.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK45_accuracy        = {"Value": 1e-13, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK45_accuracy        = {"Value": 1e-10, "Unit": "[-]"}
         
         self.Simulation_configurator.integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
         
-        """ The simulation name and input file path """
-        
+        self.Simulation_configurator.max_image_order = {"Value": 0, "Unit": "[-]"}
+        """ The simulation output file path """
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
 
     def run_simulation(self, obs_time: float, idx: int):
@@ -121,8 +122,9 @@ if __name__ == "__main__":
     Hotspot_reference_sims_instance = Hotspot_reference_sims()
 
     Spot_period: float = 2 * pi * Hotspot_reference_sims_instance.Simulation_configurator.hotspot_model.Distance["Value"]**(3 / 2)
+    # Spot_period: float = 2 * pi / 0.043801516696240203
      
-    Hotspot_number: int = 40
+    Hotspot_number: int = 30
     
     Obs_times: NDArray = linspace(0, Spot_period, Hotspot_number)
     File_idx: NDArray  = linspace(0, Hotspot_number - 1, Hotspot_number)
@@ -135,4 +137,4 @@ if __name__ == "__main__":
     with Pool(10) as pool:
         pool.starmap(Hotspot_reference_sims_instance.run_simulation, Sim_args)
     
-    # Hotspot_reference_sims_instance.run_simulation(Obs_times[0], 0)
+    # Hotspot_reference_sims_instance.run_simulation(Obs_times[29], 29)

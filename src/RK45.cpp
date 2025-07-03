@@ -55,7 +55,7 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
         New_State_vector_O5[vector_indexer] = State_Vector[vector_indexer];
         New_State_vector_O4[vector_indexer] = State_Vector[vector_indexer];
 
-        for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) {
+        for (int derivative_indexer = 0; derivative_indexer <= RK45_size - 1; derivative_indexer += 1) {
 
             New_State_vector_O5[vector_indexer] += -controller->step * Coeff_sol[derivative_indexer]      * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
             New_State_vector_O4[vector_indexer] += -controller->step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
@@ -65,6 +65,8 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
         state_error[vector_indexer] = New_State_vector_O5[vector_indexer] - New_State_vector_O4[vector_indexer];
        
     }
+
+    controller->integration_complete = p_Sim_context->p_Spacetime->terminate_integration(State_Vector, Derivatives);
 
     // The integrator might jump pass surfaces that are singular for the EOM (like the JNW singularity at 2 / gamma)
     // In this case the whole state vector becomes a NaN. I check for this and update the integration step by hand,
@@ -87,6 +89,12 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
     // Update the controller step
     controller->update_step(std::as_const(State_Vector));
 
+    if (controller->step > 5) {
+
+        controller->step = 5;
+
+    }
+
     if (controller->continue_integration) {
 
         // Update the state vector
@@ -95,8 +103,6 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
             State_Vector[vector_indexer] = New_State_vector_O5[vector_indexer];
 
         }
-
-        controller->integration_complete = p_Sim_context->p_Spacetime->terminate_integration(New_State_vector_O5, Derivatives);
 
         // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
         // Close enough that it requires "manual" scattering, by flipping the p_r sign.
@@ -152,24 +158,20 @@ void Step_controller::update_step(const double* const State_Vector) {
                                                         pow(Error_threshold / (this->prev_err + this->Parameters.Safety_2), this->Parameters.PID_gain_P) *
                                                         pow(Error_threshold / (this->sec_prev_err + this->Parameters.Safety_2), this->Parameters.PID_gain_D);
 
-        Rel_step_increase = std::min(this->Parameters.Max_rel_step_increase, std::max(this->Parameters.Min_rel_step_increase, Rel_step_increase));
-
-        this->step = Rel_step_increase * this->step;
-
         break;
 
     default:
 
         Rel_step_increase = this->Parameters.Safety_1 * pow(Error_threshold / (this->current_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k1) *
-                                                        pow(current_err / (this->prev_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k2);
-
-        Rel_step_increase = std::min(this->Parameters.Max_rel_step_increase, std::max(this->Parameters.Min_rel_step_increase, Rel_step_increase));
-
-        this->step = Rel_step_increase * this->step;
+                                                        pow(Error_threshold / (this->prev_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k2);
 
         break;
 
     }
+
+    Rel_step_increase = std::min(this->Parameters.Max_rel_step_increase, std::max(this->Parameters.Min_rel_step_increase, Rel_step_increase));
+
+    this->step = Rel_step_increase * this->step;
 
     if (this->current_err < Error_threshold)
     {

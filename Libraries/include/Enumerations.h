@@ -96,6 +96,16 @@ enum Disk_model_enums : std::underlying_type_t <std::byte> {
 
 };
 
+enum Numerical_Anzatz_enums : std::underlying_type_t <std::byte> {
+
+    /* This is the anzatz used in Stoycho / Galin's paper - https://arxiv.org/pdf/2402.08469 */
+    e_Anzatz_1 = 0,
+
+    /* This is the anzatz used in the Heirdeiro paper - https://arxiv.org/pdf/1501.04319 */
+    e_Anzatz_2 = 1,
+
+};
+
 enum Velocity_enums: std::underlying_type_t <std::byte> {
 
     e_Keplarian = 0,

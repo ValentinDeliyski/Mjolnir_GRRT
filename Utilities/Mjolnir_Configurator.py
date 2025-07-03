@@ -118,7 +118,8 @@ class Metric_parameters():
                  "Halo_compactness", 
                  "Halo_mass",
                  "Metric_type", 
-                 "Numerical_metric_spline_path")
+                 "Numerical_metric_spline_path",
+                 "Numerical_metric_anzatz_type")
 
 class Observer():
 
@@ -171,7 +172,8 @@ class Simulation_configurator:
                  "simulation_mode",
                  "sim_mode_2_param_value_number",
                  "sim_mode_3_X_init",
-                 "sim_mode_3_Y_init")
+                 "sim_mode_3_Y_init",
+                 "max_image_order")
 
     def __init__(self, 
                  Average_emission_pitch_angle: dict[str, int | str] = {"Value": 1, "Unit": "[-]"}, 
@@ -182,7 +184,8 @@ class Simulation_configurator:
                  simulation_mode: dict[str, int | str] = {"Value": 1, "Unit": "[-]"}, 
                  sim_mode_2_param_value_number: dict[str, int | str] = {"Value": 1, "Unit": "[-]"},
                  sim_mode_3_X_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
-                 sim_mode_3_Y_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"}):
+                 sim_mode_3_Y_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
+                 max_image_order: dict[str, int | str] = {"Value": 3, "Unit": "[-]"}):
 
         self.average_emission_pitch_angle = Average_emission_pitch_angle
         self.thermalize_emission_medium = thermalize_emission_medium
@@ -193,6 +196,7 @@ class Simulation_configurator:
         self.sim_mode_2_param_value_number = sim_mode_2_param_value_number
         self.sim_mode_3_X_init = sim_mode_3_X_init
         self.sim_mode_3_Y_init = sim_mode_3_Y_init
+        self.max_image_order = max_image_order
 
         self._configure_integrator_settings()
         self._configure_observer()
@@ -278,7 +282,8 @@ class Simulation_configurator:
                                            Halo_compactness: dict[str, float | str] = {"Value": 1e-4, "Unit": "[-]"},
                                            Halo_mass: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
                                            Metric_type: dict[str, float | str] = {"Value": "Kerr", "Unit": "[-]"},
-                                           Numerical_metric_spline_path: str = "",):
+                                           Numerical_metric_spline_path: str = "",
+                                           Numerical_metric_anzatz_type: dict[str, str] = {"Value": "Anzatz_1", "Unit": "[-]"},):
 
         self.metric_parameters = Metric_parameters()
 
@@ -294,6 +299,7 @@ class Simulation_configurator:
         self.metric_parameters.Halo_mass = Halo_mass
         self.metric_parameters.Metric_type = Metric_type
         self.metric_parameters.Numerical_metric_spline_path = Numerical_metric_spline_path
+        self.metric_parameters.Numerical_metric_anzatz_type = Numerical_metric_anzatz_type
 
     def _configure_emission_models(self, Emission_power_law: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
                                          Source_f_power_law: dict[str, float | str] = {"Value": 2.5, "Unit": "[-]"},
@@ -452,16 +458,14 @@ class Simulation_configurator:
         self.hotspot_model.Azimuth            = Azimuth           
         self.hotspot_model.Magnetization      = Magnetization     
         
-        self.hotspot_model.Threshold_relative_density = Threshold_relative_density     
-        
+        self.hotspot_model.Threshold_relative_density = Threshold_relative_density         
 
     def _configure_file_manager(self, Vert_shader_path: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Libraries/shaders/default.vert",
                                       Frag_shader_path: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Libraries/shaders/default.frag",
                                       Output_file_directory: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Sim_Results",
                                       Common_file_names: str = "",
                                       Sim_mode_2_input_file_path: str = "",
-                                      Truncate_files: int = 1):
-                            
+                                      Truncate_files: int = 1):                       
 
         self.file_manager = File_manager()
 
@@ -484,7 +488,8 @@ class Simulation_configurator:
         ET.SubElement(XML_root_node, "Sim_mode_2_param_value_number", units = str(self.sim_mode_2_param_value_number["Unit"])).text = "{}".format(self.sim_mode_2_param_value_number["Value"])
         ET.SubElement(XML_root_node, "Sim_mode_3_X_init", units = str(self.sim_mode_3_X_init["Unit"])).text = "{}".format(self.sim_mode_3_X_init["Value"])
         ET.SubElement(XML_root_node, "Sim_mode_3_Y_init", units = str(self.sim_mode_3_Y_init["Unit"])).text = "{}".format(self.sim_mode_3_Y_init["Value"])
-
+        ET.SubElement(XML_root_node, "Max_image_order", units = str(self.max_image_order["Unit"])).text = "{}".format(self.max_image_order["Value"])
+        
         # ============ Generate the metric XML section ============ #
 
         Metric_subelement = ET.SubElement(XML_root_node, "Metric")
@@ -520,7 +525,8 @@ class Simulation_configurator:
                 ET.SubElement(Metric_subelement, "ADM_Mass", units = "[M]").text = "{}".format(self.metric_parameters.Mass["Value"])
                 ET.SubElement(Metric_subelement, "Horizon_radius", units = "[G/c^2]").text = "{}".format(self.metric_parameters.Horizon_radius["Value"])
                 ET.SubElement(Metric_subelement, "ADM_ang_momentum", units = "[M]").text = "{}".format(self.metric_parameters.Spin["Value"])
-
+                ET.SubElement(Metric_subelement, "Numerical_metric_anzatz_type", units = "[M]").text = "{}".format(self.metric_parameters.Numerical_metric_anzatz_type["Value"])
+                
             case _:
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Kerr")
                 ET.SubElement(Metric_subelement, "Spin_parameter", units = "[M]").text = "{}".format(self.metric_parameters.Spin["Value"])
@@ -720,7 +726,7 @@ class Simulation_configurator:
         Header, Body = formatted_XML_string.split('?>')
 
         if not os.path.exists(Path_to_input_dir):
-                os.makedirs(Path_to_input_dir)
+            os.makedirs(Path_to_input_dir)
 
         with open(Path_to_input_dir + "\\" + Input_file_name, 'w') as xfile:
             xfile.write(Header + 'encoding=\"{}\"?>\n'.format(Encoding) + Body)
@@ -741,30 +747,33 @@ if __name__ == "__main__":
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type    = {"Value": "Kerr", "Unit": "[-]"}
-    Sim_config.metric_parameters.Mass           = {"Value": 0.415, "Unit": "[M]"}
-    Sim_config.metric_parameters.Horizon_radius = {"Value": 0.0662902, "Unit": "[G/c^2]"}
-    Sim_config.metric_parameters.Spin           = {"Value": 0.98, "Unit": "[M]"}
+    Sim_config.metric_parameters.Metric_type    = {"Value": "Numerical", "Unit": "[-]"}
+    Sim_config.metric_parameters.Mass           = {"Value": 0.915671, "Unit": "[M]"}
+    Sim_config.metric_parameters.Horizon_radius = {"Value": 0.05, "Unit": "[G/c^2]"}
+    Sim_config.metric_parameters.Spin           = {"Value": 0.8048 / 0.9157, "Unit": "[M]"}
+    Sim_config.metric_parameters.Numerical_metric_anzatz_type = {"Value": "Anzatz_1", "Unit": "[M]"} 
+    
     # ================================================== Observer ================================================== #
 
-    Sim_config.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
-    Sim_config.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
+    Sim_config.observer.Resolution_x = {"Value": 1500, "Unit": "[-]"}
+    Sim_config.observer.Resolution_y = {"Value": 1500, "Unit": "[-]"}
     
     Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
-    Sim_config.observer.Inclination = {"Value": 85 * pi / 180, "Unit": "[Rad]"}
+    Sim_config.observer.Inclination = {"Value": 89.99 * pi / 180, "Unit": "[Rad]"}
     Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
     Sim_config.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[Hz]"}
 
     # ================================================== Disk ================================================== #
+    
     Sim_config.disk_model.Ensamble_type = {"Value": "Thermal",   "Unit": "[-]"}
-    Sim_config.disk_model.Disk_Model    = {"Value": "Page-Thorne", "Unit": "[-]"}
+    Sim_config.disk_model.Disk_Model    = {"Value": "Phenom_RIAF_1", "Unit": "[-]"}
     Sim_config.disk_model.Mag_field_geometry = {"Value": "Constant", "Unit": "[-]"}
     
     Sim_config.disk_model.r_in_PT_disk = {"Value": 1.615, "Unit": "[M]"}
     Sim_config.disk_model.r_out_PT_disk = {"Value": 50, "Unit": "[M]"}
     
     Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g/cm^3]"}
-    Sim_config.disk_model.Temperature_scale_factor = {"Value": 5.1e+10, "Unit": "[K]"}
+    Sim_config.disk_model.Temperature_scale_factor = {"Value": 4.1e+10, "Unit": "[K]"}
             
     Sim_config.disk_model.Density_cutoff_radius = {"Value": 5, "Unit": "[M]"}
     Sim_config.disk_model.Temperature_cutoff_radius = {"Value": 5, "Unit": "[M]"}
@@ -772,23 +781,24 @@ if __name__ == "__main__":
     Sim_config.disk_model.Density_power_law_scale     = {"Value": 5, "Unit": "[M]"}
     Sim_config.disk_model.Temperature_power_law_scale = {"Value": 5, "Unit": "[M]"}
 
-    Sim_config.disk_model.Opening_angle = {"Value": 1, "Unit": "[tan(angle)]"}
+    Sim_config.disk_model.Opening_angle = {"Value": 0.4, "Unit": "[tan(angle)]"}
     
     Sim_config.disk_model.Density_power_law_power     = {"Value": 2.0, "Unit": "[-]"}
     Sim_config.disk_model.Temperature_power_law_power = {"Value": 1.0, "Unit": "[-]"}
     
     Sim_config.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
     
-    Sim_config.observer.Image_y_min = {"Value": -25, "Unit": "[M]"}
-    Sim_config.observer.Image_y_max = {"Value":  25, "Unit": "[M]"}
-    Sim_config.observer.Image_x_min = {"Value": -25, "Unit": "[M]"}
-    Sim_config.observer.Image_x_max = {"Value":  25, "Unit": "[M]"}
+    Sim_config.observer.Image_y_min = {"Value": -10, "Unit": "[M]"}
+    Sim_config.observer.Image_y_max = {"Value":  10, "Unit": "[M]"}
+    Sim_config.observer.Image_x_min = {"Value": -10, "Unit": "[M]"}
+    Sim_config.observer.Image_x_max = {"Value":  10, "Unit": "[M]"}
         
-    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-13, "Unit": "[-]"}
+    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-12, "Unit": "[-]"}
     Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
     Sim_config.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
+    Sim_config.integrator.max_integration_count = {"Value": 1000000, "Unit": "[-]"}
     
-    Sim_config.integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
+    Sim_config.integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
     # ================================================== Hotspot ================================================== #
 
     Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g / cm^3]"}

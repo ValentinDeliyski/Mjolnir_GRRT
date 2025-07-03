@@ -6,9 +6,13 @@ Return_Values Numerical_metric::load_parameters(const Metric_parameters_type* co
 
     this->Parameters = Metric_Parameters->Numerical_metric_params;
 
+    const double& r_H = Metric_Parameters->Numerical_metric_params.Horizon_radius;
+    const double& M_ADM = Metric_Parameters->Numerical_metric_params.M_ADM;
+    const double& a_ADM = Metric_Parameters->Numerical_metric_params.a_ADM;
+
     /* Computes the outer (mass normalized) event horizon radius is Boyer-Linguist coordinates, with the ADM mass of the numerical solution (the paper labels this capital R_H).
     NOTE: The ADM angular momentum parameter is normalized to the mass. */
-    this->Parameters.Horizon_radius_BL = 1 + sqrt(1 - this->Parameters.a_ADM * this->Parameters.a_ADM);
+    this->Parameters.Horizon_radius_BL = r_H / 2 + sqrt((r_H / 2) * (r_H / 2) + a_ADM * a_ADM);
 
     return OK;
 
@@ -20,7 +24,7 @@ double Numerical_metric::compactify_radial_coordiante(const double r) const {
 
     /* Computes the shifted radial coordinate used in the paper (they label this with little "r").
        NOTE: The input to this function "r" is normaled to the mass. */
-    const double r_shifted_coordinate = this->Parameters.M_ADM * (r - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
+    const double r_shifted_coordinate = this->Parameters.M_ADM * r - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
 
     /* Comute the other shifted coordinate that the paper uses in the numerical implementation (they label this little "x"). 
        NOTE: The horizon radius here is in the "r_shifted" coordinate system. */
@@ -257,7 +261,7 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
 
     /* -------------- The spline works with the compactified radial coordinate, so here I have to convert to that. -------------- */
     const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
-    const double r_shifted_coordinate = this->Parameters.M_ADM * (State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
+    const double r_shifted_coordinate = this->Parameters.M_ADM * State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
 
     /* -------------- Get the upper index of the grid interval where the current photon state vector is (in both compactified radial and there directions). --------------*/
 
@@ -373,24 +377,45 @@ Metric_type Numerical_metric::get_metric(const double* const State_Vector, int R
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. It works with a shifted radial coordinate, defined in appendix A. */
 
-    const double& r_s = State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
+    const double& r_s = this->Parameters.M_ADM * State_Vector[e_r] - (this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
     const double& theta = State_Vector[e_theta];
 
-    const double sin_theta = sin(theta);
-    const double N = 1 - (this->Parameters.Horizon_radius / this->Parameters.M_ADM) / r_s;
+    const double& sin_theta = sin(theta);
+    const double& N = 1 - (this->Parameters.Horizon_radius / this->Parameters.M_ADM) / r_s;
 
     const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
 
-    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
-    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
-    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
-
-    const double& W = s_Potentials.W * this->Parameters.M_ADM;
+    const double& W        = s_Potentials.W;
+    const double& exp_2F_0 = exp(2 * s_Potentials.F_0);
+    const double& exp_2F_1 = exp(2 * s_Potentials.F_1);
+    const double& exp_2F_2 = exp(2 * s_Potentials.F_2);
 
     Metric_type s_Metric{};
 
-    s_Metric.Metric[e_t][e_t] = -exp_2F_0 * N + exp_2F_2 * r_s * r_s * sin_theta * sin_theta * W * W;
-    s_Metric.Metric[e_t][e_phi] = -exp_2F_2 * W * r_s * r_s * sin_theta * sin_theta;
+    switch (this->Parameters.e_Anzatz) {
+
+    case e_Anzatz_1:
+
+        s_Metric.Metric[e_t][e_t] = -exp_2F_0 * N + exp_2F_2 * sin_theta * sin_theta * W * W;
+        s_Metric.Metric[e_t][e_phi] = -exp_2F_2 * W * r_s * sin_theta * sin_theta;
+
+        break;
+
+
+    case e_Anzatz_2:
+
+        s_Metric.Metric[e_t][e_t] = -exp_2F_0 * N + exp_2F_2 * r_s * r_s * sin_theta * sin_theta * W * W;
+        s_Metric.Metric[e_t][e_phi] = -exp_2F_2 * W * r_s * r_s * sin_theta * sin_theta;
+
+        break;
+
+    default:
+
+        std::cout << "Unknown numerical metric anzatz! <\n";
+        exit(ERROR);
+
+    }
+
     s_Metric.Metric[e_phi][e_t] = s_Metric.Metric[e_t][e_phi];
     s_Metric.Metric[e_r][e_r] = exp_2F_1 / N;
     s_Metric.Metric[e_theta][e_theta] = exp_2F_1 * r_s * r_s;
@@ -422,32 +447,53 @@ Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, in
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. It works with a shifted radial coordinate, defined in appendix A. */
 
-    const double& r_s = State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
+    const double& r_s = this->Parameters.M_ADM * State_Vector[e_r] - (this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
     const double& theta = State_Vector[e_theta];
 
-    const double sin_theta = sin(theta);
-    const double N = 1 - (this->Parameters.Horizon_radius / this->Parameters.a_ADM) / r_s;
-    const double dr_N = (this->Parameters.Horizon_radius / this->Parameters.a_ADM) / r_s / r_s;
+    const double& sin_theta = sin(theta);
+    const double& N    = 1 - this->Parameters.Horizon_radius / r_s;
+    const double& dr_N = (this->Parameters.Horizon_radius / r_s / r_s) * (this->Parameters.M_ADM);
 
     const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
 
-    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
-    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
-    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
-
-    const double& W = s_Potentials.W * this->Parameters.M_ADM;
+    const double& W = s_Potentials.W;
+    const double& exp_2F_0 = exp(2 * s_Potentials.F_0);
+    const double& exp_2F_1 = exp(2 * s_Potentials.F_1);
+    const double& exp_2F_2 = exp(2 * s_Potentials.F_2);
 
     const Numerical_metric_potentials_type s_dr_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, First_radial_derivative);
 
-    const double& dr_W = s_dr_Potentials.W * this->Parameters.M_ADM;
+    const double& dr_W   = s_dr_Potentials.W;
     const double& dr_F_0 = s_dr_Potentials.F_0;
     const double& dr_F_1 = s_dr_Potentials.F_1;
     const double& dr_F_2 = s_dr_Potentials.F_2;
 
     Metric_type s_dr_Metric{};
 
-    s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * r_s * sin_theta * sin_theta * W * (r_s * W * dr_F_2 + W + r_s * dr_W);
-    s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * sin_theta * sin_theta * (2 * r_s * W * dr_F_2 + 2 * W + r_s * dr_W);
+    switch (this->Parameters.e_Anzatz) {
+
+    case e_Anzatz_1:
+
+        s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * sin_theta * sin_theta * W * (r_s * W * dr_F_2 + r_s * dr_W);
+        s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * sin_theta * sin_theta * (2 * r_s * W * dr_F_2 + W + r_s * dr_W);
+
+        break;
+
+
+    case e_Anzatz_2:
+
+        s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * r_s * sin_theta * sin_theta * W * (r_s * W * dr_F_2 + W + r_s * dr_W);
+        s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * sin_theta * sin_theta * (2 * r_s * W * dr_F_2 + 2 * W + r_s * dr_W);
+
+        break;
+
+    default:
+
+        std::cout << "Unknown numerical metric anzatz! <\n";
+        exit(ERROR);
+
+    }
+
     s_dr_Metric.Metric[e_phi][e_t] = s_dr_Metric.Metric[e_t][e_phi];
     s_dr_Metric.Metric[e_r][e_r] = exp_2F_1 / N * (2 * dr_F_1 - dr_N / N);
     s_dr_Metric.Metric[e_theta][e_theta] = 2 * r_s * exp_2F_1 * (r_s * dr_F_1 + 1);
@@ -461,12 +507,12 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
 
     /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
 
-    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+    const double& r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
 
-    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const int& Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const int& Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
-    Metric_type s_dtheta_Metric = this->get_dtheta_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
+    const Metric_type& s_dtheta_Metric = this->get_dtheta_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
 
     return s_dtheta_Metric;
 
@@ -476,32 +522,53 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. It works with a shifted radial coordinate, defined in appendix A. */
 
-    const double& r_s = State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
+    const double& r_s = this->Parameters.M_ADM * State_Vector[e_r] - (this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
     const double& theta = State_Vector[e_theta];
 
-    const double sin_theta = sin(theta);
-    const double cos_theta = cos(theta);
-    const double N = 1 - (this->Parameters.Horizon_radius / this->Parameters.a_ADM) / r_s;
+    const double& sin_theta = sin(theta);
+    const double& cos_theta = cos(theta);
+    const double& N = 1 - this->Parameters.Horizon_radius / r_s;
 
     Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
 
-    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
-    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
-    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
-
-    const double& W = s_Potentials.W * this->Parameters.M_ADM;
+    const double& W        = s_Potentials.W;
+    const double& exp_2F_0 = exp(2 * s_Potentials.F_0);
+    const double& exp_2F_1 = exp(2 * s_Potentials.F_1);
+    const double& exp_2F_2 = exp(2 * s_Potentials.F_2);
 
     const Numerical_metric_potentials_type s_dtheta_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, First_theta_derivative);
 
-    const double& dtheta_W = s_dtheta_Potentials.W * this->Parameters.M_ADM;
+    const double& dtheta_W   = s_dtheta_Potentials.W;
     const double& dtheta_F_0 = s_dtheta_Potentials.F_0;
     const double& dtheta_F_1 = s_dtheta_Potentials.F_1;
     const double& dtheta_F_2 = s_dtheta_Potentials.F_2;
 
     Metric_type s_dtheta_Metric{};
 
-    s_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * N * dtheta_F_0 + 2 * exp_2F_2 * r_s * r_s * W * sin_theta * (W * sin_theta * dtheta_F_2 + sin_theta * dtheta_W + W * cos_theta);
-    s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * r_s * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
+    switch (this->Parameters.e_Anzatz) {
+
+    case e_Anzatz_1:
+
+        s_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * N * dtheta_F_0 + 2 * exp_2F_2 * W * sin_theta * (W * sin_theta * dtheta_F_2 + sin_theta * dtheta_W + W * cos_theta);
+        s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
+
+        break;
+
+
+    case e_Anzatz_2:
+
+        s_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * N * dtheta_F_0 + 2 * exp_2F_2 * r_s * r_s * W * sin_theta * (W * sin_theta * dtheta_F_2 + sin_theta * dtheta_W + W * cos_theta);
+        s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * r_s * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
+
+        break;
+
+    default:
+
+        std::cout << "Unknown numerical metric anzatz! <\n";
+        exit(ERROR);
+
+    }
+
     s_dtheta_Metric.Metric[e_phi][e_t] = s_dtheta_Metric.Metric[e_t][e_phi];
     s_dtheta_Metric.Metric[e_r][e_r] = 2 * exp_2F_1 / N * dtheta_F_1;
     s_dtheta_Metric.Metric[e_theta][e_theta] = 2 * r_s * r_s * exp_2F_1 * dtheta_F_1;
@@ -598,7 +665,7 @@ bool Numerical_metric::terminate_integration(const double* const State_vector, c
 
     const bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
 
-    const bool hit_horizon = State_vector[e_r] - this->Parameters.Horizon_radius_BL < 1e-1;
+    const bool hit_horizon = this->Parameters.M_ADM * State_vector[e_r] - this->Parameters.Horizon_radius_BL < 1e-2;
 
     return scatter || hit_horizon;
 };

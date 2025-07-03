@@ -284,10 +284,10 @@ struct Numerical_metric_params_type {
     // NOTE: This is NOT normalized to the mass.
     double Horizon_radius;
 
-    // NOTE: This IS normalized to the mass.
+    // NOTE: This NOT normalized to the mass.
     double Horizon_radius_BL;
 
-    // NOTE: This IS normalized to the mass.
+    // NOTE: This NOT normalized to the mass.
     double a_ADM;
 
     /* ============ Pointers to the numerical metric potentials control vector arrays ============ = */
@@ -307,6 +307,9 @@ struct Numerical_metric_params_type {
     double* Theta_grid;
     double* Theta_grid_control_vector;
     int Theta_grid_size;
+
+    Numerical_Anzatz_enums e_Anzatz;
+
 };
 
 struct Metric_parameters_type {
@@ -651,6 +654,13 @@ struct Initial_conditions_type {
     /*! Boolean flag that decides weather to average the emission over the electron pitch angle. */
     bool Average_electron_pitch_angle;
 
+    /*! The maximum image order for which the radiative transfer will be evaluated. 
+        NOTE: For image orders above this, the ray is still propagated, along with the parallel transport 
+        of the polarization vector */
+    int Max_order;
+
+    /*! Boolean flag that controls weather to simply add the hotspot and disk density and temperature 
+        (effectively treating them as one single medium). */
     bool Thermalize_emission_medium;
 
 };

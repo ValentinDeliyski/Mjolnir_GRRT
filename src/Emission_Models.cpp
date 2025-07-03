@@ -188,7 +188,7 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     for (int idx = 1; idx <= 3; idx++) {
 
-        Emission_medium_state->Magnetic_fields.B_field_eularian_frame[idx] /= Mag_field_eularian_norm;
+        Emission_medium_state->Magnetic_fields.B_field_eularian_frame[idx] /= sqrt(Mag_field_eularian_norm);
 
     }
 
@@ -672,12 +672,12 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
         if (!Is_inside_hotspot || this->Thermalize_emission_medium) { return; };
 
 
-        Metric = p_Sim_Context->p_Spacetime->get_metric(this->p_Hotspot_Model->s_Hotspot_params.Position);
+        Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
 
         Emission_medium_state.Density = Hotspot_state.Density;
         Emission_medium_state.Temperature = Hotspot_state.Temperature;
 
-        this->get_plasma_velocity(this->p_Hotspot_Model->s_Hotspot_params.Position,
+        this->get_plasma_velocity(State_Vector,
                                   p_Sim_Context, 
                                   this->p_Hotspot_Model->s_Hotspot_params.Velocity_profile_type,
                                   this->p_Hotspot_Model->s_Hotspot_params.Radial_velocity_fraction, 

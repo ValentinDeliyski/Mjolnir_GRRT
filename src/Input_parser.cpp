@@ -986,13 +986,26 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the ADM angular momentum!" << "\n"; return ERROR; }
         Metric_params->Numerical_metric_params.a_ADM = std::stod(temp_param_var->GetText());
 
+        std::string Anzatz_type = Metric_element->FirstChildElement("Numerical_metric_anzatz_type")->GetText();
+
+        if (0 == strcmp(static_cast<const char*>(Anzatz_type.c_str()), "Anzatz_1")) {
+
+            Metric_params->Numerical_metric_params.e_Anzatz = e_Anzatz_1;
+
+        }
+        else if (0 == strcmp(static_cast<const char*>(Anzatz_type.c_str()), "Anzatz_2")) {
+
+            Metric_params->Numerical_metric_params.e_Anzatz = e_Anzatz_2;
+
+        }
+        else { std::cout << "Unsuppored metric anzatz type! \n"; return ERROR; }
+
     }
-    else { std::cout << "Unsupported metric type!" << "\n"; return ERROR; }
+    else { std::cout << "Unsupported metric type! \n"; return ERROR; }
 
     return OK;
 
 }
-
 
 Return_Values static parse_file_manager_params(tinyxml2::XMLElement* File_manager_element, File_manager_parameters* File_manager_params) {
 
@@ -1077,6 +1090,10 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     temp_param_var = Root_node->FirstChildElement("Sim_mode_3_Y_init");
     if (temp_param_var == nullptr) { std::cout << "Failed to find sim mode 3 Y init!" << "\n"; return ERROR; }
     p_Initial_conditions->Sim_mode_3_Y_init = std::stod(temp_param_var->GetText());
+
+    temp_param_var = Root_node->FirstChildElement("Max_image_order");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find max image order!" << "\n"; return ERROR; }
+    p_Initial_conditions->Max_order = std::stoi(temp_param_var->GetText());
 
     /* ====================================== Parse the central object mass ====================================== */
 

@@ -16,7 +16,7 @@ double Page_Thorne_Model_class::Keplerian_angular_velocity(const double* const S
 
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_metric(State_Vector);
 
-    return (-s_dr_Metric.Metric[e_t][e_phi] + sqrt(s_dr_Metric.Metric[e_t][e_phi] * s_dr_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi])) / s_dr_Metric.Metric[e_phi][e_phi];
+    return (-s_dr_Metric.Metric[e_t][e_phi] - sqrt(s_dr_Metric.Metric[e_t][e_phi] * s_dr_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi])) / s_dr_Metric.Metric[e_phi][e_phi];
 
 }
 

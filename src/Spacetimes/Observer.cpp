@@ -37,7 +37,7 @@ const double* const Observer_class::get_obs_velocity() const {
 
 }
 
-const double* const Observer_class::get_fiducial_obs_velocity(Metric_type* p_Metric){
+double* const Observer_class::get_fiducial_obs_velocity(Metric_type* p_Metric){
 
     this->fiducial_obs_velocity[e_t]     = 1.0 / p_Metric->Lapse_function;
     this->fiducial_obs_velocity[e_r]     = 0;

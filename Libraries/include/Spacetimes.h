@@ -380,6 +380,6 @@ public:
 
     const double* const get_obs_velocity() const;
 
-    const double* const get_fiducial_obs_velocity(Metric_type* p_Metric);
+    double* const get_fiducial_obs_velocity(Metric_type* p_Metric);
 
 };
