@@ -18,7 +18,9 @@ private:
 		"Regular_Black_Hole",
 		"Janis_Newman_Winicour",
 		"Einstein_Gauss_Bonnet",
-		"BH_w_Dark_Matter_Halo"
+		"BH_w_Dark_Matter_Halo",
+		"Numerical",
+		"Minkowski"
 
 	};
 

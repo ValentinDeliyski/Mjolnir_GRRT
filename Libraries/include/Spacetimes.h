@@ -131,6 +131,33 @@ public:
      
 };
 
+class Minkowski_class : public Spacetime_Base_Class {
+
+public:
+
+    /* Metric and its derivatives */
+
+    Metric_type get_metric(const double* const State_Vector) const override;
+    Metric_type get_dr_metric(const double* const State_Vector) const override;
+    Metric_type get_dtheta_metric(const double* const State_Vector) const override;
+    Metric_type get_d2r_metric(const double* const State_Vector) const override;
+
+    /* Initial conditions derived from images */
+
+    int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
+
+    /* Equations of motion */
+
+    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
+
+    /* Integration Termination Conditions */
+
+    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
+
+    Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
+
+};
+
 class Wormhole_class : public Spacetime_Base_Class {
 
 private:

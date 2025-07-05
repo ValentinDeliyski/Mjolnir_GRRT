@@ -11,7 +11,8 @@ enum Spacetime_enums: std::underlying_type_t <std::byte> {
     Einstein_Gauss_Bonnet = 4,
     BH_w_Dark_Matter      = 5,
     Numerical             = 6,
-    SPACETIME_NUMBER      = 7
+    Minkowski             = 7,
+    SPACETIME_NUMBER      = 8
 
 };
 

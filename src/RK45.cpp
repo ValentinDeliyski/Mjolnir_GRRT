@@ -89,12 +89,6 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
     // Update the controller step
     controller->update_step(std::as_const(State_Vector));
 
-    if (controller->step > 5) {
-
-        controller->step = 5;
-
-    }
-
     if (controller->continue_integration) {
 
         // Update the state vector

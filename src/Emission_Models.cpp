@@ -19,6 +19,19 @@ void Emission_models_class::get_plasma_velocity(const double* const State_Vector
 
     Metric_type s_dr_Metric = p_Sim_Context->p_Spacetime->get_dr_metric(State_Vector);
 
+    if (Minkowski == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
+
+        if (r_source < 1) { Plasma_Velocity = NULL; return; }
+
+        Plasma_Velocity[e_t]     = sqrt(r_source / (r_source - sin(theta_source) * sin(theta_source)));
+        Plasma_Velocity[e_r]     = 0;
+        Plasma_Velocity[e_theta] = 0;
+        Plasma_Velocity[e_phi]   = Plasma_Velocity[e_t] / sqrt(r_source * r_source * r_source);
+
+        return;
+
+    }
+
     switch (Velocity_profile) {
 
     case e_Keplarian:

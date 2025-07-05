@@ -52,6 +52,10 @@ void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
         p_Sim_context->p_Spacetime = new Numerical_metric;
         break;
 
+    case Minkowski:
+        p_Sim_context->p_Spacetime = new Minkowski_class;
+        break;
+
     }
 
 }

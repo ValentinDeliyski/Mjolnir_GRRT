@@ -1000,6 +1000,10 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
         }
         else { std::cout << "Unsuppored metric anzatz type! \n"; return ERROR; }
 
+    }else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Minkowski")) {
+
+        Metric_params->e_Spacetime = Minkowski;
+
     }
     else { std::cout << "Unsupported metric type! \n"; return ERROR; }
 

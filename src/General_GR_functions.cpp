@@ -385,3 +385,34 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
     Connection_Coeffs[e_phi][e_theta][e_t] = Connection_Coeffs[e_phi][e_t][e_theta];
 
 }
+
+std::complex<double> compute_Penrose_Walker_constant(const double* const State_Vector, const Spacetime_Base_Class* const p_Spacetime, const std::complex<double>* const Polarization_Vector) {
+
+    double Contravariant_momentum[4]{};
+    double inv_metric[4][4]{};
+
+    Metric_type s_Metric = p_Spacetime->get_metric(State_Vector);
+
+    invert_metric(inv_metric, s_Metric.Metric);
+
+    for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+        for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+            Contravariant_momentum[left_idx] += inv_metric[left_idx][right_idx] * State_Vector[right_idx + e_p_t];
+
+        }
+
+    }
+
+    const double& p_t     = Contravariant_momentum[e_t];
+    const double& p_r     = Contravariant_momentum[e_r];
+    const double& p_theta = Contravariant_momentum[e_theta];
+    const double& p_phi   = Contravariant_momentum[e_phi];
+
+    std::complex<double> Kappa_1 = sqrt(-s_Metric.Metric[e_theta][e_theta] * s_Metric.Metric[e_r][e_r] * s_Metric.Metric[e_t][e_t]) * (p_t * Polarization_Vector[e_r] - p_r * Polarization_Vector[e_t]);
+    std::complex<double> Kappa_2 = pow(s_Metric.Metric[e_theta][e_theta], 3.0 / 2) * sin(State_Vector[e_theta]) * (p_theta * Polarization_Vector[e_phi] - p_phi * Polarization_Vector[e_theta]);
+
+    return Kappa_1 - complex_i * Kappa_2;
+
+}
