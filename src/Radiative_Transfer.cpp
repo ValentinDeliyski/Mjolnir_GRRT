@@ -97,11 +97,11 @@ void Implicit_Trapezoid_Radiative_Transfer(double* const Emission_Functions,
 
 }
 
-static void Get_radiative_transfer_matrix(double* const absorbtion_functions,
-                                          double* const faradey_functions,
-                                          double const step,
-                                          double Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num],
-                                          double Integrated_Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num]) {
+static Return_Values Get_radiative_transfer_matrix(double* const absorbtion_functions,
+                                                   double* const faradey_functions,
+                                                   double const step,
+                                                   double Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num],
+                                                   double Integrated_Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num]) {
 
     /* The reference for this implementation is from appendix D in https://arxiv.org/pdf/1602.03184.pdf, originally derived in https://doi.org/10.1007/BF00165988 */
 
@@ -142,32 +142,23 @@ static void Get_radiative_transfer_matrix(double* const absorbtion_functions,
     // This breaks the sqrt() functions, and so guards have to be put in place
     double Theta = (alpha_squared - rho_squared) * (alpha_squared - rho_squared) / 4 + alpha_rho * alpha_rho;
 
-    if (Theta >= 0.0) {
+    if (Theta > 0.0 && !isinf(1. / Theta)) {
 
         Theta = 2 * sqrt(Theta);
 
     }
-    else {
-
-        Theta = std::numeric_limits<double>::min();
-
-    }
+    else { return ERROR; }
 
     double Lambda[2] = { (Theta / 2 + (alpha_squared - rho_squared) / 2),
                          (Theta / 2 - (alpha_squared - rho_squared) / 2) };
 
-    if (Lambda[0] >= 0.0 && Lambda[1] >= 0.0) {
+    if (Lambda[0] > 0.0 && Lambda[1] > 0.0) {
 
         Lambda[0] = sqrt(Lambda[0]);
         Lambda[1] = sqrt(Lambda[1]);
 
     }
-    else {
-
-        Lambda[0] = 0.0;
-        Lambda[1] = 0.0;
-
-    }
+    else { return ERROR; }
 
 
     /* Thesse are used in the "scaling factors" infront of the M matricies */
@@ -191,12 +182,7 @@ static void Get_radiative_transfer_matrix(double* const absorbtion_functions,
 
     /* ========================== M_2 Matrix calculation ========================== */
 
-    double M_2_scale_factor{};
-
-    if (Theta > std::numeric_limits<double>::min()) {
-
-        M_2_scale_factor = -exp_I * sin_term / Theta;
-    }
+    double M_2_scale_factor = -exp_I * sin_term / Theta;
 
     double const M_2[4][4] = { {                         0,                          (Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]), (Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V])},
                                {(Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]),                           0,                          (sigma * Lambda[0] * alpha[V] + Lambda[1] * rho[V]), (-sigma * Lambda[0] * alpha[U] - Lambda[1] * rho[U])},
@@ -205,12 +191,7 @@ static void Get_radiative_transfer_matrix(double* const absorbtion_functions,
 
     /* ========================== M_3 Matrix calculation ========================== */
 
-    double M_3_scale_factor{};
-
-    if (Theta > std::numeric_limits<double>::min()) {
-
-        M_3_scale_factor = -exp_I * sinh_term / Theta;
-    }
+    double M_3_scale_factor = -exp_I * sinh_term / Theta;
 
     double const M_3[4][4] = { {						 0,							 (Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]), (Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[Q]), (Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V])},
                                {(Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]),	 		               0,                          (-sigma * Lambda[1] * alpha[V] + Lambda[0] * rho[V]), (sigma * Lambda[1] * alpha[U] - Lambda[0] * rho[U])},
@@ -219,12 +200,7 @@ static void Get_radiative_transfer_matrix(double* const absorbtion_functions,
 
     /* ========================== M_4 Matrix calculation ========================== */
 
-    double M_4_scale_factor{};
-
-    if (Theta > std::numeric_limits<double>::min()) {
-
-        M_4_scale_factor = exp_I * (cosh_term - cos_term) / Theta;
-    }
+    double M_4_scale_factor = exp_I * (cosh_term - cos_term) / Theta;
 
     double const M_4[4][4] = { {   (alpha_squared + rho_squared) / 2,                      (alpha[V] * rho[U] - alpha[U] * rho[V]),                                     (alpha[Q] * rho[V] - alpha[V] * rho[Q]),                                     (alpha[U] * rho[Q] - alpha[Q] * rho[U])},
                                {(alpha[U] * rho[V] - alpha[V] * rho[U]), (alpha[Q] * alpha[Q] + rho[Q] * rho[Q] - (alpha_squared + rho_squared) / 2),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                                     (alpha[V] * alpha[Q] + rho[V] * rho[Q])},
@@ -250,29 +226,35 @@ static void Get_radiative_transfer_matrix(double* const absorbtion_functions,
 
     /* This part of the implementation is adapted from equation (24) of https://academic.oup.com/mnras/article/475/1/43/4712230 */
 
-    bool math_guard_1 = isinf(1.0 / fabs(alpha[I] * alpha[I] - Lambda[0] * Lambda[0]));
-    bool math_guard_2 = isinf(1.0 / fabs(alpha[I] * alpha[I] + Lambda[1] * Lambda[1]));
+    double f_1 = 1.0 / (alpha[I] * alpha[I] - Lambda[0] * Lambda[0]);
+    double f_2 = 1.0 / (alpha[I] * alpha[I] + Lambda[1] * Lambda[1]);
 
-    if (!math_guard_1 && !math_guard_2) {
+    if (isinf(f_1) || isinf(f_2)) { return ERROR; }
 
-        double f_1 = 1.0 / (alpha[I] * alpha[I] - Lambda[0] * Lambda[0]);
-        double f_2 = 1.0 / (alpha[I] * alpha[I] + Lambda[1] * Lambda[1]);
+    for (int row_idx = 0; row_idx <= e_Stokes_param_num - 1; row_idx++) {
 
-        for (int row_idx = 0; row_idx <= e_Stokes_param_num - 1; row_idx++) {
-
-            for (int colum_idx = 0; colum_idx <= e_Stokes_param_num - 1; colum_idx++) {
+        for (int colum_idx = 0; colum_idx <= e_Stokes_param_num - 1; colum_idx++) {
 
 
-                Integrated_Transfer_Operator[row_idx][colum_idx] = -Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) +
-                                                                    Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) -
-                                                                    exp_I * ((-Lambda[0] * f_1 * M_3[row_idx][colum_idx] +  alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * cosh_term +
-                                                                             (-Lambda[1] * f_2 * M_2[row_idx][colum_idx] +  alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * cos_term +
-                                                                             ( -alpha[I] * f_2 * M_2[row_idx][colum_idx] - Lambda[1] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * sin_term -
-                                                                             (  alpha[I] * f_1 * M_3[row_idx][colum_idx] - Lambda[0] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * sinh_term);
-
-            }
+            Integrated_Transfer_Operator[row_idx][colum_idx] = -Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) +
+                                                                Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) -
+                                                                exp_I * ((-Lambda[0] * f_1 * M_3[row_idx][colum_idx] +  alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * cosh_term +
+                                                                         (-Lambda[1] * f_2 * M_2[row_idx][colum_idx] +  alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * cos_term +
+                                                                         ( -alpha[I] * f_2 * M_2[row_idx][colum_idx] - Lambda[1] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * sin_term -
+                                                                         (  alpha[I] * f_1 * M_3[row_idx][colum_idx] - Lambda[0] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * sinh_term);
 
         }
+
+    }
+}
+
+static void Run_No_Absorbtion_Radiative_Transfer(const double* const Emission_Functions,
+                                                 double const step, 
+                                                 double* const Stokes_Vector) {
+
+    for (int idx = 0; idx <= e_Stokes_param_num - 1; idx++) {
+
+        Stokes_Vector[idx] += Emission_Functions[idx] * step;
 
     }
 
@@ -287,7 +269,13 @@ void Analytic_Radiative_Transfer(double* const Emission_Functions,
     double transfer_operator[4][4]{};
     double integrated_transfer_operator[4][4];
 
-    Get_radiative_transfer_matrix(Absorbtion_Functions, Faradey_Functions, step, transfer_operator, integrated_transfer_operator);
+    if (OK != Get_radiative_transfer_matrix(Absorbtion_Functions, Faradey_Functions, step, transfer_operator, integrated_transfer_operator)) {
+
+        Run_No_Absorbtion_Radiative_Transfer(Emission_Functions, step, Stokes_Vector);
+
+        return;
+
+    }
 
     double Transfered_emission_vector[e_Stokes_param_num]{};
     double temp_Stokes_Vector[e_Stokes_param_num]{};

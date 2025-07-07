@@ -28,15 +28,13 @@ struct Hotspot_model_type {
     /*! Computes the hotspot density at the current photon position.
      *
      *   \param [in] State_Vector - Pointer to the current photon state vector.
-     *   \param [in] Hotspot_Velocity - Pointer to the hotspot four-velocity.
-     *   \param [out] p_Emission_medium_state - Pointer to the struct that holds the temperature and density of the hotspot.
+     *   \param [out] p_Emission_medium_state - Pointer to the struct that holds the current state of the hotspot.
      *   \return Nothing.
      */
     void get_density_and_temperature(const double* const State_Vector,
-                                     const double* const Hotspot_Velocity,
                                      Emission_medium_state_type* const p_Emission_medium_state) const;
 
-    bool is_inside_hotspot(const double* const State_Vector, const double* const Hotspot_Velocity, Emission_medium_state_type* const Hotspot_State) const;
+    bool is_inside_hotspot(const double* const State_Vector, Emission_medium_state_type* const Hotspot_State) const;
 
 
 };

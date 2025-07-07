@@ -37,11 +37,11 @@ void mat_vec_multiply_4D(double const Matrix[4][4], const double* const Vector, 
 
 	memset(Result, 0.0, 4 * sizeof(double));
 
-	for (int row = 0; row <= 3; row += 1) {
+	for (int row = 0; row <= 3; row++) {
 
 		Result[row] = 0.0;
 
-		for (int column = 0; column <= 3; column += 1) {
+		for (int column = 0; column <= 3; column++) {
 
 			Result[row] += Matrix[row][column] * Vector[column];
 
@@ -55,7 +55,7 @@ double get_max_element(const double* const Vector, int const Element_number) {
 	double max = fabs(Vector[e_r]);
 	double max_candidate = 0;
 
-	for (int index = e_theta; index <= Element_number; index += 1) {
+	for (int index = e_theta; index <= Element_number; index++) {
 
 		max_candidate = fabs(Vector[index]);
 

@@ -89,6 +89,12 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
     // Update the controller step
     controller->update_step(std::as_const(State_Vector));
 
+    if (controller->step > 10) {
+
+        //controller->step = 10;
+
+    }
+
     if (controller->continue_integration) {
 
         // Update the state vector
@@ -142,7 +148,7 @@ void Step_controller::update_step(const double* const State_Vector) {
 
     double Rel_step_increase{};
     
-    double Error_threshold = this->Parameters.RK_45_accuracy * (1 + get_max_element(State_Vector, e_State_Number - 1));
+    double Error_threshold = this->Parameters.RK_45_accuracy;
 
     switch (this->Parameters.Controller_type) {
 

@@ -438,6 +438,9 @@ struct Kappa_transfer_f_arguments_type {
     /*! Sin of the emission angle. */
     double sin_emission_angle;
 
+    /*! Cos of the emission angle. */
+    double cos_emission_angle;
+
     /*! The kappa parameter. */
     double kappa;
 

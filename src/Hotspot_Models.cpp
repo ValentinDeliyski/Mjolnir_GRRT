@@ -2,7 +2,7 @@
 
 Hotspot_model_type::Hotspot_model_type(Simulation_Context_type* p_Sim_Context) {
 
-    if (NULL != p_Sim_Context) {
+    if (nullptr != p_Sim_Context) {
 
         this->s_Hotspot_params = p_Sim_Context->p_Init_Conditions->Hotspot_params;
 
@@ -17,12 +17,12 @@ Hotspot_model_type::Hotspot_model_type(Simulation_Context_type* p_Sim_Context) {
 }
 
 Hotspot_position_type Hotspot_model_type::get_hotspot_position(const double* const State_Vector,
-                                                                const double* const Hotspot_Velocity) const {
+                                                               const double* const Hotspot_Velocity) const {
 
     Hotspot_position_type Hotspot_position{};
     double Hotspot_ang_velocity{};
 
-    if (NULL != Hotspot_Velocity) { Hotspot_ang_velocity = Hotspot_Velocity[e_phi] / Hotspot_Velocity[e_t]; }
+    if (nullptr != Hotspot_Velocity) { Hotspot_ang_velocity = Hotspot_Velocity[e_phi] / Hotspot_Velocity[e_t]; }
 
     Hotspot_position.Distance    = this->s_Hotspot_params.Position[e_r];
     Hotspot_position.Inclination = M_PI_2;
@@ -72,10 +72,9 @@ double Hotspot_model_type::get_hotspot_profile(const Hotspot_profile_parameters_
 };
 
 void Hotspot_model_type::get_density_and_temperature(const double* const State_Vector,
-                                                      const double* const Hotspot_Velocity,
-                                                      Emission_medium_state_type* const p_Emission_medium_state) const {
+                                                     Emission_medium_state_type* const p_Emission_medium_state) const {
 
-    Hotspot_position_type Hotspot_position = this->get_hotspot_position(State_Vector, Hotspot_Velocity);
+    Hotspot_position_type Hotspot_position = this->get_hotspot_position(State_Vector, p_Emission_medium_state->Plasma_Velocity);
 
     const double& photon_r  = State_Vector[e_r];
     double sin_photon_theta = sin(State_Vector[e_theta]);
@@ -156,9 +155,9 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
 }
 
-bool Hotspot_model_type::is_inside_hotspot(const double* const State_Vector, const double* const Hotspot_Velocity, Emission_medium_state_type* const Hotspot_State) const {
+bool Hotspot_model_type::is_inside_hotspot(const double* const State_Vector, Emission_medium_state_type* const Hotspot_State) const {
 
-    this->get_density_and_temperature(State_Vector, Hotspot_Velocity, Hotspot_State);
+    this->get_density_and_temperature(State_Vector, Hotspot_State);
 
     return (Hotspot_State->Density / this->s_Hotspot_params.Electron_density_scale > this->s_Hotspot_params.Threshold_relative_density);
 

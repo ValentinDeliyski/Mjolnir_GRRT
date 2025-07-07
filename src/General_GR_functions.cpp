@@ -386,7 +386,7 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
 
 }
 
-std::complex<double> compute_Penrose_Walker_constant(const double* const State_Vector, const Spacetime_Base_Class* const p_Spacetime, const std::complex<double>* const Polarization_Vector) {
+std::complex<double> get_Penrose_Walker_constant(const double* const State_Vector, const Spacetime_Base_Class* const p_Spacetime, const std::complex<double>* const Polarization_Vector) {
 
     double Contravariant_momentum[4]{};
     double inv_metric[4][4]{};

@@ -1,10 +1,10 @@
 #include "Emission_models.h"
 
-void Emission_models_class::get_plasma_velocity(const double* const State_Vector, 
-                                                   const Simulation_Context_type* const p_Sim_Context, 
-                                                   Velocity_enums const Velocity_profile,
-                                                   double const Radial_velocity_fraction,
-                                                   double* Plasma_Velocity) {
+Return_Values Emission_models_class::get_plasma_velocity(const double* const State_Vector, 
+                                                         const Simulation_Context_type* const p_Sim_Context, 
+                                                         Velocity_enums const Velocity_profile,
+                                                         double const Radial_velocity_fraction,
+                                                         double* Plasma_Velocity) {
 
     /* The reference for this implementation is https://arxiv.org/pdf/2206.12066. */
 
@@ -21,14 +21,14 @@ void Emission_models_class::get_plasma_velocity(const double* const State_Vector
 
     if (Minkowski == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
-        if (r_source < 1) { Plasma_Velocity = NULL; return; }
+        if (r_source < 1) { return ERROR; }
 
         Plasma_Velocity[e_t]     = sqrt(r_source / (r_source - sin(theta_source) * sin(theta_source)));
         Plasma_Velocity[e_r]     = 0;
         Plasma_Velocity[e_theta] = 0;
         Plasma_Velocity[e_phi]   = Plasma_Velocity[e_t] / sqrt(r_source * r_source * r_source);
 
-        return;
+        return OK;
 
     }
 
@@ -38,7 +38,7 @@ void Emission_models_class::get_plasma_velocity(const double* const State_Vector
 
         /* This velocity profile is defined only for orbit radii > ISCO. When the ray passes below ISCO I return a NULL pointer, which tells the 
            rest of the code to ignore the emission from this region. */
-        if (fabs(State_Vector[e_r]) < p_Sim_Context->p_Spacetime->get_ISCO()[Inner]) { Plasma_Velocity = NULL; return; }
+        if (fabs(r_source) < p_Sim_Context->p_Spacetime->get_ISCO()[Inner]) { return ERROR; }
 
         /* Interpolated contravariant radial velocity component -> Corresponds to equation (10a) from the reference, but beta_r -> 1 - beta_r. */
         u_r = -Radial_velocity_fraction * sqrt((-1 - inv_metric[e_t][e_t]) * inv_metric[e_r][e_r]);
@@ -85,7 +85,7 @@ void Emission_models_class::get_plasma_velocity(const double* const State_Vector
 
             if (fabs(Radial_velocity_fraction) < 1e-10) { u_r = 0.0; }
 
-            else { Plasma_Velocity = NULL; return; }
+            else { return ERROR; }
             
         }
 
@@ -120,9 +120,11 @@ void Emission_models_class::get_plasma_velocity(const double* const State_Vector
                   << Plasma_Velocity[e_phi]
                   << "]\n";
 
-        Plasma_Velocity = NULL;
+        return ERROR;
 
     }
+
+    return OK;
 
 }
 
@@ -171,17 +173,6 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
         std::cout << "Unsupported magnetic field geometry! \n";
         exit(ERROR);
-
-    }
-
-    double test = 0;
-
-    for (int left_idx = 0; left_idx <= 3; left_idx++) {
-        for (int right_idx = 0; right_idx <= 3; right_idx++) {
-
-            test += p_Metric->Metric[left_idx][right_idx] * Emission_medium_state->Plasma_Velocity[left_idx] * Emission_medium_state->Plasma_Velocity[right_idx];
-
-        }
 
     }
 
@@ -482,12 +473,14 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
         for (int averaging_idx = 1; averaging_idx <= Num_Samples_to_avg - 1; averaging_idx++) {
 
             double& sin_pitch_angle = this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[averaging_idx];
+            double& cos_pitch_angle = this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[averaging_idx];
 
             Transfer_args_corrected.X                  = Transfer_args_uncorrected.X / sin_pitch_angle;
             Transfer_args_corrected.sqrt_X             = Transfer_args_uncorrected.sqrt_X * this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[averaging_idx];
             Transfer_args_corrected.cbrt_X             = Transfer_args_uncorrected.cbrt_X * this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[averaging_idx];
             Transfer_args_corrected.X_to_7_over_20     = Transfer_args_uncorrected.X_to_7_over_20 * this->s_Precomputed_e_pitch_angles.one_over_sin_to_7_over_20[averaging_idx];
             Transfer_args_corrected.sin_emission_angle = sin_pitch_angle;
+            Transfer_args_corrected.cos_emission_angle = cos_pitch_angle;
 
             Transfer_functions_type temp_Transfer_functions{};
 
@@ -524,6 +517,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
         Transfer_args_corrected.cbrt_X             = Transfer_args_uncorrected.cbrt_X * one_over_cbrt_sin;
         Transfer_args_corrected.X_to_7_over_20     = Transfer_args_uncorrected.X_to_7_over_20 * one_over_7_to_20_sin;
         Transfer_args_corrected.sin_emission_angle = sin_pitch_angle;
+        Transfer_args_corrected.cos_emission_angle = cos(pitch_angle);
 
         this->get_synchrotron_transfer_fit_functions(e_Kappa_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Sim_Context, p_Transfer_functions);
 
@@ -589,37 +583,37 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     /* The hotspot is assumed to "screen" the magnetic field of the background accretion disk (unless its magnetic field magnitude is specified as "Background"). 
        Therefore the magnetic field with which the emission functions of the disk are evaluated, depends on the position of the hotspot. This is the reason this boolean is calculated outside the Emission_meidum 
-       switch statement. */
+       switch statement. 
+       NOTE: This call ignores the return status, because it should always be OK when evaluated at the hotspot position. */
 
     double Hotspot_velocity[4]{};
     this->get_plasma_velocity(this->p_Hotspot_Model->s_Hotspot_params.Position,
                               p_Sim_Context,
                               this->p_Hotspot_Model->s_Hotspot_params.Velocity_profile_type,
                               this->p_Hotspot_Model->s_Hotspot_params.Radial_velocity_fraction,
-                              Hotspot_velocity);
+                              Hotspot_state.Plasma_Velocity);
 
     bool Is_inside_hotspot = false;
     bool Is_inside_disk = false;
 
-    if (NULL != Hotspot_velocity) {
+    /* This function call populates the density and temperature values for the hotspot - this is why they are not populated along with the magnetic field parameters. */
+    Is_inside_hotspot = this->p_Hotspot_Model->is_inside_hotspot(State_Vector, &Hotspot_state);
 
-        /* This function call populates the density and temperature values for the hotspot - this is why they are not populated along with the magnetic field parameters. */
-        Is_inside_hotspot = this->p_Hotspot_Model->is_inside_hotspot(State_Vector, Hotspot_velocity, &Hotspot_state);
-
-    };
+    Return_Values Plasma_velocity_OK{};
 
     switch (Emission_medium) {
 
     case Disk:
 
-       this->get_plasma_velocity(State_Vector, 
-                                 p_Sim_Context, 
-                                 this->p_Disk_Model->s_Disk_params.Velocity_profile_type,
-                                 this->p_Disk_Model->s_Disk_params.Radial_velocity_fraction,
-                                 Emission_medium_state.Plasma_Velocity);
+        Plasma_velocity_OK = this->get_plasma_velocity(State_Vector,
+                                                       p_Sim_Context, 
+                                                       this->p_Disk_Model->s_Disk_params.Velocity_profile_type,
+                                                       this->p_Disk_Model->s_Disk_params.Radial_velocity_fraction,
+                                                       Emission_medium_state.Plasma_Velocity);
 
         Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
 
+        /* This function call populates the density and temperature values for the disk - this is why they are not populated along with the magnetic field parameters. */
         Is_inside_disk = this->p_Disk_Model->is_inside_disk(State_Vector, this->p_Disk_Model->s_Disk_params.e_Disk_model, &Emission_medium_state);
 
         if (this->Thermalize_emission_medium && (Is_inside_disk || Is_inside_hotspot)) {
@@ -643,7 +637,6 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
         }
 
-        /* This function call populates the density and temperature values for the disk - this is why they are not populated along with the magnetic field parameters. */
         if (!Is_inside_disk) { return; };
         
         if (Is_inside_hotspot) {
@@ -690,11 +683,11 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
         Emission_medium_state.Density = Hotspot_state.Density;
         Emission_medium_state.Temperature = Hotspot_state.Temperature;
 
-        this->get_plasma_velocity(State_Vector,
-                                  p_Sim_Context, 
-                                  this->p_Hotspot_Model->s_Hotspot_params.Velocity_profile_type,
-                                  this->p_Hotspot_Model->s_Hotspot_params.Radial_velocity_fraction, 
-                                  Emission_medium_state.Plasma_Velocity);
+        Plasma_velocity_OK = this->get_plasma_velocity(State_Vector,
+                                                       p_Sim_Context, 
+                                                       this->p_Hotspot_Model->s_Hotspot_params.Velocity_profile_type,
+                                                       this->p_Hotspot_Model->s_Hotspot_params.Radial_velocity_fraction, 
+                                                       Emission_medium_state.Plasma_Velocity);
 
         Emission_medium_state.Ensamble_type = this->p_Hotspot_Model->s_Hotspot_params.Ensamble_type;
         Emission_medium_state.Magnetization = this->p_Hotspot_Model->s_Hotspot_params.Magnetization;
@@ -720,7 +713,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     }
 
-    if (NULL == Emission_medium_state.Plasma_Velocity) { return; }
+    if (OK != Plasma_velocity_OK) { return; }
 
     this->get_magnetic_field(State_Vector, &Metric, &Emission_medium_state);
 
@@ -770,8 +763,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
         this->get_kappa_synchrotron_emission_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Emission_functions);
         this->get_kappa_synchrotron_absorbtion_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Absorbtion_functions);
-
-        // TODO: Add the Faradey function fits.
+        this->get_kappa_synchrotron_faradey_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Faradey_functions);
 
         frequency_dim = static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args)->frequency / obs_frequency;
 

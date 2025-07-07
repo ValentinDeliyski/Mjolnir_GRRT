@@ -123,4 +123,4 @@ int compute_image_order(const int N_theta_turning_points, Initial_conditions_typ
  */
 void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s_dr_metric, const Metric_type s_dtheta_metric, double Connectrion_Coeffs[4][4][4]);
 
-std::complex<double> compute_Penrose_Walker_constant(const double* const State_Vector, const Spacetime_Base_Class* const p_Spacetime, const std::complex<double>* const Polarization_Vector);
+std::complex<double> get_Penrose_Walker_constant(const double* const State_Vector, const Spacetime_Base_Class* const p_Spacetime, const std::complex<double>* const Polarization_Vector);

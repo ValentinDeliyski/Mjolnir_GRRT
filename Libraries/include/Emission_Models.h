@@ -89,6 +89,9 @@ private:
     void get_kappa_synchrotron_absorbtion_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
                                                         double* const Absorbtion_functions) const;
 
+    void get_kappa_synchrotron_faradey_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
+                                                     double* const Faradey_functions) const;
+
     // ====================== Phenomenologically Distributed synchrotron Fit Functions ====================== //
 
     void get_phenomenological_synchrotron_fit_functions(const Phenomenological_transfer_f_arguments_type* const p_Transfer_args,
@@ -128,11 +131,11 @@ public:
      *   \param [in] Velocity_profile - Enum for the type of velocity profile
      *   \return Pointer to the 4-velocity vector
      */
-    void get_plasma_velocity(const double* const State_Vector, 
-                             const Simulation_Context_type* const p_Sim_Context, 
-                             Velocity_enums const Velocity_profile,
-                             double const Radial_velocity_fraction,
-                             double* Plasma_Velocity);
+    Return_Values get_plasma_velocity(const double* const State_Vector,
+                                      const Simulation_Context_type* const p_Sim_Context, 
+                                      Velocity_enums const Velocity_profile,
+                                      double const Radial_velocity_fraction,
+                                      double* Plasma_Velocity);
     
     //! Computes the magnetic field 4-vector in the coordinate and plasma frames.
     /*! Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity) and a static observer (with 4-velocity n_mu = {-1, 0, 0, 0}).
