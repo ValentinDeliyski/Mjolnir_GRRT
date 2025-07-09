@@ -124,7 +124,7 @@ int main(int argument_count, char** cmd_line_args) {
     // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
     static Results_type s_Ray_results{};
 
-    s_Ray_results.Ray_log_struct.Ray_path_log = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_State_Number]();
+    s_Ray_results.Ray_log_struct.Ray_path_log = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size]();
 
     // Compute the dimentionless sclaes, and save them in the "Ray_results" struct for later use (the code gets messy otherwise).
     s_Ray_results.Length_scale = s_Sim_Context.p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;

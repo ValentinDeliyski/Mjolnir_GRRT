@@ -216,11 +216,13 @@ void Wormhole_class::get_EOM(const double* const State_Vector, double* const Der
 
 }
 
-bool Wormhole_class::terminate_integration(const double* const State_vector, const double* Derivatives) {
+bool Wormhole_class::terminate_integration(const double* const State_vector) {
 
-    bool scatter            = State_vector[e_r] >  sqrt(100 * 100 + this->R_Throat * this->R_Throat) && Derivatives[e_r] < 0;
-    bool scatter_other_side = State_vector[e_r] < -sqrt(100 * 100 + this->R_Throat * this->R_Throat);
-    bool stop_at_throat     = State_vector[e_r] < 1e-5;
+    const double Scatter_radius_global_coords = sqrt(this->Scattering_radius * this->Scattering_radius + this->R_Throat * this->R_Throat);
+
+    const bool scatter            = State_vector[e_r] > Scatter_radius_global_coords && State_vector[e_p_r] < 0;
+    const bool scatter_other_side = State_vector[e_r] < -Scatter_radius_global_coords;
+    const bool stop_at_throat     = State_vector[e_r] < this->Min_distance_to_throat;
 
     if (this->Stop_at_Throat) {
 
@@ -233,19 +235,52 @@ bool Wormhole_class::terminate_integration(const double* const State_vector, con
     }
 };
 
-Return_Values Wormhole_class::load_parameters(const Metric_parameters_type* const Metric_Parameters) {
+Return_Values Wormhole_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
 
-    if (!isnan(Metric_Parameters->Spin) &&
-        !isnan(Metric_Parameters->Redshift_Parameter)) {
+    if (isnan(p_Metric_Parameters->Spin) || isinf(p_Metric_Parameters->Spin)) {
 
-        this->Spin_Param = Metric_Parameters->Spin;
-        this->Redshift_Param = Metric_Parameters->Redshift_Parameter;
-        this->Stop_at_Throat = Metric_Parameters->Stop_At_Throat;
+        std::cout << "Invalid value for the spin parameter: " << p_Metric_Parameters->Spin << "\n";
 
-        return OK;
-
+        return ERROR;
     }
 
-    return ERROR;
+    if (isnan(p_Metric_Parameters->Stop_At_Throat) || isinf(p_Metric_Parameters->Stop_At_Throat)) {
+
+        std::cout << "Invalid value for the \"Stop at throat\" flag: " << p_Metric_Parameters->Stop_At_Throat << "\n";
+
+        return ERROR;
+    }
+
+    if (isnan(p_Metric_Parameters->Redshift_Parameter) || isinf(p_Metric_Parameters->Redshift_Parameter) || p_Metric_Parameters->Redshift_Parameter < 0) {
+
+        std::cout << "Invalid value for the redshift parameter: " << p_Metric_Parameters->Redshift_Parameter << "\n";
+
+        return ERROR;
+    }
+
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+
+        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
+
+        return ERROR;
+    }
+
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+
+        std::cout << "Invalid value for the distance to the throat: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
+
+        return ERROR;
+    }
+ 
+    this->Spin_Param = p_Metric_Parameters->Spin;
+    this->Redshift_Param = p_Metric_Parameters->Redshift_Parameter;
+    this->Stop_at_Throat = p_Metric_Parameters->Stop_At_Throat;
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+
+    // I just reuse the "Min_distance_to_singular_point" for the min throat distance because it serves the same purpose.
+    this->Min_distance_to_throat = p_Metric_Parameters->Min_distance_to_singular_point;
+
+    return OK;
+
 
 }

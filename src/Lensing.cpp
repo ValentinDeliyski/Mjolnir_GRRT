@@ -19,27 +19,20 @@
 #include <iostream>
 #include <complex>
 
-void static log_ray_path(double* State_Vector, Results_type* s_Ray_Results, Step_controller Controller, Initial_conditions_type* p_Init_Conditions){
+void static log_ray_path(double* State_Vector, Results_type* s_Ray_Results, Initial_conditions_type* p_Init_Conditions){
 
-    int& log_offset = s_Ray_Results->Ray_log_struct.Log_offset;
-    double& R_throat = p_Init_Conditions->Metric_parameters.R_throat;
+    const int& log_offset = s_Ray_Results->Ray_log_struct.Log_offset;
+    const double& R_throat = p_Init_Conditions->Metric_parameters.R_throat;
 
-    for (int index = 0; index <= e_State_Number - 1; index++) {
+    memcpy(&s_Ray_Results->Ray_log_struct.Ray_path_log[log_offset * e_Full_state_size], State_Vector, e_Full_state_size * sizeof(double));
 
-        s_Ray_Results->Ray_log_struct.Ray_path_log[index + log_offset * e_State_Number] = State_Vector[index];
+    // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
+    // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead. 
+    if (Wormhole == p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
-        // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
-        // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead. 
-
-        if (Wormhole == p_Init_Conditions->Metric_parameters.e_Spacetime && e_r == index) {
-
-            s_Ray_Results->Ray_log_struct.Ray_path_log[e_r + log_offset * e_State_Number] = sqrt(State_Vector[e_r] * State_Vector[e_r] + R_throat * R_throat);
-
-        }
+        s_Ray_Results->Ray_log_struct.Ray_path_log[e_r + log_offset * e_Full_state_size] = sqrt(State_Vector[e_r] * State_Vector[e_r] + R_throat * R_throat);
 
     }
-
-    s_Ray_Results->Ray_log_struct.Ray_path_log[e_step + log_offset * e_State_Number] = Controller.previous_step;
 
 }
 
@@ -60,7 +53,7 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
                                      const int N_theta_turning_points) {
 
     /* ------------ The number of components is e_State_Number - 1 because we do not include the integration step. */
-    double Crossing_State[e_State_Number - 1]{};
+    double Crossing_State[e_Dynamic_state_size - 1]{};
     double& R_throat = p_Sim_Context->p_Init_Conditions->Metric_parameters.R_throat;
 
     if (interpolate_crossing(State_vector, Old_state, Crossing_State)) {
@@ -424,6 +417,21 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
         }
     }
 
+    double test[4][4]{};
+
+    for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+        for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+            for (int m = 0; m <= 3; m++) {
+
+                    test[left_idx][right_idx] += inv_Tetrad[left_idx][m] * Tetrad[right_idx][m];
+
+            }
+
+        }
+    }
+
     return OK;
 
 }
@@ -477,7 +485,7 @@ void static Parallel_Transport_RHS(const double* const State_Vector,
 }
 
 void static Parallel_Transport_Polarization_Vector(const double* const State_Vector, 
-                                                   Spacetime_Base_Class* const Spacetime, 
+                                                   Spacetime_Base_Class* const p_Spacetime, 
                                                    std::complex<double>* Polarization_Vector) {
 
     std::complex<double> RHS1[4]{};
@@ -485,18 +493,18 @@ void static Parallel_Transport_Polarization_Vector(const double* const State_Vec
     std::complex<double> RHS3[4]{};
     std::complex<double> RHS4[4]{};
 
-    double EOM1[e_State_Number]{};
-    double EOM2[e_State_Number]{};
-    double EOM3[e_State_Number]{};
-    double EOM4[e_State_Number]{};
+    double EOM1[e_Dynamic_state_size]{};
+    double EOM2[e_Dynamic_state_size]{};
+    double EOM3[e_Dynamic_state_size]{};
+    double EOM4[e_Dynamic_state_size]{};
 
     std::complex<double> Temp_pol_vec[4]{};
-    double Temp_State_Vector[e_State_Number]{};
+    double Temp_State_Vector[e_Dynamic_state_size]{};
 
     /* ================================== 1 ========================================== */
 
-    Parallel_Transport_RHS(State_Vector, Polarization_Vector, Spacetime, RHS1);
-    Spacetime->get_EOM(State_Vector, EOM1);
+    Parallel_Transport_RHS(State_Vector, Polarization_Vector, p_Spacetime, RHS1);
+    p_Spacetime->get_EOM(State_Vector, EOM1);
 
     for (int idx = 0; idx <= 3; idx++) {
 
@@ -504,7 +512,7 @@ void static Parallel_Transport_Polarization_Vector(const double* const State_Vec
 
     }
 
-    for (int idx = 0; idx <= e_State_Number - 2; idx++) {
+    for (int idx = 0; idx <= e_Dynamic_state_size - 1; idx++) {
 
         Temp_State_Vector[idx] = State_Vector[idx] + EOM1[idx] * State_Vector[e_step] * 0.5;
 
@@ -512,8 +520,8 @@ void static Parallel_Transport_Polarization_Vector(const double* const State_Vec
 
     /* ================================== 2 ========================================== */
 
-    Parallel_Transport_RHS(Temp_State_Vector, Temp_pol_vec, Spacetime, RHS2);
-    Spacetime->get_EOM(Temp_State_Vector, EOM2);
+    Parallel_Transport_RHS(Temp_State_Vector, Temp_pol_vec, p_Spacetime, RHS2);
+    p_Spacetime->get_EOM(Temp_State_Vector, EOM2);
 
     for (int idx = 0; idx <= 3; idx++) {
 
@@ -521,7 +529,7 @@ void static Parallel_Transport_Polarization_Vector(const double* const State_Vec
 
     }
 
-    for (int idx = 0; idx <= e_State_Number - 2; idx++) {
+    for (int idx = 0; idx <= e_Dynamic_state_size - 1; idx++) {
 
         Temp_State_Vector[idx] = State_Vector[idx] + EOM2[idx] * State_Vector[e_step] * 0.5;
 
@@ -529,8 +537,8 @@ void static Parallel_Transport_Polarization_Vector(const double* const State_Vec
 
     /* ================================== 3 ========================================== */
 
-    Parallel_Transport_RHS(Temp_State_Vector, Temp_pol_vec, Spacetime, RHS3);
-    Spacetime->get_EOM(Temp_State_Vector, EOM3);
+    Parallel_Transport_RHS(Temp_State_Vector, Temp_pol_vec, p_Spacetime, RHS3);
+    p_Spacetime->get_EOM(Temp_State_Vector, EOM3);
 
     for (int idx = 0; idx <= 3; idx++) {
 
@@ -538,7 +546,7 @@ void static Parallel_Transport_Polarization_Vector(const double* const State_Vec
 
     }
 
-    for (int idx = 0; idx <= e_State_Number - 2; idx++) {
+    for (int idx = 0; idx <= e_Dynamic_state_size - 1; idx++) {
 
         Temp_State_Vector[idx] = State_Vector[idx] + EOM3[idx] * State_Vector[e_step];
 
@@ -546,11 +554,33 @@ void static Parallel_Transport_Polarization_Vector(const double* const State_Vec
 
     /* ================================== 4 ========================================== */
 
-    Parallel_Transport_RHS(Temp_State_Vector, Temp_pol_vec, Spacetime, RHS4);
+    Parallel_Transport_RHS(Temp_State_Vector, Temp_pol_vec, p_Spacetime, RHS4);
 
     for (int idx = 0; idx <= 3; idx++) {
 
         Polarization_Vector[idx] += (RHS1[idx] + 2.0 * RHS2[idx] + 2.0 * RHS3[idx] + RHS4[idx]) * State_Vector[e_step] * (1.0 / 6);
+
+    }
+
+    Metric_type s_Metric = p_Spacetime->get_metric(State_Vector);
+
+    std::complex<double> Norm_Squared{};
+
+    for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+        for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+            Norm_Squared += s_Metric.Metric[left_idx][right_idx] * Polarization_Vector[left_idx] * std::conj(Polarization_Vector[right_idx]);
+
+        }
+
+    }
+
+    double Norm = sqrt(std::abs(Norm_Squared));
+
+    for (int idx = 0; idx <= 3; idx++) {
+
+        Polarization_Vector[idx] /= Norm;
 
     }
 
@@ -572,6 +602,25 @@ void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][
     
     }
 
+    std::complex<double> test{};
+
+    for (int stokes_idx = 0; stokes_idx <= 3; stokes_idx++) {
+
+        test += Stokes_Basis_Pol_vec[stokes_idx] * std::conj(Stokes_Basis_Pol_vec[stokes_idx]);
+
+    }
+
+    double Norm = sqrt(std::abs(test));
+
+    if (!isnan(1.0 / Norm) && !isinf(1.0 / Norm)) {
+
+        for (int stokes_idx = 0; stokes_idx <= 3; stokes_idx++) {
+
+            Stokes_Basis_Pol_vec[stokes_idx] /= Norm;
+
+        }
+    }
+
     double Polarized_Intensity = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
                                       Stokes_Vector[U] * Stokes_Vector[U] +
                                       Stokes_Vector[V] * Stokes_Vector[V]);
@@ -584,6 +633,28 @@ void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][
     
     Stokes_Vector[V] = (Polarized_Intensity * (std::conj(Stokes_Basis_Pol_vec[1]) * Stokes_Basis_Pol_vec[2] -
                                                Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]))).imag();
+
+    double Polarized_Intensity_after = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
+                                            Stokes_Vector[U] * Stokes_Vector[U] +
+                                            Stokes_Vector[V] * Stokes_Vector[V]);
+
+    if (fabs(Polarized_Intensity - Polarized_Intensity_after) > 1e-6) {
+
+        int test{};
+
+    }
+
+
+
+    if (!isinf(Polarized_Intensity / Polarized_Intensity_after) && !isnan(Polarized_Intensity / Polarized_Intensity_after)) {
+
+        for (int idx = 1; idx <= 3; idx++) {
+
+            Stokes_Vector[idx] *= Polarized_Intensity / Polarized_Intensity_after;
+
+        }
+
+    }
 
 }
 
@@ -643,17 +714,19 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
     double Stokes_Vector_offset[e_Stokes_param_num][e_order_number]{};
 
     std::complex<double> Coord_Basis_Pol_vec[4]{};
-
+    std::complex<double> PW_const;
     // TODO: Propagate this aswell
     double Optical_Depth{};
+
+    double LP_fraction{};
 
     for (int log_index = p_Ray_results->Ray_log_struct.Log_length; log_index > 0; log_index--) {
 
         /* =============== Pick out the ray position / momenta from the Log, at the given log index =============== */
 
-        double* Logged_ray_path = &(p_Ray_results->Ray_log_struct.Ray_path_log[log_index * e_State_Number]);
+        double* Logged_ray_path = &(p_Ray_results->Ray_log_struct.Ray_path_log[log_index * e_Full_state_size]);
 
-        Current_theta_turning_points -= Check_for_theta_turning_point(Logged_ray_path, Logged_ray_path - e_State_Number);
+        Current_theta_turning_points -= Check_for_theta_turning_point(Logged_ray_path, Logged_ray_path - e_Full_state_size);
 
         if (Current_order != compute_image_order(Current_theta_turning_points, p_Sim_Context->p_Init_Conditions)) {
 
@@ -697,7 +770,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
                 Inside_emission_medium = true;
 
-                Propagate_Stokes_vector(Analytic, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
+                Propagate_Stokes_vector(Implicit_Trapezoid, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
 
             }
 
@@ -710,13 +783,21 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
         double Tetrad[4][4]{};
         double inv_Tetrad[4][4]{};
 
+        LP_fraction = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] + Stokes_Vector[U] * Stokes_Vector[U]) / Stokes_Vector[I];
+
+        if (LP_fraction < 0.6 && !isnan(LP_fraction)) {
+
+            int stop{};
+
+        }
+
         if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Stokes_Vector[I] > 0) {
 
             if (Inside_emission_medium) {
 
                 /* Literally arbitrary... (I picked something that does not align with the plasma velocity, because Ive noticed that such cases can cause problems).
                    NOTE: This vector CAN be an arbitrary spacelike vector. Only the final mapping at the observer needs to follow conventions. */
-                double Trial_spacelike_vector[4] = { 0, 1, -1, 1 };
+                double Trial_spacelike_vector[4] = { 0, 0, -1, 0 };
 
                 /* We are still inside the emission medium and need to parallel transport along with evaluating the emission.
                    This nessecitates a mapping back and forth between the local Stokes basis. */
@@ -736,7 +817,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
                 Map_Stokes_to_Polarization_Vector(std::as_const(Stokes_Vector), std::as_const(Tetrad), Coord_Basis_Pol_vec);
 
-                /* ----------------------------------- The actual parallel transport step ---------------------------- */
+                /* -------------------------------- The actual parallel transport step ------------------------------- */
 
                 Parallel_Transport_Polarization_Vector(Logged_ray_path, p_Sim_Context->p_Spacetime, Coord_Basis_Pol_vec);
 
@@ -744,11 +825,11 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
                 /* The inverse mapping needs to be done at the point where the polarization vector is defined. After the parallel 
                    transport step, this point is further along the ray (which in this loop is further backwards along the ray log). */
-                if (OK != Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path - e_State_Number, Trial_spacelike_vector, false)) {
+                if (OK != Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path - e_Full_state_size, Trial_spacelike_vector, false)) {
 
                     /* Sometimes the magnetic field lines up with the photon wave vector in a way that makes creating the tetrad awkward. In such cases, attempt to 
                        create the tetrad with the Trial_spacelike_vector. */
-                    if (OK != Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path - e_State_Number, Trial_spacelike_vector, true)) {
+                    if (OK != Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path - e_Full_state_size, Trial_spacelike_vector, true)) {
 
                         std::cout << "Could not construct the Stokes basis at the next ray point! \n";
 
@@ -759,6 +840,8 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                 }
 
                 Map_Polarization_Vector_to_Stokes(std::as_const(inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
+
+                LP_fraction = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] + Stokes_Vector[U] * Stokes_Vector[U]) / Stokes_Vector[I];
 
             }
             else {
@@ -782,25 +865,28 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     }
 
-    /* =============== The final mapping of the polarizatio vector to Stokes parameters at the observer ===================== */
+    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
-    double Observer_Tetrad[4][4]{};
-    double Observer_inv_Tetrad[4][4]{};
+        /* =============== The final mapping of the polarizatio vector to Stokes parameters at the observer ===================== */
 
-    double Local_north_vector[4] = {0, 0, -1, 0};
+        double Observer_Tetrad[4][4]{};
+        double Observer_inv_Tetrad[4][4]{};
 
-    if (OK != Construct_Stokes_Tetrad(Observer_Tetrad, Observer_inv_Tetrad, p_Sim_Context, p_Ray_results->Ray_log_struct.Ray_path_log, Local_north_vector, true)) {
+        double Local_north_vector[4] = { 0, 0, -1, 0 };
 
-        /* There is no second attempt to create the observer tetrad, because it should never fail. */
+        if (OK != Construct_Stokes_Tetrad(Observer_Tetrad, Observer_inv_Tetrad, p_Sim_Context, p_Ray_results->Ray_log_struct.Ray_path_log, Local_north_vector, true)) {
 
-        std::cout << "Could not construct the Stokes basis at the observer! \n";
+            /* There is no second attempt to create the observer tetrad, because it should never fail. */
 
-        exit(ERROR);
+            std::cout << "Could not construct the Stokes basis at the observer! \n";
+
+            exit(ERROR);
+
+        }
+
+        Map_Polarization_Vector_to_Stokes(std::as_const(Observer_inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
 
     }
-
-    Map_Polarization_Vector_to_Stokes(std::as_const(Observer_inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
-
     /* ====================================================================================================================== */
 
     for (int Stokes_idx = 0; Stokes_idx <= e_Stokes_param_num - 1; Stokes_idx++) {
@@ -816,8 +902,8 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
     // Initialize the State Vectors
-    double State_Vector[e_State_Number]{};
-    double Old_State_Vector[e_State_Number]{};
+    double State_Vector[e_Full_state_size]{};
+    double Old_State_Vector[e_Full_state_size]{};
 
     State_Vector[e_t]       = p_Sim_Context->p_Init_Conditions->Observer_params.init_time;
     State_Vector[e_r]       = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
@@ -827,12 +913,13 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     State_Vector[e_p_theta] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_theta];
     State_Vector[e_p_r]     = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_r];
     State_Vector[e_p_t]     = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
-    State_Vector[e_step]    = 0; // This is irrelevant at this stage - it only gets used in the photon log, not this State_Vector variable
+    State_Vector[e_step]    = p_Sim_Context->p_Init_Conditions->Integrator_params.Init_stepzie; 
+    State_Vector[e_affine_param] = 0;
 
     // Set the Old State Vector to the Initial State Vector
-    memcpy(Old_State_Vector, State_Vector, e_State_Number * sizeof(double));
+    memcpy(Old_State_Vector, State_Vector, e_Full_state_size * sizeof(double));
 
-    for (int Image_order = e_direct; Image_order < e_order_number; Image_order += 1) {
+    for (int Image_order = e_direct; Image_order < e_order_number; Image_order++) {
 
         p_Ray_results->Photon_Momentum[e_phi][Image_order] = State_Vector[e_p_phi];
         p_Ray_results->Photon_Momentum[e_t][Image_order]   = State_Vector[e_p_t];
@@ -849,10 +936,9 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     Step_controller controller(p_Sim_Context->p_Init_Conditions->Integrator_params);
 
-    p_Ray_results->Ray_log_struct.Log_offset = 0;
-    log_ray_path(State_Vector, p_Ray_results, controller, p_Sim_Context->p_Init_Conditions);
+    log_ray_path(State_Vector, p_Ray_results, p_Sim_Context->p_Init_Conditions);
 
-    while (!controller.integration_complete && integration_count <= controller.Parameters.Max_integration_count) {
+    while (!controller.integration_complete && integration_count <= controller.Parameters.Max_integration_count && std::abs(State_Vector[e_affine_param]) <= controller.Parameters.Max_affine_param) {
 
         RK45(State_Vector, &controller, p_Sim_Context);
 
@@ -861,7 +947,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
             integration_count += 1;
             p_Ray_results->Ray_log_struct.Log_offset = integration_count;
 
-            log_ray_path(State_Vector, p_Ray_results, controller, p_Sim_Context->p_Init_Conditions);
+            log_ray_path(State_Vector, p_Ray_results, p_Sim_Context->p_Init_Conditions);
 
             N_theta_turning_points += Check_for_theta_turning_point(State_Vector, Old_State_Vector);
 
@@ -875,13 +961,15 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
             /* ============================================================================================================== */
 
-            memcpy(Old_State_Vector, State_Vector, e_State_Number * sizeof(double));
+            memcpy(Old_State_Vector, State_Vector, e_Full_state_size * sizeof(double));
 
         }
 
     }
 
-    if (integration_count >= controller.Parameters.Max_integration_count) { std::cout << "Max iterations reached!" << '\n'; }
+    if (integration_count >= controller.Parameters.Max_integration_count) { std::cout << "Max iterations reached! \n"; }
+
+    if (std::abs(State_Vector[e_affine_param]) >= controller.Parameters.Max_affine_param) { std::cout << "Max affine parameter value reached! \n"; };
 
     p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset;
 

@@ -285,6 +285,8 @@ double Emission_models_class::get_electron_pitch_angle(const double* const B_fie
     }
     else {
 
+        std::cout << "ERROR";
+
         return acos(cos_angle / fabs(cos_angle));
 
     }
@@ -726,7 +728,12 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     case(e_Kappa_ensamble):
 
-        this->get_kappa_synchrotron_transfer_functions(State_Vector, p_Sim_Context, &Emission_medium_state,  p_Transfer_functions);
+        this->get_kappa_synchrotron_transfer_functions(State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
+        break;
+
+    case(e_Debug_constant_functions):
+
+        this->get_debug_synchrotron_functions(p_Transfer_functions);
         break;
 
     default:
@@ -736,11 +743,30 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
     }
 }
 
+void Emission_models_class::get_debug_synchrotron_functions(Transfer_functions_type* p_Transfer_functions) const {
+
+    p_Transfer_functions->Emission_functions[I] = this->s_Emission_params.Debug_j_I_value;
+    p_Transfer_functions->Emission_functions[Q] = this->s_Emission_params.Debug_j_Q_value;
+    p_Transfer_functions->Emission_functions[U] = this->s_Emission_params.Debug_j_U_value;
+    p_Transfer_functions->Emission_functions[V] = this->s_Emission_params.Debug_j_V_value;
+
+    p_Transfer_functions->Absorbtion_functions[I] = this->s_Emission_params.Debug_alpha_I_value;
+    p_Transfer_functions->Absorbtion_functions[Q] = this->s_Emission_params.Debug_alpha_Q_value;
+    p_Transfer_functions->Absorbtion_functions[U] = this->s_Emission_params.Debug_alpha_U_value;
+    p_Transfer_functions->Absorbtion_functions[V] = this->s_Emission_params.Debug_alpha_V_value;
+
+    p_Transfer_functions->Faradey_functions[I] = this->s_Emission_params.Debug_rho_I_value;
+    p_Transfer_functions->Faradey_functions[Q] = this->s_Emission_params.Debug_rho_Q_value;
+    p_Transfer_functions->Faradey_functions[U] = this->s_Emission_params.Debug_rho_U_value;
+    p_Transfer_functions->Faradey_functions[V] = this->s_Emission_params.Debug_rho_V_value;
+
+}
+
 void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensamble_enums e_Ensamble_type,
                                                                            const Emission_medium_state_type* const p_Emission_medium_state,
                                                                            const void* const p_Transfer_args,
                                                                            const Simulation_Context_type* const p_Sim_Context,
-                                                                           Transfer_functions_type* const p_Transfer_functions) {
+                                                                           Transfer_functions_type* const p_Transfer_functions) const {
 
     /* The dimensionless frequency needs to get extracted from the p_Transfer_args pointer, but it first needs to be recast to not-void.
        This happens in the scopes of the switch statemeent below, so I create a variable here to store it. */

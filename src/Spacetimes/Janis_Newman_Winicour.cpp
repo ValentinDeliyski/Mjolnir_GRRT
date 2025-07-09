@@ -214,37 +214,59 @@ void JNW_class::get_EOM(const double* const State_vector, double* const Derivati
 
 }
 
-bool JNW_class::terminate_integration(const double* const State_vector, const double* const Derivatives) {
+bool JNW_class::terminate_integration(const double* const State_vector) {
 
-    double r_singularity = 2 / this->Gamma;
+    const double r_singularity = 2.0 / this->Gamma;
 
-    bool hit_singularity = State_vector[e_r] - r_singularity < 1e-2;
+    bool hit_horizon = false;
 
-    bool scatter = State_vector[e_r] > 2500 && Derivatives[e_r] < 0;
+    if (r_singularity < this->Horizon_radius) {
 
-    if (this->Gamma > 0.5) {
-
-        return scatter || hit_singularity;
+        hit_horizon = State_vector[e_r] - this->Horizon_radius < this->Min_distance_to_singular_point;
 
     }
-    else {
 
-        return scatter;
+    const bool scatter = State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0.0;
 
-    }
+    return scatter || hit_horizon;
 };
 
-Return_Values JNW_class::load_parameters(const Metric_parameters_type* const Metric_Parameters) {
+Return_Values JNW_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
 
-    if (!isnan(Metric_Parameters->JNW_Gamma_Parameter)) {
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
 
-        this->Gamma = Metric_Parameters->JNW_Gamma_Parameter;
+        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
 
-        return OK;
+        return ERROR;
+    }
+
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+
+        std::cout << "Invalid value for the distance to the singular point: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
+
+        return ERROR;
+    }
+
+    if (isnan(p_Metric_Parameters->JNW_Gamma_Parameter) || isinf(p_Metric_Parameters->JNW_Gamma_Parameter) || p_Metric_Parameters->JNW_Gamma_Parameter < 0) {
+
+        std::cout << "Invalid value for the gamma parameter: " << p_Metric_Parameters->JNW_Gamma_Parameter << "\n";
+
+        return ERROR;
 
     }
 
-    return ERROR;
+    this->Gamma = p_Metric_Parameters->JNW_Gamma_Parameter;
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
+    this->Horizon_radius = 0.0;
+
+    if (this->Gamma < 1.0) {
+
+        this->Horizon_radius = this->Mass + sqrt(this->Mass * this->Mass - this->Gamma * this->Gamma);
+
+    }
+
+    return OK;
 
 }
 

@@ -166,9 +166,9 @@ void RBH_class::get_EOM(const double* const State_vector, double* const Derivati
 
 }
 
-bool RBH_class::terminate_integration(const double* const State_vector, const double* const Derivatives) {
+bool RBH_class::terminate_integration(const double* const State_vector) {
 
-    bool scatter = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
+    bool scatter = State_vector[e_r] > 100 && State_vector[e_p_r] < 0;
 
     double r_horizon = sqrt(4 * this->Mass * this->Mass - this->Parameter * this->Parameter);
 

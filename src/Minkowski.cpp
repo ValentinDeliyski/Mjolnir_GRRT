@@ -118,15 +118,22 @@ void Minkowski_class::get_EOM(const double* const State_vector, double* const De
 
 }
 
-bool Minkowski_class::terminate_integration(const double* const State_vector, const double* const Derivatives) {
+bool Minkowski_class::terminate_integration(const double* const State_vector) {
 
-    bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
-
-    return scatter;
+    return State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0;
 
 };
 
-Return_Values Minkowski_class::load_parameters(const Metric_parameters_type* const Metric_Parameters) {
+Return_Values Minkowski_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
+
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+
+        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
+
+        return ERROR;
+    }
+
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
 
     return OK;
 

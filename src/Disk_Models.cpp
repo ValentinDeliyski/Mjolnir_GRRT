@@ -43,6 +43,11 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
         Profile = exp(-int_power(Exponent_arg, 2) / 2);
         break;
 
+    case e_Debug_constant_density:
+
+        Profile = 1.0;
+        break;
+
     default:
 
         std::cout << "Unsupported disk profile type! \n";

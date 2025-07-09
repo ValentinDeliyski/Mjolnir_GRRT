@@ -52,10 +52,10 @@ void mat_vec_multiply_4D(double const Matrix[4][4], const double* const Vector, 
 
 double get_max_element(const double* const Vector, int const Element_number) {
 
-	double max = fabs(Vector[e_r]);
+	double max = fabs(Vector[0]);
 	double max_candidate = 0;
 
-	for (int index = e_theta; index <= Element_number; index++) {
+	for (int index = 1; index <= Element_number - 1; index++) {
 
 		max_candidate = fabs(Vector[index]);
 
@@ -74,7 +74,7 @@ double get_max_relative_error(const double* const Error_state, const double* con
 
 	double max_rel_error = fabs(Error_state[e_t] / Current_state[e_t]);
 
-	for (int index = e_r; index <= e_State_Number - 2; index += 1) {
+	for (int index = e_r; index <= e_Dynamic_state_size - 1; index += 1) {
 
 		double temp_error = fabs(Error_state[index] / (Current_state[index]));
 

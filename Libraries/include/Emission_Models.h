@@ -100,6 +100,9 @@ private:
 
     // ====================== Power Distributed synchrotron Fit Functions ====================== //
 
+    // ====================== Debug synchrotron Functions ====================== //
+    
+    void get_debug_synchrotron_functions(Transfer_functions_type* p_Transfer_functions) const;
 
     //! Evaluates the kappa ensamble polarized synchrotron emission, absorbtion and Faradey functions.
     /*! Evaluates the kappa ensamble polarized synchrotron emission, absorbtion and Faradey functions.
@@ -114,7 +117,7 @@ private:
                                                  const Emission_medium_state_type* const p_Emission_medium_state,
                                                  const void* const p_Transfer_args,
                                                  const Simulation_Context_type* const p_Sim_Context,
-                                                 Transfer_functions_type* const p_Transfer_functions);
+                                                 Transfer_functions_type* const p_Transfer_functions) const;
 
 public:
 

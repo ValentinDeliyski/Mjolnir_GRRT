@@ -106,7 +106,7 @@ void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const 
 void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
                                                                                 double* const Emission_functions) const {
 
-    // The reference for these expressions is https://arxiv.org/pdf/1602.08749, equations (35), (36), (37) and (38).
+    // The reference for these expressions is https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf, equations (43), (44), (45) and (46).
 
     /* Zero out the emission functions just in case. */
     memset(Emission_functions, 0, e_Stokes_param_num * sizeof(double));
@@ -139,11 +139,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
     Emission_functions_low[I]  = Common_factor_low;
     Emission_functions_high[I] = Common_factor_high;
 
-    if (!isnan(Emission_functions_high[I] / Emission_functions_low[I])) {
-
-        Emission_functions[I] = Emission_functions_low[I] * pow(1. + pow(Emission_functions_high[I] / Emission_functions_low[I], -power_I), -1. / power_I);
-
-    }
+    Emission_functions[I] = pow(pow(Emission_functions_low[I], -power_I) + pow(Emission_functions_high[I], -power_I), -1. / power_I);
 
     /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
@@ -153,22 +149,18 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
     Emission_functions_low[Q] = Common_factor_low / 2;
     Emission_functions_high[Q] = Common_factor_high * (16.0 / 25 + p_Transfer_args->kappa / 50);
 
-    if (!isnan(Emission_functions_high[Q] / Emission_functions_low[Q])) {
-
-        Emission_functions[Q] = -Emission_functions_low[Q] * pow(1. + pow(Emission_functions_high[Q] / Emission_functions_low[Q], -power_Q), -1. / power_Q);
-    }
+    Emission_functions[Q] = -pow(pow(Emission_functions_low[Q], -power_Q) + pow(Emission_functions_high[Q], -power_Q), -1. / power_Q);
 
     double power_V = 13. / 5 * pow(p_Transfer_args->kappa, -36. / 25);
 
     Emission_functions_low[V] = Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1., 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
     Emission_functions_high[V] = Common_factor_high * (49.0 / 64 * pow(pow(p_Transfer_args->sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(p_Transfer_args->kappa, -11.0 / 25) / p_Transfer_args->T_electron_dim / p_Transfer_args->sqrt_X;
 
-    if (!isnan(Emission_functions_high[V] / Emission_functions_low[V])) {
+    if (!isnan(1.0 / p_Transfer_args->cos_emission_angle) && !isinf(1.0 / p_Transfer_args->cos_emission_angle)) {
 
-        Emission_functions[V] = Emission_functions_low[V] * pow(1. + pow(Emission_functions_high[V] / Emission_functions_low[V], -power_V), -1. / power_V) * p_Transfer_args->cos_emission_angle / fabs(p_Transfer_args->cos_emission_angle);
+        Emission_functions[V] = pow(pow(Emission_functions_low[V], -power_V) + pow(Emission_functions_high[V], -power_V), -1. / power_V) * p_Transfer_args->cos_emission_angle / fabs(p_Transfer_args->cos_emission_angle);
 
     }
-
 }
 
 void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,

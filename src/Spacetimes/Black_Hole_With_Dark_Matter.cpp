@@ -230,9 +230,9 @@ void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(const double* const State_vect
 
 }
 
-bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(const double* const State_vector, const double* const Derivatives) {
+bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(const double* const State_vector) {
 
-    bool scatter     = State_vector[e_r] > 100 && Derivatives[e_r] < 0;
+    bool scatter     = State_vector[e_r] > 100 && State_vector[e_p_r] < 0;
     bool hit_horizon = State_vector[e_r] - 2 * this->Mass < 1e-5;
 
     return scatter || hit_horizon;

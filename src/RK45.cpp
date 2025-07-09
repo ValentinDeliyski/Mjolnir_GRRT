@@ -4,61 +4,61 @@
 /*! Runs one iteration of the Dormond - Prince adaptive integrator, and updates the State Vector and Step Controller instance accordingly.
 *
 *   \param [out] State_Vector - Pointer to the array that holds the photon State Vector.
-*   \param [out] Controller - Pointer to the Step Controller class instance.
+*   \param [out] p_Controller - Pointer to the Step Controller class instance.
 *   \param [in] p_Sim_context - Pointer to the Simulation Context struct.
 *   \return Nothing
 */
-void RK45(double* const State_Vector, Step_controller* const controller, const Simulation_Context_type* const p_Sim_context) {
+void RK45(double* const State_Vector, Step_controller* const p_Controller, const Simulation_Context_type* const p_Sim_context) {
 
     // Initialize the iteration counter
     int iteration = 0;
 
     // Initialize the state errors.
-    double state_error[e_State_Number]{};
-    double state_rel_err[e_State_Number]{};
+    double state_error[e_Dynamic_state_size]{};
+    double state_rel_err[e_Dynamic_state_size]{};
 
     // Initialize the array that holds the intermediate EOM RHS evaluations.
-    double Derivatives[RK45_size * e_State_Number]{};
+    double Derivatives[RK45_size * e_Dynamic_state_size]{};
 
     // Initialize the array that holds the intermediate State Vectors.
-    double inter_State_vector[RK45_size * e_State_Number]{};
+    double inter_State_vector[RK45_size * e_Dynamic_state_size]{};
 
     // Initialize the array that holds the two new solutions that the DP54 method computes.
-    double New_State_vector_O5[e_State_Number]{};
-    double New_State_vector_O4[e_State_Number]{};
+    double New_State_vector_O5[e_Dynamic_state_size]{};
+    double New_State_vector_O4[e_Dynamic_state_size]{};
 
     // Runs trough the EOM evaluations in-between t and t + step.
     while (iteration <= RK45_size - 1) { 
 
         // Runs trough the state vector components.
-        for (int vector_indexer = 0; vector_indexer <= e_State_Number - 2; vector_indexer += 1) { 
+        for (int vector_indexer = 0; vector_indexer <= e_Dynamic_state_size - 1; vector_indexer += 1) {
 
-            inter_State_vector[vector_indexer + iteration * e_State_Number] = State_Vector[vector_indexer];
+            inter_State_vector[vector_indexer + iteration * e_Dynamic_state_size] = State_Vector[vector_indexer];
 
             // Runs trough tough the Dormand-Prince coeficients matrix and adds on the contributions from the derivatives at the points between t and t + step.
             for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) { 
 
-                inter_State_vector[vector_indexer + iteration * e_State_Number] += -controller->step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
+                inter_State_vector[vector_indexer + iteration * e_Dynamic_state_size] += -p_Controller->step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
 
             }
         }
 
-        p_Sim_context->p_Spacetime->get_EOM(&inter_State_vector[iteration * e_State_Number], &Derivatives[iteration * e_State_Number]);
+        p_Sim_context->p_Spacetime->get_EOM(&inter_State_vector[iteration * e_Dynamic_state_size], &Derivatives[iteration * e_Dynamic_state_size]);
 
         iteration += 1;
 
     }
 
     // Compute the new state vectors.
-    for (int vector_indexer = 0; vector_indexer <= e_State_Number - 2; vector_indexer += 1) {
+    for (int vector_indexer = 0; vector_indexer <= e_Dynamic_state_size - 1; vector_indexer += 1) {
 
         New_State_vector_O5[vector_indexer] = State_Vector[vector_indexer];
         New_State_vector_O4[vector_indexer] = State_Vector[vector_indexer];
 
         for (int derivative_indexer = 0; derivative_indexer <= RK45_size - 1; derivative_indexer += 1) {
 
-            New_State_vector_O5[vector_indexer] += -controller->step * Coeff_sol[derivative_indexer]      * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
-            New_State_vector_O4[vector_indexer] += -controller->step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_State_Number];
+            New_State_vector_O5[vector_indexer] += -p_Controller->step * Coeff_sol[derivative_indexer]      * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
+            New_State_vector_O4[vector_indexer] += -p_Controller->step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
 
         }
 
@@ -66,52 +66,52 @@ void RK45(double* const State_Vector, Step_controller* const controller, const S
        
     }
 
-    controller->integration_complete = p_Sim_context->p_Spacetime->terminate_integration(State_Vector, Derivatives);
+    p_Controller->integration_complete = p_Sim_context->p_Spacetime->terminate_integration(State_Vector);
 
     // The integrator might jump pass surfaces that are singular for the EOM (like the JNW singularity at 2 / gamma)
     // In this case the whole state vector becomes a NaN. I check for this and update the integration step by hand,
     // then set the continue_integration flag to "false" to force the integrator to redo the current iteration with a smaller step.
     if (isnan(New_State_vector_O5[e_r])) {
 
-        controller->continue_integration = false;
-        controller->step /= 10.0;
+        p_Controller->continue_integration = false;
+        p_Controller->step /= 10.0;
 
         return;
 
     }
 
     // Update the state errors
-    controller->previous_step = controller->step;
-    controller->sec_prev_err  = controller->prev_err;
-    controller->prev_err      = controller->current_err;
-    controller->current_err   = get_max_element(state_error, e_State_Number - 1);
+    p_Controller->previous_step = p_Controller->step;
+    p_Controller->sec_prev_err  = p_Controller->prev_err;
+    p_Controller->prev_err      = p_Controller->current_err;
+    p_Controller->current_err   = get_max_element(state_error, e_Dynamic_state_size);
 
     // Update the controller step
-    controller->update_step(std::as_const(State_Vector));
+    p_Controller->update_step(std::as_const(State_Vector));
 
-    if (controller->step > 10) {
+    if (p_Controller->step > 10) {
 
-        //controller->step = 10;
+        //p_Controller->step = 10;
 
     }
 
-    if (controller->continue_integration) {
+    if (p_Controller->continue_integration) {
 
         // Update the state vector
-        for (int vector_indexer = 0; vector_indexer <= e_State_Number - 1; vector_indexer += 1) {
+        memcpy(State_Vector, New_State_vector_O5, e_Dynamic_state_size * sizeof(double));
 
-            State_Vector[vector_indexer] = New_State_vector_O5[vector_indexer];
-
-        }
+        // Using the "previous_step" here, because the step was updated by the above call to "update_step()" and we want the step that got us to this point.
+        State_Vector[e_step] = p_Controller->previous_step;
+        State_Vector[e_affine_param] -= p_Controller->previous_step;
 
         // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
         // Close enough that it requires "manual" scattering, by flipping the p_r sign.
         // Otherwise the photons never reach the turning point and the integration grinds to a halt.
         if (p_Sim_context->p_Init_Conditions->Metric_parameters.e_Spacetime == Janis_Newman_Winicour && p_Sim_context->p_Init_Conditions->Metric_parameters.JNW_Gamma_Parameter < 0.5) {
 
-            if (State_Vector[e_r] - 2 / p_Sim_context->p_Init_Conditions->Metric_parameters.JNW_Gamma_Parameter < 1e-7) {
+            if (State_Vector[e_r] - 2.0 / p_Sim_context->p_Init_Conditions->Metric_parameters.JNW_Gamma_Parameter < p_Sim_context->p_Init_Conditions->Metric_parameters.Min_distance_to_singular_point) {
 
-                State_Vector[e_p_r] *= -1;
+                State_Vector[e_p_r] *= -1.0;
 
             }
 

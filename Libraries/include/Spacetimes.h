@@ -78,7 +78,7 @@ public:
 
     /* Integration Termination Conditions */
 
-    virtual bool terminate_integration(const double* const State_vector, const double* const Derivatives) {
+    virtual bool terminate_integration(const double* const State_vector) {
 
         std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
 
@@ -102,6 +102,9 @@ private:
 
     double Mass = 1.0;
     double Spin_Param;
+    double Horizon_radius;
+    double Scattering_radius;
+    double Min_distance_to_singular_point;
 
 public:
 
@@ -125,13 +128,17 @@ public:
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
+    bool terminate_integration(const double* const State_vector) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
      
 };
 
 class Minkowski_class : public Spacetime_Base_Class {
+
+private:
+
+    double Scattering_radius;
 
 public:
 
@@ -152,7 +159,7 @@ public:
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
+    bool terminate_integration(const double* const State_vector) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -169,6 +176,9 @@ private:
 
     bool Stop_at_Throat;
 
+    double Scattering_radius;
+    double Min_distance_to_throat;
+
 public:
 
 
@@ -192,7 +202,7 @@ public:
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
+    bool terminate_integration(const double* const State_vector) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -205,6 +215,9 @@ private:
     double Mass = 1.0;
     double Parameter;
 
+    double Scattering_radius;
+    double Min_distance_to_singular_point;
+
 public:
 
     double* get_ISCO();
@@ -227,7 +240,7 @@ public:
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
+    bool terminate_integration(const double* const State_vector) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -240,6 +253,10 @@ private:
     double Mass = 1.0;
     double Gamma;
 
+    double Scattering_radius;
+    double Min_distance_to_singular_point;
+    double Horizon_radius;
+
 public:
 
     double* get_ISCO();
@@ -262,7 +279,7 @@ public:
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
+    bool terminate_integration(const double* const State_vector) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -274,6 +291,10 @@ private:;
 
     double Mass = 1.0;
     double Gamma;
+
+    double Scattering_radius;
+    double Min_distance_to_singular_point;
+    double Horizon_radius;
 
 public:
 
@@ -297,7 +318,7 @@ public:
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
+    bool terminate_integration(const double* const State_vector) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -310,6 +331,9 @@ private:
     double Mass = 1.0;
     double Compactness;
     double Halo_Mass;
+
+    double Scattering_radius;
+    double Min_distance_to_singular_point;
 
 public:
 
@@ -331,7 +355,7 @@ public:
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
+    bool terminate_integration(const double* const State_vector) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
@@ -342,6 +366,9 @@ class Numerical_metric : public Spacetime_Base_Class {
 private:
 
     Numerical_metric_params_type Parameters;
+
+    double Scattering_radius;
+    double Min_distance_to_singular_point;
 
     inline void get_control_point_matrix(const double* const Control_vector, const int r_idx, const int theta_idx, double Control_matrix[4][4]) const;
 
@@ -385,7 +412,7 @@ public:
 
     /* Integration Termination Conditions */
 
-    bool terminate_integration(const double* const State_vector, const double* const Derivatives) override;
+    bool terminate_integration(const double* const State_vector) override;
 
     Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 

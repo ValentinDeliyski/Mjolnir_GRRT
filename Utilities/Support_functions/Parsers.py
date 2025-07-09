@@ -31,6 +31,8 @@ class Simulation_Parser():
                 case "BH_w_Dark_Matter_Halo":
                     self.Halo_mass = float(csvreader.__next__()[1][1:])
                     self.Halo_Compactness = float(csvreader.__next__()[1][1:])
+                case "Minkowski":
+                    pass
      
             self.Active_Sim_Mode = int(csvreader.__next__()[1])
 
@@ -248,7 +250,7 @@ class Simulation_Parser():
                              (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / obs_pos**2)
 
         """ The base flux unit, returned by the ray-tracer is Jy. """
-        Total_Intensity_Jy: float = float(sum(sqrt(self.Q_Intensity**2 + self.U_Intensity**2)) * Pixel_area)
+        Total_Intensity_Jy: float = float(sum(sqrt(self.Q_Intensity**2 + self.U_Intensity**2 + self.V_Intensity**2)) * Pixel_area)
 
         match unit:
             

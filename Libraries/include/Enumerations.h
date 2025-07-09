@@ -69,6 +69,7 @@ enum Ensamble_enums: std::underlying_type_t <std::byte> {
     e_Power_law_ensamble        = 1,
     e_Kappa_ensamble            = 2,
     e_Phenomenological_ensamble = 3,
+    e_Debug_constant_functions  = 4
 
 };
 
@@ -93,7 +94,10 @@ enum Disk_model_enums : std::underlying_type_t <std::byte> {
     e_Colab_test_1 = 2,
 
     /* This is the model from https://articles.adsabs.harvard.edu/pdf/1974ApJ...191..499P */
-    e_Page_Thorne = 3
+    e_Page_Thorne = 3,
+
+    /* This model exists for testing purposes (see the plasma integration tests in https://www.aanda.org/articles/aa/pdf/2020/09/aa38573-20.pdf )*/
+    e_Debug_constant_density = 4
 
 };
 
@@ -103,7 +107,7 @@ enum Numerical_Anzatz_enums : std::underlying_type_t <std::byte> {
     e_Anzatz_1 = 0,
 
     /* This is the anzatz used in the Heirdeiro paper - https://arxiv.org/pdf/1501.04319 */
-    e_Anzatz_2 = 1,
+    e_Anzatz_2 = 1
 
 };
 
@@ -126,9 +130,12 @@ enum State_enums: std::underlying_type_t <std::byte> {
     e_p_theta = 6,
     e_p_phi   = 7,
 
-    e_step    = 8,
+    e_Dynamic_state_size = 8,
 
-    e_State_Number = 9,
+    e_step         = 8,
+    e_affine_param = 9,
+
+    e_Full_state_size = 10,
 
 };
 

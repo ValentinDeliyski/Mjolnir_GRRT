@@ -813,9 +813,9 @@ void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
     for (int log_index = 0; log_index <= s_Ray_results->Ray_log_struct.Log_length - 1; log_index++) {
 
-        for (int state_index = 0; state_index <= e_State_Number - 1; state_index++) {
+        for (int state_index = 0; state_index <= e_Full_state_size - 1; state_index++) {
 
-            Log_Output_File << s_Ray_results->Ray_log_struct.Ray_path_log[state_index + log_index * e_State_Number] << " ";
+            Log_Output_File << s_Ray_results->Ray_log_struct.Ray_path_log[state_index + log_index * e_Full_state_size] << " ";
           
         }
 

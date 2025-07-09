@@ -2,13 +2,30 @@
 #include "General_math_functions.h"
 #include "General_GR_functions.h"
 
-Return_Values Numerical_metric::load_parameters(const Metric_parameters_type* const Metric_Parameters) {
+Return_Values Numerical_metric::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
 
-    this->Parameters = Metric_Parameters->Numerical_metric_params;
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
 
-    const double& r_H = Metric_Parameters->Numerical_metric_params.Horizon_radius;
-    const double& M_ADM = Metric_Parameters->Numerical_metric_params.M_ADM;
-    const double& a_ADM = Metric_Parameters->Numerical_metric_params.a_ADM;
+        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
+
+        return ERROR;
+    }
+
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point)) {
+
+        std::cout << "Invalid value for the distance to the throat: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
+
+        return ERROR;
+    }
+
+    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+
+    this->Parameters = p_Metric_Parameters->Numerical_metric_params;
+
+    const double& r_H = p_Metric_Parameters->Numerical_metric_params.Horizon_radius;
+    const double& M_ADM = p_Metric_Parameters->Numerical_metric_params.M_ADM;
+    const double& a_ADM = p_Metric_Parameters->Numerical_metric_params.a_ADM;
 
     /* Computes the outer (mass normalized) event horizon radius is Boyer-Linguist coordinates, with the ADM mass of the numerical solution (the paper labels this capital R_H).
     NOTE: The ADM angular momentum parameter is normalized to the mass. */
@@ -661,11 +678,11 @@ void Numerical_metric::get_EOM(const double* const State_Vector, double* const D
 
 }
 
-bool Numerical_metric::terminate_integration(const double* const State_vector, const double* Derivatives) {
+bool Numerical_metric::terminate_integration(const double* const State_vector) {
 
-    const bool scatter = State_vector[e_r] > 30 && Derivatives[e_r] < 0;
+    const bool scatter = State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0;
 
-    const bool hit_horizon = this->Parameters.M_ADM * State_vector[e_r] - this->Parameters.Horizon_radius_BL < 1e-2;
+    const bool hit_horizon = this->Parameters.M_ADM * State_vector[e_r] - this->Parameters.Horizon_radius_BL < this->Min_distance_to_singular_point;
 
     return scatter || hit_horizon;
 };

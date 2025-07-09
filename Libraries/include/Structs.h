@@ -266,6 +266,24 @@ struct Emission_model_parameters_type {
 
     /*! The free dimentionless parameter for the kappa distribution. */
     double Kappa;
+
+    /* ==================== Debug Emission model ==================== */
+
+    double Debug_j_I_value;
+    double Debug_j_Q_value;
+    double Debug_j_U_value;
+    double Debug_j_V_value;
+
+    double Debug_alpha_I_value;
+    double Debug_alpha_Q_value;
+    double Debug_alpha_U_value;
+    double Debug_alpha_V_value;
+
+    double Debug_rho_I_value;
+    double Debug_rho_Q_value;
+    double Debug_rho_U_value;
+    double Debug_rho_V_value;
+
 };
 
 struct Numerical_metric_potentials_type {
@@ -345,11 +363,18 @@ struct Metric_parameters_type {
     double Compactness;
     double Halo_Mass;
 
+    Numerical_metric_params_type Numerical_metric_params;
+
     /* ============ Generic Parameters ============ = */
 
     double Spin; // Only affects Kerr and the Wormhole
 
-    Numerical_metric_params_type Numerical_metric_params;
+    /*! Radial distance after which we stop the integration. */
+    double Scattering_radius;
+
+    /*! The minimum distance to special surfaces (event horizons, WH throat, ...), after which we stop the integration. */
+    double Min_distance_to_singular_point;
+
 };
 
 struct Precomputed_e_pitch_angles_type {
@@ -530,6 +555,16 @@ struct Integrator_parameters_type {
 
     /*! Enum that decides which step controller to use. */
     Step_controller_type_enums Controller_type;
+
+    /*! Enum that decides weather to use an adaptive step (with the selected step controller), or a fixed one, determined by the initial step. */
+    bool Use_adaptive_step;
+
+    /*! The Maximum allowed stepsize, when using the adaptive integrator. Also the constant value for the fixed step. */
+    double Max_stepsize;
+
+    /*! The Maximum allowed affine parameter value, before terminating the integration.
+        NOTE: This is taken by absolute value. */
+    double Max_affine_param;
 
 };
 
@@ -728,7 +763,7 @@ struct Results_type {
 
     /* Array that holds the Page-Thorne disk flux for each image order. */
     double Flux_PT[e_order_number]{};
-
+     
     /* Array that holds the Page-Thorne disk redshift for each image order. */
     double Redshift_PT[e_order_number]{};
 

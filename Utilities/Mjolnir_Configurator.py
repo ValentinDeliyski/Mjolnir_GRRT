@@ -28,7 +28,8 @@ class Integrator():
                  "Gustafsson_controller_k_1", 
                  "Gustafsson_controller_k_2", 
                  "max_integration_count",
-                 "simpson_method_accuracy")
+                 "simpson_method_accuracy",
+                 "max_affine_parameter")
 
 class Disk_model():
 
@@ -119,7 +120,9 @@ class Metric_parameters():
                  "Halo_mass",
                  "Metric_type", 
                  "Numerical_metric_spline_path",
-                 "Numerical_metric_anzatz_type")
+                 "Numerical_metric_anzatz_type",
+                 "Distance_to_singular_point",
+                 "Scattering_radius")
 
 class Observer():
 
@@ -219,7 +222,8 @@ class Simulation_configurator:
                                              Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.0734, "Unit": "[-]"},
                                              Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.1136, "Unit": "[-]"},
                                              Max_integration_count: dict[str, float | str] = {"Value": 1e7, "Unit": "[-]"},
-                                             simpson_method_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"}):
+                                             simpson_method_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"},
+                                             max_affine_parameter: dict[str, float | str] = {"Value": 1e6, "Unit": "[M]"},):
 
         self.integrator = Integrator()
 
@@ -238,6 +242,7 @@ class Simulation_configurator:
         self.integrator.Gustafsson_controller_k_2 = Gustafsson_controller_k_2
         self.integrator.max_integration_count  = Max_integration_count
         self.integrator.simpson_method_accuracy = simpson_method_accuracy
+        self.integrator.max_affine_parameter = max_affine_parameter
 
     def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},
                                   Distance: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
@@ -283,7 +288,9 @@ class Simulation_configurator:
                                            Halo_mass: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
                                            Metric_type: dict[str, float | str] = {"Value": "Kerr", "Unit": "[-]"},
                                            Numerical_metric_spline_path: str = "",
-                                           Numerical_metric_anzatz_type: dict[str, str] = {"Value": "Anzatz_1", "Unit": "[-]"},):
+                                           Numerical_metric_anzatz_type: dict[str, str] = {"Value": "Anzatz_1", "Unit": "[-]"},
+                                           Distance_to_singular_point: dict[str, float | str] = {"Value": 1e-4, "Unit": "[M]"},
+                                           Scattering_radius: dict[str, float | str] = {"Value": 100, "Unit": "[M]"},):
 
         self.metric_parameters = Metric_parameters()
 
@@ -300,6 +307,8 @@ class Simulation_configurator:
         self.metric_parameters.Metric_type = Metric_type
         self.metric_parameters.Numerical_metric_spline_path = Numerical_metric_spline_path
         self.metric_parameters.Numerical_metric_anzatz_type = Numerical_metric_anzatz_type
+        self.metric_parameters.Scattering_radius = Scattering_radius
+        self.metric_parameters.Distance_to_singular_point = Distance_to_singular_point
 
     def _configure_emission_models(self, Emission_power_law: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
                                          Source_f_power_law: dict[str, float | str] = {"Value": 2.5, "Unit": "[-]"},
@@ -503,6 +512,9 @@ class Simulation_configurator:
                 ET.SubElement(Metric_subelement, "WH_r_throat", units = "[M]").text = "{}".format(self.metric_parameters.WH_r_throat["Value"])
                 ET.SubElement(Metric_subelement, "WH_stop_at_throat", units = "[-]").text = "{}".format(self.metric_parameters.WH_stop_at_throat["Value"])
 
+            case "Minkowski":
+                ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Minkowski")
+
             case "Janis-Newman-Winicour":
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Janis-Newman-Winicour")
                 ET.SubElement(Metric_subelement, "JNW_gamma", units = "[-]").text = "{}".format(self.metric_parameters.JNW_gamma["Value"])
@@ -526,12 +538,15 @@ class Simulation_configurator:
                 ET.SubElement(Metric_subelement, "Horizon_radius", units = "[G/c^2]").text = "{}".format(self.metric_parameters.Horizon_radius["Value"])
                 ET.SubElement(Metric_subelement, "ADM_ang_momentum", units = "[M]").text = "{}".format(self.metric_parameters.Spin["Value"])
                 ET.SubElement(Metric_subelement, "Numerical_metric_anzatz_type", units = "[M]").text = "{}".format(self.metric_parameters.Numerical_metric_anzatz_type["Value"])
+                ET.SubElement(Metric_subelement, "Numerical_metric_spline_path").text = "{}".format(self.metric_parameters.Numerical_metric_spline_path)
                 
             case _:
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Kerr")
                 ET.SubElement(Metric_subelement, "Spin_parameter", units = "[M]").text = "{}".format(self.metric_parameters.Spin["Value"])
                 
-        ET.SubElement(Metric_subelement, "Numerical_metric_spline_path").text = "{}".format(self.metric_parameters.Numerical_metric_spline_path)
+        ET.SubElement(Metric_subelement, "Scattering_radius", units = "[M]").text = "{}".format(self.metric_parameters.Scattering_radius["Value"])
+        ET.SubElement(Metric_subelement, "Distance_to_singular_point", units = "[M]").text = "{}".format(self.metric_parameters.Distance_to_singular_point["Value"])
+                
 
         # ============ Generate the observer XML section ============ #
 
@@ -747,7 +762,7 @@ if __name__ == "__main__":
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type    = {"Value": "Numerical", "Unit": "[-]"}
+    Sim_config.metric_parameters.Metric_type    = {"Value": "Einstein-Gauss-Bonnet", "Unit": "[-]"}
     Sim_config.metric_parameters.Mass           = {"Value": 0.915671, "Unit": "[M]"}
     Sim_config.metric_parameters.Horizon_radius = {"Value": 0.05, "Unit": "[G/c^2]"}
     Sim_config.metric_parameters.Spin           = {"Value": 0.8048 / 0.9157, "Unit": "[M]"}
@@ -755,8 +770,8 @@ if __name__ == "__main__":
     
     # ================================================== Observer ================================================== #
 
-    Sim_config.observer.Resolution_x = {"Value": 1500, "Unit": "[-]"}
-    Sim_config.observer.Resolution_y = {"Value": 1500, "Unit": "[-]"}
+    Sim_config.observer.Resolution_x = {"Value": 128, "Unit": "[-]"}
+    Sim_config.observer.Resolution_y = {"Value": 128, "Unit": "[-]"}
     
     Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
     Sim_config.observer.Inclination = {"Value": 89.99 * pi / 180, "Unit": "[Rad]"}
@@ -793,10 +808,11 @@ if __name__ == "__main__":
     Sim_config.observer.Image_x_min = {"Value": -10, "Unit": "[M]"}
     Sim_config.observer.Image_x_max = {"Value":  10, "Unit": "[M]"}
         
-    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-12, "Unit": "[-]"}
+    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-10, "Unit": "[-]"}
     Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
     Sim_config.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
     Sim_config.integrator.max_integration_count = {"Value": 1000000, "Unit": "[-]"}
+    Sim_config.integrator.max_affine_parameter = {"Value": 1000000, "Unit": "[-]"}
     
     Sim_config.integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
     # ================================================== Hotspot ================================================== #
