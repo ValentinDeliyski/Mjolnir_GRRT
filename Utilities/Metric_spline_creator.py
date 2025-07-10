@@ -6,9 +6,11 @@ import matplotlib.pyplot as plt
 import xml.etree.cElementTree as ET
 import xml.dom.minidom
 
+from numpy.typing import NDArray
+
 class Numerical_metric_parser_class():
 
-    def __init__(self, File_path: str, M_ADM, a_ADM, r_H) -> tuple[array, array, array, array, array, array]:
+    def __init__(self, File_path: str, M_ADM, a_ADM, r_H) -> None:
         
         self.M_ADM = M_ADM
         self.a_ADM = a_ADM
@@ -36,21 +38,13 @@ class Numerical_metric_parser_class():
                 """ Different theta values on the grid are seperated by a "\n" character - parsing it results in an empty list. """
                 if len(Line_contents) == 0:
                     continue
-                
-                # """ Skip parsing the compactified radial coordiante grid point at the horizon (a.e. at x = 0) -> its g_rr diverges there so I can't use it. """
-                # if float(Line_contents[0]) == 0:
-                #     continue
-                
-                # """ Skip parsing the compactified radial coordiante grid point at infintiy (a.e. at x = 1) -> its not a useful value. """
-                # if float(Line_contents[0]) == 1:
-                #     continue
-                
+
                 x_coord.append(float(Line_contents[0]))
                 theta_coord.append(float(Line_contents[1]))
-                F_1.append(float(Line_contents[2]))
-                F_2.append(float(Line_contents[3]))
-                F_0.append(float(Line_contents[4]))
-                W.append(float(Line_contents[5]))
+                F_0.append(float(Line_contents[2]))
+                F_1.append(float(Line_contents[3]))
+                F_2.append(float(Line_contents[4]))
+                W.append(-float(Line_contents[5]))
                 
         """ The metric is calculated only for theta values in the range [0, pi / 2]. We use the reflection symmetry of the problem to get the rest of the grid. """
         x_coord = array(x_coord).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
@@ -75,21 +69,22 @@ class Numerical_metric_parser_class():
             NOTE: This is NOT in Boyer-Linguist coordinates. """
         self.r_coord = sqrt((self.x_coord / (1 - self.x_coord))**2 + self.r_H**2) / self.M_ADM
         
-        """ Convert the uncompactified radial coordinate to the Boyer-Linguist radial coordinate. """
+        """ Convert the uncompactified radial coordinate to the Boyer-Linguist radial coordinate. 
+            NOTE: Fix this to work for non-kerr solutions. """
         self.r_BL_coord = self.r_coord + self.a_ADM**2 / (1 + sqrt(1 - self.a_ADM**2))
 
-    def get_parsed_results(self) -> tuple[array, array, array, array, array, array]:
+    def get_parsed_results(self) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
         
         return self.x_coord, self.r_coord, self.r_BL_coord, self.theta_coord, self.F_0, self.F_1, self.F_2, self.W
         
     def get_metric_functions(self):
                 
         """ This is how the metric function W(r) scales with the BH mass - stems from the fact that rW should be dimensionless. """
-        W = self.W * self.M_ADM
+        W = self.W
         N = 1 - (self.r_H / self.M_ADM) / self.r_coord
 
-        g_tt     = -exp(2 * self.F_0) * N + exp(2 * self.F_2) * (W * self.r_coord * sin(self.theta_coord))**2
-        g_tphi   = -exp(2 * self.F_2) * W * (self.r_coord * sin(self.theta_coord))**2
+        g_tt     = -exp(2 * self.F_0) * N + exp(2 * self.F_2) * (W * sin(self.theta_coord))**2
+        g_tphi   = -exp(2 * self.F_2) * W * sin(self.theta_coord)**2 * self.r_coord
         g_rr     =  exp(2 * self.F_1) / N
         g_thth   =  exp(2 * self.F_1) * self.r_coord**2 
         g_phiphi =  exp(2 * self.F_2) * self.r_coord**2 * sin(self.theta_coord)**2
@@ -137,7 +132,7 @@ class Numerical_metric_parser_class():
 
         plt.show()
         
-    def export_spline_to_XML(self, Metric_name: str, Radial_control_vectors: array, Theta_control_vectors: array, Metric_control_vectors: array, Control_vector_order: list):
+    def export_spline_to_XML(self, Metric_name: str, Radial_control_vectors: list[NDArray], Theta_control_vectors: list[NDArray], Metric_control_vectors: list[NDArray], Control_vector_order: list[str]):
         
         X_knot_points, _, _, Theta_knot_points, _, _, _, _ = Numerical_metric_parser.get_parsed_results()
         
@@ -204,7 +199,7 @@ if __name__ == "__main__":
     a_ADM = 0.41399683 / M_ADM
     # a_ADM = 0.172 / M_ADM**2
 
-    Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/configuration-II.dat", M_ADM = M_ADM, a_ADM = a_ADM, r_H = r_H)
+    Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/rb=0.05_om=0.648537614898263_h0=0.0362501741355515.dat", M_ADM = M_ADM, a_ADM = a_ADM, r_H = r_H)
     x_coord, _, r_BL_coord, theta_coord, F_0, F_1, F_2, W = Numerical_metric_parser.get_parsed_results()
 
     F_0_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_0, X_patch_number = 59, Y_patch_number = 251)
@@ -212,7 +207,7 @@ if __name__ == "__main__":
     F_2_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_2, X_patch_number = 59, Y_patch_number = 251)
     W_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = W, X_patch_number = 59, Y_patch_number = 251)
 
-    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Numerical_Kerr_Config_II", 
+    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Galin_numerical_config", 
                                                  Theta_control_vectors  = [F_0_spline_instance.Control_vector_X, 
                                                                            F_1_spline_instance.Control_vector_X, 
                                                                            F_2_spline_instance.Control_vector_X, 

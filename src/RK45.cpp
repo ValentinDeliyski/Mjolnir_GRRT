@@ -80,20 +80,15 @@ void RK45(double* const State_Vector, Step_controller* const p_Controller, const
 
     }
 
-    // Update the state errors
-    p_Controller->previous_step = p_Controller->step;
-    p_Controller->sec_prev_err  = p_Controller->prev_err;
-    p_Controller->prev_err      = p_Controller->current_err;
-    p_Controller->current_err   = get_max_element(state_error, e_Dynamic_state_size);
-
     // Update the controller step
+    p_Controller->previous_step = p_Controller->step;
     p_Controller->update_step(std::as_const(State_Vector));
 
-    if (p_Controller->step > 10) {
+    // Update the state errors
+    p_Controller->sec_prev_err = p_Controller->prev_err;
+    p_Controller->prev_err     = p_Controller->current_err;
+    p_Controller->current_err  = get_max_element(state_error, e_Dynamic_state_size);
 
-        //p_Controller->step = 10;
-
-    }
 
     if (p_Controller->continue_integration) {
 
@@ -146,9 +141,17 @@ Step_controller::Step_controller(const Integrator_parameters_type Integrator_par
  */
 void Step_controller::update_step(const double* const State_Vector) {
 
+    if (!this->Parameters.Use_adaptive_step) {
+
+        this->continue_integration = true;
+
+        return;
+
+    }
+
     double Rel_step_increase{};
     
-    double Error_threshold = this->Parameters.RK_45_accuracy;
+    const double Error_threshold = this->Parameters.RK_45_accuracy;
 
     switch (this->Parameters.Controller_type) {
 

@@ -269,6 +269,8 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Page-Thorne")) { Disk_params->e_Disk_model = e_Page_Thorne; }
 
+    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Debug_constant_density")) { Disk_params->e_Disk_model = e_Debug_constant_density; }
+
     else { std::cout << "Unsupported disk model!" << "\n"; return ERROR; }
 
     // ----------------- Parse the Page-Thorne parameters
@@ -335,6 +337,8 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Thermal")) { Disk_params->Ensamble_type = e_Thermal_ensamble; }
 
     else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Phenomenological")) { Disk_params->Ensamble_type = e_Phenomenological_ensamble; }
+
+    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Debug_constant_functions")) { Disk_params->Ensamble_type = e_Debug_constant_functions; }
 
     else { std::cout << "Unsupported ensamble type for the disk!" << "\n"; return ERROR; }
 
@@ -575,6 +579,11 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the max affine parameter value!" << "\n"; return ERROR; }
     Integrator_params->Max_affine_param = std::stod(temp_param_var->GetText());
 
+    // -------------------- Use adaptive step flag
+    temp_param_var = Integrator_element->FirstChildElement("use_adaptive_step");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the use adaptive step flag!" << "\n"; return ERROR; }
+    Integrator_params->Use_adaptive_step = std::stoi(temp_param_var->GetText());
+
     // -------------------- The step controller type
     temp_param_var = Integrator_element->FirstChildElement("Step_controller_type");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller type!" << "\n"; return ERROR; }
@@ -613,6 +622,71 @@ Return_Values static parse_emission_model_params(tinyxml2::XMLElement* Emission_
         temp_param_var = Emission_model_element->FirstChildElement("Kappa");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the kappa value!" << "\n"; return ERROR; }
         p_Init_conditions->Emission_params.Kappa = std::stod(temp_param_var->GetText());
+
+    }
+
+    if ((e_Debug_constant_functions == p_Init_conditions->Disk_params.Ensamble_type && 0 != p_Init_conditions->Disk_params.Electron_density_scale) ||
+         e_Debug_constant_functions == p_Init_conditions->Hotspot_params.Ensamble_type && 0 != p_Init_conditions->Hotspot_params.Electron_density_scale) {
+
+        // -------------------- Debug_j_I_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_j_I_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_j_I_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_j_I_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_j_Q_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_j_Q_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_j_Q_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_j_Q_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_j_U_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_j_U_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_j_U_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_j_U_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_j_V_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_j_V_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_j_V_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_j_V_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_alpha_I_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_alpha_I_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_alpha_I_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_alpha_I_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_alpha_Q_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_alpha_Q_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_alpha_Q_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_alpha_Q_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_alpha_U_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_alpha_U_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_alpha_U_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_alpha_U_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_alpha_V_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_alpha_V_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_alpha_V_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_alpha_V_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_rho_I_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_rho_I_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_rho_I_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_rho_I_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_rho_Q_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_rho_Q_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_rho_Q_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_rho_Q_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_rho_U_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_rho_U_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_rho_U_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_rho_U_value = std::stod(temp_param_var->GetText());
+
+        // -------------------- Debug_rho_V_value
+        temp_param_var = Emission_model_element->FirstChildElement("Debug_rho_V_value");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the Debug_rho_V_value value!" << "\n"; return ERROR; }
+        p_Init_conditions->Emission_params.Debug_rho_V_value = std::stod(temp_param_var->GetText());
 
     }
 

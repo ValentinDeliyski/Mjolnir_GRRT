@@ -308,8 +308,7 @@ void run_simulation_mode_3(const Simulation_Context_type* const p_Sim_Context, R
 
     Propagate_ray(p_Sim_Context, p_Ray_results);
 
-    p_Sim_Context->File_manager->open_log_output_file();
-    p_Sim_Context->File_manager->write_simulation_metadata();
+    p_Sim_Context->File_manager->open_image_output_files();
     p_Sim_Context->File_manager->log_photon_path(p_Ray_results);
     p_Sim_Context->File_manager->close_log_output_file();
 }

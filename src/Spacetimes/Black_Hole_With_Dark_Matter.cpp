@@ -232,20 +232,47 @@ void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(const double* const State_vect
 
 bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(const double* const State_vector) {
 
-    bool scatter     = State_vector[e_r] > 100 && State_vector[e_p_r] < 0;
-    bool hit_horizon = State_vector[e_r] - 2 * this->Mass < 1e-5;
+    bool scatter     = State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0;
+    bool hit_horizon = State_vector[e_r] - 2 * this->Mass < this->Min_distance_to_singular_point;
 
     return scatter || hit_horizon;
 
 };
 
-Return_Values Black_Hole_w_Dark_Matter_Halo_class::load_parameters(const Metric_parameters_type* const Metric_Parameters) {
+Return_Values Black_Hole_w_Dark_Matter_Halo_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
 
-    if (isnan(Metric_Parameters->Compactness)) {return ERROR;}
-    this->Compactness = Metric_Parameters->Compactness;
+    if (isnan(p_Metric_Parameters->Compactness) || isinf(p_Metric_Parameters->Compactness) || p_Metric_Parameters->Compactness < 0) {
 
-    if (isnan(Metric_Parameters->Halo_Mass)) { return ERROR; }
-    this->Halo_Mass = Metric_Parameters->Halo_Mass;
+        std::cout << "Invalid value for the compactness: " << p_Metric_Parameters->Compactness << "\n";
+
+        return ERROR;
+    }
+
+    if (isnan(p_Metric_Parameters->Halo_Mass) || isinf(p_Metric_Parameters->Halo_Mass) || p_Metric_Parameters->Halo_Mass < 0) {
+
+        std::cout << "Invalid value for the halo mass: " << p_Metric_Parameters->Halo_Mass << "\n";
+
+        return ERROR;
+    }
+
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+
+        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
+
+        return ERROR;
+    }
+
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+
+        std::cout << "Invalid value for the distance to the singular point: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
+
+        return ERROR;
+    }
+
+    this->Compactness = p_Metric_Parameters->Compactness;
+    this->Halo_Mass = p_Metric_Parameters->Halo_Mass;
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
 
     return OK;
 

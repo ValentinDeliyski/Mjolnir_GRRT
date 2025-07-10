@@ -217,6 +217,7 @@ private:
 
     double Scattering_radius;
     double Min_distance_to_singular_point;
+    double Horizon_radius;
 
 public:
 

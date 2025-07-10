@@ -36,12 +36,19 @@ void static log_ray_path(double* State_Vector, Results_type* s_Ray_Results, Init
 
 }
 
-void static log_ray_emission(double Stokes_Vector[e_Stokes_param_num], double Optical_depth, Results_type* p_Ray_Results, int log_index) {
+void static log_ray_emission(double Stokes_Vector[e_Stokes_param_num], double Optical_depth, Results_type* p_Ray_Results, int log_index, int Sim_mode) {
     
     for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
 
-        p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][0 + 2 * log_index] = Stokes_Vector[stokes_idx] * p_Ray_Results->Intensity_scale;
+        p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][0 + 2 * log_index] = Stokes_Vector[stokes_idx] ;
         p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][1 + 2 * log_index] = Optical_depth;
+
+        if (3 != Sim_mode) {
+
+            p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][0 + 2 * log_index] *= p_Ray_Results->Intensity_scale;
+
+        }
+
     }
 
 }
@@ -720,7 +727,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     double LP_fraction{};
 
-    for (int log_index = p_Ray_results->Ray_log_struct.Log_length; log_index > 0; log_index--) {
+    for (int log_index = p_Ray_results->Ray_log_struct.Log_length - 1; log_index > 0; log_index--) {
 
         /* =============== Pick out the ray position / momenta from the Log, at the given log index =============== */
 
@@ -770,7 +777,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
                 Inside_emission_medium = true;
 
-                Propagate_Stokes_vector(Implicit_Trapezoid, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
+                Propagate_Stokes_vector(Analytic, total_Transfer_functions, Logged_ray_path[e_step], Stokes_Vector);
 
             }
 
@@ -861,7 +868,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         /* ======================================================================================================================== */
 
-        log_ray_emission(Stokes_Vector, Optical_Depth, p_Ray_results, log_index);
+        log_ray_emission(Stokes_Vector, Optical_Depth, p_Ray_results, log_index, p_Sim_Context->p_Init_Conditions->Simulation_mode);
 
     }
 
@@ -971,7 +978,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     if (std::abs(State_Vector[e_affine_param]) >= controller.Parameters.Max_affine_param) { std::cout << "Max affine parameter value reached! \n"; };
 
-    p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset;
+    p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset + 1;
 
     /* =========== Integrate the radiative transfer equations forward along the ray for the RIAF models =========== */
 

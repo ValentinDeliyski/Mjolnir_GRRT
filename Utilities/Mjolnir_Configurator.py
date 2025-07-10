@@ -29,7 +29,8 @@ class Integrator():
                  "Gustafsson_controller_k_2", 
                  "max_integration_count",
                  "simpson_method_accuracy",
-                 "max_affine_parameter")
+                 "max_affine_parameter",
+                 "use_adaptive_step")
 
 class Disk_model():
 
@@ -146,7 +147,19 @@ class Emission_models():
                  "Source_f_power_law",
                  "Absorbtion_coeff",
                  "Emission_coeff",
-                 "Kappa")  
+                 "Kappa",
+                 "Debug_j_I_value",
+                 "Debug_j_Q_value",
+                 "Debug_j_U_value",
+                 "Debug_j_V_value",
+                 "Debug_alpha_I_value",
+                 "Debug_alpha_Q_value",
+                 "Debug_alpha_U_value",
+                 "Debug_alpha_V_value",
+                 "Debug_rho_I_value",
+                 "Debug_rho_Q_value",
+                 "Debug_rho_U_value",
+                 "Debug_rho_V_value",)  
 
 class File_manager():
 
@@ -188,7 +201,7 @@ class Simulation_configurator:
                  sim_mode_2_param_value_number: dict[str, int | str] = {"Value": 1, "Unit": "[-]"},
                  sim_mode_3_X_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
                  sim_mode_3_Y_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
-                 max_image_order: dict[str, int | str] = {"Value": 3, "Unit": "[-]"}):
+                 max_image_order: dict[str, int | str] = {"Value": 3, "Unit": "[-]"},):
 
         self.average_emission_pitch_angle = Average_emission_pitch_angle
         self.thermalize_emission_medium = thermalize_emission_medium
@@ -223,7 +236,8 @@ class Simulation_configurator:
                                              Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.1136, "Unit": "[-]"},
                                              Max_integration_count: dict[str, float | str] = {"Value": 1e7, "Unit": "[-]"},
                                              simpson_method_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"},
-                                             max_affine_parameter: dict[str, float | str] = {"Value": 1e6, "Unit": "[M]"},):
+                                             max_affine_parameter: dict[str, float | str] = {"Value": 1e6, "Unit": "[M]"},
+                                             use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},):
 
         self.integrator = Integrator()
 
@@ -243,6 +257,7 @@ class Simulation_configurator:
         self.integrator.max_integration_count  = Max_integration_count
         self.integrator.simpson_method_accuracy = simpson_method_accuracy
         self.integrator.max_affine_parameter = max_affine_parameter
+        self.integrator.use_adaptive_step = use_adaptive_step
 
     def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},
                                   Distance: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
@@ -314,7 +329,19 @@ class Simulation_configurator:
                                          Source_f_power_law: dict[str, float | str] = {"Value": 2.5, "Unit": "[-]"},
                                          Absorbtion_coeff: dict[str, float | str] = {"Value": 1e5, "Unit": "[?]"},
                                          Emission_coeff: dict[str, float | str] = {"Value": 3e-18, "Unit": "[erg / (cm^3 s sr Hz)]"},
-                                         Kappa: dict[str, float | str] = {"Value": 4.0, "Unit": "[-]"}):
+                                         Kappa: dict[str, float | str] = {"Value": 4.0, "Unit": "[-]"},
+                                         Debug_j_I_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_j_Q_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_j_U_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_j_V_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_alpha_I_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_alpha_Q_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_alpha_U_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_alpha_V_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_rho_I_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_rho_Q_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_rho_U_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"},
+                                         Debug_rho_V_value: dict[str, float | str] = {"Value": 0.0, "Unit": "[-]"}):
         
         self.emission_models = Emission_models()
 
@@ -323,7 +350,20 @@ class Simulation_configurator:
         self.emission_models.Absorbtion_coeff   = Absorbtion_coeff
         self.emission_models.Emission_coeff     = Emission_coeff
         self.emission_models.Kappa              = Kappa
-
+        
+        self.emission_models.Debug_j_I_value = Debug_j_I_value
+        self.emission_models.Debug_j_Q_value = Debug_j_Q_value
+        self.emission_models.Debug_j_U_value = Debug_j_U_value
+        self.emission_models.Debug_j_V_value = Debug_j_V_value
+        self.emission_models.Debug_alpha_I_value = Debug_alpha_I_value
+        self.emission_models.Debug_alpha_Q_value = Debug_alpha_Q_value
+        self.emission_models.Debug_alpha_U_value = Debug_alpha_U_value
+        self.emission_models.Debug_alpha_V_value = Debug_alpha_V_value
+        self.emission_models.Debug_rho_I_value = Debug_rho_I_value
+        self.emission_models.Debug_rho_Q_value = Debug_rho_Q_value
+        self.emission_models.Debug_rho_U_value = Debug_rho_U_value
+        self.emission_models.Debug_rho_V_value = Debug_rho_V_value\
+            
     def _configure_disk_model(self, Ensamble_type: dict[str, str] = {"Value": "Thermal", "Unit": "[-]"},
                                     Disk_Model: dict[str, str] = {"Value": "Phenom_RIAF_1", "Unit": "[-]"},
                                     Velocity_profile: dict[str, str] = {"Value": "Theta Dependant", "Unit": "[-]"},
@@ -711,7 +751,9 @@ class Simulation_configurator:
 
             for Emission_attrib_name in self.emission_models.__slots__:
 
-                if Emission_attrib_name != "Kappa":
+                attrib_mask = ['Emission_power_law', 'Source_f_power_law', 'Absorbtion_coeff', 'Emission_coeff']
+
+                if Emission_attrib_name in attrib_mask:
                     Emission_attrib: dict[str, str | int | float] = getattr(self.emission_models, Emission_attrib_name)
                     ET.SubElement(Emission_subelement, Emission_attrib_name, units = str(Emission_attrib["Unit"])).text = "{}".format(Emission_attrib["Value"])
 
@@ -719,6 +761,17 @@ class Simulation_configurator:
             or (self.disk_model.Ensamble_type["Value"] == "Kappa" and self.disk_model.Density_scale_factor["Value"] != 0)):
             
             ET.SubElement(Emission_subelement, "Kappa", units = "[-]").text = "{}".format(getattr(self.emission_models, "Kappa")["Value"])
+
+        if (self.disk_model.Ensamble_type["Value"] == "Debug_constant_functions"):
+            
+            attrib_mask = ['Emission_power_law', 'Source_f_power_law', 'Absorbtion_coeff', 'Emission_coeff', 'Kappa']
+            
+            for Emission_attrib_name in self.emission_models.__slots__:
+
+                if Emission_attrib_name not in attrib_mask:
+                    Emission_attrib: dict[str, str | int | float] = getattr(self.emission_models, Emission_attrib_name)
+                    ET.SubElement(Emission_subelement, Emission_attrib_name, units = str(Emission_attrib["Unit"])).text = "{}".format(Emission_attrib["Value"])
+
 
         # ============ Generate the integrator XML section ============ #
 
@@ -756,13 +809,13 @@ if __name__ == "__main__":
     
     Sim_config.metric_parameters.Numerical_metric_spline_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/test.XML"
 
-    Sim_config.simulation_mode = {"Value": 1, "Unit": "[-]"}
+    Sim_config.simulation_mode = {"Value": 3, "Unit": "[-]"}
 
     Sim_config.object_mass = {"Value": 6.2e9, "Unit": "[M_sun]"}
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type    = {"Value": "Einstein-Gauss-Bonnet", "Unit": "[-]"}
+    Sim_config.metric_parameters.Metric_type    = {"Value": "Kerr", "Unit": "[-]"}
     Sim_config.metric_parameters.Mass           = {"Value": 0.915671, "Unit": "[M]"}
     Sim_config.metric_parameters.Horizon_radius = {"Value": 0.05, "Unit": "[G/c^2]"}
     Sim_config.metric_parameters.Spin           = {"Value": 0.8048 / 0.9157, "Unit": "[M]"}
@@ -780,7 +833,7 @@ if __name__ == "__main__":
 
     # ================================================== Disk ================================================== #
     
-    Sim_config.disk_model.Ensamble_type = {"Value": "Thermal",   "Unit": "[-]"}
+    Sim_config.disk_model.Ensamble_type = {"Value": "Debug_constant_functions",   "Unit": "[-]"}
     Sim_config.disk_model.Disk_Model    = {"Value": "Phenom_RIAF_1", "Unit": "[-]"}
     Sim_config.disk_model.Mag_field_geometry = {"Value": "Constant", "Unit": "[-]"}
     
@@ -834,4 +887,4 @@ if __name__ == "__main__":
     filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Old_wormhole_sanity_check\\Old_wormhole_sanity_check.xml"
     args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
     
-    subprocess.call(args, shell = True)
+    # subprocess.call(args, shell = True)

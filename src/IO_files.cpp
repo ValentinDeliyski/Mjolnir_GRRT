@@ -277,6 +277,47 @@ void File_manager_class::write_simulation_metadata() {
                                              << "Kappa value [-]: "
                                              << this->p_Initial_Conditions->Emission_params.Kappa
                                              << "\n";
+                break;
+
+            case e_Debug_constant_functions:
+                *(Output_file + Image_order) << "Disk Ensamble: Debug"
+                                             << "\n"
+                                             << "j_I value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_j_I_value
+                                             << "\n"
+                                             << "j_Q value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_j_Q_value
+                                             << "\n"
+                                             << "j_U value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_j_U_value
+                                             << "\n"
+                                             << "j_B value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_j_V_value
+                                             << "\n"
+                                             << "alpha_I value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_alpha_I_value
+                                             << "\n"
+                                             << "alpha_Q value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_alpha_Q_value
+                                             << "\n"
+                                             << "alpha_U value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_alpha_U_value
+                                             << "\n"
+                                             << "alpha_V value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_alpha_V_value
+                                             << "\n"
+                                             << "rho_I value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_rho_I_value
+                                             << "\n"
+                                             << "rho_Q value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_rho_Q_value
+                                             << "\n"
+                                             << "rho_U value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_rho_U_value
+                                             << "\n"
+                                             << "rho_V value [-]: "
+                                             << this->p_Initial_Conditions->Emission_params.Debug_rho_V_value
+                                             << "\n";
 
                 break;
 
@@ -612,30 +653,19 @@ void File_manager_class::write_simulation_metadata() {
         }else{
 
            *(Output_file + Image_order) << "t_coord [M],"
-                                                << " "
-                                                << "r_coord [M],"
-                                                << " "
-                                                << "theta_coord [rad],"
-                                                << " "
-                                                << "phi_coord [rad],"
-                                                << " "
-                                                << "p_t [-],"
-                                                << " "
-                                                << "p_r [-],"
-                                                << " "
-                                                << "p_theta [rad/M],"
-                                                << " "
-                                                << "p_phi [rad/M],"
-                                                << " "
-                                                << "Integration Step [M]"
-                                                << " "
-                                                << "Synchotron Intensity I [Jy/sRad],"
-                                                << " "
-                                                << "Synchotron Intensity Q [Jy/sRad],"
-                                                << " "
-                                                << "Synchotron Intensity U [Jy/sRad],"
-                                                << " "
-                                                << "Synchotron Intensity V [Jy/sRad]";
+                                        << "r_coord [M],"
+                                        << "theta_coord [rad],"
+                                        << "phi_coord [rad],"
+                                        << "p_t [-],"
+                                        << "p_r [-],"
+                                        << "p_theta [rad/M],"
+                                        << "p_phi [rad/M],"
+                                        << "Integration Step [M],"
+                                        << "Affine Parameter [M],"
+                                        << "Synchotron Intensity I [Jy/sRad],"
+                                        << "Synchotron Intensity Q [Jy/sRad],"
+                                        << "Synchotron Intensity U [Jy/sRad],"
+                                        << "Synchotron Intensity V [Jy/sRad]";
 
         }
 
@@ -666,11 +696,17 @@ void File_manager_class::open_image_output_files() {
 
     std::filesystem::path dir(Output_directory_path);
 
-    // Init the std::path variables where we will store the names of the output files
+    // Init the std::path variables where we will store the names of the output files for sim modes 1 and 2
     std::filesystem::path Image_file_names[e_order_number];
 
-    // Init the std::path variables of the full file paths
+    // Init the std::path variables where we will store the names of the output files for sim mode 3
+    std::filesystem::path Photon_log_name;
+
+    // Init the std::path variables of the full file paths for sim modes 1 and 2
     std::filesystem::path Image_full_path[e_order_number]{};
+
+    // Init the std::path variables of the full file paths for sim mode 3
+    std::filesystem::path Photon_log_full_path{};
 
     // Specify the output file extention
     std::filesystem::path file_extention(".txt");
@@ -686,6 +722,26 @@ void File_manager_class::open_image_output_files() {
 
     // Loop over all the files and populate the (so far empty) 
     
+    if (this->p_Initial_Conditions->Simulation_mode == 3) {
+
+        if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
+
+            Photon_log_name = this->Base_File_Names[this->p_Initial_Conditions->Metric_parameters.e_Spacetime] + "_photon_log";
+
+        }
+        else {
+
+            Photon_log_name = this->p_Initial_Conditions->File_manager_params.Common_file_names + "_photon_log";
+
+        }
+
+        Photon_log_name.replace_extension(file_extention);
+        Photon_log_full_path = dir / Photon_log_name;
+
+        this->Log_Output_File.open(Photon_log_full_path, open_type);
+
+    }
+
     for (int File_Index = 0; File_Index <= e_order_number - 1; File_Index += 1) {
 
         if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
@@ -718,24 +774,6 @@ void File_manager_class::open_image_output_files() {
         this->write_simulation_metadata();
 
     }
-
-}
-
-void File_manager_class::open_log_output_file() {
-
-    std::filesystem::path dir(std::filesystem::current_path() / "Sim_Results"); // Main results directory
-
-    std::filesystem::path Log_File_Name;
-    std::filesystem::path Log_File_full_path;
-    std::filesystem::path file_extention(".txt");
-
-    auto open_type = std::ios::trunc;
-
-    Log_File_Name = "Photon_Log";
-    Log_File_Name.replace_extension(file_extention);
-    Log_File_full_path = dir / Log_File_Name;
-     
-    Log_Output_File.open(Log_File_full_path, open_type);
 
 }
 

@@ -43,11 +43,6 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
         Profile = exp(-int_power(Exponent_arg, 2) / 2);
         break;
 
-    case e_Debug_constant_density:
-
-        Profile = 1.0;
-        break;
-
     default:
 
         std::cout << "Unsupported disk profile type! \n";
@@ -178,6 +173,13 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         /* This model does not specify a temperature profile at all. */
 
         p_Emission_medium_state->Temperature = 0.0;
+
+        break;
+
+    case e_Debug_constant_density:
+
+        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale;
+        p_Emission_medium_state->Temperature = this->s_Disk_params.Electron_temperature_scale;
 
         break;
         
