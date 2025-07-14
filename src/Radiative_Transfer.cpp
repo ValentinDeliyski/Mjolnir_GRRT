@@ -23,7 +23,7 @@ void static get_M_matrix(double M_matrix[e_Stokes_param_num][e_Stokes_param_num]
 void Implicit_Trapezoid_Radiative_Transfer(double* const Emission_Functions,
                                            double* const Absorbtion_Functions,
                                            double* const Faradey_Functions,
-                                           double const step,
+                                           const double step,
                                            double* const Stokes_Vector) {
 
     /* ==================================================================================================|
@@ -31,7 +31,7 @@ void Implicit_Trapezoid_Radiative_Transfer(double* const Emission_Functions,
     |    This function applies the implicit trapezoidal rule to solve the radiative transfer             |
     |    equations. The equations are linear, so the method gives an explicit expression for             |
     |    the Stokes vector. The reference for this implementation is from the RAPTOR code/paper          |
-    |    (the paper screwed up the explanation of the method - they skipped defining the variables x):   |                                                                                 |
+    |    (the paper screwed up the explanation of the method - they skipped defining the variables x):   |                                                                              
     |    https://arxiv.org/pdf/2007.03045.pdf, https://github.com/tbronzwaer/raptor/tree/polarization    |
     |                                                                                                    |
     |    The variables u_ij and ell_ij are the components of the lower and upper triangular matricies    |
@@ -99,15 +99,15 @@ void Implicit_Trapezoid_Radiative_Transfer(double* const Emission_Functions,
 
 static Return_Values Get_radiative_transfer_matrix(double* const absorbtion_functions,
                                                    double* const faradey_functions,
-                                                   double const step,
+                                                   const double step,
                                                    double Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num],
                                                    double Integrated_Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num]) {
 
     /* The reference for this implementation is from appendix D in https://arxiv.org/pdf/1602.03184.pdf, originally derived in https://doi.org/10.1007/BF00165988 */
 
-    for (int row_idx = 0; row_idx <= e_Stokes_param_num - 1; row_idx++) {
+    for (int row_idx = 0; row_idx < e_Stokes_param_num ; row_idx++) {
 
-        for (int colum_idx = 0; colum_idx <= e_Stokes_param_num - 1; colum_idx++) {
+        for (int colum_idx = 0; colum_idx < e_Stokes_param_num ; colum_idx++) {
 
             Transfer_Operator[row_idx][colum_idx] = 0;
             Integrated_Transfer_Operator[row_idx][colum_idx] = 0;
@@ -123,95 +123,73 @@ static Return_Values Get_radiative_transfer_matrix(double* const absorbtion_func
 
     /* These are the variables defined in D8 - D13, used in calculating the M matricies */
 
-    double const alpha_squared = alpha[Q] * alpha[Q] +
-        alpha[U] * alpha[U] +
-        alpha[V] * alpha[V];
-
-    double const rho_squared = rho[Q] * rho[Q] +
-        rho[U] * rho[U] +
-        rho[V] * rho[V];
-
-    double const alpha_rho = alpha[Q] * rho[Q] +
-        alpha[U] * rho[U] +
-        alpha[V] * rho[V];
+    const double alpha_squared = alpha[Q] * alpha[Q] + alpha[U] * alpha[U] + alpha[V] * alpha[V];
+    const double rho_squared = rho[Q] * rho[Q] + rho[U] * rho[U] + rho[V] * rho[V];
+    const double alpha_rho = alpha[Q] * rho[Q] + alpha[U] * rho[U] + alpha[V] * rho[V];
 
     // sigma is the sign of the variable alpha_rho
-    double const sigma = copysign(1.0, alpha_rho);
+    const double sigma = copysign(1.0, alpha_rho);
 
-    // These quantities can go ever so sligtly negative, which physically should not happen, but nmerically it does.
-    // This breaks the sqrt() functions, and so guards have to be put in place
-    double Theta = (alpha_squared - rho_squared) * (alpha_squared - rho_squared) / 4 + alpha_rho * alpha_rho;
+    // This is identically zero if no polarization is included
+    double Theta = 2 * sqrt((alpha_squared - rho_squared) * (alpha_squared - rho_squared) / 4 + alpha_rho * alpha_rho) + 1e-40;
 
-    if (Theta > 0.0 && !isinf(1. / Theta)) {
+    if (isnan(1.0 / Theta) || isinf(1.0 / Theta)) { return ERROR; }
 
-        Theta = 2 * sqrt(Theta);
+    double Lambda[2] = { sqrt(Theta / 2 + (alpha_squared - rho_squared) / 2) + 1e-40,
+                         sqrt(Theta / 2 - (alpha_squared - rho_squared) / 2) + 1e-40 };
 
-    }
-    else { return ERROR; }
-
-    double Lambda[2] = { (Theta / 2 + (alpha_squared - rho_squared) / 2),
-                         (Theta / 2 - (alpha_squared - rho_squared) / 2) };
-
-    if (Lambda[0] > 0.0 && Lambda[1] > 0.0) {
-
-        Lambda[0] = sqrt(Lambda[0]);
-        Lambda[1] = sqrt(Lambda[1]);
-
-    }
-    else { return ERROR; }
-
+    if (isnan(Lambda[0]) || isnan(Lambda[1])) { return ERROR; }
 
     /* Thesse are used in the "scaling factors" infront of the M matricies */
+    const double exp_I = exp(-alpha[I] * step);
 
-    double const exp_I = exp(-alpha[I] * step);
+    const double cosh_term = cosh(Lambda[0] * step);
+    const double cos_term = cos(Lambda[1] * step);
 
-    double const cosh_term = cosh(Lambda[0] * step);
-    double const cos_term = cos(Lambda[1] * step);
-
-    double const sinh_term = sinh(Lambda[0] * step);
-    double const sin_term = sin(Lambda[1] * step);
+    const double sinh_term = sinh(Lambda[0] * step);
+    const double sin_term = sin(Lambda[1] * step);
 
     /* ========================== M_1 Matrix calculation ========================== */
 
-    double const M_1_scale_factor = exp_I * (cosh_term + cos_term) / 2;
+    const double M_1_scale_factor = exp_I * (cosh_term + cos_term) / 2;
 
-    double const M_1[4][4] = { {1.0, 0.0, 0.0, 0.0},
+    const double M_1[4][4] = { {1.0, 0.0, 0.0, 0.0},
                                {0.0, 1.0, 0.0, 0.0},
                                {0.0, 0.0, 1.0, 0.0},
                                {0.0, 0.0, 0.0, 1.0} };
 
     /* ========================== M_2 Matrix calculation ========================== */
 
-    double M_2_scale_factor = -exp_I * sin_term / Theta;
+    const double M_2_scale_factor = -exp_I * sin_term / Theta;
 
-    double const M_2[4][4] = { {                         0,                          (Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]), (Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V])},
-                               {(Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]),                           0,                          (sigma * Lambda[0] * alpha[V] + Lambda[1] * rho[V]), (-sigma * Lambda[0] * alpha[U] - Lambda[1] * rho[U])},
-                               {(Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (-sigma * Lambda[0] * alpha[V] - Lambda[1] * rho[V]),                           0,                          (sigma * Lambda[0] * alpha[Q] + Lambda[1] * rho[Q])},
-                               {(Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V]), (sigma * Lambda[0] * alpha[U] + Lambda[1] * rho[U]), (-sigma * Lambda[0] * alpha[Q] - Lambda[1] * rho[Q]),                           0                         } };
+    const double M_2[4][4] = { {                         0,                          (Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]), ( Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), ( Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V])},
+                               {(Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]),                           0,                         ( sigma * Lambda[0] * alpha[V] + Lambda[1] * rho[V]), (-sigma * Lambda[0] * alpha[U] - Lambda[1] * rho[U])},
+                               {(Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (-sigma * Lambda[0] * alpha[V] - Lambda[1] * rho[V]),                           0,                         ( sigma * Lambda[0] * alpha[Q] + Lambda[1] * rho[Q])},
+                               {(Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V]), ( sigma * Lambda[0] * alpha[U] + Lambda[1] * rho[U]), (-sigma * Lambda[0] * alpha[Q] - Lambda[1] * rho[Q]),                           0                         } };
 
     /* ========================== M_3 Matrix calculation ========================== */
 
-    double M_3_scale_factor = -exp_I * sinh_term / Theta;
+    const double M_3_scale_factor = -exp_I * sinh_term / Theta;
 
-    double const M_3[4][4] = { {						 0,							 (Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]), (Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[Q]), (Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V])},
-                               {(Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]),	 		               0,                          (-sigma * Lambda[1] * alpha[V] + Lambda[0] * rho[V]), (sigma * Lambda[1] * alpha[U] - Lambda[0] * rho[U])},
-                               {(Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[U]), (sigma * Lambda[1] * alpha[V] - Lambda[0] * rho[V]),	                         0,	                         (-sigma * Lambda[1] * alpha[Q] + Lambda[0] * rho[Q])},
-                               {(Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V]), (-sigma * Lambda[1] * alpha[U] + Lambda[0] * rho[U]), (sigma * Lambda[1] * alpha[Q] - Lambda[0] * rho[Q]),                           0                         } };
+    const double M_3[4][4] = { {						 0,							 ( Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]), ( Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[U]), ( Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V])},
+                               {(Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]),	 		               0,                          (-sigma * Lambda[1] * alpha[V] + Lambda[0] * rho[V]), ( sigma * Lambda[1] * alpha[U] - Lambda[0] * rho[U])},
+                               {(Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[U]), ( sigma * Lambda[1] * alpha[V] - Lambda[0] * rho[V]),	                         0,	                         (-sigma * Lambda[1] * alpha[Q] + Lambda[0] * rho[Q])},
+                               {(Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V]), (-sigma * Lambda[1] * alpha[U] + Lambda[0] * rho[U]), ( sigma * Lambda[1] * alpha[Q] - Lambda[0] * rho[Q]),                           0                          } };
 
     /* ========================== M_4 Matrix calculation ========================== */
 
-    double M_4_scale_factor = exp_I * (cosh_term - cos_term) / Theta;
+    const double M_4_scale_factor = exp_I * (cosh_term - cos_term) / Theta;
 
-    double const M_4[4][4] = { {   (alpha_squared + rho_squared) / 2,                      (alpha[V] * rho[U] - alpha[U] * rho[V]),                                     (alpha[Q] * rho[V] - alpha[V] * rho[Q]),                                     (alpha[U] * rho[Q] - alpha[Q] * rho[U])},
+    const double M_4[4][4] = { {   (alpha_squared + rho_squared) / 2,                      (alpha[V] * rho[U] - alpha[U] * rho[V]),                                     (alpha[Q] * rho[V] - alpha[V] * rho[Q]),                                     (alpha[U] * rho[Q] - alpha[Q] * rho[U])},
                                {(alpha[U] * rho[V] - alpha[V] * rho[U]), (alpha[Q] * alpha[Q] + rho[Q] * rho[Q] - (alpha_squared + rho_squared) / 2),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                                     (alpha[V] * alpha[Q] + rho[V] * rho[Q])},
                                {(alpha[V] * rho[Q] - alpha[Q] * rho[V]),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                   (alpha[U] * alpha[U] + rho[U] * rho[U] - (alpha_squared + rho_squared) / 2),                   (alpha[U] * alpha[V] + rho[U] * rho[V])},
                                {(alpha[Q] * rho[U] - alpha[U] * rho[Q]),                   (alpha[V] * alpha[Q] + rho[V] * rho[Q]),                                     (alpha[U] * alpha[V] + rho[U] * rho[V]),                   (alpha[V] * alpha[V] + rho[V] * rho[V] - (alpha_squared + rho_squared) / 2)} };
 
     /* ========================== This is the formal operator O(s,s') - the solution to D1 ========================== */
 
-    for (int row_idx = 0; row_idx <= e_Stokes_param_num - 1; row_idx++) {
+    for (int row_idx = 0; row_idx < e_Stokes_param_num ; row_idx++) {
 
-        for (int colum_idx = 0; colum_idx <= e_Stokes_param_num - 1; colum_idx++) {
+        for (int colum_idx = 0; colum_idx < e_Stokes_param_num ; colum_idx++) {
 
             Transfer_Operator[row_idx][colum_idx] = M_1_scale_factor * M_1[row_idx][colum_idx] +
                                                     M_2_scale_factor * M_2[row_idx][colum_idx] +
@@ -226,18 +204,18 @@ static Return_Values Get_radiative_transfer_matrix(double* const absorbtion_func
 
     /* This part of the implementation is adapted from equation (24) of https://academic.oup.com/mnras/article/475/1/43/4712230 */
 
-    double f_1 = 1.0 / (alpha[I] * alpha[I] - Lambda[0] * Lambda[0]);
-    double f_2 = 1.0 / (alpha[I] * alpha[I] + Lambda[1] * Lambda[1]);
+    const double f_1 = 1.0 / (alpha[I] * alpha[I] - Lambda[0] * Lambda[0]);
+    const double f_2 = 1.0 / (alpha[I] * alpha[I] + Lambda[1] * Lambda[1]);
 
     if (isinf(f_1) || isinf(f_2)) { return ERROR; }
 
-    for (int row_idx = 0; row_idx <= e_Stokes_param_num - 1; row_idx++) {
+    for (int row_idx = 0; row_idx < e_Stokes_param_num ; row_idx++) {
 
-        for (int colum_idx = 0; colum_idx <= e_Stokes_param_num - 1; colum_idx++) {
+        for (int colum_idx = 0; colum_idx < e_Stokes_param_num ; colum_idx++) {
 
 
-            Integrated_Transfer_Operator[row_idx][colum_idx] = -Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) +
-                                                                Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) -
+            Integrated_Transfer_Operator[row_idx][colum_idx] = -Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I] * f_1 / 2. * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) +
+                                                               -Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2. * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) -
                                                                 exp_I * ((-Lambda[0] * f_1 * M_3[row_idx][colum_idx] +  alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * cosh_term +
                                                                          (-Lambda[1] * f_2 * M_2[row_idx][colum_idx] +  alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * cos_term +
                                                                          ( -alpha[I] * f_2 * M_2[row_idx][colum_idx] - Lambda[1] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * sin_term -
@@ -246,15 +224,32 @@ static Return_Values Get_radiative_transfer_matrix(double* const absorbtion_func
         }
 
     }
+
+    return OK;
+
 }
 
-static void Run_No_Absorbtion_Radiative_Transfer(const double* const Emission_Functions,
-                                                 double const step, 
-                                                 double* const Stokes_Vector) {
+static void run_Decoupled_Radiative_Transfer(const double* const Emission_Functions,
+                                             const double* const Absorbtion_Functions,
+                                             const double step, 
+                                             double* const Stokes_Vector) {
 
-    for (int idx = 0; idx <= e_Stokes_param_num - 1; idx++) {
+    if (Absorbtion_Functions[I] > 0) {
 
-        Stokes_Vector[idx] += Emission_Functions[idx] * step;
+        for (int idx = 0; idx < e_Stokes_param_num; idx++) {
+
+            Stokes_Vector[idx] = Stokes_Vector[idx] * exp(-Absorbtion_Functions[I] * step) + (1 - exp(-Absorbtion_Functions[I] * step)) * Emission_Functions[idx] / Absorbtion_Functions[I];
+
+        }
+
+    }
+    else {
+
+        for (int idx = 0; idx < e_Stokes_param_num; idx++) {
+
+            Stokes_Vector[idx] += Emission_Functions[idx] * step;
+
+        }
 
     }
 
@@ -263,7 +258,7 @@ static void Run_No_Absorbtion_Radiative_Transfer(const double* const Emission_Fu
 void Analytic_Radiative_Transfer(double* const Emission_Functions,
                                  double* const Absorbtion_Functions,
                                  double* const Faradey_Functions,
-                                 double const step,
+                                 const double step,
                                  double* const Stokes_Vector){
 
     double transfer_operator[4][4]{};
@@ -271,7 +266,7 @@ void Analytic_Radiative_Transfer(double* const Emission_Functions,
 
     if (OK != Get_radiative_transfer_matrix(Absorbtion_Functions, Faradey_Functions, step, transfer_operator, integrated_transfer_operator)) {
 
-        Run_No_Absorbtion_Radiative_Transfer(Emission_Functions, step, Stokes_Vector);
+        run_Decoupled_Radiative_Transfer(Emission_Functions, Absorbtion_Functions, step, Stokes_Vector);
 
         return;
 
@@ -280,20 +275,105 @@ void Analytic_Radiative_Transfer(double* const Emission_Functions,
     double Transfered_emission_vector[e_Stokes_param_num]{};
     double temp_Stokes_Vector[e_Stokes_param_num]{};
 
-    // Placeholder vector for use in the mat_vec_multiply_4D() function
-    for (int index = 0; index <= e_Stokes_param_num - 1; index++) {
-
-        temp_Stokes_Vector[index] = Stokes_Vector[index];
-
-    }
+    memcpy(temp_Stokes_Vector, Stokes_Vector, 4 * sizeof(double));
 
     mat_vec_multiply_4D(integrated_transfer_operator, Emission_Functions, Transfered_emission_vector);
     mat_vec_multiply_4D(transfer_operator, temp_Stokes_Vector, Stokes_Vector);
 
-    for (int index = 0; index <= e_Stokes_param_num - 1; index++) {
+    for (int index = 0; index < e_Stokes_param_num; index++) {
 
         Stokes_Vector[index] += Transfered_emission_vector[index];
 
+    }
+
+}
+
+void static Radiative_transfer_RHS(const double* const Emission_Functions, 
+                                   const double* const Absorbtion_Functions, 
+                                   const double* const Faradey_Functions, 
+                                   const double* const Stokes_Vector,
+                                   double* const RHS) {
+
+    double M_matrix[4][4]{};
+    get_M_matrix(M_matrix, Absorbtion_Functions, Faradey_Functions);
+
+    double M_dot_Stokes[4]{};
+    mat_vec_multiply_4D(M_matrix, Stokes_Vector, M_dot_Stokes);
+
+    for (int idx = 0; idx < e_Stokes_param_num ; idx++) {
+
+        RHS[idx] = Emission_Functions[idx] - M_dot_Stokes[idx];
+
+    }
+
+}
+
+void RK5_radiative_transfer(double* const Emission_Functions,
+                            double* const Absorbtion_Functions,
+                            double* const Faradey_Functions,
+                            double* const State_Vector,
+                            const Simulation_Context_type* p_Sim_Context,
+                            double* const Stokes_Vector) {
+
+    double RHS[Nyström_size * e_Stokes_param_num]{};
+    double EOM[Nyström_size * e_Dynamic_state_size]{};
+
+    double Temp_Stokes_Vector[e_Stokes_param_num]{}, Temp_State_Vector[e_Dynamic_state_size]{};
+
+    for (int RK5_stage = 0; RK5_stage < Nyström_size; RK5_stage++) {
+
+        memcpy(Temp_Stokes_Vector, Stokes_Vector, e_Stokes_param_num * sizeof(double));
+        memcpy(Temp_State_Vector, State_Vector, e_Dynamic_state_size * sizeof(double));
+
+        for (int derivative_indexer = 0; derivative_indexer < RK5_stage; derivative_indexer++) {
+
+            for (int idx = 0; idx < 4; idx++) {
+
+                Temp_Stokes_Vector[idx] += Nyström_Deriv_coeffs[RK5_stage][derivative_indexer] * RHS[idx + derivative_indexer * e_Stokes_param_num] * State_Vector[e_step];
+
+            }
+
+            for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
+
+                Temp_State_Vector[idx] += Nyström_Deriv_coeffs[RK5_stage][derivative_indexer] * EOM[idx + derivative_indexer * e_Dynamic_state_size] * State_Vector[e_step];
+
+            }
+        }
+
+        Transfer_functions_type Total_Transfer_Functions{};
+
+        for (int emission_medium = Disk; emission_medium <= Hotspot; emission_medium++) {
+
+            Transfer_functions_type Temp_Transfer_functions{};
+
+            p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(Temp_State_Vector,
+                                                                              p_Sim_Context,
+                                                                              static_cast<Emission_medium_enums>(emission_medium),
+                                                                              &Temp_Transfer_functions);
+
+            add_vectors(Temp_Transfer_functions.Absorbtion_functions, Total_Transfer_Functions.Absorbtion_functions, e_Stokes_param_num, Total_Transfer_Functions.Absorbtion_functions);
+            add_vectors(Temp_Transfer_functions.Emission_functions, Total_Transfer_Functions.Emission_functions, e_Stokes_param_num, Total_Transfer_Functions.Emission_functions);
+            add_vectors(Temp_Transfer_functions.Faradey_functions, Total_Transfer_Functions.Faradey_functions, e_Stokes_param_num, Total_Transfer_Functions.Faradey_functions);
+
+        }
+
+        Radiative_transfer_RHS(Total_Transfer_Functions.Emission_functions, 
+                               Total_Transfer_Functions.Absorbtion_functions,
+                               Total_Transfer_Functions.Faradey_functions, 
+                               Temp_Stokes_Vector, 
+                               RHS + RK5_stage * e_Stokes_param_num);
+
+        p_Sim_Context->p_Spacetime->get_EOM(Temp_State_Vector, EOM + RK5_stage * e_Dynamic_state_size);
+
+    }
+
+    for (int idx = 0; idx < e_Stokes_param_num; idx++) {
+
+        for (int deriv_idx = 0; deriv_idx < Nyström_size; deriv_idx++) {
+
+            Stokes_Vector[idx] += State_Vector[e_step] * Nyström_Coeff_sol[deriv_idx] * RHS[idx + deriv_idx * e_Stokes_param_num];
+
+        }
     }
 
 }

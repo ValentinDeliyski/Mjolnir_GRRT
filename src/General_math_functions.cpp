@@ -4,7 +4,7 @@ double vector_norm(const double* const Vector, const int Vector_size) {
 
 	double norm{};
 
-	for (int index = 0; index <= Vector_size - 1; index++) {
+	for (int index = 0; index < Vector_size ; index++) {
 
 		norm += Vector[index] * Vector[index];
 
@@ -18,6 +18,7 @@ double vector_norm(const double* const Vector, const int Vector_size) {
 
 void matrix_matrix_multiply(const double Mat_A[4][4], const double Mat_B[4][4], double Result[4][4]) {
 
+	/* Note to self: This memset is here for a reason, so do not remove it! */
 	memset(Result, 0.0, 16 * sizeof(double));
 
 	for (int row = 0; row < 4; row++) {
@@ -35,13 +36,12 @@ void matrix_matrix_multiply(const double Mat_A[4][4], const double Mat_B[4][4], 
 
 void mat_vec_multiply_4D(double const Matrix[4][4], const double* const Vector, double* const Result) {
 
-	memset(Result, 0.0, 4 * sizeof(double));
+	/* Note to self: This memset is here for a reason, so do not remove it! */
+	memset(Result, 0, 4 * sizeof(double));
 
-	for (int row = 0; row <= 3; row++) {
+	for (int row = 0; row < 4; row++) {
 
-		Result[row] = 0.0;
-
-		for (int column = 0; column <= 3; column++) {
+		for (int column = 0; column < 4; column++) {
 
 			Result[row] += Matrix[row][column] * Vector[column];
 
@@ -55,7 +55,7 @@ double get_max_element(const double* const Vector, int const Element_number) {
 	double max = fabs(Vector[0]);
 	double max_candidate = 0;
 
-	for (int index = 1; index <= Element_number - 1; index++) {
+	for (int index = 1; index < Element_number; index++) {
 
 		max_candidate = fabs(Vector[index]);
 
@@ -74,7 +74,9 @@ double get_max_relative_error(const double* const Error_state, const double* con
 
 	double max_rel_error = fabs(Error_state[e_t] / Current_state[e_t]);
 
-	for (int index = e_r; index <= e_Dynamic_state_size - 1; index += 1) {
+	if (isinf(max_rel_error) || isnan(max_rel_error)) { max_rel_error = 0.0; }
+
+	for (int index = e_r; index < e_Dynamic_state_size; index += 1) {
 
 		double temp_error = fabs(Error_state[index] / (Current_state[index]));
 

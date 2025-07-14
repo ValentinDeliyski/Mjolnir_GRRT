@@ -65,6 +65,8 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) { Hotspot_params->Velocity_profile_type = e_Keplarian; }
 
+    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Circular Fixed Rate")) { Hotspot_params->Velocity_profile_type = e_Circular_fixed_rate; }
+
     else{std::cout << "Unsupported velocity profile type for the hotspot!" << "\n"; return ERROR; }
 
     temp_param_var = Hotspot_element->FirstChildElement("Velocity_profile")->FirstChildElement("Radial_velocity_fraction");
@@ -1042,6 +1044,7 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
 
         temp_param_var = Metric_element->FirstChildElement("Numerical_metric_spline_path");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical metric XML file path!" << "\n"; return ERROR; }
+        Metric_params->Numerical_metric_params.Metric_file_path = temp_param_var->GetText();
 
         tinyxml2::XMLDocument Spline_XML;
         tinyxml2::XMLError e_parse_result = Spline_XML.LoadFile(temp_param_var->GetText());

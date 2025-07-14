@@ -1,5 +1,8 @@
-from csv import reader
+from _csv import reader, Reader, Writer
+from csv import DictReader
+
 from dataclasses import dataclass
+
 from numpy import array, zeros, sum, flip, linspace, vstack, repeat, savetxt, log, pi, float64, sqrt
 from numpy.typing import NDArray
 
@@ -7,225 +10,117 @@ class Simulation_Parser():
 
     def __init__(self, File_name: str) -> None:
 
+        self.Simulation_metadata: dict = {}
+        
         with open(File_name + ".txt", 'r') as file:
 
-            csvreader = reader(file, delimiter = ":")
-
-            _ = csvreader.__next__()
-
-            self.metric = str(csvreader.__next__()[1])[1:]
-
-            match self.metric:
-
-                case "Kerr":
-                    self.Spin = float(csvreader.__next__()[1][1:])
-                case "Wormhole":
-                    self.Spin = float(csvreader.__next__()[1][1:])
-                    self.Redshift_parameter = float(csvreader.__next__()[1][1:])
-                case "Janis_Newman_Winicour":
-                    self.Gamma = float(csvreader.__next__()[1][1:])
-                case "Einstein_Gauss_Bonnet":
-                    self.Gamma = float(csvreader.__next__()[1][1:])
-                case "Regular_Black_Hole":
-                    self.Parameter = float(csvreader.__next__()[1][1:])
-                case "BH_w_Dark_Matter_Halo":
-                    self.Halo_mass = float(csvreader.__next__()[1][1:])
-                    self.Halo_Compactness = float(csvreader.__next__()[1][1:])
-                case "Minkowski":
-                    pass
-     
-            self.Active_Sim_Mode = int(csvreader.__next__()[1])
-
-            _ = csvreader.__next__() # Image Order
-            _ = csvreader.__next__() # Observer Params 
-
-            self.OBS_TIME = float(csvreader.__next__()[1])
-            self.OBS_DISTANCE    = float(csvreader.__next__()[1])
-            self.OBS_INCLICATION = float(csvreader.__next__()[1])
-
-            _ = csvreader.__next__() # Observer Azimuth
-
-            self.OBS_FREQUENCY   = float(csvreader.__next__()[1])
+            Header_parser: Reader = reader(file, delimiter = ":")
             
-            if(self.Active_Sim_Mode == 2):
-                self.Photon_Number = int(csvreader.__next__()[1])
-                self.Param_Sweep_Number = int(csvreader.__next__()[1])
-
-            if (self.Active_Sim_Mode == 1):
-
-                self.WINDOW_LIMITS = [float(limit) for limit in csvreader.__next__()[1].split(',')]
+            for line in Header_parser:
+                if len(line) == 2:
+                    self.Simulation_metadata.update({str(line[0]).strip(): str(line[1]).strip()})
                 
-                Resolution_list = csvreader.__next__()[1].split(' ')
-
-                self.X_PIXEL_COUNT   = int(Resolution_list[1])
-                self.Y_PIXEL_COUNT   = int(Resolution_list[3])
-
-            _ = csvreader.__next__() # Accretion Disk Parameters Header
-            self.ACTIVE_DISK_MODEL = csvreader.__next__()[1] # Active model string
-            
-            _ = csvreader.__next__() # Model parameters header
-
-            if self.ACTIVE_DISK_MODEL[1:-2] == "Phenomenological_RIAF":
-                self.disk_opening_angle = float(csvreader.__next__()[1])
-                self.disk_density_power_law_scale = float(csvreader.__next__()[1])
-                self.disk_density_power_law_power = float(csvreader.__next__()[1])
-                self.disk_density_cutoff_radius = float(csvreader.__next__()[1])
-                self.disk_density_cutoff_scale = float(csvreader.__next__()[1])
-                
-                self.disk_temperature_power_law_scale = float(csvreader.__next__()[1])
-                self.disk_temperature_power_law_power = float(csvreader.__next__()[1])
-                self.disk_temperature_cutoff_radius = float(csvreader.__next__()[1])
-                self.disk_temperature_cutoff_scale = float(csvreader.__next__()[1])
-                
-                self.disk_max_density = float(csvreader.__next__()[1])
-                self.disk_max_temperature = float(csvreader.__next__()[1])
-                
-                self.disk_ensamble = csvreader.__next__()[1]
-                
-            elif self.ACTIVE_DISK_MODEL[1:] == "Page-Thorne":
-                self.NT_r_in  = float(csvreader.__next__()[1])
-                self.NT_r_out = float(csvreader.__next__()[1])
-                
-            else:
-                self.disk_density_exp_height_scale = float(csvreader.__next__()[1])
-                self.disk_density_exp_radial_scale = float(csvreader.__next__()[1])
-
-            _ = csvreader.__next__() # Magnetic field parameters header
-
-            if self.ACTIVE_DISK_MODEL[1:] == "Page-Thorne":
-                self.disk_magnetic_field = csvreader.__next__()[1][1:]
-                
-            else:
-                self.disk_magnetization = float(csvreader.__next__()[1])
-                self.disk_magnetic_field = csvreader.__next__()[1]
-                self.disk_magnetic_field_magnitude_profile = csvreader.__next__()[1]
-            
-                if("Power law based" == self.disk_magnetic_field_magnitude_profile[1:]):
-                    self.disk_magnetic_field_scale = float(csvreader.__next__()[1])
-                    self.magnetic_field_radial_scale = float(csvreader.__next__()[1])
-                    self.magnetic_field_power_law_power = float(csvreader.__next__()[1])
-
-                _ = csvreader.__next__() # Hotspot Parameters Header
-                _ = csvreader.__next__() # Density Model Parameters Header
-
-                self.hotspot_density_profile = csvreader.__next__()[1][1:]
-                if self.hotspot_density_profile == "Gaussian":
-                    self.hotspot_density_spread = float(csvreader.__next__()[1])
-                elif self.hotspot_density_profile == "Spherical":
-                    self.hotspot_dentiy_radius = float(csvreader.__next__()[1])
-                elif self.hotspot_temperature_profile == "Hybrid power law gaussian":
-                    self.hotspot_density_spread = float(csvreader.__next__()[1])  
-                    self.hotspot_density_power_law_power = float(csvreader.__next__()[1])  
-                    self.hotspot_density_power_law_scale = float(csvreader.__next__()[1])   
-                
-                self.hotspot_max_density = float(csvreader.__next__()[1])
-
-                _ = csvreader.__next__() # Temperature Model Parameters Header
-
-                self.hotspot_temperature_profile = csvreader.__next__()[1][1:]
-                if self.hotspot_temperature_profile == "Gaussian":
-                    self.hotspot_temperature_spread = float(csvreader.__next__()[1])       
-                elif self.hotspot_temperature_profile == "Spherical":
-                    self.hotspot_temperature_radius = float(csvreader.__next__()[1])
-                elif self.hotspot_temperature_profile == "Hybrid power law gaussian":
-                    self.hotspot_temperature_spread = float(csvreader.__next__()[1])  
-                    self.hotspot_temperature_power_law_power = float(csvreader.__next__()[1])  
-                    self.hotspot_temperature_power_law_scale = float(csvreader.__next__()[1])   
-
-                self.hotspot_max_temperature = float(csvreader.__next__()[1])
-
-                _ = csvreader.__next__() # Hotspot Synchrotron Emission Model Parameters Header
-
-                self.hotspot_ensamble = csvreader.__next__()[1][1:]
-                if self.hotspot_ensamble == "Kappa":
-                    self.kappa = csvreader.__next__()[1][1:]
-                elif self.hotspot_ensamble == "Phenomenological":
-                    for _ in range(4):
-                        _ = csvreader.__next__()
-                elif self.hotspot_ensamble == "Thermal":
-                    pass
-
-                self.hotspot_magnetization = float(csvreader.__next__()[1])
-                self.hotspot_magnetic_field = csvreader.__next__()[1][1:]
-
-                _ = csvreader.__next__() # Hotspot Position Header
-
-                self.hotspot_distance    = float(csvreader.__next__()[1])
-                self.hotspot_inclination = float(csvreader.__next__()[1])
-                self.hotspot_azimuth     = float(csvreader.__next__()[1])
-                self.coord_time_offset   = float(csvreader.__next__()[1])
-
-            _ = csvreader.__next__() # Simulation Results Header
-            self.Legend = csvreader.__next__()
-
-            csvreader = reader(file, delimiter = " ")
-
-            if (self.Active_Sim_Mode != 2):
-                Array_size = self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT
-            else:
-                Array_size = self.Photon_Number * self.Param_Sweep_Number
-
-            self.X_coords        = zeros(Array_size)
-            self.Y_coords        = zeros(Array_size)
-            self.NT_Flux         = zeros(Array_size)
-            self.I_Intensity     = zeros(Array_size)
-            self.Q_Intensity     = zeros(Array_size)
-            self.U_Intensity     = zeros(Array_size)
-            self.V_Intensity     = zeros(Array_size)
-            self.NT_Redshift     = zeros(Array_size)
-            self.NT_Flux_Shifted = zeros(Array_size)
-
-            self.Source_R_Coord   = zeros(Array_size)
-            self.Source_Phi_Coord = zeros(Array_size)
-            self.Radial_Momentum  = zeros(Array_size)
-            self.Theta_Momentum   = zeros(Array_size)
-            self.Phi_Momentum     = zeros(Array_size)
-            self.Param_1          = zeros(Array_size)
-            self.Param_2          = zeros(Array_size)
-
-            index = 0
-
-            for row in csvreader:
-
-                try:
-
-                    self.X_coords[index] = row[0]
-                    self.Y_coords[index] = row[1]
-
-                    self.NT_Redshift[index]  = row[2]
-                    self.NT_Flux[index]      = row[3]
-                    self.I_Intensity[index]  = row[4]
-                    self.Q_Intensity[index]  = row[5]
-                    self.U_Intensity[index]  = row[6]
-                    self.V_Intensity[index]  = row[7]
-
-                    if self.Active_Sim_Mode == 2:
-
-                        self.Source_R_Coord[index]   = row[8]
-                        self.Source_Phi_Coord[index] = row[9]
-                        self.Radial_Momentum[index]  = row[10]
-                        self.Theta_Momentum[index]   = row[11]
-                        self.Phi_Momentum[index]     = row[12]
-                        self.Param_1[index]          = row[13]
-
-                        try:
-                            self.Param_2[index] = row[14]
-                        except:
-                            self.Param_2[index] = 0
-
-                    self.NT_Flux_Shifted[index] = self.NT_Redshift[index]**4 * self.NT_Flux[index]
-
-                    index += 1
-
-                except:
+                if -1 != line[0].find("Simulation Results"):
                     break
+
+            if (int(self.Simulation_metadata["Active Simulation Mode"]) == 1):
+                
+                X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
+                Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+                
+                Array_size = X_resolution * Y_resolution    
+
+                self.X_coords: NDArray      = zeros(Array_size)
+                self.Y_coords: NDArray      = zeros(Array_size)
+                self.I_Intensity: NDArray   = zeros(Array_size)
+                self.Q_Intensity: NDArray   = zeros(Array_size)
+                self.U_Intensity: NDArray   = zeros(Array_size)
+                self.V_Intensity: NDArray   = zeros(Array_size)
+                self.Disk_redshift: NDArray = zeros(Array_size)
+                self.Disk_flux: NDArray     = zeros(Array_size)
+
+                Data_parser = DictReader(file, delimiter = ",")
+                index = 0
+                
+                for row in Data_parser:
+
+                    try:
+
+                        self.X_coords[index] = float(row["Image X Coord [M]"])
+                        self.Y_coords[index] = float(row["Image Y Coord [M]"])
+
+                        if ("Page-Thorne" == self.Simulation_metadata["Active disk model"]):
+                            
+                            self.Disk_redshift[index]  = float(row["Disk Redshift [-]"])
+                            self.Disk_flux[index]  = float(row["Disk Flux [M_dot/M^2]"])
+                            
+                        else:
+
+                            self.I_Intensity[index]  = float(row["Synchotron Intensity I [Jy/sRad]"])
+                            self.Q_Intensity[index]  = float(row["Synchotron Intensity Q [Jy/sRad]"])
+                            self.U_Intensity[index]  = float(row["Synchotron Intensity U [Jy/sRad]"])
+                            self.V_Intensity[index]  = float(row["Synchotron Intensity V [Jy/sRad]"])
+
+                        index += 1
+
+                    except:
+                        break
+        
+            if (int(self.Simulation_metadata["Active Simulation Mode"]) == 3):
+
+                self.t_coord: list[float]     = []
+                self.r_coord: list[float]     = []
+                self.theta_coord: list[float] = []
+                self.phi_coord: list[float]   = []
+                
+                self.p_t: list[float]     = []
+                self.p_r: list[float]     = []
+                self.p_theta: list[float] = []
+                self.p_phi: list[float]   = []
+                
+                self.integration_step: list[float] = []
+                self.affine_param: list[float] = []
+                
+                self.I_Intensity_log: list[float] = []
+                self.Q_Intensity_log: list[float] = []
+                self.U_Intensity_log: list[float] = []
+                self.V_Intensity_log: list[float] = []
+                
+                Data_parser = DictReader(file, delimiter = ",")
+                
+                for row in Data_parser:
+                    
+                    self.t_coord.append(float(row["t_coord [M]"]))
+                    self.r_coord.append(float(row["r_coord [M]"]))
+                    self.theta_coord.append(float(row["theta_coord [rad]"]))
+                    self.phi_coord.append(float(row["phi_coord [rad]"]))
+
+                    self.p_t.append(float(row["p_t [-]"]))
+                    self.p_r.append(float(row["p_r [-]"]))
+                    self.p_theta.append(float(row["p_theta [rad/M]"]))
+                    self.p_phi.append(float(row["p_phi [rad/M]"]))
+
+                    self.integration_step.append(float(row["Integration Step [M]"]))
+                    self.affine_param.append(float(row["Affine Parameter [M]"]))
+
+                    self.I_Intensity_log.append(float(row["Synchotron Intensity I [Jy/sRad]"]))
+                    self.Q_Intensity_log.append(float(row["Synchotron Intensity Q [Jy/sRad]"]))
+                    self.U_Intensity_log.append(float(row["Synchotron Intensity U [Jy/sRad]"]))
+                    self.V_Intensity_log.append(float(row["Synchotron Intensity V [Jy/sRad]"]))
                 
     def get_total_flux(self, obs_pos: float, unit: str = "Jy") -> float:
         
         """ The observation window limits are given in geometric length units, 
             so one divides by the effective observer distance to get the angular size. """
-        Pixel_area: float = ((self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * 
-                             (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / obs_pos**2)
+            
+        Window_limits = self.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
+        Window_limits = [float(Limit) for Limit in Window_limits]
+        
+        X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
+        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+        
+        Pixel_area: float = (abs(Window_limits[1] - Window_limits[0]) * 
+                             abs(Window_limits[3] - Window_limits[2]) / X_resolution / Y_resolution / obs_pos**2)
 
         """ The base flux unit, returned by the ray-tracer is Jy. """
         Total_Intensity_Jy: float = float(sum(self.I_Intensity) * Pixel_area)
@@ -246,8 +141,15 @@ class Simulation_Parser():
         
         """ The observation window limits are given in geometric length units, 
             so one divides by the effective observer distance to get the angular size. """
-        Pixel_area: float = ((self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * 
-                             (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT / obs_pos**2)
+            
+        Window_limits = self.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
+        Window_limits = [float(Limit) for Limit in Window_limits]
+        
+        X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
+        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+        
+        Pixel_area: float = (abs(Window_limits[1] - Window_limits[0]) * 
+                             abs(Window_limits[3] - Window_limits[2]) / X_resolution / Y_resolution / obs_pos**2)
 
         """ The base flux unit, returned by the ray-tracer is Jy. """
         Total_Intensity_Jy: float = float(sum(sqrt(self.Q_Intensity**2 + self.U_Intensity**2 + self.V_Intensity**2)) * Pixel_area)
@@ -268,62 +170,79 @@ class Simulation_Parser():
 
         """ The arrays first need to be reshaped into 2D ones, then flipped along the x axis, 
             because mpl treats y = 0 as the top, and the ray-tracer (openGL) treats it as the bottom. """
+        
+        X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
+        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
             
-        I_Intensity = self.I_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
+        I_Intensity = self.I_Intensity.reshape(Y_resolution, X_resolution)
         I_Intensity = flip(I_Intensity, axis = 0)
 
-        Q_Intensity = self.Q_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
+        Q_Intensity = self.Q_Intensity.reshape(Y_resolution, X_resolution)
         Q_Intensity = flip(Q_Intensity, axis =  0)
 
-        U_Intensity = self.U_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
+        U_Intensity = self.U_Intensity.reshape(Y_resolution, X_resolution)
         U_Intensity = flip(U_Intensity, axis =  0)
 
-        V_Intensity = self.V_Intensity.reshape(self.Y_PIXEL_COUNT, self.X_PIXEL_COUNT)
+        V_Intensity = self.V_Intensity.reshape(Y_resolution, X_resolution)
         V_Intensity = flip(V_Intensity, axis =  0)
 
-        NT_Flux         = self.NT_Flux.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
-        NT_Flux         = flip(NT_Flux, axis =  0)
+        Disk_flux   = self.Disk_flux.reshape(Y_resolution, X_resolution)
+        Disk_flux     = flip(Disk_flux, axis =  0)
 
-        NT_Redshift     = self.NT_Redshift.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
-        NT_Redshift     = flip(NT_Redshift, axis =  0)
+        Disk_redshift = self.Disk_redshift.reshape(Y_resolution, X_resolution)
+        Disk_redshift   = flip(Disk_redshift, axis =  0)
 
-        NT_Flux_Shifted = self.NT_Flux_Shifted.reshape(self.Y_PIXEL_COUNT,self.X_PIXEL_COUNT)
-        NT_Flux_Shifted = flip(NT_Flux_Shifted, axis =  0)
-
-        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, NT_Redshift, NT_Flux, NT_Flux_Shifted
+        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux
     
+    def get_photon_log(self) -> tuple[tuple, tuple, tuple, list, list]:
+        
+        Position_tuple = self.t_coord, self.r_coord, self.theta_coord, self.phi_coord
+        Momentum_tuple = self.p_t, self.p_r, self.p_theta, self.p_phi
+        Emission_tuple = self.I_Intensity_log, self.Q_Intensity_log, self.U_Intensity_log, self.V_Intensity_log
+        
+        return Position_tuple, Momentum_tuple, Emission_tuple, self.integration_step, self.affine_param
+                
+        
     def export_ehtim_data(self, Spacetime: str, data: NDArray, path: str) -> None:
 
         ehtim_x_fov = 2 * 5.000000e-05
         ehtim_y_fov = 2 * 5.000000e-05
-
+        
+        Window_limits = self.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
+        Window_limits = [float(Limit) for Limit in Window_limits]
+        
+        X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
+        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+        
         Units = Units_class()
         
-        Pixel_area = (self.WINDOW_LIMITS[1] - self.WINDOW_LIMITS[0]) * (self.WINDOW_LIMITS[3] - self.WINDOW_LIMITS[2]) / self.X_PIXEL_COUNT / self.Y_PIXEL_COUNT
+        Pixel_area = abs(Window_limits[1] - Window_limits[0]) * abs(Window_limits[3] - Window_limits[2]) / X_resolution / Y_resolution
 
-        formatted_sim_data = data.reshape(1, self.X_PIXEL_COUNT * self.Y_PIXEL_COUNT).flatten()
+        formatted_sim_data = data.reshape(1, X_resolution * Y_resolution).flatten()
 
-        X_coords = linspace(-1, 1, self.X_PIXEL_COUNT) * ehtim_x_fov / 2
-        X_coords = vstack([X_coords] * self.Y_PIXEL_COUNT).flatten()
+        X_coords = linspace(-1, 1, X_resolution) * ehtim_x_fov / 2
+        X_coords = vstack([X_coords] * Y_resolution).flatten()
 
-        Y_coords = linspace(-1, 1, self.Y_PIXEL_COUNT) * ehtim_y_fov / 2
-        Y_coords = repeat(Y_coords, self.X_PIXEL_COUNT, axis = 0)
+        Y_coords = linspace(-1, 1, Y_resolution) * ehtim_y_fov / 2
+        Y_coords = repeat(Y_coords, X_resolution, axis = 0)
 
         array_to_export = array([X_coords, 
                                  Y_coords, 
                                  formatted_sim_data * Pixel_area / Units.SGRA_DISTANCE_GEOMETRICAL**2]).T
 
+        Obs_frequency: float = float(self.Simulation_metadata["Observation Frequency [Hz]"])
+
         header = ("SRC: M87 \n"                   + 
                   "RA: 12 h 30 m 49.3920 s \n"    +
                   "DEC: 12 deg 23 m 27.9600 s \n" +
                   "MJD: 58211.000000 \n"          + 
-                  "RF: {} GHz \n".format(self.OBS_FREQUENCY / 1e9)    +
-                  "FOVX: {} pix 0.000100 as \n".format(self.X_PIXEL_COUNT) +
-                  "FOVY: {} pix 0.000100 as \n".format(self.Y_PIXEL_COUNT) +
+                  "RF: {} GHz \n".format(Obs_frequency / 1e9)    +
+                  "FOVX: {} pix 0.000100 as \n".format(X_resolution) +
+                  "FOVY: {} pix 0.000100 as \n".format(Y_resolution) +
                   "------------------------------------ \n" +
                   "x (as)     y (as)       I (Jy/pixel)")
 
-        with open(path + '{}_data_for_ehtim_{}.csv'.format(Spacetime, int(self.OBS_FREQUENCY / 1e9)), 'w') as my_file:
+        with open(path + '{}_data_for_ehtim_{}.csv'.format(Spacetime, int(Obs_frequency / 1e9)), 'w') as my_file:
                   savetxt(my_file, array_to_export, fmt = '%0.4e', header = header)
 
         print('Array exported to file!')

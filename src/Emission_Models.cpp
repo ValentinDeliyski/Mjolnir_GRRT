@@ -36,8 +36,7 @@ Return_Values Emission_models_class::get_plasma_velocity(const double* const Sta
 
     case e_Keplarian:
 
-        /* This velocity profile is defined only for orbit radii > ISCO. When the ray passes below ISCO I return a NULL pointer, which tells the 
-           rest of the code to ignore the emission from this region. */
+        /* This velocity profile is defined only for orbit radii > ISCO. */
         if (fabs(r_source) < p_Sim_Context->p_Spacetime->get_ISCO()[Inner]) { return ERROR; }
 
         /* Interpolated contravariant radial velocity component -> Corresponds to equation (10a) from the reference, but beta_r -> 1 - beta_r. */
@@ -49,6 +48,22 @@ Return_Values Emission_models_class::get_plasma_velocity(const double* const Sta
         Omega = Omega + Radial_velocity_fraction * (inv_metric[e_t][e_phi] / inv_metric[e_t][e_t] - Omega);
 
         break;
+
+    case e_Circular_fixed_rate:
+
+        /* This is really only intended for the hotspot -> hence the hotspot position is used. */
+
+        Omega = 1.0 / pow(p_Sim_Context->p_Init_Conditions->Hotspot_params.Position[e_r], 3. / 2);
+        u_t = 1. / sqrt(-(s_Metric.Metric[e_t][e_t] + s_Metric.Metric[e_phi][e_phi] * Omega * Omega));
+
+        if (isnan(u_t)) { return ERROR; }
+
+        Plasma_Velocity[e_t]     = u_t;
+        Plasma_Velocity[e_r]     = 0.0;
+        Plasma_Velocity[e_theta] = 0.0;
+        Plasma_Velocity[e_phi]   = u_t * Omega;
+
+        return OK;
 
     default:
 
@@ -180,9 +195,9 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     double Mag_field_eularian_norm{};
 
-    for (int left_idx = 1; left_idx <= 3; left_idx++) {
+    for (int left_idx = 1; left_idx < 4; left_idx++) {
 
-        for (int right_idx = 1; right_idx <= 3; right_idx++) {
+        for (int right_idx = 1; right_idx < 4; right_idx++) {
 
             Mag_field_eularian_norm += p_Metric->Metric[left_idx][right_idx] * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[left_idx] * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[right_idx];
 
@@ -190,7 +205,7 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     }
 
-    for (int idx = 1; idx <= 3; idx++) {
+    for (int idx = 1; idx < 4; idx++) {
 
         Emission_medium_state->Magnetic_fields.B_field_eularian_frame[idx] /= sqrt(Mag_field_eularian_norm);
 
@@ -199,16 +214,16 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
     const double Lorentz_factor = Emission_medium_state->Plasma_Velocity[e_t] * p_Metric->Lapse_function;
 
     /* The two indecies start from 1, because the t component of the magnetic field, measured by the Eularian observer is zero. */
-    for (int left_idx = 1; left_idx <= 3; left_idx++) {
+    for (int left_idx = 1; left_idx < 4; left_idx++) {
 
-        for (int right_idx = 1; right_idx <= 3; right_idx++) {
+        for (int right_idx = 1; right_idx < 4; right_idx++) {
 
             Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] += p_Metric->Metric[left_idx][right_idx] * Emission_medium_state->Plasma_Velocity[left_idx] * Emission_medium_state->Magnetic_fields.B_field_eularian_frame[right_idx] / p_Metric->Lapse_function;
         }
 
     }
 
-    for (int index = 1; index <= 3; index++) {
+    for (int index = 1; index < 4; index++) {
 
         Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] = (Emission_medium_state->Magnetic_fields.B_field_eularian_frame[index] + p_Metric->Lapse_function * Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Lorentz_factor;
        
@@ -239,12 +254,9 @@ double Emission_models_class::get_electron_pitch_angle(const double* const B_fie
                                                        const double* const State_Vector, 
                                                        const Simulation_Context_type* const p_Sim_Context) {
 
-    double Wave_vec_dot_Plasma_vec = State_Vector[e_p_t]     * Plasma_velocity[e_t] +
-                                     State_Vector[e_p_r]     * Plasma_velocity[e_r] +
-                                     State_Vector[e_p_theta] * Plasma_velocity[e_theta] +
-                                     State_Vector[e_p_phi]   * Plasma_velocity[e_phi];
+    double Wave_vec_dot_Plasma_vec = dot_product(State_Vector + e_p_t, Plasma_velocity, 4);
 
-    Metric_type s_Metric  = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
+    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
     double B_field_norm_squared{};
     double B_field_dot_Plasma_vel{};
 
@@ -265,11 +277,7 @@ double Emission_models_class::get_electron_pitch_angle(const double* const B_fie
 
     }
 
-    double Wave_vec_dot_B_field = State_Vector[e_p_t]     * B_field_coord_frame[e_t] +
-                                  State_Vector[e_p_r]     * B_field_coord_frame[e_r] +
-                                  State_Vector[e_p_theta] * B_field_coord_frame[e_theta] +
-                                  State_Vector[e_p_phi]   * B_field_coord_frame[e_phi];
-
+    double Wave_vec_dot_B_field = dot_product(State_Vector + e_p_t, B_field_coord_frame, 4);
     double cos_angle = 1.0; 
 
     if (!isinf(1.0 / Wave_vec_dot_Plasma_vec) && !isinf(1.0 / B_field_norm_squared)) {
@@ -285,9 +293,7 @@ double Emission_models_class::get_electron_pitch_angle(const double* const B_fie
     }
     else {
 
-        std::cout << "ERROR";
-
-        return acos(cos_angle / fabs(cos_angle));
+        return acos(copysign(1.0 - 1e-10, cos_angle));
 
     }
 }
@@ -351,7 +357,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
 
         /* ============ This loop averages over the emission pitch angle, which it gets from a pre-computed table ============ */
 
-        for (int averaging_idx = 1; averaging_idx <= Num_Samples_to_avg - 1; averaging_idx++) {
+        for (int averaging_idx = 1; averaging_idx < Num_Samples_to_avg; averaging_idx++) {
 
             /* References for the sake of readabiity. */
             double& sin_pitch_angle = this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[averaging_idx];
@@ -414,7 +420,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
     }
 
     /* Account for the relativistic doppler effet via the redshift. */
-    for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
+    for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Transfer_functions->Emission_functions[stokes_idx] *= redshift * redshift;
         p_Transfer_functions->Faradey_functions[stokes_idx] /= redshift;
@@ -472,7 +478,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
 
         /* ============ This loop averages over the emission pitch angle, which it gets from a pre-computed table ============ */
 
-        for (int averaging_idx = 1; averaging_idx <= Num_Samples_to_avg - 1; averaging_idx++) {
+        for (int averaging_idx = 1; averaging_idx < Num_Samples_to_avg; averaging_idx++) {
 
             double& sin_pitch_angle = this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[averaging_idx];
             double& cos_pitch_angle = this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[averaging_idx];
@@ -526,7 +532,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     }
 
     /* Account for the relativistic doppler effet via the redshift */
-    for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
+    for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Transfer_functions->Emission_functions[stokes_idx] *= redshift * redshift;
         p_Transfer_functions->Faradey_functions[stokes_idx]  /= redshift;
@@ -557,7 +563,7 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
     this->get_synchrotron_transfer_fit_functions(e_Phenomenological_ensamble, p_Emission_medium_state, &Transfer_args, p_Sim_Context, p_Transfer_functions);
 
     /* Account for the relativistic doppler effet via the redshift. */
-    for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
+    for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Transfer_functions->Emission_functions[stokes_idx] *= Transfer_args.redshift * Transfer_args.redshift;
         p_Transfer_functions->Faradey_functions[stokes_idx] /= Transfer_args.redshift;
@@ -587,8 +593,6 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
        Therefore the magnetic field with which the emission functions of the disk are evaluated, depends on the position of the hotspot. This is the reason this boolean is calculated outside the Emission_meidum 
        switch statement. 
        NOTE: This call ignores the return status, because it should always be OK when evaluated at the hotspot position. */
-
-    double Hotspot_velocity[4]{};
     this->get_plasma_velocity(this->p_Hotspot_Model->s_Hotspot_params.Position,
                               p_Sim_Context,
                               this->p_Hotspot_Model->s_Hotspot_params.Velocity_profile_type,
@@ -741,6 +745,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
         this->get_thermal_synchrotron_transfer_functions(State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
         break;
     }
+
 }
 
 void Emission_models_class::get_debug_synchrotron_functions(Transfer_functions_type* p_Transfer_functions) const {
@@ -856,7 +861,7 @@ void Emission_models_class::precompute_electron_pitch_angles(Initial_conditions_
 
     // =========================================================================================================================================== //
 
-    for (int index = 0; index <= p_Init_Conditions->Emission_pitch_angle_samples_to_average - 1; index++) {
+    for (int index = 0; index < p_Init_Conditions->Emission_pitch_angle_samples_to_average; index++) {
 
         double pitch_angle = double(index) / p_Init_Conditions->Emission_pitch_angle_samples_to_average * M_PI;
         this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index] = sin(pitch_angle);

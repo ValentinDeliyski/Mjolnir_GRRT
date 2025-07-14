@@ -21,41 +21,41 @@ void RK45(double* const State_Vector, Step_controller* const p_Controller, const
     double Derivatives[RK45_size * e_Dynamic_state_size]{};
 
     // Initialize the array that holds the intermediate State Vectors.
-    double inter_State_vector[RK45_size * e_Dynamic_state_size]{};
+    double inter_State_vector[e_Dynamic_state_size]{};
 
     // Initialize the array that holds the two new solutions that the DP54 method computes.
     double New_State_vector_O5[e_Dynamic_state_size]{};
     double New_State_vector_O4[e_Dynamic_state_size]{};
 
     // Runs trough the EOM evaluations in-between t and t + step.
-    while (iteration <= RK45_size - 1) { 
+    while (iteration < RK45_size) { 
+
+        memcpy(inter_State_vector, State_Vector, e_Dynamic_state_size * sizeof(double));
 
         // Runs trough the state vector components.
-        for (int vector_indexer = 0; vector_indexer <= e_Dynamic_state_size - 1; vector_indexer += 1) {
-
-            inter_State_vector[vector_indexer + iteration * e_Dynamic_state_size] = State_Vector[vector_indexer];
+        for (int vector_indexer = 0; vector_indexer < e_Dynamic_state_size; vector_indexer++) {
 
             // Runs trough tough the Dormand-Prince coeficients matrix and adds on the contributions from the derivatives at the points between t and t + step.
-            for (int derivative_indexer = 0; derivative_indexer <= iteration - 1; derivative_indexer += 1) { 
+            for (int derivative_indexer = 0; derivative_indexer < iteration; derivative_indexer++) { 
 
-                inter_State_vector[vector_indexer + iteration * e_Dynamic_state_size] += -p_Controller->step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
+                inter_State_vector[vector_indexer] += -p_Controller->step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
 
             }
         }
 
-        p_Sim_context->p_Spacetime->get_EOM(&inter_State_vector[iteration * e_Dynamic_state_size], &Derivatives[iteration * e_Dynamic_state_size]);
+        p_Sim_context->p_Spacetime->get_EOM(inter_State_vector, &Derivatives[iteration * e_Dynamic_state_size]);
 
         iteration += 1;
 
     }
 
     // Compute the new state vectors.
-    for (int vector_indexer = 0; vector_indexer <= e_Dynamic_state_size - 1; vector_indexer += 1) {
+    for (int vector_indexer = 0; vector_indexer < e_Dynamic_state_size; vector_indexer++) {
 
         New_State_vector_O5[vector_indexer] = State_Vector[vector_indexer];
         New_State_vector_O4[vector_indexer] = State_Vector[vector_indexer];
 
-        for (int derivative_indexer = 0; derivative_indexer <= RK45_size - 1; derivative_indexer += 1) {
+        for (int derivative_indexer = 0; derivative_indexer < RK45_size; derivative_indexer++) {
 
             New_State_vector_O5[vector_indexer] += -p_Controller->step * Coeff_sol[derivative_indexer]      * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
             New_State_vector_O4[vector_indexer] += -p_Controller->step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];

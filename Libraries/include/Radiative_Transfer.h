@@ -3,7 +3,9 @@
 #define _USE_MATH_DEFINES
 
 #include "Enumerations.h"
+#include "Emission_Models.h"
 #include "Constants.h"
+#include "Spacetimes.h"
 #include "Structs.h"
 #include "General_math_functions.h"
 
@@ -18,3 +20,10 @@ void Analytic_Radiative_Transfer(double* const emission_functions,
                                  double* const faradey_functions,
                                  double const step,
                                  double* const Intensity);
+
+void RK5_radiative_transfer(double* const Emission_Functions,
+                            double* const Absorbtion_Functions,
+                            double* const Faradey_Functions,
+                            double* const State_Vector,
+                            const Simulation_Context_type* p_Sim_Context,
+                            double* const Stokes_Vector);

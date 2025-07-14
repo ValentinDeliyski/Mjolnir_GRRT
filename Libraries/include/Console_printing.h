@@ -12,7 +12,7 @@ class Console_Printer_class {
 
 private:
 
-    std::string Metric_strings[SPACETIME_NUMBER] = {
+    std::string Metric_strings[e_Spacetime_number] = {
 
         "Kerr Black Hole",
         "Teo Wormhole",

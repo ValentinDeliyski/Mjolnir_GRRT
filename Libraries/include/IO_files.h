@@ -11,7 +11,7 @@ class File_manager_class {
 
 private:
 
-	std::string Base_File_Names[SPACETIME_NUMBER] = {
+	std::string Base_File_Names[e_Spacetime_number] = {
 
 		"Kerr",
 		"Wormhole",
@@ -26,9 +26,18 @@ private:
 
 	std::ofstream Image_Output_files[e_order_number];
 	std::ofstream Log_Output_File;
+
 	Initial_conditions_type *p_Initial_Conditions;
 
 	bool Truncate_files{};
+
+	void write_observer_metadata(std::ofstream* Output_file);
+	void write_metric_metadata(std::ofstream* Output_file);
+	void write_accretion_disk_metadata(std::ofstream* Output_file);
+	void write_hotspot_metadata(std::ofstream* Output_file);
+	void write_emission_models_metadata(std::ofstream* Output_file);
+	void write_integrator_metadata(std::ofstream* Output_file);
+
 
 	public:
 
@@ -37,8 +46,6 @@ private:
 		File_manager_class(Initial_conditions_type* p_Initial_Conditions);
 
 		void open_image_output_files();
-
-		void open_log_output_file();
 
 		void write_image_data_to_file(Results_type* Ray_results);
 

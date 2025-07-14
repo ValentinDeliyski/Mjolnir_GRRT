@@ -17,7 +17,7 @@ if __name__ == "__main__":
                 plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
                 # EHT_Array           = ["2022"]
-                Sim_path            = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Thermal_Hotspot\\Kerr"
+                Sim_path            = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Reference_Simulation_1\\Kerr"
                 Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
                 Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 

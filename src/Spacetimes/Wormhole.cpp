@@ -163,6 +163,7 @@ int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_
     double& r_obs = p_Initial_Conditions->Observer_params.distance;
     double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
 
+    p_Initial_Conditions->Init_Momentum[e_t] = -1.0;
     p_Initial_Conditions->Init_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
     p_Initial_Conditions->Init_Momentum[e_theta] = p_theta_data[photon];
 

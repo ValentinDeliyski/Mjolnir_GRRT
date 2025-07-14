@@ -223,12 +223,12 @@ class Simulation_configurator:
         self._configure_emission_models()
 
     def _configure_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
-                                             RK45_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
+                                             RK45_accuracy: dict[str, float | str] = {"Value": 1e-11, "Unit": "[-]"},
                                              Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
                                              Safety_factor_1: dict[str, float | str] = {"Value": 0.8, "Unit": "[-]"},
                                              Safety_factor_2: dict[str, float | str] = {"Value": 1e-25, "Unit": "[-]"},
-                                             Max_rel_step_increase: dict[str, float | str] = {"Value": 20, "Unit": "[-]"},
-                                             Min_rel_step_increase: dict[str, float | str] = {"Value": 0.1, "Unit": "[-]"},
+                                             Max_rel_step_increase: dict[str, float | str] = {"Value": 2, "Unit": "[-]"},
+                                             Min_rel_step_increase: dict[str, float | str] = {"Value": 0.01, "Unit": "[-]"},
                                              Step_controller_I_gain: dict[str, float | str] = {"Value": 0.117, "Unit": "[-]"},
                                              Step_controller_P_gain: dict[str, float | str] = {"Value": -0.042, "Unit": "[-]"},
                                              Step_controller_D_gain: dict[str, float | str] = {"Value": 0.02, "Unit": "[-]"},
@@ -809,13 +809,13 @@ if __name__ == "__main__":
     
     Sim_config.metric_parameters.Numerical_metric_spline_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/test.XML"
 
-    Sim_config.simulation_mode = {"Value": 3, "Unit": "[-]"}
+    Sim_config.simulation_mode = {"Value": 1, "Unit": "[-]"}
 
     Sim_config.object_mass = {"Value": 6.2e9, "Unit": "[M_sun]"}
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type    = {"Value": "Kerr", "Unit": "[-]"}
+    Sim_config.metric_parameters.Metric_type    = {"Value": "Numerical", "Unit": "[-]"}
     Sim_config.metric_parameters.Mass           = {"Value": 0.915671, "Unit": "[M]"}
     Sim_config.metric_parameters.Horizon_radius = {"Value": 0.05, "Unit": "[G/c^2]"}
     Sim_config.metric_parameters.Spin           = {"Value": 0.8048 / 0.9157, "Unit": "[M]"}
@@ -823,8 +823,8 @@ if __name__ == "__main__":
     
     # ================================================== Observer ================================================== #
 
-    Sim_config.observer.Resolution_x = {"Value": 128, "Unit": "[-]"}
-    Sim_config.observer.Resolution_y = {"Value": 128, "Unit": "[-]"}
+    Sim_config.observer.Resolution_x = {"Value": 1500, "Unit": "[-]"}
+    Sim_config.observer.Resolution_y = {"Value": 1500, "Unit": "[-]"}
     
     Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
     Sim_config.observer.Inclination = {"Value": 89.99 * pi / 180, "Unit": "[Rad]"}
@@ -833,12 +833,9 @@ if __name__ == "__main__":
 
     # ================================================== Disk ================================================== #
     
-    Sim_config.disk_model.Ensamble_type = {"Value": "Debug_constant_functions",   "Unit": "[-]"}
+    Sim_config.disk_model.Ensamble_type = {"Value": "Thermal",   "Unit": "[-]"}
     Sim_config.disk_model.Disk_Model    = {"Value": "Phenom_RIAF_1", "Unit": "[-]"}
     Sim_config.disk_model.Mag_field_geometry = {"Value": "Constant", "Unit": "[-]"}
-    
-    Sim_config.disk_model.r_in_PT_disk = {"Value": 1.615, "Unit": "[M]"}
-    Sim_config.disk_model.r_out_PT_disk = {"Value": 50, "Unit": "[M]"}
     
     Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g/cm^3]"}
     Sim_config.disk_model.Temperature_scale_factor = {"Value": 4.1e+10, "Unit": "[K]"}
@@ -861,11 +858,12 @@ if __name__ == "__main__":
     Sim_config.observer.Image_x_min = {"Value": -10, "Unit": "[M]"}
     Sim_config.observer.Image_x_max = {"Value":  10, "Unit": "[M]"}
         
-    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-10, "Unit": "[-]"}
+    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-9, "Unit": "[-]"}
     Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
     Sim_config.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
     Sim_config.integrator.max_integration_count = {"Value": 1000000, "Unit": "[-]"}
     Sim_config.integrator.max_affine_parameter = {"Value": 1000000, "Unit": "[-]"}
+    Sim_config.metric_parameters.Distance_to_singular_point = {"Value": 1e-2, "Unit": "[M]"}
     
     Sim_config.integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
     # ================================================== Hotspot ================================================== #
@@ -887,4 +885,4 @@ if __name__ == "__main__":
     filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Old_wormhole_sanity_check\\Old_wormhole_sanity_check.xml"
     args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
     
-    # subprocess.call(args, shell = True)
+    subprocess.call(args, shell = True)

@@ -48,22 +48,22 @@ class Sim_Visualizer():
                 Sim_Parser_3 = Simulation_Parser(self.Ray_tracer_paths[Sim_number] + "_n3")
 
                 self.Sim_Parsers.append([Sim_Parser_0, Sim_Parser_1, Sim_Parser_2, Sim_Parser_3])
-
+                
             except:
                 print("Could not parse ray-tracer logs!")
                 print("I looked at this path: {}".format(self.Ray_tracer_paths[Sim_number]))
                 exit()
 
-            if Sim_Parser_0.Active_Sim_Mode != 2:
+            if int(Sim_Parser_0.Simulation_metadata["Active Simulation Mode"]) != 2:
 
                 Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy") +
                               self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy") +
                               self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy") +
                               self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy"))
                 
-                self.Total_flux_str = self.Total_flux_str + "Total flux at {}GHz = {} [mJy]\n".format(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9, np.round(Total_flux, 4))
+                self.Total_flux_str = self.Total_flux_str + "Total flux at {}GHz = {} [mJy]\n".format(float(self.Sim_Parsers[Sim_number][0].Simulation_metadata["Observation Frequency [Hz]"]) / 1e9, np.round(Total_flux, 4))
 
-        if Sim_Parser_0.Active_Sim_Mode != 2: # type: ignore
+        if int(Sim_Parser_0.Simulation_metadata["Active Simulation Mode"]) != 2: # type: ignore
 
             for msg in self.Total_flux_str.split("\n"):
                 
@@ -130,21 +130,26 @@ class Sim_Visualizer():
 
         Main_Figure.suptitle(Custom_fig_title, fontsize = self.Font_size)
 
-        for Sim_number, Freq_str in enumerate(self.Frequency_Bins):
+        for Sim_number, Freq_str in enumerate(self.Frequency_Bins):          
+            
+            Obs_frequency: float = float(self.Sim_Parsers[Sim_number][0].Simulation_metadata["Observation Frequency [Hz]"])
+            X_resolution: int = int(self.Sim_Parsers[Sim_number][0].Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
+            Y_resolution: int = int(self.Sim_Parsers[Sim_number][0].Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
 
-            I_Intensity_0, Q_Intensity_0, U_Intensity_0, V_Intensity_0, NT_Redshift_n0, NT_Flux_n0, NT_Flux_Shifted_n0 = self.Sim_Parsers[Sim_number][0].get_plottable_sim_data()
-            I_Intensity_1, Q_Intensity_1, U_Intensity_1, V_Intensity_1, NT_Redshift_n1, NT_Flux_n1, NT_Flux_Shifted_n1 = self.Sim_Parsers[Sim_number][1].get_plottable_sim_data()
-            I_Intensity_2, Q_Intensity_2, U_Intensity_2, V_Intensity_2, NT_Redshift_n2, NT_Flux_n2, NT_Flux_Shifted_n2 = self.Sim_Parsers[Sim_number][2].get_plottable_sim_data()
-            I_Intensity_3, Q_Intensity_3, U_Intensity_3, V_Intensity_3, NT_Redshift_n3, NT_Flux_n3, NT_Flux_Shifted_n3 = self.Sim_Parsers[Sim_number][3].get_plottable_sim_data()
+            I_Intensity_0, Q_Intensity_0, U_Intensity_0, V_Intensity_0, Disk_redshift_n0, Disk_flux_n0 = self.Sim_Parsers[Sim_number][0].get_plottable_sim_data()
+            I_Intensity_1, Q_Intensity_1, U_Intensity_1, V_Intensity_1, Disk_redshift_n1, Disk_flux_n1 = self.Sim_Parsers[Sim_number][1].get_plottable_sim_data()
+            I_Intensity_2, Q_Intensity_2, U_Intensity_2, V_Intensity_2, Disk_redshift_n2, Disk_flux_n2 = self.Sim_Parsers[Sim_number][2].get_plottable_sim_data()
+            I_Intensity_3, Q_Intensity_3, U_Intensity_3, V_Intensity_3, Disk_redshift_n3, Disk_flux_n3 = self.Sim_Parsers[Sim_number][3].get_plottable_sim_data()
 
             #=============== PLot the Simulated Image ===============#
 
-            Fig_title = "Simulated Image at {}GHz".format(int(self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY / 1e9))
+            Fig_title = "Simulated Image at {}GHz".format(int(Obs_frequency / 1e9))
             X_Slice_tile = "Brightness temperature at " + r'$\delta_{\text{rel}} = 0$'
             X_Slice_y_label = r'$T_b\,\,[10^9\, K]$'
 
-            # Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation OBS_DISTANCE, and conver to to micro AS 
-            axes_limits = np.array([(limit) for limit in self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS]) / Obs_effective_distance
+            # Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation "Observer Distance [M]", and conver to to micro AS 
+            axes_limits = self.Sim_Parsers[Sim_number][0].Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
+            axes_limits = np.array([float(Limit) for Limit in axes_limits]) / Obs_effective_distance
             axes_limits = np.arctan(axes_limits) * self.Units.RAD_TO_MICRO_AS
 
             # The literature (for some reason) has the X axis going positive to negative, 
@@ -163,7 +168,7 @@ class Sim_Visualizer():
             if Radiation_Component == "Stokes I":
                 Data_to_plot_Intensity = I_Intensity_0 + I_Intensity_1 + I_Intensity_2 + I_Intensity_3
                 Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot_Intensity / self.Units.W_M2_TO_JY, 
-                                                                self.Sim_Parsers[Sim_number][0].OBS_FREQUENCY) / self.Units.GIGA
+                                                                Obs_frequency) / self.Units.GIGA
                                                                 
                 Cbar_label = r"Brightness Temperature [$10^9$K]"
                 Colormap = "hot"
@@ -179,7 +184,7 @@ class Sim_Visualizer():
                 Cmap_min = -Cmap_max
 
             elif Radiation_Component == "Stokes U":
-                Data_to_plot = (U_Intensity_0 + U_Intensity_1 + U_Intensity_2 + U_Intensity_3) / Intensity_normalization * 100
+                Data_to_plot = (U_Intensity_0 + + U_Intensity_1 + U_Intensity_2 + U_Intensity_3) / Intensity_normalization * 100
                 Cbar_label = r"U Fractional Intensity [\%]"
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
                 Cmap_min = -Cmap_max
@@ -190,12 +195,29 @@ class Sim_Visualizer():
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
                 Cmap_min = -Cmap_max
 
+            elif Radiation_Component == "LP Fraction":
+                
+                U_intensity = U_Intensity_0 + U_Intensity_1 + U_Intensity_2 + U_Intensity_3
+                Q_intensity = Q_Intensity_0 + Q_Intensity_1 + Q_Intensity_2 + Q_Intensity_3
+                
+                Cbar_label   = r"LP fraction [\%]"
+                
+                Data_to_plot = sqrt(U_intensity**2 + Q_intensity**2) / Intensity_normalization * 100
+                # Data_to_plot[Total_intensity < Intensity_normalization / 100] = 0
+                Cmap_max = max(Data_to_plot.flatten())
+                Cmap_min = 0
+                
             elif Radiation_Component == "NT":
+                
+                Shifted_flux_n0: NDArray = Disk_flux_n0 * (Disk_redshift_n0)**4
+                Shifted_flux_n1: NDArray = Disk_flux_n1 * (Disk_redshift_n1)**4
+                Shifted_flux_n2: NDArray = Disk_flux_n2 * (Disk_redshift_n2)**4
+                Shifted_flux_n3: NDArray = Disk_flux_n3 * (Disk_redshift_n3)**4
             
-                Data_to_plot = NT_Flux_Shifted_n0
-                Data_to_plot = Data_to_plot + NT_Flux_Shifted_n1 * (Data_to_plot == 0)
-                Data_to_plot = Data_to_plot + NT_Flux_Shifted_n2 * (Data_to_plot == 0)
-                Data_to_plot = Data_to_plot + NT_Flux_Shifted_n3 * (Data_to_plot == 0)
+                Data_to_plot = Shifted_flux_n0
+                Data_to_plot = Data_to_plot + Shifted_flux_n1 * (Data_to_plot == 0)
+                Data_to_plot = Data_to_plot + Shifted_flux_n2 * (Data_to_plot == 0)
+                Data_to_plot = Data_to_plot + Shifted_flux_n3 * (Data_to_plot == 0)
                 Data_to_plot = Data_to_plot / 1e-6
 
                 Cmap_max = max(np.abs(Data_to_plot.flatten()))
@@ -203,7 +225,7 @@ class Sim_Visualizer():
 
                 Colormap = "hot"
 
-                Subplot.set_aspect(self.Sim_Parsers[Sim_number][0].X_PIXEL_COUNT / self.Sim_Parsers[Sim_number][0].Y_PIXEL_COUNT)
+                Subplot.set_aspect(X_resolution / Y_resolution)
 
                 Cbar_label   = r"Intensity [$10^{-6}\dot{M}M^{-2}$]"
                 X_Slice_tile = r"Intensity at $\delta_{\text{rel}} = 0$"
@@ -239,18 +261,16 @@ class Sim_Visualizer():
             Subplot = Main_Figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 2))
 
             # Convert the spectral density at y = 0 to brightness temperature, normalized to 10^9 Kelvin
-            T_Brightness = Data_to_plot[int(self.Sim_Parsers[Sim_number][0].Y_PIXEL_COUNT / 2)]
+            T_Brightness = Data_to_plot[int(X_resolution / 2)]
             T_Brightness_norm     = max(T_Brightness)
             T_Brightness_min_norm = min(T_Brightness)
-            # Rescale the celestial coordinates for an observer, located at "Obs_effective_distance", rather than the simulation OBS_DISTANCE, and converto to micro AS
-            x_coords  = np.linspace(self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS[0], self.Sim_Parsers[Sim_number][0].WINDOW_LIMITS[1], self.Sim_Parsers[Sim_number][0].X_PIXEL_COUNT) / Obs_effective_distance
-            x_coords *= self.Units.RAD_TO_MICRO_AS 
+            x_coords = np.linspace(axes_limits[0], axes_limits[1], X_resolution)
 
             # Set the aspect ratio of the figure to 1:1 (y:x)
-            Subplot.set_aspect(2 * x_coords[-1] / T_Brightness_norm)
+            # Subplot.set_aspect(2 * x_coords[-1] / T_Brightness_norm)
 
             # Create the plot of "T_b(alpha) | y = 0"
-            Subplot.plot(-x_coords, T_Brightness)
+            Subplot.plot(x_coords, T_Brightness)
             Subplot.invert_xaxis()
             Subplot.set_ylim(1.1 * T_Brightness_min_norm, 1.1 * T_Brightness_norm)
             Subplot.set_title(X_Slice_tile, fontsize = self.Font_size)
@@ -652,6 +672,9 @@ class Sim_Visualizer():
 
         axes_limits[0] = -axes_limits[0]
         axes_limits[1] = -axes_limits[1]
+        
+        # So the type checker does not complain at the imshow() call
+        axes_limits = np.array(axes_limits)
 
         x_coords = np.linspace(axes_limits[0], axes_limits[1], crop_res_x)
         y_coords = np.linspace(axes_limits[2], axes_limits[3], crop_res_y)

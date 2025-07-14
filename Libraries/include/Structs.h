@@ -328,6 +328,8 @@ struct Numerical_metric_params_type {
 
     Numerical_Anzatz_enums e_Anzatz;
 
+    std::string Metric_file_path;
+
 };
 
 struct Metric_parameters_type {

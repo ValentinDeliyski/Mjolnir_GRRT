@@ -12,7 +12,7 @@ enum Spacetime_enums: std::underlying_type_t <std::byte> {
     BH_w_Dark_Matter      = 5,
     Numerical             = 6,
     Minkowski             = 7,
-    SPACETIME_NUMBER      = 8
+    e_Spacetime_number    = 8
 
 };
 
@@ -114,7 +114,8 @@ enum Numerical_Anzatz_enums : std::underlying_type_t <std::byte> {
 enum Velocity_enums: std::underlying_type_t <std::byte> {
 
     e_Keplarian = 0,
-    e_Theta_dependant = 1
+    e_Theta_dependant = 1,
+    e_Circular_fixed_rate = 2
 
 };
 
@@ -185,6 +186,7 @@ enum Radiative_Transfer_Integrator: std::underlying_type_t <std::byte> {
 
     Analytic = 0,
     Implicit_Trapezoid = 1,
+    RK5 = 2,
 
 };
 

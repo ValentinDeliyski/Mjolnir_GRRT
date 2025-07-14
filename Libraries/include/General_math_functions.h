@@ -33,7 +33,7 @@ void matrix_matrix_multiply(const double Mat_A[4][4], const double Mat_B[4][4], 
  *  Multiplies the 4D vector "Vector" by the 4x4 matrix "Matrix", and stores the result in the vector "Result".
  *
  *  @param [in] Matrix - The 4x4 matrix, represented as a 2D array.
- *  @param [in] Vector - The 4D vector to be multiplied by the matxi "Matrix".
+ *  @param [in] Vector - The 4D vector to be multiplied by the marix "Matrix".
  *  @param [out] Result - The result of the multiplication.
  *  @return Nothing.
  */
