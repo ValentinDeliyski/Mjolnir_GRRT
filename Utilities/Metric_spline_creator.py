@@ -1,4 +1,5 @@
 from numpy import array, flip, append, pi, exp, sin, sqrt, log, roots
+import itertools
 
 from Support_functions.Surface_Cubic_B_spline import Surface_Cubic_B_spline
 import matplotlib.pyplot as plt
@@ -26,8 +27,8 @@ class Numerical_metric_parser_class():
         F_0 = []
         F_1 = []
         F_2 = []
-        W   = []
-        
+        W = []
+
         with open(File_path, "r") as file:
             
             for line in file:
@@ -51,19 +52,19 @@ class Numerical_metric_parser_class():
         self.x_coord = append(x_coord, x_coord[1:], axis = 0)
         
         theta_coord = array(theta_coord).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
-        self.theta_coord = append(theta_coord, theta_coord[1:] + pi / 2, axis = 0)
-        
-        F_0 = array(F_0).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
-        self.F_0 = append(F_0, flip(F_0[1:], axis = 0), axis = 0)
+        self.theta_coord = append(theta_coord, flip(pi - theta_coord)[1:], axis = 0)
+         
+        F_0 = array(F_0).reshape(GRID_THETA_SIZE, GRID_R_SIZE)  
+        self.F_0 = append(F_0, flip(F_0, axis = 0)[1:], axis = 0)  
         
         F_1 = array(F_1).reshape(GRID_THETA_SIZE, GRID_R_SIZE)  
-        self.F_1 = append(F_1, flip(F_1[1:], axis = 0), axis = 0)  
+        self.F_1 = append(F_1, flip(F_1, axis = 0)[1:], axis = 0)  
         
         F_2 = array(F_2).reshape(GRID_THETA_SIZE, GRID_R_SIZE) 
-        self.F_2 = append(F_2, flip(F_2[1:], axis = 0), axis = 0)  
+        self.F_2 = append(F_2, flip(F_2, axis = 0)[1:], axis = 0)  
         
         W = array(W).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
-        self.W = append(W, flip(W[1:], axis = 0), axis = 0)
+        self.W = append(W, flip(W, axis = 0)[1:], axis = 0)
         
         """ Convert the compactified coordinate x to the (mass normalized) unbounded radial coordinate.
             NOTE: This is NOT in Boyer-Linguist coordinates. """
@@ -72,6 +73,10 @@ class Numerical_metric_parser_class():
         """ Convert the uncompactified radial coordinate to the Boyer-Linguist radial coordinate. 
             NOTE: Fix this to work for non-kerr solutions. """
         self.r_BL_coord = self.r_coord + self.a_ADM**2 / (1 + sqrt(1 - self.a_ADM**2))
+
+           
+    def itertools_flatten(self, iter_lst):
+        return list(itertools.chain(*iter_lst))
 
     def get_parsed_results(self) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
         
@@ -179,7 +184,7 @@ class Numerical_metric_parser_class():
         formatted_XML_string = XML_struct.toprettyxml()
         Header, Body = formatted_XML_string.split('?>')
 
-        with open("test.XML", 'w') as xfile:
+        with open("{}.XML".format(Metric_name), 'w') as xfile:
             xfile.write(Header + 'encoding=\"{}\"?>\n'.format(Encoding) + Body)
             xfile.close()
             
@@ -188,16 +193,15 @@ if __name__ == "__main__":
     """ =================== Some post-evolution calculated metric parameters =================== """
     
     """ This is a rounded value for the Black Hole mass - we take is for granted and from it, calculate what the spin parameter SHOULD be to give their reported event horizon raius. """
-    M_ADM = 0.415
+    M_ADM = 0.915671
     
     """ Their reported event horizon radius - this is an input to the simulation, and they gave a decent amount of digits, so it should be fine.
         NOTE: This is NOT in Boyer-Linguist coordinates. """
-    r_H = 0.0662902
+    r_H = 0.05
     
-    """ This is the (mass normalized) calculated spin parameter that gives their event horizon radius (its one of the real solutions to a quintic equation).
+    """ This is the (NOT mass normalized) calculated spin parameter that gives their event horizon radius (its one of the real solutions to a quintic equation).
         Let alpha = 2M^2 - Mr_H and beta = 2M + r_h, then the quintic is 4 a^4 + (beta^2 - 4 alpha) a^2 + alpha^2 - M^2 beta^2 = 0. """
-    a_ADM = 0.41399683 / M_ADM
-    # a_ADM = 0.172 / M_ADM**2
+    a_ADM = 0.8048 / M_ADM
 
     Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/rb=0.05_om=0.648537614898263_h0=0.0362501741355515.dat", M_ADM = M_ADM, a_ADM = a_ADM, r_H = r_H)
     x_coord, _, r_BL_coord, theta_coord, F_0, F_1, F_2, W = Numerical_metric_parser.get_parsed_results()
@@ -207,7 +211,7 @@ if __name__ == "__main__":
     F_2_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_2, X_patch_number = 59, Y_patch_number = 251)
     W_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = W, X_patch_number = 59, Y_patch_number = 251)
 
-    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Galin_numerical_config", 
+    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Galin_numerical_config_I", 
                                                  Theta_control_vectors  = [F_0_spline_instance.Control_vector_X, 
                                                                            F_1_spline_instance.Control_vector_X, 
                                                                            F_2_spline_instance.Control_vector_X, 
@@ -239,7 +243,7 @@ if __name__ == "__main__":
     ax3.plot_surface(x_coord, theta_coord, F_2, color = 'blue')
     
     ax4.plot_surface(Radial_surface, Theta_surface, W_surface, color = 'orange') 
-    ax4.plot_surface(x_coord, theta_coord, W, color = 'blue')
+    ax4.plot_surface(x_coord, theta_coord, W, color = 'blue') 
     
     plt.show()
     

@@ -23,29 +23,14 @@ Return_Values Numerical_metric::load_parameters(const Metric_parameters_type* co
 
     this->Parameters = p_Metric_Parameters->Numerical_metric_params;
 
-    const double& r_H = p_Metric_Parameters->Numerical_metric_params.Horizon_radius;
-    const double& M_ADM = p_Metric_Parameters->Numerical_metric_params.M_ADM;
-    const double& a_ADM = p_Metric_Parameters->Numerical_metric_params.a_ADM;
-
-    /* Computes the outer (mass normalized) event horizon radius is Boyer-Linguist coordinates, with the ADM mass of the numerical solution (the paper labels this capital R_H).
-    NOTE: The ADM angular momentum parameter is normalized to the mass. */
-    this->Parameters.Horizon_radius_BL = r_H / 2 + sqrt((r_H / 2) * (r_H / 2) + a_ADM * a_ADM);
-
     return OK;
 
 }
 
 double Numerical_metric::compactify_radial_coordiante(const double r) const {
 
-    /* The reference for this implementation is http://gravitation.web.ua.pt/node/416. */
-
-    /* Computes the shifted radial coordinate used in the paper (they label this with little "r").
-       NOTE: The input to this function "r" is normaled to the mass. */
-    const double r_shifted_coordinate = this->Parameters.M_ADM * r - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
-
-    /* Comute the other shifted coordinate that the paper uses in the numerical implementation (they label this little "x"). 
-       NOTE: The horizon radius here is in the "r_shifted" coordinate system. */
-    const double x_uncompactified = sqrt(r_shifted_coordinate * r_shifted_coordinate - this->Parameters.Horizon_radius * this->Parameters.Horizon_radius);
+    /* Comute the shifted coordinate that the paper (http://gravitation.web.ua.pt/node/416) uses in the numerical implementation (they label this little "x"). */
+    const double x_uncompactified = sqrt(r * r - this->Parameters.Horizon_radius * this->Parameters.Horizon_radius);
 
     return x_uncompactified / (1 + x_uncompactified);
 }
@@ -54,9 +39,9 @@ inline void Numerical_metric::get_control_point_matrix(const double* const Contr
 
     /* The reference for this implementation is one of the python example scrips in this document: https://hal.science/hal-03017566/document. */
 
-    for (int radial_offset = 0; radial_offset <= 3; radial_offset++) {
+    for (int radial_offset = 0; radial_offset < 4; radial_offset++) {
 
-        for (int theta_offset = 0; theta_offset <= 3; theta_offset++) {
+        for (int theta_offset = 0; theta_offset < 4; theta_offset++) {
 
             Control_matrix[radial_offset][theta_offset] = Control_vector[r_idx + radial_offset + theta_offset * (this->Parameters.Radial_grid_size + 2) + theta_idx * (this->Parameters.Radial_grid_size + 2)];
             Control_matrix[radial_offset][theta_offset] = Control_vector[r_idx + radial_offset + theta_offset * (this->Parameters.Radial_grid_size + 2) + theta_idx * (this->Parameters.Radial_grid_size + 2)];
@@ -196,89 +181,11 @@ Numerical_metric_potentials_type Numerical_metric::evaluate_all_splines(const do
 
 }
 
-Metric_type Numerical_metric::comute_Minkowski_metric(const double* const State_Vector) const {
-
-    Metric_type s_Minkowski_metric{};
-
-    const double& r = State_Vector[e_r];
-    const double sin_theta = sin(State_Vector[e_theta]);
-
-    s_Minkowski_metric.Metric[e_t][e_t] = -1;
-    s_Minkowski_metric.Metric[e_r][e_r] = 1;
-    s_Minkowski_metric.Metric[e_theta][e_theta] = r * r;
-    s_Minkowski_metric.Metric[e_phi][e_phi] = r * r * sin_theta * sin_theta;
-
-    s_Minkowski_metric.Lapse_function = 1;
-    s_Minkowski_metric.Shift_function = 0;
-
-    return s_Minkowski_metric;
-
-}
-
-Metric_type Numerical_metric::comute_dr_Minkowski_metric(const double* const State_Vector) const {
-
-    Metric_type s_dr_Minkowski_metric{};
-
-    const double& r = State_Vector[e_r];
-    const double sin_theta = sin(State_Vector[e_theta]);
-
-    s_dr_Minkowski_metric.Metric[e_t][e_t] = 0;
-    s_dr_Minkowski_metric.Metric[e_r][e_r] = 0;
-    s_dr_Minkowski_metric.Metric[e_theta][e_theta] = 2 * r;
-    s_dr_Minkowski_metric.Metric[e_phi][e_phi] = 2 * r * sin_theta * sin_theta;
-
-    s_dr_Minkowski_metric.Lapse_function = 0;
-    s_dr_Minkowski_metric.Shift_function = 0;
-
-    return s_dr_Minkowski_metric;
-
-}
-
-Metric_type Numerical_metric::comute_dtheta_Minkowski_metric(const double* const State_Vector) const {
-
-    Metric_type s_dtheta_Minkowski_metric{};
-
-    const double& r = State_Vector[e_r];
-    const double sin_theta = sin(State_Vector[e_theta]);
-    const double cos_theta = cos(State_Vector[e_theta]);
-
-    s_dtheta_Minkowski_metric.Metric[e_t][e_t] = 0;
-    s_dtheta_Minkowski_metric.Metric[e_r][e_r] = 0;
-    s_dtheta_Minkowski_metric.Metric[e_theta][e_theta] = 0;
-    s_dtheta_Minkowski_metric.Metric[e_phi][e_phi] = 2 * r * r * sin_theta * cos_theta;
-
-    s_dtheta_Minkowski_metric.Lapse_function = 0;
-    s_dtheta_Minkowski_metric.Shift_function = 0;
-
-    return s_dtheta_Minkowski_metric;
-
-}
-
-Metric_type Numerical_metric::comute_d2r_Minkowski_metric(const double* const State_Vector) const {
-
-    Metric_type s_d2r_Minkowski_metric{};
-
-    const double& r = State_Vector[e_r];
-    const double sin_theta = sin(State_Vector[e_theta]);
-    const double cos_theta = cos(State_Vector[e_theta]);
-
-    s_d2r_Minkowski_metric.Metric[e_t][e_t] = 0;
-    s_d2r_Minkowski_metric.Metric[e_r][e_r] = 0;
-    s_d2r_Minkowski_metric.Metric[e_theta][e_theta] = 2;
-    s_d2r_Minkowski_metric.Metric[e_phi][e_phi] = 2 * sin_theta * sin_theta;
-
-    s_d2r_Minkowski_metric.Lapse_function = 0;
-    s_d2r_Minkowski_metric.Shift_function = 0;
-
-    return s_d2r_Minkowski_metric;
-
-}
-
 Numerical_metric_potentials_type Numerical_metric::compute_metric_components_from_spline(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx, Derivative_selector_enums Derivative_selector) const {
 
     /* -------------- The spline works with the compactified radial coordinate, so here I have to convert to that. -------------- */
+
     const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
-    const double r_shifted_coordinate = this->Parameters.M_ADM * State_Vector[e_r] - this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL;
 
     /* -------------- Get the upper index of the grid interval where the current photon state vector is (in both compactified radial and there directions). --------------*/
 
@@ -303,10 +210,7 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
         derivative_correction_factor_1 *= (1 - r_compactified) * (1 - r_compactified);
 
         /* ------- This is correcting by the factor d(x_uncompactified)/d(r_shifted_coordinate) ------- */
-        derivative_correction_factor_1 *= r_shifted_coordinate * (1 - r_compactified) / r_compactified;
-
-        /* ------- This is correcting by the factor d(r_shifted_coordinate)/d(r_BL) ------- */
-        derivative_correction_factor_1 *= this->Parameters.M_ADM;
+        derivative_correction_factor_1 *= State_Vector[e_r] * (1 - r_compactified) / r_compactified;
 
         Corrected_Potentials.F_0 *= derivative_correction_factor_1;
         Corrected_Potentials.F_1 *= derivative_correction_factor_1;
@@ -331,39 +235,36 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
 
     case Second_radial_derivative:
 
-        temp_Potentials_1 = this->evaluate_all_splines(State_Vector, Radial_grid_idx, Theta_grid_idx, Second_radial_derivative);
-        temp_Potentials_2 = this->evaluate_all_splines(State_Vector, Radial_grid_idx, Theta_grid_idx, First_radial_derivative);
+        //temp_Potentials_1 = this->evaluate_all_splines(State_Vector, Radial_grid_idx, Theta_grid_idx, Second_radial_derivative);
+        //temp_Potentials_2 = this->evaluate_all_splines(State_Vector, Radial_grid_idx, Theta_grid_idx, First_radial_derivative);
 
-        /* ------- This is correcting by the factor d(natural_parameter)/d(x_compactified) ------- */
-        derivative_correction_factor_1 = 1 / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
+        ///* ------- This is correcting by the factor d(natural_parameter)/d(x_compactified) ------- */
+        //derivative_correction_factor_1 = 1 / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
 
-        /* ------- This is correcting by the factor d(x_compactified)/d(x_uncompactified) ------- */
-        derivative_correction_factor_1 *= (1 - r_compactified) * (1 - r_compactified);
+        ///* ------- This is correcting by the factor d(x_compactified)/d(x_uncompactified) ------- */
+        //derivative_correction_factor_1 *= (1 - r_compactified) * (1 - r_compactified);
 
-        /* ------- This is correcting by the factor d(x_uncompactified)/d(r_shifted_coordinate) ------- */
-        derivative_correction_factor_1 *= r_shifted_coordinate * (1 - r_compactified) / r_compactified;
+        ///* ------- This is correcting by the factor d(x_uncompactified)/d(r_shifted_coordinate) ------- */
+        //derivative_correction_factor_1 *= State_Vector[e_r] * (1 - r_compactified) / r_compactified;
 
-        /* ------- This is correcting by the factor d(r_shifted_coordinate)/d(r_BL) ------- */
-        derivative_correction_factor_1 *= this->Parameters.M_ADM;
+        ///* ------- This is the first term in d(derivative_correction_factor_1)/d(r_BL) FIX THIS ------- */
+        //derivative_correction_factor_2  = -((1 - r_compactified) * (1 - r_compactified) * (1 - r_compactified) + 3 * r_compactified * (1 - r_compactified) * (1 - r_compactified)) / r_compactified / r_compactified * State_Vector[e_r] * derivative_correction_factor_1;
+        //derivative_correction_factor_2 += derivative_correction_factor_1 / State_Vector[e_r];
 
-        /* ------- This is the first term in d(derivative_correction_factor_1)/d(r_BL) ------- */
-        derivative_correction_factor_2  = -this->Parameters.M_ADM * ((1 - r_compactified) * (1 - r_compactified) * (1 - r_compactified) + 3 * r_compactified * (1 - r_compactified) * (1 - r_compactified)) / r_compactified / r_compactified * r_shifted_coordinate * derivative_correction_factor_1;
-        derivative_correction_factor_2 += this->Parameters.M_ADM * derivative_correction_factor_1 / r_shifted_coordinate;
+        //temp_Potentials_1.F_0 *= derivative_correction_factor_1 * derivative_correction_factor_1;
+        //temp_Potentials_1.F_1 *= derivative_correction_factor_1 * derivative_correction_factor_1;
+        //temp_Potentials_1.F_2 *= derivative_correction_factor_1 * derivative_correction_factor_1;
+        //temp_Potentials_1.W   *= derivative_correction_factor_1 * derivative_correction_factor_1;
 
-        temp_Potentials_1.F_0 *= derivative_correction_factor_1 * derivative_correction_factor_1;
-        temp_Potentials_1.F_1 *= derivative_correction_factor_1 * derivative_correction_factor_1;
-        temp_Potentials_1.F_2 *= derivative_correction_factor_1 * derivative_correction_factor_1;
-        temp_Potentials_1.W   *= derivative_correction_factor_1 * derivative_correction_factor_1;
+        //temp_Potentials_2.F_0 *= derivative_correction_factor_2;
+        //temp_Potentials_2.F_1 *= derivative_correction_factor_2;
+        //temp_Potentials_2.F_2 *= derivative_correction_factor_2;
+        //temp_Potentials_2.W   *= derivative_correction_factor_2;
 
-        temp_Potentials_2.F_0 *= derivative_correction_factor_2;
-        temp_Potentials_2.F_1 *= derivative_correction_factor_2;
-        temp_Potentials_2.F_2 *= derivative_correction_factor_2;
-        temp_Potentials_2.W   *= derivative_correction_factor_2;
-
-        Corrected_Potentials.F_0 = temp_Potentials_1.F_0 + temp_Potentials_2.F_0;
-        Corrected_Potentials.F_1 = temp_Potentials_1.F_1 + temp_Potentials_2.F_1;
-        Corrected_Potentials.F_2 = temp_Potentials_1.F_2 + temp_Potentials_2.F_2;
-        Corrected_Potentials.W   = temp_Potentials_1.W   + temp_Potentials_2.W;
+        //Corrected_Potentials.F_0 = temp_Potentials_1.F_0 + temp_Potentials_2.F_0;
+        //Corrected_Potentials.F_1 = temp_Potentials_1.F_1 + temp_Potentials_2.F_1;
+        //Corrected_Potentials.F_2 = temp_Potentials_1.F_2 + temp_Potentials_2.F_2;
+        //Corrected_Potentials.W   = temp_Potentials_1.W   + temp_Potentials_2.W;
 
         return Corrected_Potentials;
 
@@ -394,11 +295,11 @@ Metric_type Numerical_metric::get_metric(const double* const State_Vector, int R
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. It works with a shifted radial coordinate, defined in appendix A. */
 
-    const double& r_s = this->Parameters.M_ADM * State_Vector[e_r] - (this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
+    const double& r = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
 
     const double& sin_theta = sin(theta);
-    const double& N = 1 - (this->Parameters.Horizon_radius / this->Parameters.M_ADM) / r_s;
+    const double& N = 1 - this->Parameters.Horizon_radius / r;
 
     const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
 
@@ -414,15 +315,15 @@ Metric_type Numerical_metric::get_metric(const double* const State_Vector, int R
     case e_Anzatz_1:
 
         s_Metric.Metric[e_t][e_t] = -exp_2F_0 * N + exp_2F_2 * sin_theta * sin_theta * W * W;
-        s_Metric.Metric[e_t][e_phi] = -exp_2F_2 * W * r_s * sin_theta * sin_theta;
+        s_Metric.Metric[e_t][e_phi] = -exp_2F_2 * W * r * sin_theta * sin_theta;
 
         break;
 
 
     case e_Anzatz_2:
 
-        s_Metric.Metric[e_t][e_t] = -exp_2F_0 * N + exp_2F_2 * r_s * r_s * sin_theta * sin_theta * W * W;
-        s_Metric.Metric[e_t][e_phi] = -exp_2F_2 * W * r_s * r_s * sin_theta * sin_theta;
+        s_Metric.Metric[e_t][e_t] = -exp_2F_0 * N + exp_2F_2 * r * r * sin_theta * sin_theta * W * W;
+        s_Metric.Metric[e_t][e_phi] = -exp_2F_2 * W * r * r * sin_theta * sin_theta;
 
         break;
 
@@ -435,8 +336,8 @@ Metric_type Numerical_metric::get_metric(const double* const State_Vector, int R
 
     s_Metric.Metric[e_phi][e_t] = s_Metric.Metric[e_t][e_phi];
     s_Metric.Metric[e_r][e_r] = exp_2F_1 / N;
-    s_Metric.Metric[e_theta][e_theta] = exp_2F_1 * r_s * r_s;
-    s_Metric.Metric[e_phi][e_phi] = exp_2F_2 * r_s * r_s * sin_theta * sin_theta;
+    s_Metric.Metric[e_theta][e_theta] = exp_2F_1 * r * r;
+    s_Metric.Metric[e_phi][e_phi] = exp_2F_2 * r * r * sin_theta * sin_theta;
 
     s_Metric.Lapse_function = sqrt(-s_Metric.Metric[e_t][e_t] + s_Metric.Metric[e_t][e_phi] * s_Metric.Metric[e_t][e_phi] / s_Metric.Metric[e_phi][e_phi]);
     s_Metric.Shift_function = -s_Metric.Metric[e_t][e_phi] / s_Metric.Metric[e_phi][e_phi];
@@ -464,12 +365,12 @@ Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, in
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. It works with a shifted radial coordinate, defined in appendix A. */
 
-    const double& r_s = this->Parameters.M_ADM * State_Vector[e_r] - (this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
+    const double& r = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
 
     const double& sin_theta = sin(theta);
-    const double& N    = 1 - this->Parameters.Horizon_radius / r_s;
-    const double& dr_N = (this->Parameters.Horizon_radius / r_s / r_s) * (this->Parameters.M_ADM);
+    const double& N    = 1 - this->Parameters.Horizon_radius / r;
+    const double& dr_N = this->Parameters.Horizon_radius / r / r;
 
     const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
 
@@ -491,16 +392,16 @@ Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, in
 
     case e_Anzatz_1:
 
-        s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * sin_theta * sin_theta * W * (r_s * W * dr_F_2 + r_s * dr_W);
-        s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * sin_theta * sin_theta * (2 * r_s * W * dr_F_2 + W + r_s * dr_W);
+        s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * sin_theta * sin_theta * W * (W * dr_F_2 + dr_W);
+        s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * sin_theta * sin_theta * (2 * r * W * dr_F_2 + W + r * dr_W);
 
         break;
 
 
     case e_Anzatz_2:
 
-        s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * r_s * sin_theta * sin_theta * W * (r_s * W * dr_F_2 + W + r_s * dr_W);
-        s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * sin_theta * sin_theta * (2 * r_s * W * dr_F_2 + 2 * W + r_s * dr_W);
+        s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * r * sin_theta * sin_theta * W * (r * W * dr_F_2 + W + r * dr_W);
+        s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * sin_theta * sin_theta * (2 * r * W * dr_F_2 + 2 * W + r * dr_W);
 
         break;
 
@@ -513,8 +414,8 @@ Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, in
 
     s_dr_Metric.Metric[e_phi][e_t] = s_dr_Metric.Metric[e_t][e_phi];
     s_dr_Metric.Metric[e_r][e_r] = exp_2F_1 / N * (2 * dr_F_1 - dr_N / N);
-    s_dr_Metric.Metric[e_theta][e_theta] = 2 * r_s * exp_2F_1 * (r_s * dr_F_1 + 1);
-    s_dr_Metric.Metric[e_phi][e_phi] = 2 * r_s * exp_2F_2 * (r_s * dr_F_2 + 1) * sin_theta * sin_theta;
+    s_dr_Metric.Metric[e_theta][e_theta] = 2 * r * exp_2F_1 * (r * dr_F_1 + 1);
+    s_dr_Metric.Metric[e_phi][e_phi] = 2 * r * exp_2F_2 * (r * dr_F_2 + 1) * sin_theta * sin_theta;
 
     return s_dr_Metric;
 
@@ -537,16 +438,16 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
 
 Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
 
-    /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. It works with a shifted radial coordinate, defined in appendix A. */
+    /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
 
-    const double& r_s = this->Parameters.M_ADM * State_Vector[e_r] - (this->Parameters.a_ADM * this->Parameters.a_ADM / this->Parameters.Horizon_radius_BL);
+    const double& r = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
 
     const double& sin_theta = sin(theta);
     const double& cos_theta = cos(theta);
-    const double& N = 1 - this->Parameters.Horizon_radius / r_s;
+    const double& N = 1 - this->Parameters.Horizon_radius / r;
 
-    Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
+    const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(State_Vector, Radial_grid_idx, Theta_grid_idx, None);
 
     const double& W        = s_Potentials.W;
     const double& exp_2F_0 = exp(2 * s_Potentials.F_0);
@@ -567,15 +468,15 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
     case e_Anzatz_1:
 
         s_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * N * dtheta_F_0 + 2 * exp_2F_2 * W * sin_theta * (W * sin_theta * dtheta_F_2 + sin_theta * dtheta_W + W * cos_theta);
-        s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
+        s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
 
         break;
 
 
     case e_Anzatz_2:
 
-        s_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * N * dtheta_F_0 + 2 * exp_2F_2 * r_s * r_s * W * sin_theta * (W * sin_theta * dtheta_F_2 + sin_theta * dtheta_W + W * cos_theta);
-        s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r_s * r_s * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
+        s_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * N * dtheta_F_0 + 2 * exp_2F_2 * r * r * W * sin_theta * (W * sin_theta * dtheta_F_2 + sin_theta * dtheta_W + W * cos_theta);
+        s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * r * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
 
         break;
 
@@ -588,8 +489,8 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
 
     s_dtheta_Metric.Metric[e_phi][e_t] = s_dtheta_Metric.Metric[e_t][e_phi];
     s_dtheta_Metric.Metric[e_r][e_r] = 2 * exp_2F_1 / N * dtheta_F_1;
-    s_dtheta_Metric.Metric[e_theta][e_theta] = 2 * r_s * r_s * exp_2F_1 * dtheta_F_1;
-    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r_s * r_s * exp_2F_2 * sin_theta * (sin_theta * dtheta_F_2 + cos_theta);
+    s_dtheta_Metric.Metric[e_theta][e_theta] = 2 * r * r * exp_2F_1 * dtheta_F_1;
+    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * exp_2F_2 * sin_theta * (sin_theta * dtheta_F_2 + cos_theta);
 
     return s_dtheta_Metric;
 
@@ -621,8 +522,6 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, i
 
 int Numerical_metric::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
-    /* =================== TODO ================ */
-
     return 0;
 }
 
@@ -651,9 +550,9 @@ void Numerical_metric::get_EOM(const double* const State_Vector, double* const D
     matrix_matrix_multiply(inv_metric, temp_matrix, dtheta_inv_metric);
 
     /* ----------- There is a minus sign infront of the whole expression for the derivative of an inverse of a matrix ----------- */
-    for (int left_idx = 0; left_idx <= 3; left_idx++) {
+    for (int left_idx = 0; left_idx < 4; left_idx++) {
 
-        for (int right_idx = 0; right_idx <= 3; right_idx++) {
+        for (int right_idx = 0; right_idx < 4; right_idx++) {
 
             dr_inv_metric[left_idx][right_idx] *= -1;
             dtheta_inv_metric[left_idx][right_idx] *= -1;
@@ -662,14 +561,14 @@ void Numerical_metric::get_EOM(const double* const State_Vector, double* const D
 
     }
 
-    for (int right_idx = 0; right_idx <= 3; right_idx++) {
+    for (int right_idx = 0; right_idx < 4; right_idx++) {
 
         Derivatives[e_t] += inv_metric[e_t][right_idx] * State_Vector[right_idx + 4];
         Derivatives[e_r] += inv_metric[e_r][right_idx] * State_Vector[right_idx + 4];
         Derivatives[e_theta] += inv_metric[e_theta][right_idx] * State_Vector[right_idx + 4];
         Derivatives[e_phi] += inv_metric[e_phi][right_idx] * State_Vector[right_idx + 4];
 
-        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+        for (int left_idx = 0; left_idx < 4; left_idx++) {
 
             Derivatives[e_p_r] += -1. / 2 * dr_inv_metric[left_idx][right_idx] * State_Vector[left_idx + 4] * State_Vector[right_idx + 4];
             Derivatives[e_p_theta] += -1. / 2 * dtheta_inv_metric[left_idx][right_idx] * State_Vector[left_idx + 4] * State_Vector[right_idx + 4];
@@ -678,13 +577,16 @@ void Numerical_metric::get_EOM(const double* const State_Vector, double* const D
 
     }
 
+    Derivatives[e_p_t] = 0.0;
+    Derivatives[e_p_phi] = 0.0;
+
 }
 
 bool Numerical_metric::terminate_integration(const double* const State_vector) {
 
     const bool scatter = State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0;
 
-    const bool hit_horizon = this->Parameters.M_ADM * State_vector[e_r] - this->Parameters.Horizon_radius_BL < this->Min_distance_to_singular_point;
+    const bool hit_horizon = State_vector[e_r] - this->Parameters.Horizon_radius < this->Min_distance_to_singular_point;
 
     return scatter || hit_horizon;
 };

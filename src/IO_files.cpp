@@ -563,118 +563,113 @@ void File_manager_class::write_simulation_metadata() {
 
     default:
 
-        Output_file = this->Image_Output_files;
+        Output_file = &this->Image_Output_File;
 
         break;
     }
 
-    for (int Image_order = e_direct; Image_order <= Output_file_number - 1; Image_order += 1) {
+    *Output_file << "============================================================ SIMULATION METADATA ============================================================" << "\n";
 
-        *(Output_file + Image_order) << "============================================================ SIMULATION METADATA ============================================================" << "\n";
+    *Output_file << "Active Simulation Mode: " << p_Initial_Conditions->Simulation_mode << '\n';  
+    
+    this->write_metric_metadata(Output_file);
+    this->write_observer_metadata(Output_file); 
+    this->write_accretion_disk_metadata(Output_file);
+    this->write_hotspot_metadata(Output_file);
+    this->write_emission_models_metadata(Output_file);
+    this->write_integrator_metadata(Output_file);
 
-        *(Output_file + Image_order) << "Active Simulation Mode: " << p_Initial_Conditions->Simulation_mode << '\n';
-
-        if (this->p_Initial_Conditions->Simulation_mode != 3) {
-
-            *(Output_file + Image_order) << "Image Order [-]: " << Image_order << "\n";
-
-        }             
-     
-        this->write_metric_metadata(Output_file + Image_order);
-        this->write_observer_metadata(Output_file + Image_order); 
-        this->write_accretion_disk_metadata(Output_file + Image_order);
-        this->write_hotspot_metadata(Output_file + Image_order);
-        this->write_emission_models_metadata(Output_file + Image_order);
-        this->write_integrator_metadata(Output_file + Image_order);
-
-        *(Output_file + Image_order) << "============================================================ Simulation Results ============================================================"
-                                        << "\n";
+    *Output_file << "============================================================ Simulation Results ============================================================"
+                                    << "\n";
 
 
-        if (p_Initial_Conditions->Simulation_mode != 3) {
+    if (p_Initial_Conditions->Simulation_mode != 3) {
 
-            *(Output_file + Image_order) << "Image X Coord [M],"
-                << "Image Y Coord [M],";
+        *Output_file << "Image X Coord [M],"
+            << "Image Y Coord [M],";
 
-            if (e_Page_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model){
+        if (e_Page_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model){
 
-               *(Output_file + Image_order) << "Synchotron Intensity I [Jy/sRad],"
-                                            << "Synchotron Intensity Q [Jy/sRad],"
-                                            << "Synchotron Intensity U [Jy/sRad],"
-                                            << "Synchotron Intensity V [Jy/sRad]";
-            }
-            else {
-
-                *(Output_file + Image_order) << "Disk Redshift [-],"
-                                             << "Disk Flux [M_dot/M^2],";
-            }
-
-            if (p_Initial_Conditions->Simulation_mode == 2) {
-
-                *(Output_file + Image_order) << ", Source r Coord [M],"
-                    << "Source phi Coord [Rad],"
-                    << "Radial Momentum (covariant),"
-                    << "Theta Momentum (covariant),"
-                    << "Phi Momentum (covariant),";
-
-                switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
-
-                case Kerr:
-
-                    *(Output_file + Image_order) << "Spin Parameter,";
-                    break;
-
-                case Wormhole:
-
-                    *(Output_file + Image_order) << "Spin Parameter," << "Redshift Parameter,";
-                    break;
-
-                case Reg_Black_Hole:
-
-                    *(Output_file + Image_order) << "Parameter,";
-                    break;
-
-                case Janis_Newman_Winicour:
-
-                    *(Output_file + Image_order) << "Gamma,";
-                    break;
-
-                case Einstein_Gauss_Bonnet:
-
-                    *(Output_file + Image_order) << "Gamma,";
-                    break;
-
-                case BH_w_Dark_Matter:
-
-                    *(Output_file + Image_order) << "Halo Mass," << "Halo Compactness,";
-                    break;
-                }
-            }
-
-        } else {
-
-           *(Output_file + Image_order) << "t_coord [M],"
-                                        << "r_coord [M],"
-                                        << "theta_coord [rad],"
-                                        << "phi_coord [rad],"
-                                        << "p_t [-],"
-                                        << "p_r [-],"
-                                        << "p_theta [rad/M],"
-                                        << "p_phi [rad/M],"
-                                        << "Integration Step [M],"
-                                        << "Affine Parameter [M],"
-                                        << "Synchotron Intensity I [Jy/sRad],"
+           *Output_file << "Synchotron Intensity I [Jy/sRad],"
                                         << "Synchotron Intensity Q [Jy/sRad],"
                                         << "Synchotron Intensity U [Jy/sRad],"
-                                        << "Synchotron Intensity V [Jy/sRad]";
+                                        << "Synchotron Intensity V [Jy/sRad],";
+        }
+        else {
 
+            *Output_file << "Disk Redshift [-],"
+                                         << "Disk Flux [M_dot/M^2],";
         }
 
-        *(Output_file + Image_order) << '\n';
+        *Output_file << "Celestial Sphere Crossing Theta [Rad],"
+                                     << "Celestial Sphere Crossing Phi [Rad],";
+
+        if (p_Initial_Conditions->Simulation_mode == 2) {
+
+            *Output_file << ", Source r Coord [M],"
+                << "Source Phi Coord [Rad],"
+                << "Radial Momentum (covariant),"
+                << "Theta Momentum (covariant),"
+                << "Phi Momentum (covariant),";
+
+            switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
+
+            case Kerr:
+
+                *Output_file << "Spin Parameter,";
+                break;
+
+            case Wormhole:
+
+                *Output_file << "Spin Parameter," << "Redshift Parameter,";
+                break;
+
+            case Reg_Black_Hole:
+
+                *Output_file << "Parameter,";
+                break;
+
+            case Janis_Newman_Winicour:
+
+                *Output_file << "Gamma,";
+                break;
+
+            case Einstein_Gauss_Bonnet:
+
+                *Output_file << "Gamma,";
+                break;
+
+            case BH_w_Dark_Matter:
+
+                *Output_file << "Halo Mass," << "Halo Compactness,";
+                break;
+            }
+        }
+
+    } else {
+
+       *Output_file << "t_coord [M],"
+                                    << "r_coord [M],"
+                                    << "theta_coord [rad],"
+                                    << "phi_coord [rad],"
+                                    << "p_t [-],"
+                                    << "p_r [-],"
+                                    << "p_theta [rad/M],"
+                                    << "p_phi [rad/M],"
+                                    << "Integration Step [M],"
+                                    << "Affine Parameter [M],"
+                                    << "Synchotron Intensity I [Jy/sRad],"
+                                    << "Synchotron Intensity Q [Jy/sRad],"
+                                    << "Synchotron Intensity U [Jy/sRad],"
+                                    << "Synchotron Intensity V [Jy/sRad]";
+
     }
+
+    *Output_file << '\n';
+    
 }
 
-void File_manager_class::open_image_output_files() {
+void File_manager_class::open_image_output_file() {
 
     // Create the path to the main results directory
 
@@ -698,13 +693,13 @@ void File_manager_class::open_image_output_files() {
     std::filesystem::path dir(Output_directory_path);
 
     // Init the std::path variables where we will store the names of the output files for sim modes 1 and 2
-    std::filesystem::path Image_file_names[e_order_number];
+    std::filesystem::path Image_file_name;
 
     // Init the std::path variables where we will store the names of the output files for sim mode 3
     std::filesystem::path Photon_log_name;
 
     // Init the std::path variables of the full file paths for sim modes 1 and 2
-    std::filesystem::path Image_full_path[e_order_number]{};
+    std::filesystem::path Image_full_path{};
 
     // Init the std::path variables of the full file paths for sim mode 3
     std::filesystem::path Photon_log_full_path{};
@@ -745,30 +740,24 @@ void File_manager_class::open_image_output_files() {
 
     if (this->p_Initial_Conditions->Simulation_mode == 1) {
 
-        for (int File_Index = 0; File_Index <= e_order_number - 1; File_Index += 1) {
+        if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
-            if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
-
-                Image_file_names[File_Index] = this->Base_File_Names[this->p_Initial_Conditions->Metric_parameters.e_Spacetime]
-                    + "_n"
-                    + std::to_string(File_Index);
-
-            }
-            else {
-
-                Image_file_names[File_Index] = this->p_Initial_Conditions->File_manager_params.Common_file_names
-                    + "_n"
-                    + std::to_string(File_Index);
-
-            }
-
-            Image_file_names[File_Index].replace_extension(file_extention);
-            Image_full_path[File_Index] = dir / Image_file_names[File_Index];
-
-
-            this->Image_Output_files[File_Index].open(Image_full_path[File_Index], open_type);
+            Image_file_name = this->Base_File_Names[this->p_Initial_Conditions->Metric_parameters.e_Spacetime];
 
         }
+        else {
+
+            Image_file_name = this->p_Initial_Conditions->File_manager_params.Common_file_names;
+
+        }
+
+        Image_file_name.replace_extension(file_extention);
+        Image_full_path = dir / Image_file_name;
+
+
+        this->Image_Output_File.open(Image_full_path, open_type);
+
+        
 
     }
 
@@ -783,83 +772,85 @@ void File_manager_class::open_image_output_files() {
 
 void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
-    for (int Image_order = e_direct; Image_order <= e_order_number - 1; Image_order += 1) {
+    Image_Output_File << s_Ray_results->Image_Coords[e_x]
+                                    << ","
+                                    << s_Ray_results->Image_Coords[e_y]
+                                    << "," 
+                                    << std::setprecision(15);
 
-        Image_Output_files[Image_order] << s_Ray_results->Image_Coords[e_x]
+    if (e_Page_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+
+        Image_Output_File << s_Ray_results->Redshift_PT
                                         << ","
-                                        << s_Ray_results->Image_Coords[e_y]
-                                        << "," 
-                                        << std::setprecision(15);
-
-        if (e_Page_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
-
-            Image_Output_files[Image_order] << s_Ray_results->Redshift_PT[Image_order]
-                                            << ","
-                                            << s_Ray_results->Flux_PT[Image_order]
-                                            << ",";
-        }
-        else {
-
-            Image_Output_files[Image_order] << s_Ray_results->Intensity[Image_order][I] * CGS_TO_JANSKY
-                                            << ","
-                                            << s_Ray_results->Intensity[Image_order][Q] * CGS_TO_JANSKY
-                                            << ","
-                                            << s_Ray_results->Intensity[Image_order][U] * CGS_TO_JANSKY
-                                            << ","
-                                            << s_Ray_results->Intensity[Image_order][V] * CGS_TO_JANSKY
-                                            << ",";
-        }
-
-        if (p_Initial_Conditions->Simulation_mode == 2) {
-
-            Image_Output_files[Image_order] << ","
-                                            << s_Ray_results->Source_Coords[e_r][Image_order]
-                                            << ","
-                                            << s_Ray_results->Source_Coords[e_phi][Image_order]
-                                            << ","
-                                            << s_Ray_results->Photon_Momentum[e_r][Image_order]
-                                            << ","
-                                            << s_Ray_results->Photon_Momentum[e_theta][Image_order]
-                                            << ","
-                                            << s_Ray_results->Photon_Momentum[e_phi][Image_order]
-                                            << ",";
-
-                switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
-
-                case Kerr:
-                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.Spin;
-                    break;
-
-                case Wormhole:
-                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.Spin
-                                                    << "," 
-                                                    << s_Ray_results->Metric_parameters.Redshift_Parameter;
-                    break;
-
-                case Reg_Black_Hole:
-                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.RBH_Parameter;
-         
-                    break;
-
-                case Janis_Newman_Winicour:
-                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.JNW_Gamma_Parameter;
-                    break;
-
-                case Einstein_Gauss_Bonnet:
-                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.GB_Gamma_Parameter;
-                    break;
-
-                case BH_w_Dark_Matter:
-                    Image_Output_files[Image_order] << s_Ray_results->Metric_parameters.Halo_Mass 
-                                                    << ","
-                                                    << s_Ray_results->Metric_parameters.Compactness;
-                    break;
-                }
-        }
-
-        Image_Output_files[Image_order] << '\n';
-
+                                        << s_Ray_results->Flux_PT
+                                        << ",";
     }
+    else {
+
+        Image_Output_File << s_Ray_results->Intensity[I] * CGS_TO_JANSKY
+                                        << ","
+                                        << s_Ray_results->Intensity[Q] * CGS_TO_JANSKY
+                                        << ","
+                                        << s_Ray_results->Intensity[U] * CGS_TO_JANSKY
+                                        << ","
+                                        << s_Ray_results->Intensity[V] * CGS_TO_JANSKY
+                                        << ",";
+    }
+
+    Image_Output_File << s_Ray_results->Celestial_sphere_crossing_coords[e_theta]
+                                    << ","
+                                    << s_Ray_results->Celestial_sphere_crossing_coords[e_phi];
+
+    if (p_Initial_Conditions->Simulation_mode == 2) {
+
+        Image_Output_File << ","
+                                        << s_Ray_results->Source_Coords[e_r]
+                                        << ","
+                                        << s_Ray_results->Source_Coords[e_phi]
+                                        << ","
+                                        << s_Ray_results->Photon_Momentum[e_r]
+                                        << ","
+                                        << s_Ray_results->Photon_Momentum[e_theta]
+                                        << ","
+                                        << s_Ray_results->Photon_Momentum[e_phi]
+                                        << ",";
+
+            switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
+
+            case Kerr:
+                Image_Output_File << s_Ray_results->Metric_parameters.Spin;
+                break;
+
+            case Wormhole:
+                Image_Output_File << s_Ray_results->Metric_parameters.Spin
+                                                << "," 
+                                                << s_Ray_results->Metric_parameters.Redshift_Parameter;
+                break;
+
+            case Reg_Black_Hole:
+                Image_Output_File << s_Ray_results->Metric_parameters.RBH_Parameter;
+     
+                break;
+
+            case Janis_Newman_Winicour:
+                Image_Output_File << s_Ray_results->Metric_parameters.JNW_Gamma_Parameter;
+                break;
+
+            case Einstein_Gauss_Bonnet:
+                Image_Output_File << s_Ray_results->Metric_parameters.GB_Gamma_Parameter;
+                break;
+
+            case BH_w_Dark_Matter:
+                Image_Output_File << s_Ray_results->Metric_parameters.Halo_Mass
+                                                << ","
+                                                << s_Ray_results->Metric_parameters.Compactness;
+                break;
+            }
+    }
+
+    Image_Output_File << '\n';
+
+    
 }
 
 void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
@@ -885,10 +876,8 @@ void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
 void File_manager_class::close_image_output_files() {
 
-    for (int File_Index = 0; File_Index <= e_order_number - 1; File_Index++) {
-
-        Image_Output_files[File_Index].close();
-    }
+    Image_Output_File.close();
+    
 }
 
 void File_manager_class::close_log_output_file() {

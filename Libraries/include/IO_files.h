@@ -24,7 +24,7 @@ private:
 
 	};
 
-	std::ofstream Image_Output_files[e_order_number];
+	std::ofstream Image_Output_File;
 	std::ofstream Log_Output_File;
 
 	Initial_conditions_type *p_Initial_Conditions;
@@ -45,7 +45,7 @@ private:
 
 		File_manager_class(Initial_conditions_type* p_Initial_Conditions);
 
-		void open_image_output_files();
+		void open_image_output_file();
 
 		void write_image_data_to_file(Results_type* Ray_results);
 

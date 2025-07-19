@@ -373,11 +373,6 @@ private:
 
     inline void get_control_point_matrix(const double* const Control_vector, const int r_idx, const int theta_idx, double Control_matrix[4][4]) const;
 
-    Metric_type comute_Minkowski_metric(const double* const State_Vector) const;
-    Metric_type comute_dr_Minkowski_metric(const double* const State_Vector) const;
-    Metric_type comute_d2r_Minkowski_metric(const double* const State_Vector) const;
-    Metric_type comute_dtheta_Minkowski_metric(const double* const State_Vector) const;
-
     void get_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
     void get_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
     void get_second_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;

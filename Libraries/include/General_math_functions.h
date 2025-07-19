@@ -68,9 +68,14 @@ double get_max_relative_error(const double* const Error_state, const double* con
  *  @param [out] Crossing_State - Pointer to interpolated state vector at the equator crossing point.
  *  @return A boolian flag for weather the equator has been crossed or not.
  */
-bool interpolate_crossing(const double* const State_Vector, 
-						  const double* const Old_State_Vector,  
-						  double* const Crossing_State);
+bool interpolate_equatorial_crossing(const double* const State_Vector,
+									 const double* const Old_State_Vector,  
+									 double* const Crossing_State);
+
+void interpolate_celestial_sphere_crossing(const double* const Current_State_Vector_Spherical,
+										   const double* const Old_State_Vector_Spherical,
+										   const double Celestial_Sphere_Raius,
+										   double* const Crossing_State_Spherical);
 
 /*! @brief Computes a simple Eucliduan dot product between two vectors with element numbers "Vector_size".
  *

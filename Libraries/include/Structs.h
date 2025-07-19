@@ -699,6 +699,11 @@ struct Initial_conditions_type {
         of the polarization vector */
     int Max_order;
 
+    /*! The minimum image order for which the radiative transfer will be evaluated.
+        NOTE: For image orders blow this, the ray is still propagated, along with the parallel transport
+        of the polarization vector */
+    int Min_order;
+
     /*! Boolean flag that controls weather to simply add the hotspot and disk density and temperature 
         (effectively treating them as one single medium). */
     bool Thermalize_emission_medium;
@@ -752,24 +757,27 @@ struct Results_type {
     /* The struct that holds the photon log. */
     s_Ray_log_type Ray_log_struct;
 
-    /* Array that holds the integrated intensity for each image order and polarization. */
-    double Intensity[e_order_number][e_Stokes_param_num]{};
+    /* Array that holds the integrated intensity for each polarization component. */
+    double Intensity[e_Stokes_param_num]{};
 
-    /* Array that holds the source coordinates from the Page-Thorne disk for each image order.
+    /* Array that holds the source coordinates from the Page-Thorne disk.
        This exists for use in simulation mode 2. */
-    double Source_Coords[4][e_order_number]{};
+    double Source_Coords[4]{};
 
-    /* Array that holds the photon momentum at the source from the Page-Thorne disk for each image order.
+    /* Array that holds the photon momentum at the source from the Page-Thorne dis.
        This exists for use in simulation mode 2. */
-    double Photon_Momentum[4][e_order_number]{};
+    double Photon_Momentum[4]{};
 
-    /* Array that holds the Page-Thorne disk flux for each image order. */
-    double Flux_PT[e_order_number]{};
+    /* Array that holds the phi and theta coordinates of the ray when it reaches the scattering radius. */
+    double Celestial_sphere_crossing_coords[4]{};
+
+    /* Array that holds the Page-Thorne disk flux. */
+    double Flux_PT{};
      
-    /* Array that holds the Page-Thorne disk redshift for each image order. */
-    double Redshift_PT[e_order_number]{};
+    /* Array that holds the Page-Thorne disk redshift. */
+    double Redshift_PT{};
 
-    /* Placeholder for an array that will hold the integrated optical depth for each image order and polarization. */
+    /* Placeholder for an array that will hold the integrated optical depth. */
     double Optical_Depth{};
 
     /* Array that holds the coordinates of the image on the observer plane. 

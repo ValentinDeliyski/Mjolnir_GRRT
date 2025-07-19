@@ -1,7 +1,6 @@
-from numpy import sin, cos, sqrt, exp, arctan2
+from numpy import sin, cos, sqrt, exp, arctan2, pi, linspace, zeros, min, max, mean, flip
 from Support_functions.Parsers import VIDA_params_Parser
 from numpy.typing import NDArray
-import numpy as np
 
 def generate_general_gaussian_template(N_pixels: int, VIDA_parser: VIDA_params_Parser, FOV: float) -> NDArray:
 
@@ -17,11 +16,11 @@ def generate_general_gaussian_template(N_pixels: int, VIDA_parser: VIDA_params_P
     a_elipse = d0 / 2 / sqrt(1 - tau)
     b_elipse = d0 / 2 * sqrt(1 - tau)
 
-    elipse_samples = np.linspace(0, 2 * np.pi, 1000)
+    elipse_samples = linspace(0, 2 * pi, 1000)
     x_elipse = a_elipse * cos(elipse_samples) * cos(rot_angle) - b_elipse * sin(elipse_samples) * sin(rot_angle) + elipse_x_offset 
     y_elipse = b_elipse * sin(elipse_samples) * cos(rot_angle) + a_elipse * cos(elipse_samples) * sin(rot_angle) + elipse_y_offset 
  
-    template_image = np.zeros((N_pixels, N_pixels))
+    template_image = zeros((N_pixels, N_pixels))
 
     for px in range(N_pixels):
 
@@ -34,9 +33,9 @@ def generate_general_gaussian_template(N_pixels: int, VIDA_parser: VIDA_params_P
 
             azimuth_rel_to_center = arctan2(y_pixel - elipse_y_offset, x_pixel - elipse_x_offset)
 
-            template_image[N_pixels - 1 - py, N_pixels - 1 - px] = (1 + slash * cos(azimuth_rel_to_center - slash_angle)) * exp(-np.min(d_squared) / 2 / template_std**2)
+            template_image[N_pixels - 1 - py, N_pixels - 1 - px] = (1 + slash * cos(azimuth_rel_to_center - slash_angle)) * exp(-min(d_squared) / 2 / template_std**2)
             
-    template_image = template_image / np.max(template_image)
+    template_image = template_image / max(template_image)
     
     return template_image
 
@@ -52,12 +51,12 @@ def get_template_pixel_mask(VIDA_parser: VIDA_params_Parser, FOV, N_pixels, std_
     a_elipse = d0 / 2 / sqrt(1 - tau)
     b_elipse = d0 / 2 * sqrt(1 - tau)
 
-    elipse_samples = np.linspace(0, 2 * np.pi, 1000)
+    elipse_samples = linspace(0, 2 * pi, 1000)
     x_elipse = a_elipse * cos(elipse_samples) * cos(rot_angle) - b_elipse * sin(elipse_samples) * sin(rot_angle) + elipse_x_offset 
     y_elipse = b_elipse * sin(elipse_samples) * cos(rot_angle) + a_elipse * cos(elipse_samples) * sin(rot_angle) + elipse_y_offset
 
-    ring_mask      = np.zeros((N_pixels, N_pixels))
-    dark_spot_mask = np.zeros((N_pixels, N_pixels))
+    ring_mask      = zeros((N_pixels, N_pixels))
+    dark_spot_mask = zeros((N_pixels, N_pixels))
 
     for px in range(N_pixels):
 
@@ -68,7 +67,7 @@ def get_template_pixel_mask(VIDA_parser: VIDA_params_Parser, FOV, N_pixels, std_
 
             d_squared = (x_pixel - x_elipse)**2 + (y_pixel - y_elipse)**2 
 
-            ring_mask[N_pixels - 1 - py, N_pixels - 1 - px] = np.min(d_squared) < (std_scale * template_std)**2
+            ring_mask[N_pixels - 1 - py, N_pixels - 1 - px] = min(d_squared) < (std_scale * template_std)**2
 
             x_term = (x_pixel - elipse_x_offset) * cos(rot_angle) + (y_pixel - elipse_y_offset) * sin(rot_angle)
             y_term = (x_pixel - elipse_x_offset) * sin(rot_angle) - (y_pixel - elipse_y_offset) * cos(rot_angle)
@@ -81,7 +80,7 @@ def get_template_pixel_mask(VIDA_parser: VIDA_params_Parser, FOV, N_pixels, std_
 def get_brigness_depression_ratio(ring_mask, dark_spot_mask, Ehtim_intensity) -> float:
     
     try:
-        return np.min(Ehtim_intensity[dark_spot_mask != 0]) / np.mean(Ehtim_intensity[ring_mask != 0])
+        return min(Ehtim_intensity[dark_spot_mask != 0]) / mean(Ehtim_intensity[ring_mask != 0])
     except:
         return 0.0
 
@@ -93,8 +92,8 @@ def get_template_slices(N_pixels: int, template: NDArray, VIDA_parser: VIDA_para
     x_slice_y_index = N_pixels - int( slice_y_offset / FOV * (N_pixels - 1) )
     y_slice_x_index = N_pixels - int( slice_x_offset / FOV * (N_pixels - 1) )
 
-    x_slice = template[x_slice_y_index, 0 : N_pixels] / np.max(template)
-    y_slice = np.flip(template[0 : N_pixels, y_slice_x_index]) / np.max(template)
+    x_slice = template[x_slice_y_index, 0 : N_pixels] / max(template)
+    y_slice = flip(template[0 : N_pixels, y_slice_x_index]) / max(template)
 
     return x_slice, slice_x_offset, y_slice, slice_y_offset
 

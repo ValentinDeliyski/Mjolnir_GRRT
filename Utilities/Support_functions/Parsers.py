@@ -38,6 +38,8 @@ class Simulation_Parser():
                 self.V_Intensity: NDArray   = zeros(Array_size)
                 self.Disk_redshift: NDArray = zeros(Array_size)
                 self.Disk_flux: NDArray     = zeros(Array_size)
+                self.Celestial_theta: NDArray = zeros(Array_size)
+                self.Celestial_phi: NDArray   = zeros(Array_size)
 
                 Data_parser = DictReader(file, delimiter = ",")
                 index = 0
@@ -59,8 +61,11 @@ class Simulation_Parser():
                             self.I_Intensity[index]  = float(row["Synchotron Intensity I [Jy/sRad]"])
                             self.Q_Intensity[index]  = float(row["Synchotron Intensity Q [Jy/sRad]"])
                             self.U_Intensity[index]  = float(row["Synchotron Intensity U [Jy/sRad]"])
-                            self.V_Intensity[index]  = float(row["Synchotron Intensity V [Jy/sRad]"])
-
+                            self.V_Intensity[index]  = float(row["Synchotron Intensity V [Jy/sRad]"])       
+                            
+                            self.Celestial_theta[index] = float(row["Celestial Sphere Crossing Theta [Rad]"])       
+                            self.Celestial_phi[index]  = float(row["Celestial Sphere Crossing Phi [Rad]"])
+                            
                         index += 1
 
                     except:
@@ -191,8 +196,14 @@ class Simulation_Parser():
 
         Disk_redshift = self.Disk_redshift.reshape(Y_resolution, X_resolution)
         Disk_redshift   = flip(Disk_redshift, axis =  0)
+        
+        Celestial_theta = self.Celestial_theta.reshape(Y_resolution, X_resolution)
+        Celestial_theta = flip(Celestial_theta, axis =  0)
+        
+        Celestial_phi = self.Celestial_phi.reshape(Y_resolution, X_resolution)
+        Celestial_phi = flip(Celestial_phi, axis =  0)
 
-        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux
+        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, Celestial_theta, Celestial_phi
     
     def get_photon_log(self) -> tuple[tuple, tuple, tuple, list, list]:
         
@@ -388,5 +399,5 @@ class Units_class():
 
         I_nu += 1e-40 # To avoid division by 0 errors
 
-        return self.PLANCK_SI * frequency / self.BOLTZMANN_SI / log(1 + 2 * self.PLANCK_SI * frequency**3 / self.C_LIGHT_SI**2 / I_nu)
+        return self.PLANCK_SI * frequency / self.BOLTZMANN_SI / log(1 + 2 * self.PLANCK_SI * frequency**3 / self.C_LIGHT_SI**2 / (I_nu))
     

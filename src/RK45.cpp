@@ -66,8 +66,6 @@ void RK45(double* const State_Vector, Step_controller* const p_Controller, const
        
     }
 
-    p_Controller->integration_complete = p_Sim_context->p_Spacetime->terminate_integration(State_Vector);
-
     // The integrator might jump pass surfaces that are singular for the EOM (like the JNW singularity at 2 / gamma)
     // In this case the whole state vector becomes a NaN. I check for this and update the integration step by hand,
     // then set the continue_integration flag to "false" to force the integrator to redo the current iteration with a smaller step.
@@ -111,7 +109,11 @@ void RK45(double* const State_Vector, Step_controller* const p_Controller, const
             }
 
         }
+
+        p_Controller->integration_complete = p_Sim_context->p_Spacetime->terminate_integration(State_Vector);
+
     }
+
 }
 
 Step_controller::Step_controller(const Integrator_parameters_type Integrator_parameters) {
@@ -151,7 +153,7 @@ void Step_controller::update_step(const double* const State_Vector) {
 
     double Rel_step_increase{};
     
-    const double Error_threshold = this->Parameters.RK_45_accuracy;
+    const double Error_threshold = this->Parameters.RK_45_accuracy * (1 + std::abs(State_Vector[e_r]));
 
     switch (this->Parameters.Controller_type) {
 

@@ -74,37 +74,12 @@ void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray
 
     if (e_Page_Thorne == Disk_model) {
 
-        if (p_Ray_results->Flux_PT[e_direct] > std::numeric_limits<double>::min()) {
-
-            Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT[e_direct] * pow(p_Ray_results->Redshift_PT[e_direct], 4);
-
-        }
-        else if (p_Ray_results->Flux_PT[e_direct] < std::numeric_limits<double>::min() &&
-                 p_Ray_results->Flux_PT[e_first] > std::numeric_limits<double>::min()) {
-
-            Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT[e_first] * pow(p_Ray_results->Redshift_PT[e_first], 4);
-
-        }
-        else if (p_Ray_results->Flux_PT[e_direct] < std::numeric_limits<double>::min() &&
-                 p_Ray_results->Flux_PT[e_first] < std::numeric_limits<double>::min() && 
-                 p_Ray_results->Flux_PT[e_second] > std::numeric_limits<double>::min()) {
-
-            Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT[e_second] * pow(p_Ray_results->Redshift_PT[e_second], 4);
-
-        }
-        else {
-
-            Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT[e_third] * pow(p_Ray_results->Redshift_PT[e_third], 4);
-
-        }
+        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT * pow(p_Ray_results->Redshift_PT, 4);
 
     }
     else {
 
-        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Intensity[e_direct][I] +
-                                                                         p_Ray_results->Intensity[e_first][I] +
-                                                                         p_Ray_results->Intensity[e_second][I] +
-                                                                         p_Ray_results->Intensity[e_third][I];
+        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Intensity[I];
 
     }
 
@@ -147,7 +122,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         */
 
-        p_Sim_Context->File_manager->open_image_output_files();
+        p_Sim_Context->File_manager->open_image_output_file();
 
         /*
 
@@ -185,11 +160,11 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
                 /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), 
                    and therefore not automatically reinitialized to 0s. I have to manually do it. */
-                memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(e_order_number * e_Stokes_param_num) * sizeof(double));
-                memset(p_Ray_results->Flux_PT,         0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
-                memset(p_Ray_results->Redshift_PT,     0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
-                memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(e_order_number * 3) * sizeof(double));
-                memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(e_order_number * 3) * sizeof(double));
+                memset(p_Ray_results->Intensity, 0, e_Stokes_param_num * sizeof(double));
+                memset(p_Ray_results->Source_Coords, 0, 4 * sizeof(double));
+                memset(p_Ray_results->Photon_Momentum, 0, 4 * sizeof(double));
+                memset(&p_Ray_results->Flux_PT, 0, sizeof(double));
+                memset(&p_Ray_results->Redshift_PT, 0, sizeof(double));
 
             }
 
@@ -249,7 +224,7 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
 
     */
 
-    p_Sim_Context->File_manager->open_image_output_files();
+    p_Sim_Context->File_manager->open_image_output_file();
 
     for (int photon = 0; photon <= p_Sim_Context->File_manager->sim_mode_2_ray_number - 1; photon += 1) {
 
@@ -283,11 +258,11 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
 
         */
 
-        memset(p_Ray_results->Intensity,       0, static_cast<unsigned long long>(e_order_number * e_Stokes_param_num) * sizeof(double));
-        memset(p_Ray_results->Flux_PT,         0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
-        memset(p_Ray_results->Redshift_PT,     0, static_cast<unsigned long long>(e_order_number) * sizeof(double));
-        memset(p_Ray_results->Source_Coords,   0, static_cast<unsigned long long>(e_order_number * 4) * sizeof(double));
-        memset(p_Ray_results->Photon_Momentum, 0, static_cast<unsigned long long>(e_order_number * 4) * sizeof(double));
+        memset(p_Ray_results->Intensity,       0, e_Stokes_param_num * sizeof(double));
+        memset(p_Ray_results->Source_Coords,   0, 4 * sizeof(double));
+        memset(p_Ray_results->Photon_Momentum, 0, 4 * sizeof(double));
+        memset(&p_Ray_results->Flux_PT,        0, sizeof(double));
+        memset(&p_Ray_results->Redshift_PT,    0, sizeof(double));
 
         print_progress(photon, p_Sim_Context->File_manager->sim_mode_2_ray_number - 1, true);
 
@@ -308,7 +283,7 @@ void run_simulation_mode_3(const Simulation_Context_type* const p_Sim_Context, R
 
     Propagate_ray(p_Sim_Context, p_Ray_results);
 
-    p_Sim_Context->File_manager->open_image_output_files();
+    p_Sim_Context->File_manager->open_image_output_file();
     p_Sim_Context->File_manager->log_photon_path(p_Ray_results);
     p_Sim_Context->File_manager->close_log_output_file();
 }

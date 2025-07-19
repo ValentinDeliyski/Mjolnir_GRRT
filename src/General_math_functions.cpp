@@ -19,11 +19,13 @@ double vector_norm(const double* const Vector, const int Vector_size) {
 void matrix_matrix_multiply(const double Mat_A[4][4], const double Mat_B[4][4], double Result[4][4]) {
 
 	/* Note to self: This memset is here for a reason, so do not remove it! */
-	memset(Result, 0.0, 16 * sizeof(double));
+	memset(Result, 0, 16 * sizeof(double));
 
 	for (int row = 0; row < 4; row++) {
 
 		for (int column = 0; column < 4; column++){
+
+			Result[row][column] = 0.0;
 
 			for (int k = 0; k < 4; k++) {
 
@@ -90,9 +92,9 @@ double get_max_relative_error(const double* const Error_state, const double* con
 	return max_rel_error;
 }
 
-bool interpolate_crossing(const double* const State_Vector, 
-						  const double* const Old_State_Vector, 
-						  double* const Crossing_State) {
+bool interpolate_equatorial_crossing(const double* const State_Vector, 
+									 const double* const Old_State_Vector, 
+									 double* const Crossing_State) {
 
 	// Check weather the equator has been crossed
 	if ((State_Vector[e_theta] - M_PI_2) * (Old_State_Vector[e_theta] - M_PI_2) > 0) { return false; }
@@ -141,11 +143,57 @@ bool interpolate_crossing(const double* const State_Vector,
 	return true;
 }
 
+void interpolate_celestial_sphere_crossing(const double* const Current_State_Vector_Spherical,
+										   const double* const Old_State_Vector_Spherical,
+										   const double Celestial_Sphere_Raius,
+										   double* const Crossing_State_Spherical) {
+
+	/* This should only happen to rays that either hit the central object or run out of integration iterations / affine parameter. */
+	if (Current_State_Vector_Spherical[e_r] < Celestial_Sphere_Raius) {
+
+		Crossing_State_Spherical[e_r] = Current_State_Vector_Spherical[e_r];
+		Crossing_State_Spherical[e_theta] = 1e100;
+		Crossing_State_Spherical[e_phi] = 1e100;
+
+		return;
+
+	}
+
+	/* ----------- Get the current and old state in cartesian components ----------- */
+
+	double Current_State_Cartesian[3]{}, Old_State_Cartesian[3]{};
+
+	convert_spherical_to_cartesian(Current_State_Vector_Spherical, Current_State_Cartesian);
+	convert_spherical_to_cartesian(Old_State_Vector_Spherical, Old_State_Cartesian);
+
+	/* -- Construct the difference vector between the two and intersect it with the celestial sphere -- */
+
+	const double Difference_Vector[3] = { Current_State_Cartesian[e_x] - Old_State_Cartesian[e_x],
+										  Current_State_Cartesian[e_y] - Old_State_Cartesian[e_y],
+										  Current_State_Cartesian[e_z] - Old_State_Cartesian[e_z] };
+
+	/* The expression for the intersection of a line with a sphere is given here https ://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+	   NOTE: In our case the sphere has its center point at (0, 0, 0). */
+
+	const double U_dot_O   = dot_product(Difference_Vector, Old_State_Cartesian, 3);
+	const double U_squared = dot_product(Difference_Vector, Difference_Vector, 3);
+	const double O_squared = dot_product(Old_State_Cartesian, Old_State_Cartesian, 3);
+
+	const double Crossing_param = (-U_dot_O + sqrt(U_dot_O * U_dot_O - U_squared * (O_squared - Celestial_Sphere_Raius * Celestial_Sphere_Raius))) / U_squared;
+
+	const double Crossing_State_Cartesian[3] = { Old_State_Cartesian[e_x] + Crossing_param * Difference_Vector[e_x],
+												 Old_State_Cartesian[e_y] + Crossing_param * Difference_Vector[e_y],
+												 Old_State_Cartesian[e_z] + Crossing_param * Difference_Vector[e_z] };
+
+	convert_cartesian_to_spherical(Crossing_State_Cartesian, Crossing_State_Spherical);
+
+}
+
 double dot_product(const double* const Vector_1, const double* const Vector_2, int Vector_size) {
 
 	double result{};
 
-	for (int index = 0; index <= Vector_size - 1; index++) {
+	for (int index = 0; index < Vector_size; index++) {
 
 		result += Vector_1[index] * Vector_2[index];
 
