@@ -609,6 +609,11 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
 
     }
 
+    // -------------------- Max stepsize
+    temp_param_var = Integrator_element->FirstChildElement("max_stepsize");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the max step size!" << "\n"; return ERROR; }
+    Integrator_params->Max_stepsize = std::stod(temp_param_var->GetText());
+
     return OK;
 
 }

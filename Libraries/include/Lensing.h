@@ -45,6 +45,6 @@ public:
 *   \param [in] p_Sim_context - Pointer to the Simulation Context struct.
 *   \return Nothing
 */
-void RK45(double* const State_Vector, Step_controller* const Controller, const Simulation_Context_type* const p_Sim_context);
+void RK78(double* const State_Vector, Step_controller* const Controller, const Simulation_Context_type* const p_Sim_context);
 
 void Propagate_ray(const Simulation_Context_type* s_Sim_Context, Results_type* const Ray_results);

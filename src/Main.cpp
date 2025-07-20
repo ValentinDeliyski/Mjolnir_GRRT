@@ -130,7 +130,7 @@ int main(int argument_count, char** cmd_line_args) {
     s_Ray_results.Length_scale = s_Sim_Context.p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
     s_Ray_results.Intensity_scale = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * s_Sim_Context.p_Init_Conditions->Observer_params.obs_frequency * s_Ray_results.Length_scale;
 
-    for (int index = I; index <= e_Stokes_param_num - 1; index++) {
+    for (int index = I; index < e_Stokes_param_num; index++) {
 
         s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[2 * s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
 

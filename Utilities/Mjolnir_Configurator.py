@@ -30,7 +30,8 @@ class Integrator():
                  "max_integration_count",
                  "simpson_method_accuracy",
                  "max_affine_parameter",
-                 "use_adaptive_step")
+                 "use_adaptive_step",
+                 "max_stepsize")
 
 class Disk_model():
 
@@ -225,19 +226,20 @@ class Simulation_configurator:
     def _configure_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
                                              RK45_accuracy: dict[str, float | str] = {"Value": 1e-11, "Unit": "[-]"},
                                              Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
-                                             Safety_factor_1: dict[str, float | str] = {"Value": 0.8, "Unit": "[-]"},
+                                             Safety_factor_1: dict[str, float | str] = {"Value": 1, "Unit": "[-]"},
                                              Safety_factor_2: dict[str, float | str] = {"Value": 1e-25, "Unit": "[-]"},
                                              Max_rel_step_increase: dict[str, float | str] = {"Value": 2, "Unit": "[-]"},
                                              Min_rel_step_increase: dict[str, float | str] = {"Value": 0.01, "Unit": "[-]"},
-                                             Step_controller_I_gain: dict[str, float | str] = {"Value": 0.117, "Unit": "[-]"},
-                                             Step_controller_P_gain: dict[str, float | str] = {"Value": -0.042, "Unit": "[-]"},
-                                             Step_controller_D_gain: dict[str, float | str] = {"Value": 0.02, "Unit": "[-]"},
-                                             Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.0734, "Unit": "[-]"},
-                                             Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.1136, "Unit": "[-]"},
+                                             Step_controller_I_gain: dict[str, float | str] = {"Value": 0.0725, "Unit": "[-]"},
+                                             Step_controller_P_gain: dict[str, float | str] = {"Value": -0.02625, "Unit": "[-]"},
+                                             Step_controller_D_gain: dict[str, float | str] = {"Value": 0.0125, "Unit": "[-]"},
+                                             Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.045875, "Unit": "[-]"},
+                                             Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.0335, "Unit": "[-]"},
                                              Max_integration_count: dict[str, float | str] = {"Value": 1e7, "Unit": "[-]"},
                                              simpson_method_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"},
                                              max_affine_parameter: dict[str, float | str] = {"Value": 1e6, "Unit": "[M]"},
-                                             use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},):
+                                             use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},
+                                             max_stepsize: dict[str, int | str] = {"Value": 10, "Unit": "[M]"}):
 
         self.integrator = Integrator()
 
@@ -258,6 +260,7 @@ class Simulation_configurator:
         self.integrator.simpson_method_accuracy = simpson_method_accuracy
         self.integrator.max_affine_parameter = max_affine_parameter
         self.integrator.use_adaptive_step = use_adaptive_step
+        self.integrator.max_stepsize = max_stepsize
 
     def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},
                                   Distance: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
@@ -807,7 +810,7 @@ if __name__ == "__main__":
 
     Sim_config = Simulation_configurator()
     
-    Sim_config.metric_parameters.Numerical_metric_spline_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/test.XML"
+    Sim_config.metric_parameters.Numerical_metric_spline_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/Galin_numerical_config_II.XML"
 
     Sim_config.simulation_mode = {"Value": 1, "Unit": "[-]"}
 
@@ -815,19 +818,21 @@ if __name__ == "__main__":
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type    = {"Value": "Numerical", "Unit": "[-]"}
-    Sim_config.metric_parameters.Mass           = {"Value": 0.915671, "Unit": "[M]"}
-    Sim_config.metric_parameters.Horizon_radius = {"Value": 0.05, "Unit": "[G/c^2]"}
-    Sim_config.metric_parameters.Spin           = {"Value": 0.8048 / 0.9157, "Unit": "[M]"}
+    Sim_config.metric_parameters.Metric_type    = {"Value": "Kerr", "Unit": "[-]"}
+    Sim_config.metric_parameters.Mass           = {"Value": 0.881990876889021, "Unit": "[M]"}
+    Sim_config.metric_parameters.Horizon_radius = {"Value": 0.01, "Unit": "[G/c^2]"}
+    Sim_config.metric_parameters.Spin           = {"Value": 0, "Unit": "[M]"}
     Sim_config.metric_parameters.Numerical_metric_anzatz_type = {"Value": "Anzatz_1", "Unit": "[M]"} 
+    
+    Sim_config.metric_parameters.Scattering_radius = {"Value": 400, "Unit": "[M]"} 
     
     # ================================================== Observer ================================================== #
 
-    Sim_config.observer.Resolution_x = {"Value": 1500, "Unit": "[-]"}
-    Sim_config.observer.Resolution_y = {"Value": 1500, "Unit": "[-]"}
+    Sim_config.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
+    Sim_config.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
     
-    Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
-    Sim_config.observer.Inclination = {"Value": 89.99 * pi / 180, "Unit": "[Rad]"}
+    Sim_config.observer.Distance    = {"Value": 200, "Unit": "[M]"}
+    Sim_config.observer.Inclination = {"Value": 90 * pi / 180, "Unit": "[Rad]"}
     Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
     Sim_config.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[Hz]"}
 
@@ -858,14 +863,14 @@ if __name__ == "__main__":
     Sim_config.observer.Image_x_min = {"Value": -10, "Unit": "[M]"}
     Sim_config.observer.Image_x_max = {"Value":  10, "Unit": "[M]"}
         
-    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-9, "Unit": "[-]"}
+    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-10, "Unit": "[-]"}
     Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
     Sim_config.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
     Sim_config.integrator.max_integration_count = {"Value": 1000000, "Unit": "[-]"}
     Sim_config.integrator.max_affine_parameter = {"Value": 1000000, "Unit": "[-]"}
     Sim_config.metric_parameters.Distance_to_singular_point = {"Value": 1e-2, "Unit": "[M]"}
     
-    Sim_config.integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
+    Sim_config.integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
     # ================================================== Hotspot ================================================== #
 
     Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g / cm^3]"}

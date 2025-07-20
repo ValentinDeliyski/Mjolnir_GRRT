@@ -96,30 +96,6 @@ bool static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
     return false;
 }
 
-//void static Seperate_Image_into_orders(const int Max_order,
-//                                       const double Stokes_Vector_offset[e_Stokes_param_num][e_order_number],
-//                                       Results_type* const p_Ray_results) {
-//
-//    for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
-//    
-//        for (int order_scan = 0; order_scan <= Max_order; order_scan++) {
-//
-//            p_Ray_results->Intensity[order_scan][stokes_idx] = Stokes_Vector_offset[stokes_idx][order_scan];
-//
-//            if (order_scan + 1 <= Max_order) {
-//
-//                p_Ray_results->Intensity[order_scan][stokes_idx] -= Stokes_Vector_offset[stokes_idx][order_scan + 1];
-//
-//            }
-//
-//            p_Ray_results->Intensity[order_scan][stokes_idx] *= p_Ray_results->Intensity_scale;
-//
-//        }
-//    
-//    }
-//
-//}
-
 bool static Propagate_Stokes_vector(Radiative_Transfer_Integrator e_Integrator,
                                     const Simulation_Context_type* p_Sim_Context,
                                     double* const State_Vector,
@@ -533,7 +509,7 @@ void static Parallel_Transport_Polarization_Vector(const double* const State_Vec
     std::complex<double> RHS[Nyström_size * e_Stokes_param_num]{};
     double EOM[Nyström_size * e_Dynamic_state_size]{};
 
-    std::complex<double> Temp_Polarization_Vector[4]{};
+    std::complex<double> Temp_Polarization_Vector[e_Stokes_param_num]{};
     double Temp_State_Vector[e_Dynamic_state_size]{};
 
     for (int RK5_stage = 0; RK5_stage < Nyström_size; RK5_stage++) {
@@ -648,11 +624,9 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                                        int const N_theta_turning_points) {
 
     int Current_theta_turning_points = N_theta_turning_points;
-    const int Max_order = compute_image_order(N_theta_turning_points, p_Sim_Context->p_Init_Conditions);
-    int Current_order = Max_order;
+    int Current_order = compute_image_order(N_theta_turning_points, p_Sim_Context->p_Init_Conditions);;
 
     double Stokes_Vector[e_Stokes_param_num]{};
-    double Stokes_Vector_offset[e_Stokes_param_num][e_order_number]{};
 
     std::complex<double> Coord_Basis_Pol_vec[4]{};
     // TODO: Propagate this aswell
@@ -676,7 +650,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         if (Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
             
-            Inside_emission_medium = Propagate_Stokes_vector(Implicit_Trapezoid, p_Sim_Context, Logged_ray_path, Stokes_Vector); 
+            Inside_emission_medium = Propagate_Stokes_vector(RK5, p_Sim_Context, Logged_ray_path, Stokes_Vector); 
         
         }
 
@@ -826,7 +800,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     while (true) {
 
-        RK45(State_Vector, &controller, p_Sim_Context);
+        RK78(State_Vector, &controller, p_Sim_Context);
 
         if (controller.integration_complete || integration_count > controller.Parameters.Max_integration_count || std::abs(State_Vector[e_affine_param]) > controller.Parameters.Max_affine_param) {
 
@@ -863,7 +837,11 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     }
 
-    if (integration_count >= controller.Parameters.Max_integration_count) { std::cout << "Max iterations reached! \n"; }
+    if (integration_count >= controller.Parameters.Max_integration_count) { 
+        
+        std::cout << "Max iterations reached! \n"; 
+    
+    }
 
     if (std::abs(State_Vector[e_affine_param]) >= controller.Parameters.Max_affine_param) { std::cout << "Max affine parameter value reached! \n"; };
 

@@ -1,14 +1,16 @@
 #include "Lensing.h"
+#include "General_GR_functions.h"
 
-//! Runs one iteration of the Dormond - Prince adaptive integrator.
-/*! Runs one iteration of the Dormond - Prince adaptive integrator, and updates the State Vector and Step Controller instance accordingly.
+//! Runs one iteration of the Runge Kutta 7(8) adaptive integrator.
+/*! Runs one iteration of the Runge Kutta 7(8) adaptive integrator, and updates the State Vector and Step Controller instance accordingly.
+*   The reference for this implementation is https://ntrs.nasa.gov/api/citations/19720012011/downloads/19720012011.pdf
 *
 *   \param [out] State_Vector - Pointer to the array that holds the photon State Vector.
 *   \param [out] p_Controller - Pointer to the Step Controller class instance.
 *   \param [in] p_Sim_context - Pointer to the Simulation Context struct.
 *   \return Nothing
 */
-void RK45(double* const State_Vector, Step_controller* const p_Controller, const Simulation_Context_type* const p_Sim_context) {
+void RK78(double* const State_Vector, Step_controller* const p_Controller, const Simulation_Context_type* const p_Sim_context) {
 
     // Initialize the iteration counter
     int iteration = 0;
@@ -18,27 +20,27 @@ void RK45(double* const State_Vector, Step_controller* const p_Controller, const
     double state_rel_err[e_Dynamic_state_size]{};
 
     // Initialize the array that holds the intermediate EOM RHS evaluations.
-    double Derivatives[RK45_size * e_Dynamic_state_size]{};
+    double Derivatives[RK78_size * e_Dynamic_state_size]{};
 
     // Initialize the array that holds the intermediate State Vectors.
     double inter_State_vector[e_Dynamic_state_size]{};
 
     // Initialize the array that holds the two new solutions that the DP54 method computes.
-    double New_State_vector_O5[e_Dynamic_state_size]{};
-    double New_State_vector_O4[e_Dynamic_state_size]{};
+    double New_State_vector_O8[e_Dynamic_state_size]{};
+    double New_State_vector_O9[e_Dynamic_state_size]{};
 
     // Runs trough the EOM evaluations in-between t and t + step.
-    while (iteration < RK45_size) { 
+    while (iteration < RK78_size) { 
 
         memcpy(inter_State_vector, State_Vector, e_Dynamic_state_size * sizeof(double));
 
         // Runs trough the state vector components.
         for (int vector_indexer = 0; vector_indexer < e_Dynamic_state_size; vector_indexer++) {
 
-            // Runs trough tough the Dormand-Prince coeficients matrix and adds on the contributions from the derivatives at the points between t and t + step.
+            // Runs trough tough the RK7 coefficients matrix and adds on the contributions from the derivatives at the points between t and t + step.
             for (int derivative_indexer = 0; derivative_indexer < iteration; derivative_indexer++) { 
 
-                inter_State_vector[vector_indexer] += -p_Controller->step * Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
+                inter_State_vector[vector_indexer] += -p_Controller->step * RK78_Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
 
             }
         }
@@ -52,24 +54,24 @@ void RK45(double* const State_Vector, Step_controller* const p_Controller, const
     // Compute the new state vectors.
     for (int vector_indexer = 0; vector_indexer < e_Dynamic_state_size; vector_indexer++) {
 
-        New_State_vector_O5[vector_indexer] = State_Vector[vector_indexer];
-        New_State_vector_O4[vector_indexer] = State_Vector[vector_indexer];
+        New_State_vector_O8[vector_indexer] = State_Vector[vector_indexer];
+        New_State_vector_O9[vector_indexer] = State_Vector[vector_indexer];
 
-        for (int derivative_indexer = 0; derivative_indexer < RK45_size; derivative_indexer++) {
+        for (int derivative_indexer = 0; derivative_indexer < RK78_size; derivative_indexer++) {
 
-            New_State_vector_O5[vector_indexer] += -p_Controller->step * Coeff_sol[derivative_indexer]      * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
-            New_State_vector_O4[vector_indexer] += -p_Controller->step * Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
+            New_State_vector_O8[vector_indexer] += -p_Controller->step * RK78_Coeff_sol[derivative_indexer]      * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
+            New_State_vector_O9[vector_indexer] += -p_Controller->step * RK78_Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
 
         }
 
-        state_error[vector_indexer] = New_State_vector_O5[vector_indexer] - New_State_vector_O4[vector_indexer];
+        state_error[vector_indexer] = New_State_vector_O8[vector_indexer] - New_State_vector_O9[vector_indexer];
        
     }
 
     // The integrator might jump pass surfaces that are singular for the EOM (like the JNW singularity at 2 / gamma)
     // In this case the whole state vector becomes a NaN. I check for this and update the integration step by hand,
     // then set the continue_integration flag to "false" to force the integrator to redo the current iteration with a smaller step.
-    if (isnan(New_State_vector_O5[e_r])) {
+    if (isnan(New_State_vector_O8[e_r])) {
 
         p_Controller->continue_integration = false;
         p_Controller->step /= 10.0;
@@ -78,20 +80,18 @@ void RK45(double* const State_Vector, Step_controller* const p_Controller, const
 
     }
 
-    // Update the controller step
     p_Controller->previous_step = p_Controller->step;
-    p_Controller->update_step(std::as_const(State_Vector));
 
-    // Update the state errors
     p_Controller->sec_prev_err = p_Controller->prev_err;
     p_Controller->prev_err     = p_Controller->current_err;
     p_Controller->current_err  = get_max_element(state_error, e_Dynamic_state_size);
 
+    p_Controller->update_step(std::as_const(State_Vector));
 
     if (p_Controller->continue_integration) {
 
         // Update the state vector
-        memcpy(State_Vector, New_State_vector_O5, e_Dynamic_state_size * sizeof(double));
+        memcpy(State_Vector, New_State_vector_O8, e_Dynamic_state_size * sizeof(double));
 
         // Using the "previous_step" here, because the step was updated by the above call to "update_step()" and we want the step that got us to this point.
         State_Vector[e_step] = p_Controller->previous_step;
@@ -153,7 +153,7 @@ void Step_controller::update_step(const double* const State_Vector) {
 
     double Rel_step_increase{};
     
-    const double Error_threshold = this->Parameters.RK_45_accuracy * (1 + std::abs(State_Vector[e_r]));
+    const double Error_threshold = this->Parameters.RK_45_accuracy * (1 + std::abs(State_Vector[e_r])) + this->Parameters.RK_45_accuracy * this->current_err;
 
     switch (this->Parameters.Controller_type) {
 
@@ -168,7 +168,7 @@ void Step_controller::update_step(const double* const State_Vector) {
     default:
 
         Rel_step_increase = this->Parameters.Safety_1 * pow(Error_threshold / (this->current_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k1) *
-                                                        pow(Error_threshold / (this->prev_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k2);
+                                                        pow((this->current_err + this->Parameters.Safety_2) / (this->prev_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k2);
 
         break;
 
@@ -177,6 +177,8 @@ void Step_controller::update_step(const double* const State_Vector) {
     Rel_step_increase = std::min(this->Parameters.Max_rel_step_increase, std::max(this->Parameters.Min_rel_step_increase, Rel_step_increase));
 
     this->step = Rel_step_increase * this->step;
+
+    if (this->step > this->Parameters.Max_stepsize) { this->step = this->Parameters.Max_stepsize; };
 
     if (this->current_err < Error_threshold)
     {
