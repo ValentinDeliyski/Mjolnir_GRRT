@@ -10,7 +10,7 @@ double vector_norm(const double* const Vector, const int Vector_size) {
 
 	}
 	
-	norm = sqrt(norm);
+	norm = std::sqrt(norm);
 
 	return norm;
 

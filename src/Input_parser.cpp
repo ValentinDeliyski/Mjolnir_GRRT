@@ -492,12 +492,12 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
         if (Colab_test_1_element == nullptr) { std::cout << "Failed to find the Colab Test 1 profile element !" << "\n"; return ERROR; }
 
         // -------------------- The density radial power law
-        temp_param_var = Common_RIAF_element->FirstChildElement("Radial_scale");
+        temp_param_var = Colab_test_1_element->FirstChildElement("Radial_scale");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the Colab Test 1 disk radial scale!" << "\n"; return ERROR; }
         Disk_params->Colab_test_1_params.Radial_scale = std::stod(temp_param_var->GetText());
 
         // -------------------- The density radial power law
-        temp_param_var = Common_RIAF_element->FirstChildElement("Vertical_scale");
+        temp_param_var = Colab_test_1_element->FirstChildElement("Vertical_scale");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the Colab Test 1 disk vertical scale!" << "\n"; return ERROR; }
         Disk_params->Colab_test_1_params.Vertical_scale = std::stod(temp_param_var->GetText());
 
@@ -516,10 +516,10 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the initial step size!" << "\n"; return ERROR; }
     Integrator_params->Init_stepzie = std::stod(temp_param_var->GetText());
 
-    // -------------------- RK45 accuracy
-    temp_param_var = Integrator_element->FirstChildElement("RK45_accuracy");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK45 accuracy parameter!" << "\n"; return ERROR; }
-    Integrator_params->RK_45_accuracy = std::stod(temp_param_var->GetText());
+    // -------------------- RK78 accuracy
+    temp_param_var = Integrator_element->FirstChildElement("RK78_accuracy");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 accuracy parameter!" << "\n"; return ERROR; }
+    Integrator_params->RK_78_accuracy = std::stod(temp_param_var->GetText());
 
     // -------------------- Step controller safety 1
     temp_param_var = Integrator_element->FirstChildElement("step_controller_safety_factor_1");
@@ -613,6 +613,34 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     temp_param_var = Integrator_element->FirstChildElement("max_stepsize");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the max step size!" << "\n"; return ERROR; }
     Integrator_params->Max_stepsize = std::stod(temp_param_var->GetText());
+
+    // -------------------- Radiative transfer integrator
+    temp_param_var = Integrator_element->FirstChildElement("radiative_transfer_integrator_type");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the max step size!" << "\n"; return ERROR; }
+    std::string Radiative_transfer_integrator_type = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "Analytic")) {
+
+        Integrator_params->e_Radiative_transfer_integrator = Analytic;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "Implicit Trapezoid")) {
+
+        Integrator_params->e_Radiative_transfer_integrator = Implicit_Trapezoid;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "RK5")) {
+
+        Integrator_params->e_Radiative_transfer_integrator = RK5;
+    
+    }
+    else {
+
+        std::cout << "Unsupported radiative transfer integrator type!" << "\n";
+
+        return ERROR;
+
+    }
 
     return OK;
 

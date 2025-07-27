@@ -540,8 +540,8 @@ struct Integrator_parameters_type {
     /*! The initial stepsize. */
     double Init_stepzie;
 
-    /*! The Dormond-Prince error threshold parameter. Right now, this is used as both an absolute and relative thresholds. */
-    double RK_45_accuracy;
+    /*! The adaptive RK7(8) error threshold parameter. Right now, this is used as both an absolute and relative thresholds. */
+    double RK_78_accuracy;
 
     /*! A multiplicative factor forr the integration step in the range (0, 1] that makes the integrator more stable. */
     double Safety_1;
@@ -552,7 +552,7 @@ struct Integrator_parameters_type {
     /*! The error theshold parameter for the Simpson integral solving method. Currently this is only used in the Page-Thorne flux integral. */
     double Simpson_accuracy;
 
-    /*! The maximum allowed attempted integration steps. */
+    /*! The maximum allowed (accepted) integration steps. */
     int Max_integration_count;
 
     /*! Enum that decides which step controller to use. */
@@ -567,6 +567,8 @@ struct Integrator_parameters_type {
     /*! The Maximum allowed affine parameter value, before terminating the integration.
         NOTE: This is taken by absolute value. */
     double Max_affine_param;
+
+    Radiative_Transfer_Integrator e_Radiative_transfer_integrator;
 
 };
 
@@ -701,7 +703,8 @@ struct Initial_conditions_type {
 
     /*! The minimum image order for which the radiative transfer will be evaluated.
         NOTE: For image orders blow this, the ray is still propagated, along with the parallel transport
-        of the polarization vector */
+        of the polarization vector (though the stokes vector will be zero, so the "if" statement in which
+        the parallel transport is placed won't pass, so really only the ray will be propagated). */
     int Min_order;
 
     /*! Boolean flag that controls weather to simply add the hotspot and disk density and temperature 

@@ -26,21 +26,21 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
 
     case e_Power_law:
 
-        Profile = pow(p_Profile_parameters->power_law_scale / p_Profile_parameters->radial_coordinate, p_Profile_parameters->power);
+        Profile = std::pow(p_Profile_parameters->power_law_scale / p_Profile_parameters->radial_coordinate, p_Profile_parameters->power);
         break;
 
     case e_Hybrid_power_gaussian:
 
         Exponent_arg = (p_Profile_parameters->gaussian_variable - p_Profile_parameters->gaussian_mean) / p_Profile_parameters->gaussian_std;
 
-        Profile = pow(p_Profile_parameters->power_law_scale / p_Profile_parameters->radial_coordinate, p_Profile_parameters->power) * exp(-int_power(Exponent_arg, 2) / 2);
+        Profile = std::pow(p_Profile_parameters->power_law_scale / p_Profile_parameters->radial_coordinate, p_Profile_parameters->power) * exp(-std::pow(Exponent_arg, 2) / 2);
         break;
 
     case e_Gaussian:
 
         Exponent_arg = (p_Profile_parameters->gaussian_variable - p_Profile_parameters->gaussian_mean) / p_Profile_parameters->gaussian_std;
 
-        Profile = exp(-int_power(Exponent_arg, 2) / 2);
+        Profile = std::exp(-std::pow(Exponent_arg, 2) / 2);
         break;
 
     default:
@@ -162,12 +162,12 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         /* The above only evaluates the radial part of the profile. Below we evaluate the vertical part (another gaussian). */
 
         Density_profile_params.radial_coordinate = 0.0; // This is not used in this profile, so I set it to zero.
-        Density_profile_params.gaussian_variable = State_Vector[e_r] * cos(State_Vector[e_theta]);
+        Density_profile_params.gaussian_variable = this->s_Disk_params.Colab_test_1_params.Vertical_scale * cos(State_Vector[e_theta]);
         Density_profile_params.gaussian_mean     = 0.0;
-        Density_profile_params.gaussian_std      = this->s_Disk_params.Colab_test_1_params.Vertical_scale;
+        Density_profile_params.gaussian_std      = 1.0;
 
         /* Note that the two profiles multiply together. */
-        p_Emission_medium_state->Density *= this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Gaussian);
+        p_Emission_medium_state->Density *= this->get_disk_profile(&Density_profile_params, e_Gaussian);
 
         /* ---------------------------------------------- Get the temperature profile ---------------------------------------------- */
         /* This model does not specify a temperature profile at all. */

@@ -397,7 +397,7 @@ class Units_class():
     
     def Spectral_density_to_T(self, I_nu: NDArray, frequency: float) -> NDArray:
 
-        I_nu += 1e-40 # To avoid division by 0 errors
+        I_nu = abs(I_nu) + 1e-40 # To avoid division by 0 errors
 
         return self.PLANCK_SI * frequency / self.BOLTZMANN_SI / log(1 + 2 * self.PLANCK_SI * frequency**3 / self.C_LIGHT_SI**2 / (I_nu))
     

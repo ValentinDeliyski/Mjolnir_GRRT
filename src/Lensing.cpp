@@ -15,6 +15,7 @@
 #include "Radiative_Transfer.h"
 
 #include "Lensing.h"
+#include "Integrators.h"
 
 #include <iostream>
 #include <complex>
@@ -650,7 +651,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         if (Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
             
-            Inside_emission_medium = Propagate_Stokes_vector(RK5, p_Sim_Context, Logged_ray_path, Stokes_Vector); 
+            Inside_emission_medium = Propagate_Stokes_vector(p_Sim_Context->p_Init_Conditions->Integrator_params.e_Radiative_transfer_integrator, p_Sim_Context, Logged_ray_path, Stokes_Vector); 
         
         }
 
@@ -766,56 +767,20 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
 void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
-    // Initialize the State Vectors
-    double State_Vector[e_Full_state_size]{};
-    double Old_State_Vector[e_Full_state_size]{};
-
-    State_Vector[e_t] = p_Sim_Context->p_Init_Conditions->Observer_params.init_time;
-    State_Vector[e_r] = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
-    State_Vector[e_theta] = p_Sim_Context->p_Init_Conditions->Observer_params.inclination;
-    State_Vector[e_phi] = p_Sim_Context->p_Init_Conditions->Observer_params.azimuth;
-    State_Vector[e_p_phi] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_phi];
-    State_Vector[e_p_theta] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_theta];
-    State_Vector[e_p_r] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_r];
-    State_Vector[e_p_t] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
-    State_Vector[e_step] = p_Sim_Context->p_Init_Conditions->Integrator_params.Init_stepzie;
-    State_Vector[e_affine_param] = 0;
-
-    // Set the Old State Vector to the Initial State Vector
-    memcpy(Old_State_Vector, State_Vector, e_Full_state_size * sizeof(double));
-
-    p_Ray_results->Photon_Momentum[e_phi] = State_Vector[e_p_phi];
-    p_Ray_results->Photon_Momentum[e_t] = State_Vector[e_p_t];
-    p_Ray_results->Metric_parameters = p_Sim_Context->p_Init_Conditions->Metric_parameters;
-
-    // Initialize counters for the Number Of Integration Steps and the Number Of Turning points of the Polar Coordinate
-    int integration_count{}, N_theta_turning_points{}, Current_order{};;
+    int N_theta_turning_points{}, Current_order{};
 
     // Calculate the image coordinates from the initial conditions
     get_image_coordinates(p_Sim_Context->p_Init_Conditions, p_Ray_results->Image_Coords);
 
-    Step_controller controller(p_Sim_Context->p_Init_Conditions->Integrator_params);
+    Integrator_class Geodesic_Integrator(p_Sim_Context, p_Ray_results);
 
-    log_ray_path(State_Vector, p_Ray_results, p_Sim_Context->p_Init_Conditions);
+    while (!Geodesic_Integrator.integration_complete) {
 
-    while (true) {
+        Geodesic_Integrator.Propagate_ray();
 
-        RK78(State_Vector, &controller, p_Sim_Context);
+        if (Geodesic_Integrator.continue_integration) {
 
-        if (controller.integration_complete || integration_count > controller.Parameters.Max_integration_count || std::abs(State_Vector[e_affine_param]) > controller.Parameters.Max_affine_param) {
-
-            break;
-
-        }
-
-        if (controller.continue_integration) {
-
-            integration_count += 1;
-            p_Ray_results->Ray_log_struct.Log_offset = integration_count;
-
-            log_ray_path(State_Vector, p_Ray_results, p_Sim_Context->p_Init_Conditions);
-
-            N_theta_turning_points += Check_for_theta_turning_point(State_Vector, Old_State_Vector);
+            N_theta_turning_points += Check_for_theta_turning_point(Geodesic_Integrator.get_current_State_Vector(), Geodesic_Integrator.get_previous_State_Vector());
 
             Current_order = compute_image_order(N_theta_turning_points, p_Sim_Context->p_Init_Conditions);
 
@@ -825,29 +790,25 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
                 Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && 
                 Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
 
-                Evaluate_Equatorial_Disk(p_Sim_Context, p_Ray_results, State_Vector, Old_State_Vector, N_theta_turning_points);
+                Evaluate_Equatorial_Disk(p_Sim_Context, p_Ray_results, Geodesic_Integrator.get_current_State_Vector(), Geodesic_Integrator.get_previous_State_Vector(), N_theta_turning_points);
 
             }
 
             /* ============================================================================================================== */
 
-            memcpy(Old_State_Vector, State_Vector, e_Full_state_size * sizeof(double));
-
         }
 
     }
 
-    if (integration_count >= controller.Parameters.Max_integration_count) { 
-        
-        std::cout << "Max iterations reached! \n"; 
-    
-    }
-
-    if (std::abs(State_Vector[e_affine_param]) >= controller.Parameters.Max_affine_param) { std::cout << "Max affine parameter value reached! \n"; };
-
     p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset;
+    p_Ray_results->Photon_Momentum[e_phi] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_phi];
+    p_Ray_results->Photon_Momentum[e_t]   = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
+    p_Ray_results->Metric_parameters      = p_Sim_Context->p_Init_Conditions->Metric_parameters;
 
-    interpolate_celestial_sphere_crossing(State_Vector, Old_State_Vector, p_Sim_Context->p_Init_Conditions->Metric_parameters.Scattering_radius, p_Ray_results->Celestial_sphere_crossing_coords);
+    interpolate_celestial_sphere_crossing(Geodesic_Integrator.get_current_State_Vector(),
+                                          Geodesic_Integrator.get_previous_State_Vector(), 
+                                          p_Sim_Context->p_Init_Conditions->Metric_parameters.Scattering_radius, 
+                                          p_Ray_results->Celestial_sphere_crossing_coords);
 
     /* =========== Integrate the radiative transfer equations forward along the ray for the RIAF models =========== */
 

@@ -1,43 +1,25 @@
 #include "Lensing.h"
 #include "General_GR_functions.h"
 
-//! Runs one iteration of the Runge Kutta 7(8) adaptive integrator.
-/*! Runs one iteration of the Runge Kutta 7(8) adaptive integrator, and updates the State Vector and Step Controller instance accordingly.
-*   The reference for this implementation is https://ntrs.nasa.gov/api/citations/19720012011/downloads/19720012011.pdf
-*
-*   \param [out] State_Vector - Pointer to the array that holds the photon State Vector.
-*   \param [out] p_Controller - Pointer to the Step Controller class instance.
-*   \param [in] p_Sim_context - Pointer to the Simulation Context struct.
-*   \return Nothing
-*/
 void RK78(double* const State_Vector, Step_controller* const p_Controller, const Simulation_Context_type* const p_Sim_context) {
 
-    // Initialize the iteration counter
     int iteration = 0;
 
-    // Initialize the state errors.
     double state_error[e_Dynamic_state_size]{};
-    double state_rel_err[e_Dynamic_state_size]{};
 
-    // Initialize the array that holds the intermediate EOM RHS evaluations.
     double Derivatives[RK78_size * e_Dynamic_state_size]{};
 
-    // Initialize the array that holds the intermediate State Vectors.
     double inter_State_vector[e_Dynamic_state_size]{};
 
-    // Initialize the array that holds the two new solutions that the DP54 method computes.
     double New_State_vector_O8[e_Dynamic_state_size]{};
     double New_State_vector_O9[e_Dynamic_state_size]{};
 
-    // Runs trough the EOM evaluations in-between t and t + step.
     while (iteration < RK78_size) { 
 
         memcpy(inter_State_vector, State_Vector, e_Dynamic_state_size * sizeof(double));
 
-        // Runs trough the state vector components.
         for (int vector_indexer = 0; vector_indexer < e_Dynamic_state_size; vector_indexer++) {
 
-            // Runs trough tough the RK7 coefficients matrix and adds on the contributions from the derivatives at the points between t and t + step.
             for (int derivative_indexer = 0; derivative_indexer < iteration; derivative_indexer++) { 
 
                 inter_State_vector[vector_indexer] += -p_Controller->step * RK78_Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
@@ -51,7 +33,6 @@ void RK78(double* const State_Vector, Step_controller* const p_Controller, const
 
     }
 
-    // Compute the new state vectors.
     for (int vector_indexer = 0; vector_indexer < e_Dynamic_state_size; vector_indexer++) {
 
         New_State_vector_O8[vector_indexer] = State_Vector[vector_indexer];
@@ -80,13 +61,8 @@ void RK78(double* const State_Vector, Step_controller* const p_Controller, const
 
     }
 
-    p_Controller->previous_step = p_Controller->step;
-
-    p_Controller->sec_prev_err = p_Controller->prev_err;
-    p_Controller->prev_err     = p_Controller->current_err;
-    p_Controller->current_err  = get_max_element(state_error, e_Dynamic_state_size);
-
-    p_Controller->update_step(std::as_const(State_Vector));
+    p_Controller->update_state_errors(New_State_vector_O8, state_error);
+    p_Controller->update_step(New_State_vector_O8);
 
     if (p_Controller->continue_integration) {
 
@@ -116,31 +92,49 @@ void RK78(double* const State_Vector, Step_controller* const p_Controller, const
 
 }
 
+void Step_controller::update_state_errors(const double* State_Vector, const double* State_Error_Vector) {
+
+    this->sec_prev_err = this->prev_err;
+    this->prev_err     = this->current_err;
+
+    double Error_scale[e_Dynamic_state_size]{};
+
+    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
+
+        Error_scale[idx] = this->Parameters.RK_78_accuracy + std::fabs(State_Vector[idx]) * this->Parameters.RK_78_accuracy;
+
+    }
+
+    double Total_State_Error{};
+
+    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
+
+        Total_State_Error += (State_Error_Vector[idx] / Error_scale[idx]) * (State_Error_Vector[idx] / Error_scale[idx]);
+
+    }
+
+    Total_State_Error /= e_Dynamic_state_size;
+
+    this->current_err = std::sqrt(Total_State_Error) + this->Parameters.Safety_2;
+
+}
+
 Step_controller::Step_controller(const Integrator_parameters_type Integrator_parameters) {
 
     this->Parameters = Integrator_parameters;
 
-    this->step = Integrator_parameters.Init_stepzie;
-    this->previous_step = Integrator_parameters.Init_stepzie;
+    this->step = this->Parameters.Init_stepzie;
+    this->previous_step = this->Parameters.Init_stepzie;
 
-    this->current_err  = Integrator_parameters.RK_45_accuracy;
-    this->prev_err     = Integrator_parameters.RK_45_accuracy;
-    this->sec_prev_err = Integrator_parameters.RK_45_accuracy;
+    this->current_err  = this->Parameters.Safety_2;
+    this->prev_err     = this->Parameters.Safety_2;
+    this->sec_prev_err = this->Parameters.Safety_2;
 
     this->continue_integration = false;
     this->integration_complete = false;
 
 }
 
-//! Updates the integration step, based on the previous State Error estimates, and the current State Vector.
-/*! Updates the integration step, based on the previous State Error estimates, and the current State Vector.
- *   Currently the following step controllers are implemented. The reference is https://arxiv.org/pdf/1806.08693:
- *      1) PID controller
- *      2) Gustafsson controller
- *
- *   \param [in] State_Vector - Pointer to the array that holds the photon State Vector.
- *   \return Nothing
- */
 void Step_controller::update_step(const double* const State_Vector) {
 
     if (!this->Parameters.Use_adaptive_step) {
@@ -151,24 +145,24 @@ void Step_controller::update_step(const double* const State_Vector) {
 
     }
 
+    this->previous_step = this->step;
+
     double Rel_step_increase{};
-    
-    const double Error_threshold = this->Parameters.RK_45_accuracy * (1 + std::abs(State_Vector[e_r])) + this->Parameters.RK_45_accuracy * this->current_err;
 
     switch (this->Parameters.Controller_type) {
 
     case PID:
 
-        Rel_step_increase = this->Parameters.Safety_1 * pow(Error_threshold / (this->current_err + this->Parameters.Safety_2), this->Parameters.PID_gain_I) *
-                                                        pow(Error_threshold / (this->prev_err + this->Parameters.Safety_2), this->Parameters.PID_gain_P) *
-                                                        pow(Error_threshold / (this->sec_prev_err + this->Parameters.Safety_2), this->Parameters.PID_gain_D);
+        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, this->Parameters.PID_gain_I) *
+                                                        pow(this->prev_err, this->Parameters.PID_gain_P) *
+                                                        pow(this->sec_prev_err, this->Parameters.PID_gain_D);
 
         break;
 
     default:
 
-        Rel_step_increase = this->Parameters.Safety_1 * pow(Error_threshold / (this->current_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k1) *
-                                                        pow((this->current_err + this->Parameters.Safety_2) / (this->prev_err + this->Parameters.Safety_2), this->Parameters.Gustafsson_k2);
+        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, this->Parameters.Gustafsson_k1) *
+                                                        pow(this->current_err / this->prev_err, this->Parameters.Gustafsson_k2);
 
         break;
 
@@ -176,11 +170,11 @@ void Step_controller::update_step(const double* const State_Vector) {
 
     Rel_step_increase = std::min(this->Parameters.Max_rel_step_increase, std::max(this->Parameters.Min_rel_step_increase, Rel_step_increase));
 
-    this->step = Rel_step_increase * this->step;
+    this->step *= Rel_step_increase;
 
     if (this->step > this->Parameters.Max_stepsize) { this->step = this->Parameters.Max_stepsize; };
 
-    if (this->current_err < Error_threshold)
+    if (this->current_err < 1.0)
     {
         this->continue_integration = true;
     }

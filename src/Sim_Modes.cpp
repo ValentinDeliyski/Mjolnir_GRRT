@@ -87,6 +87,26 @@ void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray
 
 }
 
+void static Zero_results_struct(Results_type* const p_Ray_results) {
+
+    memset(p_Ray_results, 0, e_Stokes_param_num * sizeof(double));
+    memset(p_Ray_results->Source_Coords, 0, 4 * sizeof(double));
+    memset(p_Ray_results->Photon_Momentum, 0, 4 * sizeof(double));
+    memset(&p_Ray_results->Flux_PT, 0, sizeof(double));
+    memset(&p_Ray_results->Redshift_PT, 0, sizeof(double));
+
+    p_Ray_results->Ray_log_struct.Log_length = 0;
+    p_Ray_results->Ray_log_struct.Log_offset = 0;
+
+    memset(&p_Ray_results->Image_Coords, 0, 2 * sizeof(double));
+
+    memset(&p_Ray_results->Celestial_sphere_crossing_coords, 0, 4 * sizeof(double));
+
+    memset(&p_Ray_results->Photon_Momentum, 0, 4 * sizeof(double));
+    memset(&p_Ray_results->Source_Coords, 0, 4 * sizeof(double));
+
+}
+
 void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, Rendering_engine* const Renderer, Results_type* const p_Ray_results) {
         
         /*
@@ -160,11 +180,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
                 /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), 
                    and therefore not automatically reinitialized to 0s. I have to manually do it. */
-                memset(p_Ray_results->Intensity, 0, e_Stokes_param_num * sizeof(double));
-                memset(p_Ray_results->Source_Coords, 0, 4 * sizeof(double));
-                memset(p_Ray_results->Photon_Momentum, 0, 4 * sizeof(double));
-                memset(&p_Ray_results->Flux_PT, 0, sizeof(double));
-                memset(&p_Ray_results->Redshift_PT, 0, sizeof(double));
+                Zero_results_struct(p_Ray_results);
 
             }
 
@@ -252,17 +268,9 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
 
         p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
 
-        /*
-
-         The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), and therefore not automatically re - initialized to 0s!
-
-        */
-
-        memset(p_Ray_results->Intensity,       0, e_Stokes_param_num * sizeof(double));
-        memset(p_Ray_results->Source_Coords,   0, 4 * sizeof(double));
-        memset(p_Ray_results->Photon_Momentum, 0, 4 * sizeof(double));
-        memset(&p_Ray_results->Flux_PT,        0, sizeof(double));
-        memset(&p_Ray_results->Redshift_PT,    0, sizeof(double));
+        /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope),
+           and therefore not automatically reinitialized to 0s. I have to manually do it. */
+        Zero_results_struct(p_Ray_results);
 
         print_progress(photon, p_Sim_Context->File_manager->sim_mode_2_ray_number - 1, true);
 

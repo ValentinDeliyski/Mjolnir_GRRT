@@ -542,7 +542,7 @@ void File_manager_class::write_integrator_metadata(std::ofstream* Output_file) {
         *Output_file << "Stepsize [M]: " << this->p_Initial_Conditions->Integrator_params.Init_stepzie;
     }
 
-    *Output_file << "Geodesic integrator accuracy parameter [M]: " << this->p_Initial_Conditions->Integrator_params.RK_45_accuracy << "\n";
+    *Output_file << "Geodesic integrator accuracy parameter [M]: " << this->p_Initial_Conditions->Integrator_params.RK_78_accuracy << "\n";
     *Output_file << "Max affine parameter [M]: " << this->p_Initial_Conditions->Integrator_params.Max_affine_param << "\n";
 
 }

@@ -1,11 +1,18 @@
-import numpy as np
-from matplotlib import pyplot as plt
+from numpy.typing import NDArray
+from numpy import float64, bool_
+from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones
+
+from matplotlib.figure import Figure
 from matplotlib.axes import Axes
+from matplotlib.image import AxesImage 
+from matplotlib.colorbar import Colorbar 
+
+from matplotlib import pyplot as plt
 from astropy.io import fits
 import os
 
 from Support_functions.Parsers import Simulation_Parser, Units_class, ehtim_Parser, VIDA_params_Parser
-from Support_functions.Image_processing import*
+from Support_functions.Image_processing import generate_general_gaussian_template, get_template_pixel_mask, get_brigness_depression_ratio, get_template_slices
 
 class Sim_Visualizer():
 
@@ -17,23 +24,24 @@ class Sim_Visualizer():
                  Common_file_name: str,
                  Respect_folder_structure: bool):
 
-        self.Sim_Parsers     = []
-        self.Ehtim_Parsers   = []
-        self.VIDA_Parsers    = []
-        self.Metric          = Common_file_name
-        self.Sim_path        = Sim_path
-        self.Arrays          = Array
-        self.Units           = Units_class()
-        self.Frequency_Bins  = Sim_Frequency_Bins
-        self.Total_flux_str  = ""
-        self.Console_log_str = []
-        self.Respect_folder_structure = Respect_folder_structure
-        self.Font_size = Font_size
-        self.Label_Pad = Label_Pad
+        self.Sim_Parsers: list[Simulation_Parser]    = []
+        self.Ehtim_Parsers: list[list[ehtim_Parser]] = []
+        self.VIDA_Parsers: list[VIDA_params_Parser]  = []
+        self.Metric: str                = Common_file_name
+        self.Sim_path: str              = Sim_path
+        self.Arrays: list[str]          = Array
+        self.Units: Units_class         = Units_class()
+        self.Frequency_Bins: list[str]  = Sim_Frequency_Bins
+        self.Total_flux_str: str        = ""
+        self.Console_log_str: list[str] = []
+        self.Respect_folder_structure   = Respect_folder_structure
+        self.Font_size: int = Font_size
+        self.Label_Pad: int = Label_Pad
+        
         #========= Enums =========#
 
-        self.NO_BLUR = 0
-        self.BLUR    = 1
+        self.NO_BLUR: int = 0
+        self.BLUR: int    = 1
 
         #=========================#
 
@@ -42,34 +50,29 @@ class Sim_Visualizer():
         for Sim_number, _ in enumerate(self.Frequency_Bins):
 
             try:
-                Sim_Parser_0 = Simulation_Parser(self.Ray_tracer_paths[Sim_number] + "_n0")
-                Sim_Parser_1 = Simulation_Parser(self.Ray_tracer_paths[Sim_number] + "_n1")
-                Sim_Parser_2 = Simulation_Parser(self.Ray_tracer_paths[Sim_number] + "_n2")
-                Sim_Parser_3 = Simulation_Parser(self.Ray_tracer_paths[Sim_number] + "_n3")
+                Sim_Parser = Simulation_Parser(self.Ray_tracer_paths[Sim_number])
+                
+                if 2 == int(Sim_Parser.Simulation_metadata["Active Simulation Mode"]):
+                    print("Simulation with \"Simulation mode = 2\" aren't meant to be visualized with this script!")
+                    exit()
 
-                self.Sim_Parsers.append([Sim_Parser_0, Sim_Parser_1, Sim_Parser_2, Sim_Parser_3])
+                self.Sim_Parsers.append(Sim_Parser)
                 
             except:
                 print("Could not parse ray-tracer logs!")
                 print("I looked at this path: {}".format(self.Ray_tracer_paths[Sim_number]))
                 exit()
 
-            if int(Sim_Parser_0.Simulation_metadata["Active Simulation Mode"]) != 2:
+            if int(Sim_Parser.Simulation_metadata["Active Simulation Mode"]) != 2:
 
-                Total_flux = (self.Sim_Parsers[Sim_number][0].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy") +
-                              self.Sim_Parsers[Sim_number][1].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy") +
-                              self.Sim_Parsers[Sim_number][2].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy") +
-                              self.Sim_Parsers[Sim_number][3].get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy"))
+                Total_flux = Sim_Parser.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
+                self.Total_flux_str = self.Total_flux_str + "Total flux at {}GHz = {} [mJy]\n".format(float64(Sim_Parser.Simulation_metadata["Observation Frequency [Hz]"]) / 1e9, round(Total_flux, 4))
+
+        for msg in self.Total_flux_str.split("\n"):
                 
-                self.Total_flux_str = self.Total_flux_str + "Total flux at {}GHz = {} [mJy]\n".format(float(self.Sim_Parsers[Sim_number][0].Simulation_metadata["Observation Frequency [Hz]"]) / 1e9, np.round(Total_flux, 4))
-
-        if int(Sim_Parser_0.Simulation_metadata["Active Simulation Mode"]) != 2: # type: ignore
-
-            for msg in self.Total_flux_str.split("\n"):
+            print("=" * len(msg))
+            print(msg)
                 
-                print("=" * len(msg))
-                print(msg)
-
         for Array_num, _ in enumerate(self.Ehtim_paths):
             try:
                 Ehtim_Parser_no_blur = ehtim_Parser(self.Ehtim_paths[Array_num] + "Results") 
@@ -90,199 +93,221 @@ class Sim_Visualizer():
                 print("Could not parse VIDA template!")
                 print("I looked at this path: {}".format(self.Ehtim_paths[Array_num] + "fit_params"))
 
-    def __make_paths(self, Sim_path: str):
+    def __make_paths(self, Sim_path: str) -> None:
 
         self.Ray_tracer_paths = []
         self.Ehtim_paths      = []
         
-        if self.Respect_folder_structure:
-
-            for freq in self.Frequency_Bins:
-
-                self.Ray_tracer_paths.append(Sim_path + freq + "GHz\\" + "Sim_Results\\Ray_tracer_output\\" + self.Metric)
-
-        else:
-
-            for freq in self.Frequency_Bins:
-                
-                self.Ray_tracer_paths.append(Sim_path)  
+        if not self.Respect_folder_structure:
+            self.Ray_tracer_paths.append(Sim_path)  
+            return
+            
+        for freq in self.Frequency_Bins:
+            self.Ray_tracer_paths.append(Sim_path + freq + "GHz\\" + "Sim_Results\\Ray_tracer_output\\" + self.Metric)
 
         for array in self.Arrays:
             for freq in self.Frequency_Bins:
-                
                 self.Ehtim_paths.append(Sim_path + freq + "GHz\\" + "Sim_Results\\Ehtim_" + array + "\\")
+        
+    def get_celestial_sphere_pattern(self, Celestial_Theta: NDArray, Celestial_Phi: NDArray) -> NDArray[float64]:
+        
+        def find_nearest(array, value):
+            idx = (abs(array - value)).argmin()
+            return array[idx]
+             
+        X_resolution: int = int(self.Sim_Parsers[0].Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
+        Y_resolution: int = int(self.Sim_Parsers[0].Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+
+        Celestial_sphere_pattern = zeros((X_resolution, Y_resolution, 3))
+        
+        N_stripes: int = 40
+        Stripe_width: float = pi / 400
+        
+        Stripe_center_phi = linspace(-pi, pi, N_stripes + 1)
+        Stripe_center_theta = linspace(0, pi, int(N_stripes / 2) + 1)
+        
+        for px in range(X_resolution):
+
+            for py in range(Y_resolution):
+                  
+                # Black rays
+                if Celestial_Phi[px][py] > 1e99 or Celestial_Theta[px][py] > 1e99:
+                    Celestial_sphere_pattern[px, py] = 0, 0, 0
+                    
+                # The red quadrant
+                elif Celestial_Phi[px][py] < 0 and Celestial_Theta[px][py] < pi / 2:
+                    Celestial_sphere_pattern[px, py] = 255, 0, 0
+                    
+                # The yellow quadrant
+                elif Celestial_Phi[px][py] < 0 and Celestial_Theta[px][py] > pi / 2: 
+                    Celestial_sphere_pattern[px, py] = 255, 255, 0
+                    
+                # The green quadrant
+                elif Celestial_Phi[px][py] > 0 and Celestial_Theta[px][py] < pi / 2:
+                    Celestial_sphere_pattern[px, py] = 0, 255, 0
+        
+                # The blue quadrant
+                elif Celestial_Phi[px][py] > 0 and Celestial_Theta[px][py] > pi / 2:
+                    Celestial_sphere_pattern[px, py] = 0, 0, 255
+                                                     
+                if (abs(Celestial_Phi[px][py] - find_nearest(Stripe_center_phi, Celestial_Phi[px][py])) < Stripe_width or
+                    abs(Celestial_Theta[px][py] - find_nearest(Stripe_center_theta, Celestial_Theta[px][py])) < Stripe_width):
+                            Celestial_sphere_pattern[px, py] = 0, 0, 0
+                        
+        return Celestial_sphere_pattern
         
     def plot_ray_tracer_results(self, 
                                 Export_data_for_Ehtim: bool, 
                                 Radiation_Component: str,
                                 Save_Figures: bool,
-                                Custom_fig_title: str):
+                                Custom_fig_title: str,
+                                Obs_effective_distance: float,
+                                Colormap: str = "seismic") -> None:
 
-        Obs_effective_distance = self.Units.M87_DISTANCE_GEOMETRICAL
-        Frequency_str_addon    = ""
+        Frequency_str_addon: str = ""
 
         if len(self.Frequency_Bins) == 1:
-
-            Main_Figure = plt.figure(figsize = (20, 8))
+            Main_Figure: Figure = plt.figure(figsize = (20, 8))
             
         else:
-            Main_Figure = plt.figure(figsize = (20, 16))
+            Main_Figure: Figure = plt.figure(figsize = (20, 16))
 
         Main_Figure.suptitle(Custom_fig_title, fontsize = self.Font_size)
 
         for Sim_number, Freq_str in enumerate(self.Frequency_Bins):          
             
-            Obs_frequency: float = float(self.Sim_Parsers[Sim_number][0].Simulation_metadata["Observation Frequency [Hz]"])
-            X_resolution: int = int(self.Sim_Parsers[Sim_number][0].Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
-            Y_resolution: int = int(self.Sim_Parsers[Sim_number][0].Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+            Obs_frequency: float = float(self.Sim_Parsers[Sim_number].Simulation_metadata["Observation Frequency [Hz]"])
 
-            I_Intensity_0, Q_Intensity_0, U_Intensity_0, V_Intensity_0, Disk_redshift_n0, Disk_flux_n0 = self.Sim_Parsers[Sim_number][0].get_plottable_sim_data()
-            I_Intensity_1, Q_Intensity_1, U_Intensity_1, V_Intensity_1, Disk_redshift_n1, Disk_flux_n1 = self.Sim_Parsers[Sim_number][1].get_plottable_sim_data()
-            I_Intensity_2, Q_Intensity_2, U_Intensity_2, V_Intensity_2, Disk_redshift_n2, Disk_flux_n2 = self.Sim_Parsers[Sim_number][2].get_plottable_sim_data()
-            I_Intensity_3, Q_Intensity_3, U_Intensity_3, V_Intensity_3, Disk_redshift_n3, Disk_flux_n3 = self.Sim_Parsers[Sim_number][3].get_plottable_sim_data()
+            I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, Celestial_theta, Celestial_phi = self.Sim_Parsers[Sim_number].get_plottable_sim_data()
 
-            #=============== PLot the Simulated Image ===============#
-
-            Fig_title = "Simulated Image at {}GHz".format(int(Obs_frequency / 1e9))
-            X_Slice_tile = "Brightness temperature at " + r'$\delta_{\text{rel}} = 0$'
-            X_Slice_y_label = r'$T_b\,\,[10^9\, K]$'
+            # =============== PLot the Simulated Image =============== #
+            
+            Fig_title: str       = "Simulated Image at {}GHz".format(int(Obs_frequency / 1e9))
+            X_Slice_tile: str    = "Brightness temperature at " + r'$\delta_{\text{rel}} = 0$'
+            X_Slice_y_label: str = r'$T_b\,\,[10^9\, K]$'
 
             # Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation "Observer Distance [M]", and conver to to micro AS 
-            axes_limits = self.Sim_Parsers[Sim_number][0].Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
-            axes_limits = np.array([float(Limit) for Limit in axes_limits]) / Obs_effective_distance
-            axes_limits = np.arctan(axes_limits) * self.Units.RAD_TO_MICRO_AS
+            axes_limits: NDArray[float64] = self.Sim_Parsers[Sim_number].Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
+            axes_limits = array([float64(Limit) for Limit in axes_limits]) / Obs_effective_distance
+            axes_limits = arctan(axes_limits) * self.Units.RAD_TO_MICRO_AS
 
             # The literature (for some reason) has the X axis going positive to negative, 
             # so I invert the X axis limits
             axes_limits[0] = -axes_limits[0]
             axes_limits[1] = -axes_limits[1]
             
-            Subplot_count = 100 * len(self.Frequency_Bins)
-
-            Subplot  = Main_Figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 1))
-            Colormap = "seismic"
-
-            Total_intensity = I_Intensity_0 + I_Intensity_1 + I_Intensity_2 + I_Intensity_3
-            Intensity_normalization = max(np.abs(Total_intensity.flatten()))
-
-            if Radiation_Component == "Stokes I":
-                Data_to_plot_Intensity = I_Intensity_0 + I_Intensity_1 + I_Intensity_2 + I_Intensity_3
-                Data_to_plot = self.Units.Spectral_density_to_T(Data_to_plot_Intensity / self.Units.W_M2_TO_JY, 
-                                                                Obs_frequency) / self.Units.GIGA
-                                                                
-                Cbar_label = r"Brightness Temperature [$10^9$K]"
-                Colormap = "hot"
-
-                Cmap_max = max(np.abs(Data_to_plot.flatten()))
-                Cmap_min = 0
-
-            elif Radiation_Component == "Stokes Q":
-                
-                Data_to_plot = (Q_Intensity_0 + Q_Intensity_1 + Q_Intensity_2 + Q_Intensity_3) / Intensity_normalization * 100
-                Cbar_label = r"Q Fractional Intensity [\%]"
-                Cmap_max = max(np.abs(Data_to_plot.flatten())) 
-                Cmap_min = -Cmap_max
-
-            elif Radiation_Component == "Stokes U":
-                Data_to_plot = (U_Intensity_0 + + U_Intensity_1 + U_Intensity_2 + U_Intensity_3) / Intensity_normalization * 100
-                Cbar_label = r"U Fractional Intensity [\%]"
-                Cmap_max = max(np.abs(Data_to_plot.flatten()))
-                Cmap_min = -Cmap_max
-
-            elif Radiation_Component == "Stokes V":
-                Data_to_plot = (V_Intensity_0 + V_Intensity_1 + V_Intensity_2 + V_Intensity_3) / Intensity_normalization * 100
-                Cbar_label = r"V Fractional Intensity [\%]"
-                Cmap_max = max(np.abs(Data_to_plot.flatten()))
-                Cmap_min = -Cmap_max
-
-            elif Radiation_Component == "LP Fraction":
-                
-                U_intensity = U_Intensity_0 + U_Intensity_1 + U_Intensity_2 + U_Intensity_3
-                Q_intensity = Q_Intensity_0 + Q_Intensity_1 + Q_Intensity_2 + Q_Intensity_3
-                
-                Cbar_label   = r"LP fraction [\%]"
-                
-                Data_to_plot = sqrt(U_intensity**2 + Q_intensity**2) / Intensity_normalization * 100
-                # Data_to_plot[Total_intensity < Intensity_normalization / 100] = 0
-                Cmap_max = max(Data_to_plot.flatten())
-                Cmap_min = 0
-                
-            elif Radiation_Component == "NT":
-                
-                Shifted_flux_n0: NDArray = Disk_flux_n0 * (Disk_redshift_n0)**4
-                Shifted_flux_n1: NDArray = Disk_flux_n1 * (Disk_redshift_n1)**4
-                Shifted_flux_n2: NDArray = Disk_flux_n2 * (Disk_redshift_n2)**4
-                Shifted_flux_n3: NDArray = Disk_flux_n3 * (Disk_redshift_n3)**4
+            Image_Subplot: Axes = Main_Figure.add_subplot(100 * len(self.Frequency_Bins) + 20 + (2 * Sim_number + 1))
             
-                Data_to_plot = Shifted_flux_n0
-                Data_to_plot = Data_to_plot + Shifted_flux_n1 * (Data_to_plot == 0)
-                Data_to_plot = Data_to_plot + Shifted_flux_n2 * (Data_to_plot == 0)
-                Data_to_plot = Data_to_plot + Shifted_flux_n3 * (Data_to_plot == 0)
-                Data_to_plot = Data_to_plot / 1e-6
+            match Radiation_Component:
+            
+                case "Stokes I":
+                    Data_to_plot: NDArray[float64] = self.Units.Spectral_density_to_T(I_Intensity / self.Units.W_M2_TO_JY, Obs_frequency) / self.Units.GIGA    
+                    
+                    Cmap_max: float = max(abs(Data_to_plot.flatten()))
+                    Cmap_min: float = 0
+                                
+                    Cbar_label: str = r"Brightness Temperature [$10^9$K]"
 
-                Cmap_max = max(np.abs(Data_to_plot.flatten()))
-                Cmap_min = 0
+                case "Stokes Q":
+                    Data_to_plot: NDArray[float64] = Q_Intensity / max(I_Intensity.flatten()) * 100
+                    
+                    Cmap_max: float = max(abs(Data_to_plot.flatten())) 
+                    Cmap_min: float = -Cmap_max
+                    
+                    Cbar_label: str = r"Q Fractional Intensity [\%]"
 
-                Colormap = "hot"
+                case "Stokes U":
+                    Data_to_plot = U_Intensity / max(I_Intensity.flatten()) * 100
+                    
+                    Cmap_max: float = max(abs(Data_to_plot.flatten()))
+                    Cmap_min: float = -Cmap_max
 
-                Subplot.set_aspect(X_resolution / Y_resolution)
+                    Cbar_label: str = r"U Fractional Intensity [\%]"
 
-                Cbar_label   = r"Intensity [$10^{-6}\dot{M}M^{-2}$]"
-                X_Slice_tile = r"Intensity at $\delta_{\text{rel}} = 0$"
+                case "Stokes V":
+                    Data_to_plot: NDArray[float64] = V_Intensity / max(I_Intensity.flatten()) * 100
+                                       
+                    Cmap_max: float = max(abs(Data_to_plot.flatten()))
+                    Cmap_min: float = -Cmap_max
+                    
+                    Cbar_label: str = r"V Fractional Intensity [\%]"
 
-                Fig_title       = "Simulated Image"
-                X_Slice_y_label = r"Intensity at $\delta_{\text{rel}} = 0$ $[10^{-6}\dot{M}M^{-2}]$"
+                case "LP Fraction":
+                    Data_to_plot: NDArray[float64] = sqrt(U_Intensity**2 + Q_Intensity**2) / max(abs(I_Intensity.flatten())) * 100
+ 
+                    Cmap_max: float = max(Data_to_plot.flatten())
+                    Cmap_min: float = 0
+              
+                    Cbar_label: str = r"LP fraction [\%]"
+                    
+                case "NT":
+                    Data_to_plot: NDArray[float64] = Disk_flux * Disk_redshift**4
+                    
+                    Cmap_max: float = max(abs(Data_to_plot.flatten()))
+                    Cmap_min: float = 0.0
+                    
+                    Cbar_label: str      = r"Intensity [$10^{-6}\dot{M}M^{-2}$]"
+                    Fig_title: str       = r"Simulated Image"
+                    X_Slice_tile: str    = r"Intensity at $\delta_{\text{rel}} = 0$"
+                    X_Slice_y_label: str = r"Intensity $[10^{-6}\dot{M}M^{-2}]$"
 
-            else:
-                print("Incorrect Radiation Component!")
-                return
+                case "Pattern":
+                    Data_to_plot = self.get_celestial_sphere_pattern(Celestial_Theta = Celestial_theta, Celestial_Phi = Celestial_phi)
+                    
+                    Cmap_max: float = 1.0
+                    Cmap_min: float = 0.0
+                                
+                    Cbar_label: str = r"Brightness Temperature [$10^9$K]"
+
+                case _:
+                    print("Incorrect Radiation Component!")
+                    return
 
             if Export_data_for_Ehtim:
-                self.Sim_Parsers[Sim_number][0].export_ehtim_data(Spacetime = self.Sim_Parsers[Sim_number][0].metric, 
-                                                                  data = Data_to_plot_Intensity,  # type: ignore
-                                                                  path = self.Sim_path)
+                self.Sim_Parsers[Sim_number].export_ehtim_data(Spacetime = self.Sim_Parsers[Sim_number].Simulation_metadata["Spacetime [-]"], 
+                                                               data = I_Intensity,
+                                                               path = self.Sim_path)
 
             # Create the plot of the Simulated Image
-            Sim_subplot = Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = Colormap, extent = tuple(axes_limits), vmin = Cmap_min, vmax = Cmap_max)
+            Image: AxesImage = Image_Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = Colormap, extent = tuple(axes_limits), vmin = Cmap_min, vmax = Cmap_max)
 
-            colorbar = Main_Figure.colorbar(Sim_subplot, ax = Subplot, fraction = 0.046, pad = 0.04)
+            colorbar: Colorbar = Main_Figure.colorbar(Image, ax = Image_Subplot, fraction = 0.046, pad = 0.04)
             colorbar.set_label(Cbar_label, fontsize = self.Font_size, labelpad = self.Label_Pad)
             colorbar.ax.tick_params(labelsize = self.Font_size)
 
-            Subplot.set_title(Fig_title, fontsize = self.Font_size)
-            Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
-            Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+            Image_Subplot.set_title(Fig_title, fontsize = self.Font_size)
+            Image_Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+            Image_Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
 
             plt.xticks(fontsize = self.Font_size)
             plt.yticks(fontsize = self.Font_size)
+            
+            if "Pattern" != Radiation_Component:
 
-            #=============== PLot the Brigtness Temperature at y = 0 of the Simulated Image ===============#
+                #=============== PLot the Brigtness Temperature at y = 0 of the Simulated Image ===============#
 
-            Subplot = Main_Figure.add_subplot(Subplot_count + 20 + (2 * Sim_number + 2))
+                T_Brightness_Subplot: Axes = Main_Figure.add_subplot(100 * len(self.Frequency_Bins) + 20 + (2 * Sim_number + 2))
 
-            # Convert the spectral density at y = 0 to brightness temperature, normalized to 10^9 Kelvin
-            T_Brightness = Data_to_plot[int(X_resolution / 2)]
-            T_Brightness_norm     = max(T_Brightness)
-            T_Brightness_min_norm = min(T_Brightness)
-            x_coords = np.linspace(axes_limits[0], axes_limits[1], X_resolution)
+                # Convert the spectral density at y = 0 to brightness temperature, normalized to 10^9 Kelvin
+                X_resolution: int = int(self.Sim_Parsers[Sim_number].Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
+                
+                T_Brightness: NDArray[float64] = Data_to_plot[int(X_resolution / 2)]
+                T_Brightness_norm: float     = max(T_Brightness)
+                T_Brightness_min_norm: float = min(T_Brightness)
+                x_coords: NDArray[float64]   = linspace(axes_limits[0], axes_limits[1], X_resolution)
 
-            # Set the aspect ratio of the figure to 1:1 (y:x)
-            # Subplot.set_aspect(2 * x_coords[-1] / T_Brightness_norm)
+                # Create the plot of "T_b(alpha) | y = 0"
+                T_Brightness_Subplot.plot(x_coords, T_Brightness)
+                T_Brightness_Subplot.invert_xaxis()
+                T_Brightness_Subplot.set_ylim(1.1 * T_Brightness_min_norm, 1.1 * T_Brightness_norm)
+                T_Brightness_Subplot.set_title(X_Slice_tile, fontsize = self.Font_size)
+                T_Brightness_Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+                T_Brightness_Subplot.set_ylabel(X_Slice_y_label, fontsize = self.Font_size, labelpad = self.Label_Pad)
 
-            # Create the plot of "T_b(alpha) | y = 0"
-            Subplot.plot(x_coords, T_Brightness)
-            Subplot.invert_xaxis()
-            Subplot.set_ylim(1.1 * T_Brightness_min_norm, 1.1 * T_Brightness_norm)
-            Subplot.set_title(X_Slice_tile, fontsize = self.Font_size)
-            Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
-            Subplot.set_ylabel(X_Slice_y_label, fontsize = self.Font_size, labelpad = self.Label_Pad)
-
-            Frequency_str_addon += Freq_str + "_"
+            Frequency_str_addon += Freq_str
 
             plt.xticks(fontsize = self.Font_size)
             plt.yticks(fontsize = self.Font_size)
-
-        Frequency_str_addon = Frequency_str_addon[:len(Frequency_str_addon) - 1]
 
         Main_Figure.tight_layout()
 
@@ -337,14 +362,14 @@ class Sim_Visualizer():
                 #========================= Plot the main EHTIM image =========================#
 
                 # EHTIM saves the axis limits in arcsec - here I convert to micro-arcsec
-                axes_limits = np.array([(limit) for limit in Ehtim_metadata_blur]) * self.Units.MEGA
+                axes_limits = array([(limit) for limit in Ehtim_metadata_blur]) * self.Units.MEGA
 
                 # The literature (for some reason) has the X axis going positive to negative, 
                 # so I invert the X axis limits
                 axes_limits[0] = -axes_limits[0]
                 axes_limits[1] = -axes_limits[1]
 
-                pixel_size = np.abs(axes_limits[0] - axes_limits[1]) / Ehtim_Parser_no_Blur.X_PIXEL_COUNT / self.Units.MEGA * self.Units.ARCSEC_TO_RAD 
+                pixel_size = abs(axes_limits[0] - axes_limits[1]) / Ehtim_Parser_no_Blur.X_PIXEL_COUNT / self.Units.MEGA * self.Units.ARCSEC_TO_RAD 
 
                 Intensity_ehtim_no_blur_T = self.Units.Spectral_density_to_T(Intensity_ehtim_no_blur_jy / pixel_size**2 / self.Units.W_M2_TO_JY, Ehtim_Parser_no_Blur.OBS_FREQUENCY * self.Units.GIGA) / self.Units.GIGA
                 Intensity_ehtim_blur_T    = self.Units.Spectral_density_to_T(Intensity_ehtim_blur_jy    / pixel_size**2 / self.Units.W_M2_TO_JY, Ehtim_Parser_Blur.OBS_FREQUENCY * self.Units.GIGA) / self.Units.GIGA
@@ -562,26 +587,26 @@ class Sim_Visualizer():
         axes_limits[0] = -axes_limits[0]
         axes_limits[1] = -axes_limits[1]
 
-        max_value = np.max(Intensity_ehtim_jy)
+        max_value = max(Intensity_ehtim_jy.flatten())
 
         # Im not even sure what is going on with the axis limits at this points - TODO: figure out the axis inversion
-        x_axis = np.linspace(axes_limits[0],axes_limits[1], Ehtim_Parser.X_PIXEL_COUNT)
-        y_axis = np.linspace(axes_limits[3],axes_limits[2], Ehtim_Parser.Y_PIXEL_COUNT)
+        x_axis = linspace(axes_limits[0],axes_limits[1], Ehtim_Parser.X_PIXEL_COUNT)
+        y_axis = linspace(axes_limits[3],axes_limits[2], Ehtim_Parser.Y_PIXEL_COUNT)
 
         ring_mask, dark_spot_mask = get_template_pixel_mask(VIDA_parser = VIDA_parser, 
-                                                            FOV         = np.abs(axes_limits[0] - axes_limits[1]), 
+                                                            FOV         = abs(axes_limits[0] - axes_limits[1]), 
                                                             N_pixels    = Ehtim_Parser.X_PIXEL_COUNT,
                                                             std_scale   = 0.5)
                     
         # Cast to a numpy array, so I can scale it by max_value
-        Contour_levels = np.array(Contour_levels)
+        Contour_levels = array(Contour_levels)
 
         format = {}
         for label_idx, string in zip(max_value * Contour_levels, Contour_levels):
             format[label_idx] = str(string)
         
-        Contour_mask = np.ma.array(Intensity_ehtim_jy, 
-                                    mask = np.logical_and(np.logical_not(dark_spot_mask), np.logical_not(ring_mask)))
+        Contour_mask = ma.array(Intensity_ehtim_jy, 
+                                mask = logical_and(logical_not(dark_spot_mask), logical_not(ring_mask)))
                     
         Contour = Subplot.contour(x_axis, y_axis, Contour_mask, levels = max_value * Contour_levels, colors = Contour_colors)
         Labels  = Subplot.clabel(Contour, inline = True, fontsize = 12, fmt = format)
@@ -601,7 +626,7 @@ class Sim_Visualizer():
         Ehtim_Parser = Ehtim_Parsers[0]
 
         axes_limits     = [limit * self.Units.MEGA for limit in Ehtim_Parser.WINDOW_LIMITS]
-        Ehtim_image_FOV = np.abs(axes_limits[0] - axes_limits[1])  # Units of [uas]
+        Ehtim_image_FOV = abs(axes_limits[0] - axes_limits[1])  # Units of [uas]
         Ehtim_image_res = Ehtim_Parser.X_PIXEL_COUNT
 
         Intensity_ehtim_jy, Intensity_ehtim_T, Frequency_str = self.get_plottable_intensity_from_parsers(Ehtim_Parsers)
@@ -628,12 +653,12 @@ class Sim_Visualizer():
 
         if CROP:
 
-            x_crop_range = np.array([(-(slice_x_offset - Ehtim_image_FOV / 2) - crop_rel_rage[0]), (-(slice_x_offset - Ehtim_image_FOV / 2) + crop_rel_rage[1])])
-            y_crop_range = np.array([(-(slice_y_offset - Ehtim_image_FOV / 2) - crop_rel_rage[2]), (-(slice_y_offset - Ehtim_image_FOV / 2) + crop_rel_rage[3])])
+            x_crop_range = array([(-(slice_x_offset - Ehtim_image_FOV / 2) - crop_rel_rage[0]), (-(slice_x_offset - Ehtim_image_FOV / 2) + crop_rel_rage[1])])
+            y_crop_range = array([(-(slice_y_offset - Ehtim_image_FOV / 2) - crop_rel_rage[2]), (-(slice_y_offset - Ehtim_image_FOV / 2) + crop_rel_rage[3])])
             
             # The desired crop window could "cut" outside the simulated window
-            FOV_overshoot_x = max(np.absolute(x_crop_range)) - Ehtim_image_FOV / 2
-            FOV_overshoot_y = max(np.absolute(y_crop_range)) - Ehtim_image_FOV / 2
+            FOV_overshoot_x = max(absolute(x_crop_range)) - Ehtim_image_FOV / 2
+            FOV_overshoot_y = max(absolute(y_crop_range)) - Ehtim_image_FOV / 2
 
             FOV_overshoot = max(FOV_overshoot_x, FOV_overshoot_y)
             
@@ -645,8 +670,8 @@ class Sim_Visualizer():
             # If it does, crop to the end of the simulated window, while keeping the aspec ratio
             if FOV_overshoot > 0:
 
-                x_crop_range = x_crop_range - np.array([-FOV_overshoot, FOV_overshoot])
-                y_crop_range = y_crop_range - np.array([-FOV_overshoot, FOV_overshoot])
+                x_crop_range = x_crop_range - array([-FOV_overshoot, FOV_overshoot])
+                y_crop_range = y_crop_range - array([-FOV_overshoot, FOV_overshoot])
 
                 axes_limits = [-crop_rel_rage[0] + FOV_overshoot, 
                                 crop_rel_rage[1] - FOV_overshoot, 
@@ -674,10 +699,10 @@ class Sim_Visualizer():
         axes_limits[1] = -axes_limits[1]
         
         # So the type checker does not complain at the imshow() call
-        axes_limits = np.array(axes_limits)
+        axes_limits = array(axes_limits)
 
-        x_coords = np.linspace(axes_limits[0], axes_limits[1], crop_res_x)
-        y_coords = np.linspace(axes_limits[2], axes_limits[3], crop_res_y)
+        x_coords = linspace(axes_limits[0], axes_limits[1], crop_res_x)
+        y_coords = linspace(axes_limits[2], axes_limits[3], crop_res_y)
 
         Subplot = template_fig.add_subplot(141)
         Ehtim_crop        = Intensity_ehtim[y_crop_idx[0] : y_crop_idx[1], x_crop_idx[0] : x_crop_idx[1]]
@@ -685,13 +710,13 @@ class Sim_Visualizer():
 
         if CROP:
 
-            Subplot.plot(np.zeros(crop_res_y), y_coords, "r", linewidth = 4)
-            Subplot.plot(x_coords, np.zeros(crop_res_x), "b", linewidth = 4)
+            Subplot.plot(zeros(crop_res_y), y_coords, "r", linewidth = 4)
+            Subplot.plot(x_coords, zeros(crop_res_x), "b", linewidth = 4)
 
         else:
 
-            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res_y), y_coords, "r", linewidth = 4)
-            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res_x), "b", linewidth = 4)
+            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * ones(crop_res_y), y_coords, "r", linewidth = 4)
+            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * ones(crop_res_x), "b", linewidth = 4)
 
         Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
         Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
@@ -727,13 +752,13 @@ class Sim_Visualizer():
 
         if CROP:
 
-            Subplot.plot(np.zeros(crop_res_y), y_coords, "r--", linewidth = 4)
-            Subplot.plot(x_coords, np.zeros(crop_res_x), "b--", linewidth = 4)
+            Subplot.plot(zeros(crop_res_y), y_coords, "r--", linewidth = 4)
+            Subplot.plot(x_coords, zeros(crop_res_x), "b--", linewidth = 4)
 
         else:
 
-            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * np.ones(crop_res_y), y_coords, "r--", linewidth = 4)
-            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * np.ones(crop_res_x), "b--", linewidth = 4)
+            Subplot.plot((slice_x_offset - Ehtim_image_FOV / 2) * ones(crop_res_y), y_coords, "r--", linewidth = 4)
+            Subplot.plot(x_coords, (slice_y_offset - Ehtim_image_FOV / 2) * ones(crop_res_x), "b--", linewidth = 4)
 
         Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
         Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
@@ -756,7 +781,7 @@ class Sim_Visualizer():
         Subplot.set_ylim(0, 1)
         Subplot.set_xlim(axes_limits[0], axes_limits[1])
 
-        Subplot.set_aspect(np.absolute(axes_limits[1] - axes_limits[0]))
+        Subplot.set_aspect(absolute(axes_limits[1] - axes_limits[0]))
         Subplot.tick_params(left = True, right = False, labelleft = True,
                             labelbottom = True, bottom = True)
 
@@ -777,7 +802,7 @@ class Sim_Visualizer():
         Subplot.set_ylim(0, 1)
         Subplot.set_xlim(axes_limits[0], axes_limits[1])
 
-        Subplot.set_aspect(np.absolute(axes_limits[1] - axes_limits[0]))
+        Subplot.set_aspect(absolute(axes_limits[1] - axes_limits[0]))
         Subplot.tick_params(left = True, right = False, labelleft = True,
                                 labelbottom = True, bottom = True)
             
@@ -801,12 +826,12 @@ class Sim_Visualizer():
         Ehtim_Parser    = Ehtim_Parsers[0]
         Ehtim_image_res = Ehtim_Parser.X_PIXEL_COUNT
 
-        axes_limits     = np.array([(limit) for limit in Ehtim_Parser.WINDOW_LIMITS ]) * self.Units.MEGA
-        Ehtim_image_FOV = np.abs(axes_limits[0] - axes_limits[1])  # Units of [uas]
+        axes_limits     = array([(limit) for limit in Ehtim_Parser.WINDOW_LIMITS ]) * self.Units.MEGA
+        Ehtim_image_FOV = abs(axes_limits[0] - axes_limits[1])  # Units of [uas]
         pixel_size      = Ehtim_image_FOV / Ehtim_image_res / self.Units.MEGA * self.Units.ARCSEC_TO_RAD  
 
-        Intensity_ehtim_jy = np.zeros((Ehtim_image_res, Ehtim_image_res))
-        Intensity_ehtim_T  = np.zeros((Ehtim_image_res, Ehtim_image_res))
+        Intensity_ehtim_jy = zeros((Ehtim_image_res, Ehtim_image_res))
+        Intensity_ehtim_T  = zeros((Ehtim_image_res, Ehtim_image_res))
 
         for Parser in Ehtim_Parsers:
 
@@ -859,7 +884,7 @@ class Sim_Visualizer():
                 return 
 
             Intensity_ehtim_jy, _, Frequency_str = self.get_plottable_intensity_from_parsers(Ehtim_Parsers)
-            axes_limits     = np.array([(limit) for limit in Ehtim_Parsers[0].WINDOW_LIMITS ]) * self.Units.MEGA
+            axes_limits     = array([(limit) for limit in Ehtim_Parsers[0].WINDOW_LIMITS ]) * self.Units.MEGA
 
             # The literature (for some reason) has the X axis going positive to negative, 
             # so I invert the X axis limits
@@ -928,74 +953,3 @@ class Sim_Visualizer():
                 Superposition_w_contour_fig.savefig(self.Sim_path + 
                                                     "Figures\\" + 
                                                     fig_title, bbox_inches = 'tight')
-                
-    def make_PIL_image(self, arr):
-        
-        from PIL import Image
-
-        size = len(arr)
-
-        # Initialize an empty image in RGB mode
-        img = Image.new("RGB", (size, size))
-
-        # Map the array to colors (0 -> white, 1 -> black)
-        # Using NumPy's broadcasting for efficiency
-        color_array = np.zeros((size, size, 3), dtype = np.uint8)  # Create a blank RGB array
-        color_array[arr == 0] = [255, 255, 255]  # White for 0
-        color_array[arr != 0] = [155, 0, 0]  # Black for non-0 values
-
-        # Convert the NumPy array to a PIL image
-        img = Image.fromarray(color_array)
-
-        # Save the image as a PNG file
-        img.save("output.png")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# #     Ehtim_Parser_no_blur = ehtim_Parser("Results_specIDX_blur")
-# #     Intensity_ehtim_no_blur, Ehtim_metadata_no_blur = Ehtim_Parser_no_blur.get_plottable_ehtim_data()
-
-# #     Spectral_idx_figure = plt.figure()
-
-# #     Spectral_idx_axis = Spectral_idx_figure.add_subplot(111)
-# #     Spectral_idx_plot = Spectral_idx_axis.imshow(-Intensity_ehtim_no_blur, interpolation = 'bilinear', cmap = 'jet', extent = axes_limits)
-
-# #     colorbar = Spectral_idx_figure.colorbar(Spectral_idx_plot, ax = Spectral_idx_axis, fraction=0.046, pad=0.04)
-# #     colorbar.set_label(r"Spectral Index")
-
-# #     print(np.mean(-Intensity_ehtim_no_blur))

@@ -16,7 +16,7 @@ sys.path.append(parent_directory)
 class Integrator():
 
     __slots__ = ("init_stepsize",
-                 "RK45_accuracy", 
+                 "RK78_accuracy", 
                  "Step_controller_type",
                  "step_controller_safety_factor_1",
                  "step_controller_safety_factor_2",
@@ -31,7 +31,8 @@ class Integrator():
                  "simpson_method_accuracy",
                  "max_affine_parameter",
                  "use_adaptive_step",
-                 "max_stepsize")
+                 "max_stepsize",
+                 "radiative_transfer_integrator_type")
 
 class Disk_model():
 
@@ -224,28 +225,29 @@ class Simulation_configurator:
         self._configure_emission_models()
 
     def _configure_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
-                                             RK45_accuracy: dict[str, float | str] = {"Value": 1e-11, "Unit": "[-]"},
+                                             RK78_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
                                              Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
-                                             Safety_factor_1: dict[str, float | str] = {"Value": 1, "Unit": "[-]"},
-                                             Safety_factor_2: dict[str, float | str] = {"Value": 1e-25, "Unit": "[-]"},
+                                             Safety_factor_1: dict[str, float | str] = {"Value": 0.9, "Unit": "[-]"},
+                                             Safety_factor_2: dict[str, float | str] = {"Value": 1e-35, "Unit": "[-]"},
                                              Max_rel_step_increase: dict[str, float | str] = {"Value": 2, "Unit": "[-]"},
                                              Min_rel_step_increase: dict[str, float | str] = {"Value": 0.01, "Unit": "[-]"},
-                                             Step_controller_I_gain: dict[str, float | str] = {"Value": 0.0725, "Unit": "[-]"},
-                                             Step_controller_P_gain: dict[str, float | str] = {"Value": -0.02625, "Unit": "[-]"},
-                                             Step_controller_D_gain: dict[str, float | str] = {"Value": 0.0125, "Unit": "[-]"},
-                                             Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.045875, "Unit": "[-]"},
-                                             Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.0335, "Unit": "[-]"},
+                                             Step_controller_I_gain: dict[str, float | str] = {"Value": -0.58 / 7, "Unit": "[-]"},
+                                             Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 7, "Unit": "[-]"},
+                                             Step_controller_D_gain: dict[str, float | str] = {"Value": -0.1 / 7, "Unit": "[-]"},
+                                             Gustafsson_controller_k_1: dict[str, float | str] = {"Value": -0.367 / 7, "Unit": "[-]"},
+                                             Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 7, "Unit": "[-]"},
                                              Max_integration_count: dict[str, float | str] = {"Value": 1e7, "Unit": "[-]"},
                                              simpson_method_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"},
                                              max_affine_parameter: dict[str, float | str] = {"Value": 1e6, "Unit": "[M]"},
                                              use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},
-                                             max_stepsize: dict[str, int | str] = {"Value": 10, "Unit": "[M]"}):
+                                             max_stepsize: dict[str, int | str] = {"Value": 5, "Unit": "[M]"},
+                                             radiative_transfer_integrator_type: dict[str, str] = {"Value": "Implicit Trapezoid", "Unit": "[-]"}):
 
         self.integrator = Integrator()
 
         self.integrator.init_stepsize = Init_stepsize
         self.integrator.init_stepsize = Init_stepsize
-        self.integrator.RK45_accuracy = RK45_accuracy
+        self.integrator.RK78_accuracy = RK78_accuracy
         self.integrator.Step_controller_type = Step_controller_type
         self.integrator.step_controller_safety_factor_1 = Safety_factor_1
         self.integrator.step_controller_safety_factor_2 = Safety_factor_2
@@ -261,6 +263,7 @@ class Simulation_configurator:
         self.integrator.max_affine_parameter = max_affine_parameter
         self.integrator.use_adaptive_step = use_adaptive_step
         self.integrator.max_stepsize = max_stepsize
+        self.integrator.radiative_transfer_integrator_type = radiative_transfer_integrator_type
 
     def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},
                                   Distance: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
@@ -645,7 +648,7 @@ class Simulation_configurator:
 
             match self.disk_model.Disk_Model["Value"]:
 
-                case "Colab_test_1_profile":
+                case "Colab_test_1":
 
                     # ------------- Colab test 1 profile subsection
                     Colab_test_1_subelement = ET.SubElement(Disk_subelement, "Colab_test_1_profile") 
@@ -863,7 +866,7 @@ if __name__ == "__main__":
     Sim_config.observer.Image_x_min = {"Value": -10, "Unit": "[M]"}
     Sim_config.observer.Image_x_max = {"Value":  10, "Unit": "[M]"}
         
-    Sim_config.integrator.RK45_accuracy      = {"Value": 1e-10, "Unit": "[-]"}
+    Sim_config.integrator.RK78_accuracy      = {"Value": 1e-10, "Unit": "[-]"}
     Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
     Sim_config.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
     Sim_config.integrator.max_integration_count = {"Value": 1000000, "Unit": "[-]"}
