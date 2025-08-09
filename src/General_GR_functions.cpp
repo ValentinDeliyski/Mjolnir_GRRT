@@ -1,5 +1,89 @@
 ﻿#include "General_GR_functions.h"
 
+void get_derivative_of_inverse_metric(const double inv_Metric[4][4], const double deriv_Metric[4][4], double deriv_inv_Metric[4][4]) {
+
+    memset(deriv_inv_Metric, 0, sizeof(double) * 16);
+
+    double temp_matrix[4][4]{};
+
+    matrix_matrix_multiply(deriv_Metric, inv_Metric, temp_matrix);
+    matrix_matrix_multiply(inv_Metric, temp_matrix, deriv_inv_Metric);
+
+    for (int left_idx = 0; left_idx < 4; left_idx++) {
+
+        for (int right_idx = 0; right_idx < 4; right_idx++) {
+
+            deriv_inv_Metric[left_idx][right_idx] *= -1;
+
+        }
+
+    }
+
+}
+
+void get_second_derivative_of_inverse_metric(const double inv_Metric[4][4],
+                                             const double deriv_inv_Metric[4][4],
+                                             const double deriv_Metric[4][4], 
+                                             const double second_deriv_Metric[4][4], 
+                                             double second_deriv_inv_Metric[4][4]) {
+
+    memset(second_deriv_inv_Metric, 0, sizeof(double) * 16);
+
+    double temp_matrix[4][4]{}, term_1[4][4]{}, term_2[4][4]{}, term_3[4][4]{};
+
+    matrix_matrix_multiply(deriv_Metric, inv_Metric, temp_matrix);
+    matrix_matrix_multiply(deriv_inv_Metric, temp_matrix, term_1);
+
+    matrix_matrix_multiply(second_deriv_Metric, inv_Metric, temp_matrix);
+    matrix_matrix_multiply(inv_Metric, temp_matrix, term_2);
+
+    matrix_matrix_multiply(deriv_Metric, deriv_inv_Metric, temp_matrix);
+    matrix_matrix_multiply(inv_Metric, temp_matrix, term_3);
+
+    for (int left_idx = 0; left_idx < 4; left_idx++) {
+
+        for (int right_idx = 0; right_idx < 4; right_idx++) {
+
+            second_deriv_inv_Metric[left_idx][right_idx] = -term_1[left_idx][right_idx] - term_2[left_idx][right_idx] - term_3[left_idx][right_idx];
+
+        }
+
+    }
+
+}
+
+void get_second_mixed_derivative_of_inverse_metric(const double inv_Metric[4][4],
+                                                   const double dtheta_inv_Metric[4][4],
+                                                   const double dr_Metric[4][4],
+                                                   const double dtheta_Metric[4][4],
+                                                   const double second_deriv_Metric[4][4], 
+                                                   double second_deriv_inv_Metric[4][4]) {
+
+    memset(second_deriv_inv_Metric, 0, sizeof(double) * 16);
+
+    double temp_matrix[4][4]{}, term_1[4][4]{}, term_2[4][4]{}, term_3[4][4]{};
+
+    matrix_matrix_multiply(dr_Metric, inv_Metric, temp_matrix);
+    matrix_matrix_multiply(dtheta_inv_Metric, temp_matrix, term_1);
+
+    matrix_matrix_multiply(second_deriv_Metric, inv_Metric, temp_matrix);
+    matrix_matrix_multiply(inv_Metric, temp_matrix, term_2);
+
+    matrix_matrix_multiply(dr_Metric, dtheta_inv_Metric, temp_matrix);
+    matrix_matrix_multiply(inv_Metric, temp_matrix, term_3);
+
+    for (int left_idx = 0; left_idx < 4; left_idx++) {
+
+        for (int right_idx = 0; right_idx < 4; right_idx++) {
+
+            second_deriv_inv_Metric[left_idx][right_idx] = -term_1[left_idx][right_idx] - term_2[left_idx][right_idx] - term_3[left_idx][right_idx];
+
+        }
+
+    }
+
+}
+
 void invert_metric(double Inv_metric[4][4], const double Metric[4][4]) {
 
     double g2 = Metric[0][3] * Metric[0][3] - Metric[3][3] * Metric[0][0];
@@ -25,9 +109,10 @@ double get_eq_induced_metric_det(const double metric[4][4]) {
 
 }
 
-double get_4vec_norm(const double* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type) {
+double get_complex_4vec_norm(const std::complex<double>* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type) {
 
-    double inv_metric[4][4]{}, vec_norm{};
+    double inv_metric[4][4]{};
+    std::complex<double> vec_norm_squrated{};
 
     switch (Vector_type)
     {
@@ -39,7 +124,7 @@ double get_4vec_norm(const double* const Vector, const double Metric[4][4], Tens
 
             for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
-                vec_norm += inv_metric[left_idx][right_idx] * Vector[left_idx] * Vector[right_idx];
+                vec_norm_squrated += inv_metric[left_idx][right_idx] * Vector[left_idx] * std::conj(Vector[right_idx]);
 
             }
 
@@ -53,7 +138,7 @@ double get_4vec_norm(const double* const Vector, const double Metric[4][4], Tens
 
             for (int right_idx = 0; right_idx <= 3; right_idx++) {
 
-                vec_norm += Metric[left_idx][right_idx] * Vector[left_idx] * Vector[right_idx];
+                vec_norm_squrated += Metric[left_idx][right_idx] * Vector[left_idx] * std::conj(Vector[right_idx]);
 
             }
 
@@ -70,7 +155,21 @@ double get_4vec_norm(const double* const Vector, const double Metric[4][4], Tens
         break;
     }
 
-    return vec_norm;
+    return std::sqrt(std::abs(vec_norm_squrated));
+
+}
+
+void Normalize_complex_vector(std::complex<double>* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type) {
+
+    double Vector_norm = get_complex_4vec_norm(Vector, Metric, Vector_type);
+
+    if (isinf(1.0 / Vector_norm) || isnan(1.0 / Vector_norm)) { std::cout << "Invalid vector norm! \n"; exit(ERROR); }
+
+    for (int idx = 0; idx < 4; idx++) {
+
+        Vector[idx] *= 1.0 / Vector_norm;
+
+    }
 
 }
 

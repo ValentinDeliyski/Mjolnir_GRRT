@@ -95,7 +95,7 @@ void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const 
 
     double const delta_J_5 = 0.4379 * log(1 + 1.3414 / p_Transfer_args->X_to_0_p_7515);
 
-    Faradey_fucntions[Q] = -f_m * p_Transfer_args->sin_pitch_angle * p_Transfer_args->sin_pitch_angle * (K1_Bessel / K2_Bessel + 6 * p_Transfer_args->T_electron_dim);
+    Faradey_fucntions[Q] = f_m * p_Transfer_args->sin_pitch_angle * p_Transfer_args->sin_pitch_angle * (K1_Bessel / K2_Bessel + 6 * p_Transfer_args->T_electron_dim);
 
     Faradey_fucntions[V] = (K0_Bessel - delta_J_5) / K2_Bessel * p_Transfer_args->cos_pitch_angle;
 
@@ -134,7 +134,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
 
     // ------------------------------------------------------------------------ Bridging function ------------------------------------------------------------------------ //
 
-    double power_I = 3 * pow(p_Transfer_args->kappa, -3. / 2.);
+    double power_I = 3. * pow(p_Transfer_args->kappa, -3. / 2.);
 
     Emission_functions_low[I]  = Common_factor_low;
     Emission_functions_high[I] = Common_factor_high;
@@ -151,7 +151,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
 
     Emission_functions[Q] = -pow(pow(Emission_functions_low[Q], -power_Q) + pow(Emission_functions_high[Q], -power_Q), -1. / power_Q);
 
-    double power_V = 3. * pow(p_Transfer_args->kappa, -3. / 2);
+    double power_V = 3. * pow(p_Transfer_args->kappa, -3. / 2.);
 
     Emission_functions_low[V] = Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1., 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
     Emission_functions_high[V] = Common_factor_high * (49.0 / 64 * pow(pow(p_Transfer_args->sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(p_Transfer_args->kappa, -11.0 / 25) / p_Transfer_args->T_electron_dim / p_Transfer_args->sqrt_X;
@@ -213,7 +213,6 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
     double Common_factor_high = pow(p_Transfer_args->X, -(1 + p_Transfer_args->kappa) / 2) * M_PI * (2 / M_2_SQRTPI) / 3 * (p_Transfer_args->kappa - 2) * (p_Transfer_args->kappa - 1) * p_Transfer_args->kappa / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim) / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim) / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim)
                               * (2 * std::tgamma(2 + p_Transfer_args->kappa / 2) / (2 + p_Transfer_args->kappa) - 1.0);
 
-
     // ------------------------------------------------------------------------ Bridging function ------------------------------------------------------------------------ //
 
     double power_I = pow(-7.0 / 4 + 8.0 / 5 * p_Transfer_args->kappa, -43.0 / 50);
@@ -232,7 +231,7 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
     Absorbtion_functions_low[Q]  = Common_factor_low * 25.0 / 48;
     Absorbtion_functions_high[Q] = Common_factor_high * (441 * pow(p_Transfer_args->kappa, -144.0 / 25) + 11.0 / 20);
 
-    Absorbtion_functions[Q] = - pow(pow(Absorbtion_functions_low[Q], -power_Q) + pow(Absorbtion_functions_high[Q], -power_Q), -1.0 / power_Q);
+    Absorbtion_functions[Q] = -pow(pow(Absorbtion_functions_low[Q], -power_Q) + pow(Absorbtion_functions_high[Q], -power_Q), -1.0 / power_Q);
 
     double power_V = 61.0 / 50 * pow(p_Transfer_args->kappa, -142.0 / 125) + 7.0 / 1000;
 
@@ -300,7 +299,7 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
         Faradey_functions[V] = (T_dim * T_dim + 54. * T_dim + 50) / (30. / 11 * T_dim * T_dim + 134. * T_dim + 50) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
 
     }
-    else if (fabs(p_Transfer_args->kappa - 5.0) < 0.01) {
+    else if (fabs(p_Transfer_args->kappa - 4.5) < 0.01) {
 
         Q_coeff = 1 - exp(-pow(p_Transfer_args->X, 0.84) / 12.) - sin(p_Transfer_args->X / 4.) * exp(-2. * pow(p_Transfer_args->X, 0.525));
         V_coeff = 1 - 0.17 * log(1 + 0.348 / p_Transfer_args->sqrt_X);

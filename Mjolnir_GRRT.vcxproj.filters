@@ -28,9 +28,6 @@
     <ClCompile Include="src\Sim_Modes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\RK45.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Rendering_Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -79,28 +76,85 @@
     <ClCompile Include="src\Numerical_metric.cpp">
       <Filter>Source Files\Spacetimes</Filter>
     </ClCompile>
+    <ClCompile Include="src\Integrators.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Spacetimes\Minkowski.cpp">
+      <Filter>Source Files\Spacetimes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Libraries\include\gsl\gsl_blas.h">
-      <Filter>Header Files\gsl</Filter>
+    <ClInclude Include="Libraries\include\GLFW\glfw3native.h">
+      <Filter>Header Files\GLFW</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_blas_types.h">
-      <Filter>Header Files\gsl</Filter>
+    <ClInclude Include="Libraries\include\GLFW\glfw3.h">
+      <Filter>Header Files\GLFW</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block.h">
-      <Filter>Header Files\gsl</Filter>
+    <ClInclude Include="Libraries\include\glad\glad.h">
+      <Filter>Header Files\glad</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_double.h">
-      <Filter>Header Files\gsl</Filter>
+    <ClInclude Include="Libraries\include\KHR\khrplatform.h">
+      <Filter>Header Files\KHR</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block_char.h">
-      <Filter>Header Files\gsl</Filter>
+    <ClInclude Include="Libraries\include\Constants.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_long_double.h">
-      <Filter>Header Files\gsl</Filter>
+    <ClInclude Include="Libraries\include\Console_printing.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_float.h">
-      <Filter>Header Files\gsl</Filter>
+    <ClInclude Include="Libraries\include\Enumerations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Emission_Models.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\General_GR_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\General_math_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Input_parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\IO_files.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Lensing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Radiative_Transfer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Rendering_Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Spacetimes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Sim_Modes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Structs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\tinyxml2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Hotspot_Models.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Disk_Models.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Page_Thorne_model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Model_Structs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Integrators.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_block_double.h">
       <Filter>Header Files\gsl</Filter>
@@ -138,10 +192,10 @@
     <ClInclude Include="Libraries\include\gsl\gsl_bst.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_bst_rb.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_bst_avl.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_bst_avl.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_bst_rb.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_bst_types.h">
@@ -150,10 +204,10 @@
     <ClInclude Include="Libraries\include\gsl\gsl_cblas.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_chebyshev.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_cdf.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_cdf.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_chebyshev.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_check_range.h">
@@ -168,10 +222,10 @@
     <ClInclude Include="Libraries\include\gsl\gsl_complex_math.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_const_cgs.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_const.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_const.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_const_cgs.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_const_cgsm.h">
@@ -189,10 +243,10 @@
     <ClInclude Include="Libraries\include\gsl\gsl_deriv.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_dft_complex_float.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_dft_complex.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_dft_complex.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_dft_complex_float.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_dht.h">
@@ -213,13 +267,13 @@
     <ClInclude Include="Libraries\include\gsl\gsl_fft_complex.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_fft_complex_float.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_fft_halfcomplex.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_fft_halfcomplex_float.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_fft_complex_float.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_fft_real.h">
@@ -234,10 +288,10 @@
     <ClInclude Include="Libraries\include\gsl\gsl_fit.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_histogram.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_heapsort.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_heapsort.h">
+    <ClInclude Include="Libraries\include\gsl\gsl_histogram.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_histogram2d.h">
@@ -267,13 +321,16 @@
     <ClInclude Include="Libraries\include\gsl\gsl_math.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_matrix_char.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_matrix.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_char.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_matrix_complex_double.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_matrix_complex_float.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_matrix_complex_long_double.h">
@@ -287,18 +344,6 @@
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_matrix_int.h">
       <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_matrix_complex_float.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\GLFW\glfw3native.h">
-      <Filter>Header Files\GLFW</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\GLFW\glfw3.h">
-      <Filter>Header Files\GLFW</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\glad\glad.h">
-      <Filter>Header Files\glad</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_matrix_long.h">
       <Filter>Header Files\gsl</Filter>
@@ -888,65 +933,26 @@
     <ClInclude Include="Libraries\include\gsl\gsl_wavelet2d.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\KHR\khrplatform.h">
-      <Filter>Header Files\KHR</Filter>
+    <ClInclude Include="Libraries\include\gsl\gsl_blas.h">
+      <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\Constants.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Libraries\include\gsl\gsl_blas_types.h">
+      <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\Console_printing.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Libraries\include\gsl\gsl_block.h">
+      <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\Enumerations.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Libraries\include\gsl\gsl_block_char.h">
+      <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\Emission_Models.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_double.h">
+      <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\General_GR_functions.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_float.h">
+      <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\General_math_functions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Input_parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\IO_files.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Lensing.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Radiative_Transfer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Rendering_Engine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Spacetimes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Sim_Modes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Structs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\tinyxml2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Hotspot_Models.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Disk_Models.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Page_Thorne_model.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Model_Structs.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_long_double.h">
+      <Filter>Header Files\gsl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -967,9 +973,6 @@
     <Filter Include="Header Files\glad">
       <UniqueIdentifier>{8d7ed085-82c4-40fb-b446-02d1e9f067a2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\gsl">
-      <UniqueIdentifier>{e0a38af9-9a31-4618-b3f6-904dcddf1af9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\KHR">
       <UniqueIdentifier>{19643a91-ee85-467a-b952-b7ea61841a57}</UniqueIdentifier>
     </Filter>
@@ -988,5 +991,16 @@
     <Filter Include="Source Files\Spacetimes">
       <UniqueIdentifier>{6126e746-89c3-430b-b0fd-5bc6a134a42b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\gsl">
+      <UniqueIdentifier>{9b6ce5df-5b5b-4aaf-b1e3-91e3c560472d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Libraries\lib\gsl.dll">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Libraries\lib\gslcblas.dll">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

@@ -19,7 +19,7 @@ class Numerical_metric_parser_class():
         
         """ ====================== Initialize the arrays that hold the metric functions ====================== """
         
-        GRID_R_SIZE = 251
+        GRID_R_SIZE = 120
         GRID_THETA_SIZE = 30
         
         x_coord = []
@@ -193,25 +193,25 @@ if __name__ == "__main__":
     """ =================== Some post-evolution calculated metric parameters =================== """
     
     """ This is a rounded value for the Black Hole mass - we take is for granted and from it, calculate what the spin parameter SHOULD be to give their reported event horizon raius. """
-    M_ADM = 0.915671
+    M_ADM = 0.8904892552349474
     
     """ Their reported event horizon radius - this is an input to the simulation, and they gave a decent amount of digits, so it should be fine.
         NOTE: This is NOT in Boyer-Linguist coordinates. """
-    r_H = 0.05
+    r_H = 0.01
     
     """ This is the (NOT mass normalized) calculated spin parameter that gives their event horizon radius (its one of the real solutions to a quintic equation).
         Let alpha = 2M^2 - Mr_H and beta = 2M + r_h, then the quintic is 4 a^4 + (beta^2 - 4 alpha) a^2 + alpha^2 - M^2 beta^2 = 0. """
-    a_ADM = 0.8048 / M_ADM
+    a_ADM = 0.7813066738190858 / M_ADM
 
-    Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/rb=0.05_om=0.648537614898263_h0=0.0362501741355515.dat", M_ADM = M_ADM, a_ADM = a_ADM, r_H = r_H)
+    Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/rh=0.01_om=0.607386575548133_h0=0.0134874523851357.dat", M_ADM = M_ADM, a_ADM = a_ADM, r_H = r_H)
     x_coord, _, r_BL_coord, theta_coord, F_0, F_1, F_2, W = Numerical_metric_parser.get_parsed_results()
 
-    F_0_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_0, X_patch_number = 59, Y_patch_number = 251)
-    F_1_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_1, X_patch_number = 59, Y_patch_number = 251)
-    F_2_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_2, X_patch_number = 59, Y_patch_number = 251)
-    W_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = W, X_patch_number = 59, Y_patch_number = 251)
+    F_0_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_0, X_patch_number = 59, Y_patch_number = 120)
+    F_1_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_1, X_patch_number = 59, Y_patch_number = 120)
+    F_2_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_2, X_patch_number = 59, Y_patch_number = 120)
+    W_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = W, X_patch_number = 59, Y_patch_number = 120)
 
-    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Galin_numerical_config_I", 
+    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Galin_numerical_config_III", 
                                                  Theta_control_vectors  = [F_0_spline_instance.Control_vector_X, 
                                                                            F_1_spline_instance.Control_vector_X, 
                                                                            F_2_spline_instance.Control_vector_X, 

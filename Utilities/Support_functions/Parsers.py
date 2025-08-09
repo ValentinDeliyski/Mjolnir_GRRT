@@ -239,7 +239,7 @@ class Simulation_Parser():
 
         array_to_export = array([X_coords, 
                                  Y_coords, 
-                                 formatted_sim_data * Pixel_area / Units.SGRA_DISTANCE_GEOMETRICAL**2]).T
+                                 formatted_sim_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2]).T
 
         Obs_frequency: float = float(self.Simulation_metadata["Observation Frequency [Hz]"])
 

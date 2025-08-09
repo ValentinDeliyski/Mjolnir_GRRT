@@ -82,7 +82,7 @@ private:
     
     // The first index corresponds to the order of the method, while the second index (idx_2) corresponds to the coefficient infront of the f_{n + idx_2) term.
     // The reference for this is table 1 from https://math.iit.edu/~fass/478578_Chapter_2.pdf.
-    double AB_coefficients[5][5] =
+    double AB_history_coefficients[5][5] =
     {
         {      1.,            0.,          0.,           0.,          0.,   },
         {    -0.5,         3. / 2,         0.,           0.,          0.,   },
@@ -117,7 +117,7 @@ private:
    
     void Run_RK78();
 
-    bool Check_explicit_method_stability();
+    bool Check_method_stability();
 
     void Check_integration_complete_status();
 

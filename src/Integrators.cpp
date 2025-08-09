@@ -20,21 +20,21 @@ void Step_controller_class::update_state_errors(const double* State_Vector, cons
 
     double Error_scale[e_Dynamic_state_size]{};
 
-    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
+    for (int idx = 1; idx < e_Dynamic_state_size; idx++) {
 
-        Error_scale[idx] = this->Parameters.RK_78_accuracy + std::fabs(State_Vector[idx]) * this->Parameters.RK_78_accuracy;
+        Error_scale[idx] = this->Parameters.RK_78_abs_accuracy + std::fabs(State_Vector[idx]) * this->Parameters.RK_78_rel_accuracy;
 
     }
 
     double Total_State_Error{};
 
-    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
+    for (int idx = 1; idx < e_Dynamic_state_size; idx++) {
 
         Total_State_Error += (State_Error_Vector[idx] / Error_scale[idx]) * (State_Error_Vector[idx] / Error_scale[idx]);
 
     }
 
-    Total_State_Error /= e_Dynamic_state_size;
+    Total_State_Error /= (e_Dynamic_state_size - 1);
 
     this->current_err = std::sqrt(Total_State_Error) + this->Parameters.Safety_2;
 
@@ -208,30 +208,44 @@ void Integrator_class::Update_ray_log(const double* const New_State_vector) {
 
     this->p_Ray_log_struct->Log_offset += 1;
     int& log_offset = this->p_Ray_log_struct->Log_offset;
-    const double& R_throat = this->p_Init_conditions->Metric_parameters.R_throat;
 
     memcpy(&this->p_Ray_log_struct->Ray_path_log[log_offset * e_Full_state_size], New_State_vector, e_Dynamic_state_size * sizeof(double));
 
     this->p_Ray_log_struct->Ray_path_log[e_step + log_offset * e_Full_state_size] = this->p_Step_controller->previous_step;
-
-    if (log_offset > 0) {
-        
-        this->p_Ray_log_struct->Ray_path_log[e_affine_param + log_offset * e_Full_state_size] = this->p_Ray_log_struct->Ray_path_log[(log_offset - 1) * e_Full_state_size + e_affine_param] - this->p_Step_controller->previous_step;
-
-    }
-    else {
-
-        this->p_Ray_log_struct->Ray_path_log[e_affine_param + log_offset * e_Full_state_size] = -this->p_Init_conditions->Integrator_params.Init_stepzie;
-
-    }
+    this->p_Ray_log_struct->Ray_path_log[e_affine_param + log_offset * e_Full_state_size] = this->p_Ray_log_struct->Ray_path_log[e_affine_param + (log_offset - 1) * e_Full_state_size] - this->p_Step_controller->previous_step;
     
     // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
     // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead. 
     if (Wormhole == this->p_Init_conditions->Metric_parameters.e_Spacetime) {
 
+        const double& R_throat = this->p_Init_conditions->Metric_parameters.R_throat;
         this->p_Ray_log_struct->Ray_path_log[e_r + log_offset * e_Full_state_size] = sqrt(New_State_vector[e_r] * New_State_vector[e_r] + R_throat * R_throat);
 
     }
+
+}
+
+bool Integrator_class::Check_method_stability() {
+
+    /* ---------------------------- References for the sake of readability ---------------------------- */
+    int& Current_state_idx = this->p_Ray_log_struct->Log_offset;
+    double* State_Vector = &this->p_Ray_log_struct->Ray_path_log[Current_state_idx * e_Full_state_size];
+    /* ------------------------------------------------------------------------------------------------ */
+
+    if (this->p_Step_controller->step < this->p_Init_conditions->Integrator_params.Step_stability_check_threshold) {
+
+        this->p_Spacetime->get_largest_EOM_eigenvalue(State_Vector);
+
+    }
+
+    return true;
+
+}
+
+void Integrator_class::Init_BDF_w_AB_predictor() {
+
+
+
 
 }
 
@@ -239,14 +253,16 @@ void Integrator_class::Propagate_ray() {
 
     this->Run_RK78();
     this->Check_integration_complete_status();
+    this->Check_method_stability();
 
 }
 
 void Integrator_class::Check_integration_complete_status() {
 
-    // References for the sake of readability
-    const int& log_offset = this->p_Ray_log_struct->Log_offset;
-    const double* State_Vector = &this->p_Ray_log_struct->Ray_path_log[log_offset * e_Full_state_size];
+    /* ---------------------------- References for the sake of readability ---------------------------- */
+    int& Current_state_idx = this->p_Ray_log_struct->Log_offset;
+    double* State_Vector = &this->p_Ray_log_struct->Ray_path_log[Current_state_idx * e_Full_state_size];
+    /* ------------------------------------------------------------------------------------------------ */
 
     bool Normal_termination_condition = this->p_Spacetime->terminate_integration(State_Vector);
     bool Max_affine_param_reached = std::abs(State_Vector[e_affine_param]) >= this->p_Step_controller->Parameters.Max_affine_param;

@@ -516,10 +516,15 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the initial step size!" << "\n"; return ERROR; }
     Integrator_params->Init_stepzie = std::stod(temp_param_var->GetText());
 
+    // -------------------- RK78 abs accuracy
+    temp_param_var = Integrator_element->FirstChildElement("RK78_abs_accuracy");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 abs accuracy parameter!" << "\n"; return ERROR; }
+    Integrator_params->RK_78_abs_accuracy = std::stod(temp_param_var->GetText());
+
     // -------------------- RK78 accuracy
-    temp_param_var = Integrator_element->FirstChildElement("RK78_accuracy");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 accuracy parameter!" << "\n"; return ERROR; }
-    Integrator_params->RK_78_accuracy = std::stod(temp_param_var->GetText());
+    temp_param_var = Integrator_element->FirstChildElement("RK78_rel_accuracy");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 rel accuracy parameter!" << "\n"; return ERROR; }
+    Integrator_params->RK_78_rel_accuracy = std::stod(temp_param_var->GetText());
 
     // -------------------- Step controller safety 1
     temp_param_var = Integrator_element->FirstChildElement("step_controller_safety_factor_1");
@@ -613,6 +618,11 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     temp_param_var = Integrator_element->FirstChildElement("max_stepsize");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the max step size!" << "\n"; return ERROR; }
     Integrator_params->Max_stepsize = std::stod(temp_param_var->GetText());
+
+    // -------------------- Step stability check threshold
+    temp_param_var = Integrator_element->FirstChildElement("Step_stability_check_threshold");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step stability check threshold!" << "\n"; return ERROR; }
+    Integrator_params->Step_stability_check_threshold = std::stod(temp_param_var->GetText());
 
     // -------------------- Radiative transfer integrator
     temp_param_var = Integrator_element->FirstChildElement("radiative_transfer_integrator_type");

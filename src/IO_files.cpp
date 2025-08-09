@@ -542,7 +542,8 @@ void File_manager_class::write_integrator_metadata(std::ofstream* Output_file) {
         *Output_file << "Stepsize [M]: " << this->p_Initial_Conditions->Integrator_params.Init_stepzie;
     }
 
-    *Output_file << "Geodesic integrator accuracy parameter [M]: " << this->p_Initial_Conditions->Integrator_params.RK_78_accuracy << "\n";
+    *Output_file << "Geodesic integrator abs accuracy parameter [M]: " << this->p_Initial_Conditions->Integrator_params.RK_78_abs_accuracy << "\n";
+    *Output_file << "Geodesic integrator rel accuracy parameter [M]: " << this->p_Initial_Conditions->Integrator_params.RK_78_rel_accuracy << "\n";
     *Output_file << "Max affine parameter [M]: " << this->p_Initial_Conditions->Integrator_params.Max_affine_param << "\n";
 
 }
@@ -855,15 +856,15 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
 void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
-    for (int log_index = 0; log_index <= s_Ray_results->Ray_log_struct.Log_length - 1; log_index++) {
+    for (int log_index = 0; log_index <= s_Ray_results->Ray_log_struct.Log_length; log_index++) {
 
-        for (int state_index = 0; state_index <= e_Full_state_size - 1; state_index++) {
+        for (int state_index = 0; state_index < e_Full_state_size; state_index++) {
 
             Log_Output_File << s_Ray_results->Ray_log_struct.Ray_path_log[state_index + log_index * e_Full_state_size] << ",";
           
         }
 
-        for (int stokes_index = I; stokes_index <= e_Stokes_param_num - 1; stokes_index++) {
+        for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
 
             Log_Output_File << std::setprecision(15) << s_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][0 + 2 * log_index] << ",";
 

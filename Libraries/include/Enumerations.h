@@ -37,7 +37,9 @@ enum Derivative_selector_enums : std::underlying_type_t <std::byte> {
     None = 0,
     First_radial_derivative = 1,
     Second_radial_derivative = 2,
-    First_theta_derivative = 3
+    First_theta_derivative = 3,
+    Second_mixed_derivative = 4,
+    Second_theta_derivative = 5
 
 };
 

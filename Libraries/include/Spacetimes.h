@@ -1,8 +1,14 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include "Structs.h"
+#include <complex>
 #include <iostream>
 #include <cmath>
+#include "gsl/gsl_complex_math.h"
+#include "gsl/gsl_complex.h"
+#include "gsl/gsl_blas.h"
+#include "gsl/gsl_matrix.h"
+#include "gsl/gsl_eigen.h"
 
 class Spacetime_Base_Class {
 
@@ -24,7 +30,7 @@ public:
 
     };
 
-    /* Metric and its derivatives */
+    /* --------------------------------------------------- Metric and its derivatives --------------------------------------------------- */
 
     virtual Metric_type get_metric(const double* const State_Vector) const  {
 
@@ -58,7 +64,39 @@ public:
 
     };
 
-    /* Initial conditions derived from images */
+    virtual Metric_type get_d2theta_metric(const double* const State_Vector) const  {
+
+        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+
+        return {};
+
+    };
+
+    virtual Metric_type get_dr_dtheta_metric(const double* const State_Vector) const {
+
+        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+
+        return {};
+
+    };
+
+    /* ------------------------------------------- The Jacobian of the locally linearized EOM ------------------------------------------- */
+
+    virtual void get_EOM_Jacobian(const double* const State_Vector, double Jacobian[e_Dynamic_state_size][e_Dynamic_state_size]) {
+
+        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+
+    };
+
+    virtual std::complex<double> get_largest_EOM_eigenvalue(const double* const State_Vector) {
+
+        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+
+        return 0.0;
+
+    };
+
+    /* --------------------------------------------- Initial conditions derived from images -------------------------------------------- */
 
     virtual int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
@@ -68,7 +106,7 @@ public:
 
     };
 
-    /* Equations of motion */
+    /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
     virtual void get_EOM(const double* const State_vector, double* const Derivatives) const {
 
@@ -76,7 +114,7 @@ public:
     
     };
 
-    /* Integration Termination Conditions */
+    /* ---------------------------------------------- Integration Termination Conditions ----------------------------------------------- */
 
     virtual bool terminate_integration(const double* const State_vector) {
 
@@ -366,47 +404,67 @@ class Numerical_metric : public Spacetime_Base_Class {
 
 private:
 
+    /* ------------------------ Pointers to memory allocated for the gsl functions that evaluate the EOM Jacobian ------------------------ */
+
+    gsl_eigen_nonsymmv_workspace* GSL_workspace;
+    gsl_vector_complex* EOM_Eigenvalues;
+    gsl_matrix_complex* EOM_Eigenvectors;
+    gsl_matrix* EOM_Jacobian_gsl_matrix;
+
     Numerical_metric_params_type Parameters;
 
     double Scattering_radius;
     double Min_distance_to_singular_point;
 
-    inline void get_control_point_matrix(const double* const Control_vector, const int r_idx, const int theta_idx, double Control_matrix[4][4]) const;
+    /* ------------------------------ Functions that evaluate the cubic B-spline of the metric potentials ------------------------------- */
 
+    void get_control_point_matrix(const double* const Control_vector, const int r_idx, const int theta_idx, double Control_matrix[4][4]) const;
     void get_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
     void get_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
     void get_second_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
 
     double evaluate_single_spline(const double Control_point_matrix[4][4], const double Radial_natural_parameter, const double Theta_natural_parameter, Derivative_selector_enums Derivative_selector) const;
 
-    Numerical_metric_potentials_type evaluate_all_splines(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
-    Numerical_metric_potentials_type compute_metric_components_from_spline(const double* const State_vector, int radial_grid_idx, int theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
+    Numerical_metric_potentials_type evaluate_all_splines(const double radial_natural_param, const double theta_natural_param, int radial_grid_idx, int theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
+    Numerical_metric_potentials_type compute_metric_components_from_spline(Spline_arguments_type s_Splnie_args, Derivative_selector_enums Derivative_selector) const;
 
     double compactify_radial_coordiante(const double r) const;
+
+    /* --------------------------------------------------- Metric and its derivatives --------------------------------------------------- */
 
     Metric_type get_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
     Metric_type get_dr_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
     Metric_type get_dtheta_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
     Metric_type get_d2r_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
+    Metric_type get_d2theta_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
+    Metric_type get_dr_dtheta_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
 
 public:
 
-    /* Metric and its derivatives */
+    /* --------------------------------------------- Metric and its derivatives (wrappers) ---------------------------------------------- */
 
     Metric_type get_metric(const double* const State_Vector) const override;
     Metric_type get_dr_metric(const double* const State_Vector) const override;
     Metric_type get_dtheta_metric(const double* const State_Vector) const override;
     Metric_type get_d2r_metric(const double* const State_Vector) const override;
+    Metric_type get_d2theta_metric(const double* const State_Vector) const override;
+    Metric_type get_dr_dtheta_metric(const double* const State_Vector) const override;
 
-    /* Initial conditions derived from images */
+    /* ------------------------------------------- The Jacobian of the locally linearized EOM ------------------------------------------- */
+
+    void get_EOM_Jacobian(const double* const State_Vector, double Jacobian[e_Dynamic_state_size][e_Dynamic_state_size]) override;
+
+    std::complex<double> get_largest_EOM_eigenvalue(const double* const State_Vector) override;
+
+    /* --------------------------------------------- Initial conditions derived from images -------------------------------------------- */
 
     int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
-    /* Equations of motion */
+    /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
     void get_EOM(const double* const State_vector, double* const Derivatives) const override;
 
-    /* Integration Termination Conditions */
+    /* ---------------------------------------------- Integration Termination Conditions ----------------------------------------------- */
 
     bool terminate_integration(const double* const State_vector) override;
 

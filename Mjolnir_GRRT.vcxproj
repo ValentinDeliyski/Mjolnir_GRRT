@@ -292,6 +292,7 @@
     <ClInclude Include="Libraries\include\gsl\gsl_wavelet2d.h" />
     <ClInclude Include="Libraries\include\Hotspot_Models.h" />
     <ClInclude Include="Libraries\include\Input_parser.h" />
+    <ClInclude Include="Libraries\include\Integrators.h" />
     <ClInclude Include="Libraries\include\KHR\khrplatform.h" />
     <ClInclude Include="Libraries\include\Model_Structs.h" />
     <ClInclude Include="Libraries\include\Page_Thorne_model.h" />
@@ -319,6 +320,7 @@
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\Hotspot_Models.cpp" />
     <ClCompile Include="src\Input_parser.cpp" />
+    <ClCompile Include="src\Integrators.cpp" />
     <ClCompile Include="src\IO_files.cpp" />
     <ClCompile Include="src\Lensing.cpp" />
     <ClCompile Include="src\Page_Thorne_disk_model.cpp" />
@@ -326,18 +328,24 @@
     <ClCompile Include="src\Radiative_Transfer.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Rendering_Engine.cpp" />
-    <ClCompile Include="src\RK45.cpp" />
     <ClCompile Include="src\Sim_Modes.cpp" />
     <ClCompile Include="src\Spacetimes\Black_Hole_With_Dark_Matter.cpp" />
     <ClCompile Include="src\Spacetimes\Gauss_Bonnet.cpp" />
     <ClCompile Include="src\Spacetimes\Janis_Newman_Winicour.cpp" />
     <ClCompile Include="src\Spacetimes\Kerr.cpp" />
+    <ClCompile Include="src\Spacetimes\Minkowski.cpp" />
     <ClCompile Include="src\Spacetimes\Observer.cpp" />
     <ClCompile Include="src\Spacetimes\Regular_Black_Hole.cpp" />
     <ClCompile Include="src\Spacetimes\Wormhole.cpp" />
     <ClCompile Include="src\tinyxml2.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <CopyFileToFolders Include="Libraries\lib\gsl.dll">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Libraries\lib\gslcblas.dll">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
     <None Include="Libraries\shaders\default.frag" />
     <None Include="Libraries\shaders\default.vert" />
   </ItemGroup>
@@ -403,7 +411,7 @@
     <LibraryPath>Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>Libraries\include;$(IncludePath)</IncludePath>
+    <IncludePath>Libraries\include\gsl;Libraries\include;$(IncludePath)</IncludePath>
     <LibraryPath>Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -460,7 +468,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;libgsl.a;libmingwex.a;libgcc.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;gsl.lib;gslcblas.lib;libmingwex.a;libgcc.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -480,7 +488,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;libgsl.a;libmingwex.a;libgcc.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;gsl.lib;gslcblas.lib;libmingwex.a;libgcc.a;%(AdditionalDependencies)</AdditionalDependencies>
       <ShowProgress>NotSet</ShowProgress>
     </Link>
   </ItemDefinitionGroup>

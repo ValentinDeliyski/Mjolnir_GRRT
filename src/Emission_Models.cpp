@@ -247,6 +247,11 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     }
 
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_r] = cos(State_Vector[e_theta]);
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_theta] = -sin(State_Vector[e_theta]);
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_phi] = 0;
+
+
 }
 
 double Emission_models_class::get_electron_pitch_angle(const double* const B_field_coord_frame, 
@@ -282,7 +287,7 @@ double Emission_models_class::get_electron_pitch_angle(const double* const B_fie
 
     if (!isinf(1.0 / Wave_vec_dot_Plasma_vec) && !isinf(1.0 / B_field_norm_squared)) {
 
-        cos_angle = Wave_vec_dot_B_field / (fabs(Wave_vec_dot_Plasma_vec) * sqrt(B_field_norm_squared));
+        cos_angle = (Wave_vec_dot_B_field + B_field_dot_Plasma_vel * Wave_vec_dot_B_field) / (fabs(Wave_vec_dot_Plasma_vec) * sqrt(B_field_norm_squared + B_field_dot_Plasma_vel * B_field_dot_Plasma_vel));
 
     }
 

@@ -16,7 +16,8 @@ sys.path.append(parent_directory)
 class Integrator():
 
     __slots__ = ("init_stepsize",
-                 "RK78_accuracy", 
+                 "RK78_abs_accuracy", 
+                 "RK78_rel_accuracy", 
                  "Step_controller_type",
                  "step_controller_safety_factor_1",
                  "step_controller_safety_factor_2",
@@ -32,7 +33,8 @@ class Integrator():
                  "max_affine_parameter",
                  "use_adaptive_step",
                  "max_stepsize",
-                 "radiative_transfer_integrator_type")
+                 "radiative_transfer_integrator_type",
+                 "Step_stability_check_threshold")
 
 class Disk_model():
 
@@ -225,7 +227,8 @@ class Simulation_configurator:
         self._configure_emission_models()
 
     def _configure_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
-                                             RK78_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
+                                             RK78_abs_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
+                                             RK78_rel_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
                                              Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
                                              Safety_factor_1: dict[str, float | str] = {"Value": 0.9, "Unit": "[-]"},
                                              Safety_factor_2: dict[str, float | str] = {"Value": 1e-35, "Unit": "[-]"},
@@ -241,13 +244,15 @@ class Simulation_configurator:
                                              max_affine_parameter: dict[str, float | str] = {"Value": 1e6, "Unit": "[M]"},
                                              use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},
                                              max_stepsize: dict[str, int | str] = {"Value": 5, "Unit": "[M]"},
-                                             radiative_transfer_integrator_type: dict[str, str] = {"Value": "Implicit Trapezoid", "Unit": "[-]"}):
+                                             radiative_transfer_integrator_type: dict[str, str] = {"Value": "Implicit Trapezoid", "Unit": "[-]"},
+                                             Step_stability_check_threshold: dict[str, float | str] = {"Value": 0.01, "Unit": "[M]"}):
 
         self.integrator = Integrator()
 
         self.integrator.init_stepsize = Init_stepsize
         self.integrator.init_stepsize = Init_stepsize
-        self.integrator.RK78_accuracy = RK78_accuracy
+        self.integrator.RK78_abs_accuracy = RK78_abs_accuracy
+        self.integrator.RK78_rel_accuracy = RK78_rel_accuracy
         self.integrator.Step_controller_type = Step_controller_type
         self.integrator.step_controller_safety_factor_1 = Safety_factor_1
         self.integrator.step_controller_safety_factor_2 = Safety_factor_2
@@ -264,6 +269,7 @@ class Simulation_configurator:
         self.integrator.use_adaptive_step = use_adaptive_step
         self.integrator.max_stepsize = max_stepsize
         self.integrator.radiative_transfer_integrator_type = radiative_transfer_integrator_type
+        self.integrator.Step_stability_check_threshold = Step_stability_check_threshold
 
     def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},
                                   Distance: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
@@ -866,7 +872,7 @@ if __name__ == "__main__":
     Sim_config.observer.Image_x_min = {"Value": -10, "Unit": "[M]"}
     Sim_config.observer.Image_x_max = {"Value":  10, "Unit": "[M]"}
         
-    Sim_config.integrator.RK78_accuracy      = {"Value": 1e-10, "Unit": "[-]"}
+    Sim_config.integrator.RK78_abs_accuracy      = {"Value": 1e-10, "Unit": "[-]"}
     Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
     Sim_config.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
     Sim_config.integrator.max_integration_count = {"Value": 1000000, "Unit": "[-]"}

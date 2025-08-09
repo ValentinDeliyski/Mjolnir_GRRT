@@ -7,6 +7,21 @@
 #include <iostream>
 #include <complex>
 
+void get_derivative_of_inverse_metric(const double Metric[4][4], const double deriv_Metric[4][4], double deriv_inv_Metric[4][4]);
+
+void get_second_derivative_of_inverse_metric(const double inv_Metric[4][4],
+                                             const double deriv_inv_Metric[4][4],
+                                             const double deriv_Metric[4][4], 
+                                             const double second_deriv_Metric[4][4], 
+                                             double second_deriv_inv_Metric[4][4]);
+
+void get_second_mixed_derivative_of_inverse_metric(const double inv_Metric[4][4],
+                                                   const double dtheta_inv_Metric[4][4],
+                                                   const double dr_Metric[4][4],
+                                                   const double dtheta_Metric[4][4],
+                                                   const double second_deriv_Metric[4][4], 
+                                                   double second_deriv_inv_Metric[4][4]);
+
 //! Inverts the covariant metric tensor.
 /*! Inverts the covariant metric tensor. The current implementation works only for axi-symmetric metrics
  *  in coordinates in which the cross terms appears in the [0][3] and [3][0] elements
@@ -43,7 +58,9 @@ double get_eq_induced_metric_det(const double metric[4][4]);
  *   \param [in] Vector_type - Enum that determines the tensor type of the vector "Vector" (covariant or contravariant)
  *   \return The norm of the 4-vector.
  */
-double get_4vec_norm(const double* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type);
+double get_complex_4vec_norm(const std::complex<double>* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type);
+
+void Normalize_complex_vector(std::complex<double>* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type);
 
 //! Converts a contravariant vector from the coordinate basis to the ZAMO basis.
 /*! Converts a contravariant vector from the coordinate basis to the ZAMO basis.

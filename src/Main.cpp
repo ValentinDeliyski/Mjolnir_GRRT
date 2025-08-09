@@ -75,7 +75,7 @@ int main(int argument_count, char** cmd_line_args) {
         std::cout << "To run Mjolnir, use the following call structure:" << "\n";
         std::cout << "Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__ -print_to_console __1 FOR YES 0 FOR NO__" << "\n";
 
-        exit(ERROR);
+        throw std::runtime_error("To run Mjolnir, use the following call structure:\n Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__ -print_to_console __1 FOR YES 0 FOR NO__ \n");
 
     }
 
@@ -89,7 +89,7 @@ int main(int argument_count, char** cmd_line_args) {
 
     s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
 
-    if (ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)){ exit(ERROR); }
+    if (ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)){ throw std::runtime_error("Could not parse input file!"); }
 
     s_Sim_Context.p_Init_Conditions->Print_to_console = print_to_console;
     s_Sim_Context.p_Init_Conditions->Hotspot_params.Profile_params.Coord_time_offset += s_Sim_Context.p_Init_Conditions->Observer_params.distance;
@@ -97,7 +97,7 @@ int main(int argument_count, char** cmd_line_args) {
     // Populate the Spacetime class instance 
     Allocate_Spacetime_Class(&s_Sim_Context);
 
-    s_Sim_Context.p_Spacetime->load_parameters(&s_Sim_Context.p_Init_Conditions->Metric_parameters);
+    if (ERROR == s_Sim_Context.p_Spacetime->load_parameters(&s_Sim_Context.p_Init_Conditions->Metric_parameters)) { throw std::runtime_error("Invalid metric parameters!"); };
 
     // Get the observer position and populate the Observer class instance.
     s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
@@ -152,7 +152,7 @@ int main(int argument_count, char** cmd_line_args) {
 
     switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
    
-    case 1:
+    default:
          run_simulation_mode_1(&s_Sim_Context, &s_Ray_results);
          break;
    
@@ -163,11 +163,7 @@ int main(int argument_count, char** cmd_line_args) {
     case 3:
          run_simulation_mode_3(&s_Sim_Context, &s_Ray_results);
          break;
-   
-    default:
-         std::cout << "Unsuported simulation mode!" << "\n";
-         exit(ERROR);
-   
+ 
     }
 
     return OK;

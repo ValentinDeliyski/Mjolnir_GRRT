@@ -303,9 +303,6 @@ struct Numerical_metric_params_type {
     double Horizon_radius;
 
     // NOTE: This NOT normalized to the mass.
-    double Horizon_radius_BL;
-
-    // NOTE: This NOT normalized to the mass.
     double a_ADM;
 
     /* ============ Pointers to the numerical metric potentials control vector arrays ============ = */
@@ -329,6 +326,18 @@ struct Numerical_metric_params_type {
     Numerical_Anzatz_enums e_Anzatz;
 
     std::string Metric_file_path;
+
+};
+
+struct Spline_arguments_type {
+
+    double Radial_natural_param;
+    double Theta_natural_param;
+    int Radial_idx;
+    int Theta_idx;
+
+    double r_coord;
+    double r_coord_compactified;
 
 };
 
@@ -541,7 +550,10 @@ struct Integrator_parameters_type {
     double Init_stepzie;
 
     /*! The adaptive RK7(8) error threshold parameter. Right now, this is used as both an absolute and relative thresholds. */
-    double RK_78_accuracy;
+    double RK_78_abs_accuracy;
+
+    /*! The adaptive RK7(8) error threshold parameter. Right now, this is used as both an absolute and relative thresholds. */
+    double RK_78_rel_accuracy;
 
     /*! A multiplicative factor forr the integration step in the range (0, 1] that makes the integrator more stable. */
     double Safety_1;
@@ -569,6 +581,8 @@ struct Integrator_parameters_type {
     double Max_affine_param;
 
     Radiative_Transfer_Integrator e_Radiative_transfer_integrator;
+
+    double Step_stability_check_threshold;
 
 };
 

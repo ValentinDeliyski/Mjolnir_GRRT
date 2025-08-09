@@ -149,7 +149,7 @@ bool static Propagate_Stokes_vector(Radiative_Transfer_Integrator e_Integrator,
                                               Stokes_Vector);
         break;
 
-    case RK5:
+    default:
 
         RK5_radiative_transfer(const_cast<double*>(Total_Transfer_Functions.Emission_functions),
                                const_cast<double*>(Total_Transfer_Functions.Absorbtion_functions),
@@ -159,12 +159,6 @@ bool static Propagate_Stokes_vector(Radiative_Transfer_Integrator e_Integrator,
                                Stokes_Vector);
 
         break;
-
-    default:
-
-        std::cout << "Integration method not supported for the radiative transfer equations!" << '\n';
-
-        exit(ERROR);
 
     }
 
@@ -546,7 +540,6 @@ void static Parallel_Transport_Polarization_Vector(const double* const State_Vec
 
         }
     }
-
 }
 
 void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][4],
@@ -578,6 +571,20 @@ void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][
     Stokes_Vector[V] = (Polarized_Intensity * (std::conj(Stokes_Basis_Pol_vec[1]) * Stokes_Basis_Pol_vec[2] -
                                                Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]))).imag();
 
+    double Polarized_Intensity_after_mapping = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
+                                                    Stokes_Vector[U] * Stokes_Vector[U] +
+                                                    Stokes_Vector[V] * Stokes_Vector[V]);
+
+    if (!isnan(1. / Polarized_Intensity_after_mapping) && !isinf(1.0 / Polarized_Intensity_after_mapping)) {
+
+        for (int idx = 1; idx < 4; idx++) {
+
+            Stokes_Vector[idx] *= Polarized_Intensity / Polarized_Intensity_after_mapping;
+
+        }
+
+    }
+    
 }
 
 void static Map_Stokes_to_Polarization_Vector(const double* const Stokes_Vector,
@@ -638,7 +645,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
         /* =============== Pick out the ray position / momenta from the Log, at the given log index =============== */
 
         double* Logged_ray_path = &(p_Ray_results->Ray_log_struct.Ray_path_log[log_index * e_Full_state_size]);
-
+        
         if (log_index > 0) { Current_theta_turning_points -= Check_for_theta_turning_point(Logged_ray_path, Logged_ray_path - e_Full_state_size); };
 
         Current_order = compute_image_order(Current_theta_turning_points, p_Sim_Context->p_Init_Conditions);
@@ -678,9 +685,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                        create the tetrad with the Trial_spacelike_vector. */
                     if (OK != Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path, Trial_spacelike_vector, true)) {
 
-                        std::cout << "Could not construct the Stokes basis at the current ray point! \n";
-
-                        exit(ERROR);
+                        throw std::runtime_error("Could not construct the Stokes basis at the current ray point!\n");
 
                     }
 
@@ -702,9 +707,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                        create the tetrad with the Trial_spacelike_vector. */
                     if (OK != Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, Logged_ray_path - e_Full_state_size, Trial_spacelike_vector, true)) {
 
-                        std::cout << "Could not construct the Stokes basis at the next ray point! \n";
-
-                        exit(ERROR);
+                        throw std::runtime_error("Could not construct the Stokes basis at the next ray point!\n");
 
                     }
 
@@ -734,7 +737,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     /* =============== The final mapping of the polarizatio vector to Stokes parameters at the observer ===================== */
 
-    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
+    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Stokes_Vector[I] > 0) {
 
         double Observer_Tetrad[4][4]{};
         double Observer_inv_Tetrad[4][4]{};
@@ -745,9 +748,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             /* There is no second attempt to create the observer tetrad, because it should never fail. */
 
-            std::cout << "Could not construct the Stokes basis at the observer! \n";
-
-            exit(ERROR);
+            throw std::runtime_error("Could not construct the Stokes basis at the observer! \n");
 
         }
 
