@@ -11,6 +11,7 @@ class Emission_models_class;
 class Page_Thorne_Model_class;
 class Observer_class;
 class File_manager_class;
+class Integrator_class;
 
 struct Hotspot_profile_parameters_type {
 
@@ -583,6 +584,24 @@ struct Integrator_parameters_type {
     Radiative_Transfer_Integrator e_Radiative_transfer_integrator;
 
     double Step_stability_check_threshold;
+
+    bool Evaluate_method_stability;
+
+    int BDF_root_finder_max_iterations;
+
+};
+
+struct RHS_wrapper_struct {
+
+    Integrator_class* Integrator;
+    void* RHS_params;
+
+};
+
+struct Stability_return_type {
+
+    bool RK78_stability_status;
+    bool BDF_stability_status;
 
 };
 

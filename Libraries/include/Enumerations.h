@@ -196,10 +196,6 @@ enum Geodesic_Integrator_enums: std::underlying_type_t <std::byte> {
 
     RK5_fixed_step = 0,
     RK78_adaptive_step = 1,
-    BDF_w_AB_predictor_order_1 = 2,
-    BDF_w_AB_predictor_order_2 = 3,
-    BDF_w_AB_predictor_order_3 = 4,
-    BDF_w_AB_predictor_order_4 = 5,
-    BDF_w_AB_predictor_order_5 = 6,
+    BDF = 2
 
 };

@@ -300,7 +300,7 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
         derivative_correction_factor_1 *= s_Splnie_args.r_coord * (1 - s_Splnie_args.r_coord_compactified) / s_Splnie_args.r_coord_compactified;
 
         /* ------- This is correcting by the factor d(natural_parameter)/d(theta) ------- */
-        derivative_correction_factor_1 = 1 / (this->Parameters.Theta_grid[s_Splnie_args.Theta_idx] - this->Parameters.Theta_grid[s_Splnie_args.Theta_idx - 1]);
+        derivative_correction_factor_1 *= 1 / (this->Parameters.Theta_grid[s_Splnie_args.Theta_idx] - this->Parameters.Theta_grid[s_Splnie_args.Theta_idx - 1]);
 
         Corrected_Potentials.F_0 *= derivative_correction_factor_1;
         Corrected_Potentials.F_1 *= derivative_correction_factor_1;
@@ -326,7 +326,6 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
     default:
 
         return this->evaluate_all_splines(s_Splnie_args.Radial_natural_param, s_Splnie_args.Theta_natural_param, s_Splnie_args.Radial_idx, s_Splnie_args.Theta_idx, Derivative_selector);
-
 
     }
 
@@ -753,26 +752,23 @@ Metric_type Numerical_metric::get_d2theta_metric(const double* const State_Vecto
 
     Metric_type s_d2theta_Metric{};
 
+    s_d2theta_Metric.Metric[e_t][e_t] = -2 * N * exp_2F_0 * (d2theta_F_0 + 2 * dtheta_F_0 * dtheta_F_0)
+        + 2 * exp_2F_2 * sin_theta * sin_theta * (W * W * d2theta_F_2 + 2 * W * W * dtheta_F_2 * dtheta_F_2 + 4 * W * dtheta_W * dtheta_F_2 + dtheta_W * dtheta_W + W * d2theta_W - W * W)
+        + 8 * exp_2F_2 * sin_theta * cos_theta * (dtheta_F_2 * W * W + W * dtheta_W) + 2 * exp_2F_2 * W * W * cos_theta * cos_theta;
+
+    s_d2theta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * sin_theta * sin_theta * (2 * d2theta_F_2 * W + 4 * dtheta_F_2 * dtheta_F_2 * W + 4 * dtheta_F_2 * dtheta_W + d2theta_W - 2 * W)
+        - exp_2F_2 * r * sin_theta * cos_theta * (dtheta_W + 2 * dtheta_F_2 * W) - 2 * exp_2F_2 * W * r * cos_theta * cos_theta;
+
     switch (this->Parameters.e_Anzatz) {
 
     case e_Anzatz_2:
 
-        s_d2theta_Metric.Metric[e_t][e_t] = -2 * N * exp_2F_2 * (d2theta_F_0 + 2 * dtheta_F_0 * dtheta_F_0) + 2 * exp_2F_2 * r * r * sin_theta * sin_theta * (W * W * d2theta_F_2 + 2 * W * W * dtheta_F_2 * dtheta_F_2 + 2 * W * dtheta_W * dtheta_F_2
-            + dtheta_W * dtheta_W + W * d2theta_W + 2 * W * dtheta_W * dtheta_F_2 - W * W)
-            + 8 * exp_2F_2 * r * r * sin_theta * cos_theta * (dtheta_F_2 * W * W + W * dtheta_W) + 2 * exp_2F_2 * W * W * r * r * cos_theta * cos_theta;
+        s_d2theta_Metric.Metric[e_t][e_t] *= r * r;
+        s_d2theta_Metric.Metric[e_t][e_phi] *= r;
 
-        s_d2theta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * r * sin_theta * sin_theta * (2 * d2theta_F_2 * W + 4 * dtheta_F_2 * dtheta_F_2 * W + 4 * dtheta_F_2 * dtheta_W + d2theta_W - 2 * W)
-                                              -exp_2F_2 * r * r * sin_theta * cos_theta * (dtheta_W + 2 * dtheta_F_2 * W) - 2 * exp_2F_2 * W * r * r * cos_theta * cos_theta;
         break;
 
     default:
-
-        s_d2theta_Metric.Metric[e_t][e_t] = -2 * N * exp_2F_2 * (d2theta_F_0 + 2 * dtheta_F_0 * dtheta_F_0) + 2 * exp_2F_2 * sin_theta * sin_theta * (W * W * d2theta_F_2 + 2 * W * W * dtheta_F_2 * dtheta_F_2 + 2 * W * dtheta_W * dtheta_F_2
-            + dtheta_W * dtheta_W + W * d2theta_W + 2 * W * dtheta_W * dtheta_F_2 - W * W)
-            + 8 * exp_2F_2 * sin_theta * cos_theta * (dtheta_F_2 * W * W + W * dtheta_W) + 2 * exp_2F_2 * W * W * cos_theta * cos_theta;
-
-        s_d2theta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * sin_theta * sin_theta * (2 * d2theta_F_2 * W + 4 * dtheta_F_2 * dtheta_F_2 * W + 4 * dtheta_F_2 * dtheta_W + d2theta_W - 2 * W)
-                                              -exp_2F_2 * r * sin_theta * cos_theta * (dtheta_W + 2 * dtheta_F_2 * W) - 2 * exp_2F_2 * W * r * cos_theta * cos_theta;
 
         break;
 
@@ -827,8 +823,8 @@ Metric_type Numerical_metric::get_dr_dtheta_metric(const double* const State_Vec
                                       / (this->Parameters.Theta_grid[Theta_grid_idx] - this->Parameters.Theta_grid[Theta_grid_idx - 1]);
 
     const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(s_Spline_args, None);
-    const Numerical_metric_potentials_type s_dtheta_Potentials = this->compute_metric_components_from_spline(s_Spline_args, First_theta_derivative);
     const Numerical_metric_potentials_type s_dr_Potentials = this->compute_metric_components_from_spline(s_Spline_args, First_radial_derivative);
+    const Numerical_metric_potentials_type s_dtheta_Potentials = this->compute_metric_components_from_spline(s_Spline_args, First_theta_derivative);
     const Numerical_metric_potentials_type s_dr_dtheta_Potentials = this->compute_metric_components_from_spline(s_Spline_args, Second_mixed_derivative);
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
@@ -865,19 +861,16 @@ Metric_type Numerical_metric::get_dr_dtheta_metric(const double* const State_Vec
 
         /* TODO: fix these */
 
-        s_dr_dtheta_Metric.Metric[e_t][e_t] = (-2 * dr_N * dtheta_F_0 - 4 * N * dr_F_0 * dtheta_F_0 - 2 * N * dr_dtheta_F_0) * exp_2F_0 + ((4 * dtheta_F_2 * dr_F_2 * W * W * r * r + 2 * dr_dtheta_F_2 * r * r + 4 * dtheta_F_2 * W * dr_W * r * r + 4 * dr_dtheta_F_2 * W * dtheta_W * r * r
-                                                                                                                                        + 2 * dr_W * dtheta_W * r * r + 2 * W * dr_dtheta_W * r * r + 4 * r * dr_dtheta_F_2 * W * W + 4 * r * W * dtheta_W) * sin_theta * sin_theta
-                                            + 4 * dtheta_F_2 * W * W * sin_theta * cos_theta + 4 * W * dtheta_W * sin_theta * cos_theta + 4 * r * W * W) * exp_2F_2;
+        s_dr_dtheta_Metric.Metric[e_t][e_t] = 0;
 
-        s_dr_dtheta_Metric.Metric[e_t][e_phi] = -2 * exp_2F_2 * (2 * r * r * W * dr_F_2 * dtheta_F_2 * sin_theta * sin_theta - 2 * r * W * dtheta_F_2 * sin_theta * sin_theta - r * r * dr_W * dtheta_F_2 * sin_theta * sin_theta - r * r * W * dr_dtheta_F_2 * sin_theta * sin_theta
-                                                               - 2 * r * W * dr_F_2 * sin_theta * cos_theta - 2 * r * W * sin_theta * cos_theta - r * r * dr_W * sin_theta * cos_theta);
+        s_dr_dtheta_Metric.Metric[e_t][e_phi] = 0;
 
         break;
 
 
     default:
 
-        s_dr_dtheta_Metric.Metric[e_t][e_t] = -2 * (dr_N * dtheta_F_0 + 2 * N * dr_F_0 * dtheta_F_0 + N * dr_dtheta_F_0) * exp_2F_0 
+        s_dr_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * (dr_N * dtheta_F_0 + 2 * N * dr_F_0 * dtheta_F_0 + N * dr_dtheta_F_0)
                                             + (4 * dtheta_F_2 * dr_F_2 * W * W + 4 * W * dtheta_W * dr_F_2 + 2 * dr_dtheta_F_2 * W * W + 4 * dtheta_F_2 * dr_W * W + 2 * dtheta_W * dr_W + 2 * dr_dtheta_W * W) * exp_2F_2 * sin_theta * sin_theta
                                             + (4 * dr_F_2 * W * W + 4 * W * dr_W) * exp_2F_2 * sin_theta * cos_theta;
 
@@ -889,9 +882,12 @@ Metric_type Numerical_metric::get_dr_dtheta_metric(const double* const State_Vec
     }
 
     s_dr_dtheta_Metric.Metric[e_phi][e_t] = s_dr_dtheta_Metric.Metric[e_t][e_phi];
-    s_dr_dtheta_Metric.Metric[e_r][e_r] = 2 * exp_2F_1 / N * (2 * dtheta_F_1 * dr_F_1 + dr_dtheta_F_1 - dtheta_F_1 * dr_N / N);
-    s_dr_dtheta_Metric.Metric[e_theta][e_theta] = 2 * exp_2F_1 * dtheta_F_1 * (2 * r * dtheta_F_1 + 2 * r * r * dtheta_F_2 * dr_F_2 + r * r * dr_dtheta_F_2);
-    s_dr_dtheta_Metric.Metric[e_phi][e_phi] = 2 * exp_2F_2 * (2 * dr_F_2 * r * r * dtheta_F_2 * sin_theta * sin_theta + 2 * r * dtheta_F_2 * sin_theta * sin_theta + 4 * r * r * dr_F_2 * sin_theta * cos_theta + 2 * r * sin_theta * cos_theta);
+    s_dr_dtheta_Metric.Metric[e_r][e_r] = 2 * exp_2F_1 / N * dtheta_F_1 * (2 * dr_F_1 - dr_N / N) + 2 * exp_2F_1 / N * dr_dtheta_F_1;
+    s_dr_dtheta_Metric.Metric[e_theta][e_theta] = 2 * exp_2F_1 * (2 * dr_F_1 * dtheta_F_1 * r * r + dr_dtheta_F_1 * r * r + 2 * dtheta_F_1 * r);
+    s_dr_dtheta_Metric.Metric[e_phi][e_phi] = 2 * exp_2F_2 * (2 * dr_F_2 * dtheta_F_2 * r * r + dr_dtheta_F_2 * r * r + 2 * dtheta_F_2 * r) * sin_theta * sin_theta
+                                            + 4 * exp_2F_2 * (r * r * dr_F_2 + r) * sin_theta * cos_theta;
+
+
 
     return s_dr_dtheta_Metric;
 
@@ -912,12 +908,10 @@ void Numerical_metric::get_EOM_Jacobian(const double* const State_Vector, double
         |0,                0,                              0,               0,  |     0,    -d_r g^{\phi a}p_a,   -d_\theta g^{\phi a}p_a,     0,     |
         |---------------------------------------------------------------------------------------------------------------------------------------------| */
 
-
     const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
 
     const int Radial_grid_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
     const int Theta_grid_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
-
 
     memset(Jacobian, 0, sizeof(double) * 64);
 
@@ -962,22 +956,22 @@ void Numerical_metric::get_EOM_Jacobian(const double* const State_Vector, double
         Jacobian[2][2] += dtheta_inv_metric[e_theta][idx] * State_Vector[idx + e_p_t];
         Jacobian[3][2] += dtheta_inv_metric[e_phi][idx] * State_Vector[idx + e_p_t];
 
-        Jacobian[4][4] -= dr_inv_metric[e_t][idx] * State_Vector[idx + e_p_t];
-        Jacobian[5][4] -= dr_inv_metric[e_r][idx] * State_Vector[idx + e_p_t];
-        Jacobian[6][4] -= dr_inv_metric[e_theta][idx] * State_Vector[idx + e_p_t];
-        Jacobian[7][4] -= dr_inv_metric[e_phi][idx] * State_Vector[idx + e_p_t];
+        Jacobian[4][5] -= dr_inv_metric[e_t][idx] * State_Vector[idx + e_p_t];
+        Jacobian[5][5] -= dr_inv_metric[e_r][idx] * State_Vector[idx + e_p_t];
+        Jacobian[6][5] -= dr_inv_metric[e_theta][idx] * State_Vector[idx + e_p_t];
+        Jacobian[7][5] -= dr_inv_metric[e_phi][idx] * State_Vector[idx + e_p_t];
 
-        Jacobian[4][5] -= dtheta_inv_metric[e_t][idx] * State_Vector[idx + e_p_t];
-        Jacobian[5][5] -= dtheta_inv_metric[e_r][idx] * State_Vector[idx + e_p_t];
-        Jacobian[6][5] -= dtheta_inv_metric[e_theta][idx] * State_Vector[idx + e_p_t];
-        Jacobian[7][5] -= dtheta_inv_metric[e_phi][idx] * State_Vector[idx + e_p_t];
+        Jacobian[4][6] -= dtheta_inv_metric[e_t][idx] * State_Vector[idx + e_p_t];
+        Jacobian[5][6] -= dtheta_inv_metric[e_r][idx] * State_Vector[idx + e_p_t];
+        Jacobian[6][6] -= dtheta_inv_metric[e_theta][idx] * State_Vector[idx + e_p_t];
+        Jacobian[7][6] -= dtheta_inv_metric[e_phi][idx] * State_Vector[idx + e_p_t];
 
         for (int idx_2 = 0; idx_2 < 4; idx_2++) {
 
-            Jacobian[1][5] -= 0.5 * d2r_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
-            Jacobian[1][6] -= 0.5 * dr_dtheta_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
-            Jacobian[2][5] -= 0.5 * dr_dtheta_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
-            Jacobian[2][6] -= 0.5 * d2theta_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
+            Jacobian[5][1] -= 0.5 * d2r_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
+            Jacobian[6][1] -= 0.5 * dr_dtheta_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
+            Jacobian[5][2] -= 0.5 * dr_dtheta_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
+            Jacobian[6][2] -= 0.5 * d2theta_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
 
         }
 
@@ -994,13 +988,13 @@ void Numerical_metric::get_EOM_Jacobian(const double* const State_Vector, double
 
 std::complex<double> Numerical_metric::get_largest_EOM_eigenvalue(const double* const State_Vector) {
 
-    double EOM_Jacobian[8][8]{};
+    double EOM_Jacobian[e_Dynamic_state_size][e_Dynamic_state_size]{};
 
     this->get_EOM_Jacobian(State_Vector, EOM_Jacobian);
 
-    for (int idx_1 = 0; idx_1 < 8; idx_1++) {
+    for (int idx_1 = 0; idx_1 < e_Dynamic_state_size; idx_1++) {
 
-        for (int idx_2 = 0; idx_2 < 8; idx_2++) {
+        for (int idx_2 = 0; idx_2 < e_Dynamic_state_size; idx_2++) {
 
             gsl_matrix_set(this->EOM_Jacobian_gsl_matrix, idx_1, idx_2, EOM_Jacobian[idx_1][idx_2]);
 
@@ -1027,7 +1021,6 @@ std::complex<double> Numerical_metric::get_largest_EOM_eigenvalue(const double* 
     return Largest_eigenvalue;
 
 }
-
 
 int Numerical_metric::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
 
