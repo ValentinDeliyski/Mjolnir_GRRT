@@ -196,6 +196,6 @@ enum Geodesic_Integrator_enums: std::underlying_type_t <std::byte> {
 
     RK5_fixed_step = 0,
     RK78_adaptive_step = 1,
-    BDF = 2
+    ESDIRK54 = 2
 
 };

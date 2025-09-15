@@ -13,22 +13,40 @@ Step_controller_class::Step_controller_class(const Integrator_parameters_type In
 
 }
 
-void Step_controller_class::update_state_errors(const double* State_Vector, const double* State_Error_Vector) {
+void Step_controller_class::update_state_errors(const double* State_Vector, const double* State_Error_Vector, Geodesic_Integrator_enums e_Active_integrator) {
 
     this->sec_prev_err = this->prev_err;
     this->prev_err = this->current_err;
 
+    double Abs_tol{}, Rel_tol{};
+
+    switch (e_Active_integrator) {
+
+    default:
+
+        Abs_tol = this->Parameters.RK_78_abs_accuracy; 
+        Rel_tol = this->Parameters.RK_78_rel_accuracy;
+
+        break;
+
+    case ESDIRK54:
+
+        Abs_tol = this->Parameters.ESDIRK54_abs_accuracy;
+        Rel_tol = this->Parameters.ESDIRK54_rel_accuracy;
+
+    }
+
     double Error_scale[e_Dynamic_state_size]{};
 
-    for (int idx = 1; idx < e_Dynamic_state_size; idx++) {
+    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
 
-        Error_scale[idx] = this->Parameters.RK_78_abs_accuracy + std::fabs(State_Vector[idx]) * this->Parameters.RK_78_rel_accuracy;
+        Error_scale[idx] = Abs_tol + std::fabs(State_Vector[idx]) * Rel_tol;
 
     }
 
     double Total_State_Error{};
 
-    for (int idx = 1; idx < e_Dynamic_state_size; idx++) {
+    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
 
         Total_State_Error += (State_Error_Vector[idx] / Error_scale[idx]) * (State_Error_Vector[idx] / Error_scale[idx]);
 
@@ -40,9 +58,35 @@ void Step_controller_class::update_state_errors(const double* State_Vector, cons
 
 }
 
-void Step_controller_class::update_step(const double* const State_Vector) {
+void Step_controller_class::update_step(const double* const State_Vector, Geodesic_Integrator_enums e_Active_integrator) {
 
     this->previous_step = this->step;
+
+    double PID_gain_I{}, PID_gain_P{}, PID_gain_D{}, Gustafsson_k1{}, Gustafsson_k2{};
+
+    switch (e_Active_integrator) {
+
+    default:
+
+        PID_gain_P = this->Parameters.RK78_PID_gain_P;
+        PID_gain_I = this->Parameters.RK78_PID_gain_I;
+        PID_gain_D = this->Parameters.RK78_PID_gain_D;
+
+        Gustafsson_k1 = this->Parameters.RK78_Gustafsson_k1;
+        Gustafsson_k2 = this->Parameters.RK78_Gustafsson_k2;
+
+        break;
+
+    case ESDIRK54:
+
+        PID_gain_P = this->Parameters.ESDIRK54_PID_gain_P;
+        PID_gain_I = this->Parameters.ESDIRK54_PID_gain_I;
+        PID_gain_D = this->Parameters.ESDIRK54_PID_gain_D;
+
+        Gustafsson_k1 = this->Parameters.ESDIRK54_Gustafsson_k1;
+        Gustafsson_k2 = this->Parameters.ESDIRK54_Gustafsson_k2;
+
+    }
 
     if (!this->Parameters.Use_adaptive_step) { return; }
 
@@ -52,16 +96,16 @@ void Step_controller_class::update_step(const double* const State_Vector) {
 
     case PID:
 
-        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, this->Parameters.PID_gain_I) *
-                                                        pow(this->prev_err, this->Parameters.PID_gain_P) *
-                                                        pow(this->sec_prev_err, this->Parameters.PID_gain_D);
+        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, PID_gain_I) *
+                                                        pow(this->prev_err, PID_gain_P) *
+                                                        pow(this->sec_prev_err, PID_gain_D);
 
         break;
 
     default:
 
-        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, this->Parameters.Gustafsson_k1) *
-                                                        pow(this->current_err / this->prev_err, this->Parameters.Gustafsson_k2);
+        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, Gustafsson_k1) *
+                                                        pow(this->current_err / this->prev_err, Gustafsson_k2);
 
         break;
 
@@ -75,84 +119,24 @@ void Step_controller_class::update_step(const double* const State_Vector) {
 
 }
 
-/* ======================================================================== GSL Wrapper functions ======================================================================== */
-
 static int implicit_method_system_wrapper_f(const gsl_vector* gsl_trial_State_Vector, void* Params, gsl_vector* gsl_System_to_solve) {
 
     RHS_wrapper_struct* RHS_wrapper_params = (RHS_wrapper_struct*)Params;
 
-    return RHS_wrapper_params->Integrator->get_implicit_method_system(gsl_trial_State_Vector, RHS_wrapper_params->RHS_params, gsl_System_to_solve);
+    return RHS_wrapper_params->Integrator->get_implicit_method_system(gsl_trial_State_Vector, RHS_wrapper_params->p_Iteration_number, gsl_System_to_solve);
 
 }
-
-static int implicit_method_system_wrapper_df(const gsl_vector* gsl_trial_State_Vector, void* Params, gsl_matrix* gsl_Jacobian) {
-
-    RHS_wrapper_struct* RHS_wrapper_params = (RHS_wrapper_struct*)Params;
-
-    /* Convert the gsl_vector to a normal double* so I can pass it to the EOM functions */
-
-    double trial_State_Vector[e_Dynamic_state_size]{};
-
-    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
-
-        trial_State_Vector[idx] = gsl_vector_get(gsl_trial_State_Vector, 0);
-
-    }
-
-    double EOM_Jacobian[e_Dynamic_state_size][e_Dynamic_state_size]{};
-    RHS_wrapper_params->Integrator->p_Spacetime->get_EOM_Jacobian(trial_State_Vector, EOM_Jacobian);
-
-    for (int idx_1 = 0; idx_1 < e_Dynamic_state_size; idx_1++) {
-
-        for (int idx_2 = 0; idx_2 < e_Dynamic_state_size; idx_2++) {
-
-            double value_to_set = -2 * RHS_wrapper_params->Integrator->p_Step_controller->step / 3 * EOM_Jacobian[idx_1][idx_2];
-
-            if (idx_1 == idx_2) {
-
-                value_to_set += 1.;
-
-            }
-
-            gsl_matrix_set(gsl_Jacobian, idx_1, idx_2, value_to_set);
-
-        }
-    }
-
-    return GSL_SUCCESS;
-
-}
-
-static int implicit_method_system_wrapper_fdf(const gsl_vector* gsl_trial_State_Vector, void* Params, gsl_vector* gsl_System_to_solve, gsl_matrix* gsl_Jacobian) {
-
-    RHS_wrapper_struct* RHS_wrapper_params = (RHS_wrapper_struct*)Params;
-
-    /* Convert the gsl_vector to a normal double* so I can pass it to the EOM functions */
-
-    double trial_State_Vector[e_Dynamic_state_size]{};
-
-    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
-
-        trial_State_Vector[idx] = gsl_vector_get(gsl_trial_State_Vector, 0);
-
-    }
-
-    implicit_method_system_wrapper_f(gsl_trial_State_Vector, Params, gsl_System_to_solve);
-    implicit_method_system_wrapper_df(gsl_trial_State_Vector, Params, gsl_Jacobian);
-
-    return GSL_SUCCESS;
-
-}
-
-/* ======================================================================================================================================================================== */
 
 Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results) {
 
-    this->In_stiff_region = false;
-    this->Implicit_method_init_status = false;
     this->continue_integration = true;
     this->integration_complete = false;
+    this->Normal_termination_condition = false;
+    this->Max_affine_param_reached = false;
+    this->Max_integration_count_reached = false;
+    this->Step_too_small = false;
 
+    /* ---------- Placeholder ------------ */
     this->e_Active_integrator = RK78_adaptive_step;
 
     this->p_Init_conditions = p_Sim_Context->p_Init_Conditions;
@@ -163,20 +147,22 @@ Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Co
     this->p_Ray_log_struct = &p_Ray_results->Ray_log_struct;
 
     /* ------------------------------ Construct the initial state vector ------------------------------ */ 
-    double Init_State_Vector[e_Full_state_size]{};
 
-    Init_State_Vector[e_t] = p_Sim_Context->p_Init_Conditions->Observer_params.init_time;
-    Init_State_Vector[e_r] = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
-    Init_State_Vector[e_theta] = p_Sim_Context->p_Init_Conditions->Observer_params.inclination;
-    Init_State_Vector[e_phi] = p_Sim_Context->p_Init_Conditions->Observer_params.azimuth;
-    Init_State_Vector[e_p_phi] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_phi];
-    Init_State_Vector[e_p_theta] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_theta];
-    Init_State_Vector[e_p_r] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_r];
-    Init_State_Vector[e_p_t] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
-    Init_State_Vector[e_step] = p_Sim_Context->p_Init_Conditions->Integrator_params.Init_stepzie;
-    Init_State_Vector[e_affine_param] = 0;
+    this->p_Ray_log_struct->Ray_path_log[e_t] = p_Sim_Context->p_Init_Conditions->Observer_params.init_time;
+    this->p_Ray_log_struct->Ray_path_log[e_r] = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
+    this->p_Ray_log_struct->Ray_path_log[e_theta] = p_Sim_Context->p_Init_Conditions->Observer_params.inclination;
+    this->p_Ray_log_struct->Ray_path_log[e_phi] = p_Sim_Context->p_Init_Conditions->Observer_params.azimuth;
+    this->p_Ray_log_struct->Ray_path_log[e_p_phi] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_phi];
+    this->p_Ray_log_struct->Ray_path_log[e_p_theta] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_theta];
+    this->p_Ray_log_struct->Ray_path_log[e_p_r] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_r];
+    this->p_Ray_log_struct->Ray_path_log[e_p_t] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
+    this->p_Ray_log_struct->Ray_path_log[e_step] = p_Sim_Context->p_Init_Conditions->Integrator_params.Init_stepzie;
+    this->p_Ray_log_struct->Ray_path_log[e_affine_param] = 0;
 
-    memcpy(this->p_Ray_log_struct->Ray_path_log, Init_State_Vector, e_Full_state_size * sizeof(double));
+    this->RK_Integrator_debug_log.N_steps_rejected = p_Ray_results->RK_integrator_debug_log.N_steps_rejected;
+    this->RK_Integrator_debug_log.State_error_history = p_Ray_results->RK_integrator_debug_log.State_error_history;
+    this->N_steps_rejected = 0;
+    this->NaN_checker_count = 0;
 
     /* --------------- Allocate space for the root finder, and its trial gsl_vector --------------- */
 
@@ -185,15 +171,23 @@ Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Co
 
     this->RHS_Wrapper_params = { this, nullptr };
     this->Function_to_solve = { &implicit_method_system_wrapper_f,
-                                e_Dynamic_state_size, 
+                                e_Dynamic_state_size,
                                &RHS_Wrapper_params };
+}
+
+Integrator_class::~Integrator_class() {
+
+    free(this->p_Step_controller);
+    gsl_multiroot_fsolver_free(this->Root_finder);
+    gsl_vector_free(this->gsl_trial_State_Vector);
 
 }
 
-int Integrator_class::get_implicit_method_system(const gsl_vector* gsl_trial_State_Vector, void* Params, gsl_vector* System_to_solve) {
+int Integrator_class::get_implicit_method_system(const gsl_vector* gsl_trial_State_Vector, void* p_Iteration_number, gsl_vector* System_to_solve) {
 
-    /* Convert the gsl_vector to a normal double* so I can pass it to the EOM functions */
+    int Iteration_number = *(int*)p_Iteration_number;
 
+    /* ------------ Convert the gsl_vector to a normal double* so I can pass it to the EOM functions ------------  */
     double trial_State_Vector[e_Dynamic_state_size]{};
 
     for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
@@ -202,43 +196,150 @@ int Integrator_class::get_implicit_method_system(const gsl_vector* gsl_trial_Sta
 
     }
 
-    /* ---------------------------- References for the sake of readability ---------------------------- */
-    int& Current_state_idx = this->p_Ray_log_struct->Log_offset;
-    double* State_Vector = &this->p_Ray_log_struct->Ray_path_log[Current_state_idx * e_Full_state_size];
+    /* ----- Updates the Intermediate_RHS_log with the value at the current intermediate state estimate, which I call a "trial" state ----- */
+    this->p_Spacetime->get_EOM(trial_State_Vector, &this->Intermediate_RHS_log[Iteration_number * e_Dynamic_state_size]);
 
-    double* Old_State = &this->p_Ray_log_struct->Ray_path_log[(Current_state_idx - 1) * e_Full_state_size];
-    /* ------------------------------------------------------------------------------------------------ */
+    double Func_to_minimize[e_Dynamic_state_size]{};
 
-    double RHS[e_Dynamic_state_size]{};
+    for (int state_idx = 0; state_idx < e_Dynamic_state_size; state_idx++) {
 
-    switch (this->e_Active_integrator) {
+        Func_to_minimize[state_idx] = trial_State_Vector[state_idx] - this->get_current_State_Vector()[state_idx];
 
-    case BDF:
+        for (int derivative_idx = 0; derivative_idx <= Iteration_number; derivative_idx++) {
 
-        this->p_Spacetime->get_EOM(trial_State_Vector, RHS);
-
-        for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
-
-            gsl_vector_set(System_to_solve, idx, trial_State_Vector[idx] - 4. / 3 * State_Vector[idx] + 1. / 3 * Old_State[idx] - 2. * (-this->p_Step_controller->step) / 3. * RHS[idx]);
-
+            Func_to_minimize[state_idx] -= -this->p_Step_controller->step * ESDIRK54_Coeff_deriv[Iteration_number][derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
+            
         }
+
+        gsl_vector_set(System_to_solve, state_idx, Func_to_minimize[state_idx]);
 
     }
 
     return GSL_SUCCESS;
 }
 
-void Integrator_class::Run_RK78() {
-
-    /* ---------------------------- References for the sake of readability ---------------------------- */
-    int& Current_state_idx = this->p_Ray_log_struct->Log_offset;
-    double* State_Vector = &this->p_Ray_log_struct->Ray_path_log[Current_state_idx * e_Full_state_size];
-    /* ------------------------------------------------------------------------------------------------ */
+void Integrator_class::Run_ESDIRK54() {
 
     double state_error[e_Dynamic_state_size]{};
 
-    double Derivatives[RK78_size * e_Dynamic_state_size]{};
+    double New_State_vector_O6[e_Dynamic_state_size]{};
+    double New_State_vector_O5[e_Dynamic_state_size]{};
 
+    /* ---------------------- Set the RHS log to zero (just in case) ---------------------- */
+    memset(this->Intermediate_RHS_log, 0, sizeof(double) * RK78_size * e_Dynamic_state_size);
+
+    /* - Compute the RHS as the current position (no point in doing this inside the loop) - */
+    this->p_Spacetime->get_EOM(this->get_current_State_Vector(), this->Intermediate_RHS_log);
+
+    /* ----------------- Convert the current state vector to a gsl_vector ----------------- */
+    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
+
+        gsl_vector_set(this->gsl_trial_State_Vector, idx, this->get_current_State_Vector()[idx]);
+
+    }
+
+    for (int Integrator_stage = 1; Integrator_stage < ESDIRK54_size; Integrator_stage++) {
+
+        this->RHS_Wrapper_params.p_Iteration_number = &Integrator_stage;
+
+        gsl_multiroot_fsolver_set(this->Root_finder, &this->Function_to_solve, this->gsl_trial_State_Vector);
+
+        int Root_finder_status = GSL_CONTINUE;
+
+        while (GSL_CONTINUE == Root_finder_status) {
+
+            Root_finder_status = gsl_multiroot_fsolver_iterate(this->Root_finder);
+
+            if (GSL_SUCCESS != Root_finder_status) {
+
+                /* TODO ERROR HANDLING */
+
+                this->p_Step_controller->step /= 2;
+                this->continue_integration = false;
+
+                return;
+
+            }
+
+            Root_finder_status = gsl_multiroot_test_residual(this->Root_finder->f, 1e-10);
+
+        }
+
+        gsl_vector_memcpy(this->gsl_trial_State_Vector, this->Root_finder->x);
+
+    }
+
+    for (int state_idx = 0; state_idx < e_Dynamic_state_size; state_idx++) {
+
+        New_State_vector_O6[state_idx] = this->get_current_State_Vector()[state_idx];
+        New_State_vector_O5[state_idx] = this->get_current_State_Vector()[state_idx];
+
+        for (int derivative_idx = 0; derivative_idx < ESDIRK54_size; derivative_idx++) {
+
+            New_State_vector_O6[state_idx] += -this->p_Step_controller->step * ESDIRK54_Coeff_sol[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
+            New_State_vector_O5[state_idx] += -this->p_Step_controller->step * ESDIRK54_Coeff_test_sol[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
+
+        }
+
+        state_error[state_idx] = New_State_vector_O6[state_idx] - New_State_vector_O5[state_idx];
+
+    }
+
+    if (ERROR == this->Run_NaN_checker(New_State_vector_O6, New_State_vector_O5)) { return; }
+
+    this->p_Step_controller->update_state_errors(New_State_vector_O6, state_error, this->e_Active_integrator);
+    this->p_Step_controller->update_step(New_State_vector_O6, this->e_Active_integrator);
+
+    if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step) {
+
+        this->continue_integration = true;
+
+    }
+    else {
+
+        this->continue_integration = false;
+        this->N_steps_rejected++;
+    }
+
+    if (this->continue_integration) {
+
+        this->Update_ray_log(New_State_vector_O6);
+        this->Update_debug_log();
+
+        this->N_steps_rejected = 0;
+        this->NaN_checker_count = 0;
+
+    }
+
+}
+
+bool Integrator_class::Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded) {
+
+    for (int idx = 0; idx < e_Full_state_size; idx++) {
+
+        if (isnan(New_State[idx]) || isnan(New_State_Embeded[idx]) || isinf(New_State[idx]) || isinf(New_State_Embeded[idx])) {
+
+            this->continue_integration = false;
+            this->p_Step_controller->step /= 10.0;
+            this->NaN_checker_count++;
+
+            return ERROR;
+
+        }
+
+    }
+
+    return OK;
+
+}
+
+void Integrator_class::Run_RK78() {
+
+    memset(this->Intermediate_RHS_log, 0, sizeof(double) * RK78_size * e_Dynamic_state_size);
+
+    const double* State_Vector = this->get_current_State_Vector();
+ 
+    double state_error[e_Dynamic_state_size]{};
     double temp_State_vector[e_Dynamic_state_size]{};
 
     double New_State_vector_O8[e_Dynamic_state_size]{};
@@ -248,157 +349,62 @@ void Integrator_class::Run_RK78() {
 
         memcpy(temp_State_vector, State_Vector, e_Dynamic_state_size * sizeof(double));
 
-        for (int vector_indexer = 0; vector_indexer < e_Dynamic_state_size; vector_indexer++) {
+        for (int state_idx = 0; state_idx < e_Dynamic_state_size; state_idx++) {
 
-            for (int derivative_indexer = 0; derivative_indexer < iteration; derivative_indexer++) {
+            for (int derivative_idx = 0; derivative_idx < iteration; derivative_idx++) {
 
-                temp_State_vector[vector_indexer] += -this->p_Step_controller->step * RK78_Coeff_deriv[iteration][derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
+                temp_State_vector[state_idx] += -this->p_Step_controller->step * RK78_Coeff_deriv[iteration][derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
 
             }
         }
 
-        this->p_Spacetime->get_EOM(temp_State_vector, &Derivatives[iteration * e_Dynamic_state_size]);
+        this->p_Spacetime->get_EOM(temp_State_vector, &this->Intermediate_RHS_log[iteration * e_Dynamic_state_size]);
 
     }
 
-    for (int vector_indexer = 0; vector_indexer < e_Dynamic_state_size; vector_indexer++) {
+    for (int state_idx = 0; state_idx < e_Dynamic_state_size; state_idx++) {
 
-        New_State_vector_O8[vector_indexer] = State_Vector[vector_indexer];
-        New_State_vector_O9[vector_indexer] = State_Vector[vector_indexer];
+        New_State_vector_O8[state_idx] = State_Vector[state_idx];
+        New_State_vector_O9[state_idx] = State_Vector[state_idx];
 
-        for (int derivative_indexer = 0; derivative_indexer < RK78_size; derivative_indexer++) {
+        for (int derivative_idx = 0; derivative_idx < RK78_size; derivative_idx++) {
 
-            New_State_vector_O8[vector_indexer] += -this->p_Step_controller->step * RK78_Coeff_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
-            New_State_vector_O9[vector_indexer] += -this->p_Step_controller->step * RK78_Coeff_test_sol[derivative_indexer] * Derivatives[vector_indexer + derivative_indexer * e_Dynamic_state_size];
+            New_State_vector_O8[state_idx] += -this->p_Step_controller->step * RK78_Coeff_sol[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
+            New_State_vector_O9[state_idx] += -this->p_Step_controller->step * RK78_Coeff_test_sol[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
 
         }
 
-        state_error[vector_indexer] = New_State_vector_O8[vector_indexer] - New_State_vector_O9[vector_indexer];
+        state_error[state_idx] = New_State_vector_O8[state_idx] - New_State_vector_O9[state_idx];
 
     }
 
-    this->p_Step_controller->update_state_errors(New_State_vector_O8, state_error);
+    if (ERROR == this->Run_NaN_checker(New_State_vector_O8, New_State_vector_O9)) { return; }
 
-    // The integrator might jump pass surfaces that are singular for the EOM (like the JNW singularity at 2 / gamma)
-    // In this case the whole state vector becomes a NaN. I check for this and update the integration step by hand,
-    // then set the continue_integration flag to "false" to force the integrator to redo the current iteration with a smaller step.
-    if (isnan(this->p_Step_controller->current_err)) {
+    this->p_Step_controller->update_state_errors(New_State_vector_O8, state_error, this->e_Active_integrator);
+    this->p_Step_controller->update_step(New_State_vector_O8, this->e_Active_integrator);
 
-        this->continue_integration = false;
-        this->p_Step_controller->step /= 10.0;
+    if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step){
 
-        return;
-
-    }
-
-    this->p_Step_controller->update_step(New_State_vector_O8);
-
-    if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step)
-    {
         this->continue_integration = true;
+
     }
-    else
-    {
+    else {
+
         this->continue_integration = false;
+        this->N_steps_rejected++;
+
     }
 
     if (this->continue_integration) {
 
-        // For the JNW Naked Singularity, certain photons scatter from very close to the singularity.
-        // Close enough that it requires "manual" scattering, by flipping the p_r sign.
-        // Otherwise the photons never reach the turning point and the integration grinds to a halt.
-        if (this->p_Init_conditions->Metric_parameters.e_Spacetime == Janis_Newman_Winicour && this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 0.5) {
-
-            if (State_Vector[e_r] - 2.0 / this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < this->p_Init_conditions->Metric_parameters.Min_distance_to_singular_point) {
-
-                State_Vector[e_p_r] *= -1.0;
-
-            }
-
-        }
-
         this->Update_ray_log(New_State_vector_O8);
+        this->Update_debug_log();
+        
+        this->N_steps_rejected = 0;
+        this->NaN_checker_count = 0;
 
     }
 
-}
-
-void Integrator_class::Init_BDF() {
-
-    this->p_Step_controller->Parameters.Use_adaptive_step = false;
-    //this->p_Step_controller->step *= 10;
-
-    for (int init_idx = 0; init_idx < 5; init_idx++) {
-
-        this->Run_RK78();
-        this->Check_integration_complete_status();
-
-    }
-
-    this->Implicit_method_init_status = true;
-
-}
-
-void print_state(size_t iter, gsl_multiroot_fsolver* s)
-{
-    printf("iter = %3u x = % .6f % .6f "
-        "f(x) = % .6e % .6e\n",
-        iter,
-        gsl_vector_get(s->x, 0),
-        gsl_vector_get(s->x, 1),
-        gsl_vector_get(s->f, 0),
-        gsl_vector_get(s->f, 1),
-        s->state);
-}
-
-int Integrator_class::Run_BDF() {
-
-    /* -------------------- Convert the current state vector to a gsl_vector -------------------- */
-
-    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
-
-        gsl_vector_set(this->gsl_trial_State_Vector, idx, this->get_current_State_Vector()[idx]);
-
-    }
-
-    gsl_multiroot_fsolver_set(this->Root_finder, &this->Function_to_solve, this->gsl_trial_State_Vector);
-
-    int Root_finder_status = GSL_CONTINUE;
-    int Root_finder_iteration = 0;
-
-    // && Root_finder_iteration <= this->p_Init_conditions->Integrator_params.BDF_root_finder_max_iterations
-
-    //std::cout << "Current r:" << this->get_current_State_Vector()[e_r] << "\n";
-
-    while (GSL_CONTINUE == Root_finder_status) {
-
-        Root_finder_status = gsl_multiroot_fsolver_iterate(this->Root_finder);
-
-        Root_finder_iteration++;
-
-        if (Root_finder_status)   /* check if solver is stuck */
-            return Root_finder_status;
-
-        Root_finder_status = gsl_multiroot_test_residual(this->Root_finder->f, 1e-4);
-
-
-        //print_state(Root_finder_iteration, this->Root_finder);
-
-    }
-
-    /* --- Convert the new gsl_vector State to a normal double* so I can pass it to the Update_ray_log function --- */
-
-    double Nnew_State_Vector[e_Dynamic_state_size]{};
-
-    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
-
-        Nnew_State_Vector[idx] = gsl_vector_get(this->Root_finder->x, idx);
-
-    }
-
-    this->Update_ray_log(Nnew_State_Vector);
-
-    return GSL_SUCCESS;
 }
 
 void Integrator_class::Update_ray_log(const double* const New_State_vector) {
@@ -422,45 +428,10 @@ void Integrator_class::Update_ray_log(const double* const New_State_vector) {
 
 }
 
-Stability_return_type Integrator_class::Check_method_stability() {
+void Integrator_class::Update_debug_log() {
 
-    /* ---------------------------- References for the sake of readability ---------------------------- */
-    int& Current_state_idx = this->p_Ray_log_struct->Log_offset;
-    double* State_Vector = &this->p_Ray_log_struct->Ray_path_log[Current_state_idx * e_Full_state_size];
-    /* ------------------------------------------------------------------------------------------------ */
-
-    std::complex<double> Stability_param = -this->p_Step_controller->step;
-    std::complex<double> Stability_polynomial{};
-    Stability_return_type s_Method_stability{};
-
-    /* ------- Init all stability criteria to true ------- */
-
-    s_Method_stability.RK78_stability_status = true;
-    s_Method_stability.BDF_stability_status = true;
-
-    /* --------------------------------------------------- */
-
-    if (this->p_Step_controller->step > this->p_Init_conditions->Integrator_params.Step_stability_check_threshold || State_Vector[e_r] > 5) { return s_Method_stability; }
-
-    Stability_param *= this->p_Spacetime->get_largest_EOM_eigenvalue(State_Vector);
-
-    /* ------------------------------------- Evaluate BDF stability ------------------------------------- */
-
-    s_Method_stability.BDF_stability_status = true;
-
-    /* ------------------------------------- Evaluate RK78 stability ------------------------------------ */
-
-    for (int idx = 0; idx < RK78_size; idx++) {
-
-        Stability_polynomial += this->RK78_Stability_pol_coeffs[idx] * std::pow(Stability_param, idx);
-
-    }
-
-    s_Method_stability.RK78_stability_status = std::abs(Stability_polynomial) <= 1.0;
-
-    /* ------------------------------------------------------------------------------------------------- */
-
-    return s_Method_stability;
+    this->RK_Integrator_debug_log.N_steps_rejected[this->p_Ray_log_struct->Log_offset] = this->N_steps_rejected;
+    this->RK_Integrator_debug_log.State_error_history[this->p_Ray_log_struct->Log_offset] = this->p_Step_controller->current_err;
 
 }
 
@@ -468,89 +439,104 @@ void Integrator_class::Propagate_ray() {
 
     switch (this->e_Active_integrator) {
 
-    default:
+    case ESDIRK54:
 
-        this->Run_RK78();
+        this->Run_ESDIRK54();
+        this->Check_integration_complete_status();
 
         break;
 
-    case BDF:
+    default:
 
-        if (this->Implicit_method_init_status) { 
+        this->Run_RK78();
+        this->Check_integration_complete_status();
+
+        if (this->Max_integration_count_reached || this->Step_too_small || this->NaN_checker_count > 5) {
             
-          int Status = this->Run_BDF();
-
-          //if (GSL_SUCCESS != Status) {
-
-          //    this->Implicit_method_init_status = false;
-          //    this->p_Step_controller->Parameters.Use_adaptive_step = true;
-          //    this->e_Active_integrator = RK78_adaptive_step;
-
-          //}
+            this->e_Active_integrator = ESDIRK54;
+            this->p_Ray_log_struct->Log_offset = 0;
         
+            std::cout << "Switching to ESDIRK54... \n";
+
         }
-        else { this->Init_BDF(); }
 
         break;
 
     }
 
-    this->Check_integration_complete_status();
-
-    //if (0) {
-
-    //    Stability_return_type s_Method_Stability = this->Check_method_stability();
-
-    //    switch (this->e_Active_integrator) {
-
-    //    case RK78_adaptive_step:
-
-    //        if (!s_Method_Stability.RK78_stability_status) { 
-    //            
-    //            this->e_Active_integrator = BDF;
-    //        
-    //        }
-    //        break;
-
-    //    case BDF:
-
-    //        if (s_Method_Stability.RK78_stability_status){ 
-    //            
-    //            this->Implicit_method_init_status = false;
-    //            this->p_Step_controller->Parameters.Use_adaptive_step = true;
-    //            this->e_Active_integrator = RK78_adaptive_step; 
-    //        
-    //        }
-
-    //        if (!s_Method_Stability.BDF_stability_status) { 
-
-    //            /* Placeholder - probably just log it in the hypothetical event logger */
-    //        
-    //        }
-
-    //        break;
-
-    //    }
-
-    //}
-
 }
 
 void Integrator_class::Check_integration_complete_status() {
 
-    /* ---------------------------- References for the sake of readability ---------------------------- */
-    int& Current_state_idx = this->p_Ray_log_struct->Log_offset;
-    double* State_Vector = &this->p_Ray_log_struct->Ray_path_log[Current_state_idx * e_Full_state_size];
-    /* ------------------------------------------------------------------------------------------------ */
+    this->Normal_termination_condition  = this->p_Spacetime->terminate_integration(this->get_current_State_Vector());
+    this->Max_affine_param_reached      = std::abs(this->get_current_State_Vector()[e_affine_param]) >= this->p_Step_controller->Parameters.Max_affine_param;
+    this->Max_integration_count_reached = this->p_Ray_log_struct->Log_offset >= this->p_Step_controller->Parameters.Max_integration_count;
+    this->Step_too_small                = this->p_Step_controller->step < std::numeric_limits<double>::min();
 
-    bool Normal_termination_condition = this->p_Spacetime->terminate_integration(State_Vector);
-    bool Max_affine_param_reached = std::abs(State_Vector[e_affine_param]) >= this->p_Step_controller->Parameters.Max_affine_param;
-    bool Max_integration_count_reached = this->p_Ray_log_struct->Log_offset >= this->p_Step_controller->Parameters.Max_integration_count;
+    if (this->Max_affine_param_reached) { 
 
-    if (Max_integration_count_reached) { std::cout << "Max iterations reached! \n"; }
-    if (Max_affine_param_reached) { std::cout << "Max affine parameter value reached! \n"; };
+        switch (this->e_Active_integrator) {
 
-    this->integration_complete = Normal_termination_condition || Max_affine_param_reached || Max_integration_count_reached;
+        case ESDIRK54:
+
+            std::cout << "Max affine parameter value reachedl with ESDIRK54! \n";
+
+            break;
+
+        default:
+
+            std::cout << "Max affine parameter value reached with RK78! \n";
+
+            break;
+
+        }
+    }
+
+    if (this->Max_integration_count_reached) { 
+
+        switch (this->e_Active_integrator) {
+
+        case ESDIRK54:
+
+            std::cout << "Max iterations reached with ESDIRK54! \n";
+
+            break;
+
+        default:
+
+            std::cout << "Max iterations reached with RK78! \n";
+
+            break;
+
+        }
+    }
+
+    if (this->Step_too_small) {
+
+        switch (this->e_Active_integrator) {
+
+        case ESDIRK54:
+
+            std::cout << "Step too small with ESDIRK54! \n";
+
+            break;
+
+        default:
+
+            std::cout << "Step too small with RK78! \n";
+
+            break;
+
+        }
+    }
+
+    this->integration_complete = this->Normal_termination_condition || this->Max_affine_param_reached;
+
+    if (ESDIRK54 == this->e_Active_integrator) {
+
+        this->integration_complete = this->integration_complete || this->Step_too_small || this->Max_integration_count_reached;
+
+    }
 
 }
 

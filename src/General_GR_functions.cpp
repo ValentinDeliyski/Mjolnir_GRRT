@@ -485,6 +485,40 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
 
 }
 
+void get_initial_conditions_from_image_coords(Initial_conditions_type* p_Initial_Conditions, double Image_X_coord, double Image_Y_coord) {
+
+    double (*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
+
+    double inv_metric[4][4]{};
+    invert_metric(inv_metric, p_Initial_Conditions->Init_metric.Metric);
+
+    double g2 = pow(metric[e_t][e_phi], 2) - metric[e_t][e_t] * metric[e_phi][e_phi];
+    double ksi = sqrt(metric[e_phi][e_phi] / g2);
+    double gamma = -metric[e_t][e_phi] / metric[e_phi][e_phi] * ksi;
+
+    double& r_0 = p_Initial_Conditions->Observer_params.distance;
+
+    p_Initial_Conditions->Init_Momentum[e_t] = -1;
+    p_Initial_Conditions->Init_Momentum[e_phi] = sqrt(metric[e_phi][e_phi]) * ksi * Image_X_coord / (sqrt(metric[e_phi][e_phi]) * gamma * Image_X_coord - r_0);
+    p_Initial_Conditions->Init_Momentum[e_theta] = Image_Y_coord * (ksi - gamma * p_Initial_Conditions->Init_Momentum[e_phi]) * sqrt(metric[e_theta][e_theta]) / r_0;
+
+    double effective_rad_potential{};
+
+    for (int idx_1 = e_t; idx_1 <= e_phi; idx_1++) {
+
+        for (int idx_2 = e_t; idx_2 <= e_phi; idx_2++) {
+
+            if (e_r == idx_1 || e_r == idx_2) { continue; }
+
+            effective_rad_potential += inv_metric[idx_1][idx_2] * p_Initial_Conditions->Init_Momentum[idx_1] * p_Initial_Conditions->Init_Momentum[idx_2];
+
+        }
+    }
+
+    p_Initial_Conditions->Init_Momentum[e_r] = sqrt(-effective_rad_potential / inv_metric[e_r][e_r]);
+
+}
+
 std::complex<double> get_Penrose_Walker_constant(const double* const State_Vector, const Spacetime_Base_Class* const p_Spacetime, const std::complex<double>* const Polarization_Vector) {
 
     double Contravariant_momentum[4]{};

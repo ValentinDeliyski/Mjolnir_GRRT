@@ -159,28 +159,6 @@ Metric_type JNW_class::get_d2r_metric(const double* const State_Vector) const {
 
 }
 
-int JNW_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
-
-    double& r_obs = p_Initial_Conditions->Observer_params.distance;
-    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
-
-    double r_singularity = 2 / this->Gamma;
-
-    p_Initial_Conditions->Init_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
-    p_Initial_Conditions->Init_Momentum[e_theta] = p_theta_data[photon];
-
-    double& J = p_Initial_Conditions->Init_Momentum[e_phi];
-
-    double rad_potential = 1 - pow(1 - r_singularity / r_obs, 2 * this->Gamma - 1) * J * J / (r_obs * r_obs);
-
-    double(*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
-
-    p_Initial_Conditions->Init_Momentum[e_r] = sqrt(rad_potential) * metric[1][1];
-
-    return OK;
-
-}
-
 void JNW_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
 
     const double& r = State_vector[e_r];

@@ -175,31 +175,6 @@ Metric_type Kerr_class::get_d2r_metric(const double* const State_Vector) const {
     return s_d2r_Metric;
 }
 
-int Kerr_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
-
-    double M = this->Mass;
-    double a = this->Spin_Param;
-
-    double& r_obs = p_Initial_Conditions->Observer_params.distance;
-    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
-
-    p_Initial_Conditions->Init_Momentum[e_t] = -1;
-    p_Initial_Conditions->Init_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
-    p_Initial_Conditions->Init_Momentum[e_theta] = p_theta_data[photon];
-
-    double& J = p_Initial_Conditions->Init_Momentum[e_phi];
-    double& p_theta = p_Initial_Conditions->Init_Momentum[e_theta];
-
-    double delta = pow(r_obs, 2) + pow(a, 2) - 2 * M * r_obs;
-    double K = pow(p_theta, 2) + pow(cos(theta_obs), 2) * (pow(J / sin(theta_obs), 2) - pow(a, 2));
-
-    double rad_potential = pow(r_obs * r_obs + a * a - a * J, 2) - delta * (pow(J - a, 2) + K);
-
-    p_Initial_Conditions->Init_Momentum[e_r] = sqrt(rad_potential) / delta;
-
-    return OK;
-}
-
 void Kerr_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
 
     const double& r = State_vector[e_r];

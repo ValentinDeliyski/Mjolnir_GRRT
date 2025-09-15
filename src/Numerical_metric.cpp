@@ -887,8 +887,6 @@ Metric_type Numerical_metric::get_dr_dtheta_metric(const double* const State_Vec
     s_dr_dtheta_Metric.Metric[e_phi][e_phi] = 2 * exp_2F_2 * (2 * dr_F_2 * dtheta_F_2 * r * r + dr_dtheta_F_2 * r * r + 2 * dtheta_F_2 * r) * sin_theta * sin_theta
                                             + 4 * exp_2F_2 * (r * r * dr_F_2 + r) * sin_theta * cos_theta;
 
-
-
     return s_dr_dtheta_Metric;
 
 }
@@ -1022,12 +1020,9 @@ std::complex<double> Numerical_metric::get_largest_EOM_eigenvalue(const double* 
 
 }
 
-int Numerical_metric::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
-
-    return 0;
-}
-
 void Numerical_metric::get_EOM(const double* const State_Vector, double* const Derivatives) const {
+
+    memset(Derivatives, 0, e_Dynamic_state_size * sizeof(double));
 
     const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
     const int Radial_grid_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;

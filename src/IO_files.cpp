@@ -650,19 +650,21 @@ void File_manager_class::write_simulation_metadata() {
     } else {
 
        *Output_file << "t_coord [M],"
-                                    << "r_coord [M],"
-                                    << "theta_coord [rad],"
-                                    << "phi_coord [rad],"
-                                    << "p_t [-],"
-                                    << "p_r [-],"
-                                    << "p_theta [rad/M],"
-                                    << "p_phi [rad/M],"
-                                    << "Integration Step [M],"
-                                    << "Affine Parameter [M],"
-                                    << "Synchotron Intensity I [Jy/sRad],"
-                                    << "Synchotron Intensity Q [Jy/sRad],"
-                                    << "Synchotron Intensity U [Jy/sRad],"
-                                    << "Synchotron Intensity V [Jy/sRad]";
+                    << "r_coord [M],"
+                    << "theta_coord [rad],"
+                    << "phi_coord [rad],"
+                    << "p_t [-],"
+                    << "p_r [-],"
+                    << "p_theta [rad/M],"
+                    << "p_phi [rad/M],"
+                    << "Integration Step [M],"
+                    << "Affine Parameter [M],"
+                    << "Synchotron Intensity I [Jy/sRad],"
+                    << "Synchotron Intensity Q [Jy/sRad],"
+                    << "Synchotron Intensity U [Jy/sRad],"
+                    << "Synchotron Intensity V [Jy/sRad],"
+                    << "State Error [-],"
+                    << "Number of rejected steps [-]";
 
     }
 
@@ -856,6 +858,8 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
 void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
+    Log_Output_File << std::setprecision(15);
+
     for (int log_index = 0; log_index <= s_Ray_results->Ray_log_struct.Log_length; log_index++) {
 
         for (int state_index = 0; state_index < e_Full_state_size; state_index++) {
@@ -866,9 +870,12 @@ void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
         for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
 
-            Log_Output_File << std::setprecision(15) << s_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][0 + 2 * log_index] << ",";
+            Log_Output_File  << s_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][0 + 2 * log_index] << ",";
 
         }
+
+        Log_Output_File << s_Ray_results->RK_integrator_debug_log.State_error_history[log_index] << ",";
+        Log_Output_File << s_Ray_results->RK_integrator_debug_log.N_steps_rejected[log_index];
 
         Log_Output_File << '\n';
     }

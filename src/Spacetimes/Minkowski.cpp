@@ -74,25 +74,6 @@ Metric_type Minkowski_class::get_d2r_metric(const double* const State_Vector) co
     return s_d2r_Minkowski_metric;
 }
 
-int Minkowski_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
-
-    double& r_obs = p_Initial_Conditions->Observer_params.distance;
-    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
-
-    p_Initial_Conditions->Init_Momentum[e_t] = -1;
-    p_Initial_Conditions->Init_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
-    p_Initial_Conditions->Init_Momentum[e_theta] = p_theta_data[photon];
-
-    double& J = p_Initial_Conditions->Init_Momentum[e_phi];
-    double& p_theta = p_Initial_Conditions->Init_Momentum[e_theta];
-
-    double rad_potential = 1 - J * J / (r_obs * sin(theta_obs)) / (r_obs * sin(theta_obs));
-
-    p_Initial_Conditions->Init_Momentum[e_r] = sqrt(rad_potential);
-
-    return OK;
-}
-
 void Minkowski_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
 
     const double& r = State_vector[e_r];

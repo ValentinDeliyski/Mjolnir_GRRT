@@ -526,20 +526,35 @@ struct Metric_type {
 
 struct Integrator_parameters_type {
 
-    /*! The integral gain for the PID controller. */
-    double PID_gain_I;
+    /*! The integral gain for the PID controller for the RK78 integrator. */
+    double RK78_PID_gain_I;
 
-    /*! The proportional gain for the PID controller. */
-    double PID_gain_P;
+    /*! The proportional gain for the PID controller for the RK78 integrator. */
+    double RK78_PID_gain_P;
 
-    /*! The derivative gain for the PID controller. */
-    double PID_gain_D;
+    /*! The derivative gain for the PID controller for the RK78 integrator. */
+    double RK78_PID_gain_D;
 
-    /*! The k1 gain for the Gustafsson controller. */
-    double Gustafsson_k1;
+    /*! The k1 gain for the Gustafsson controller for the RK78 integrator. */
+    double RK78_Gustafsson_k1;
 
-    /*! The k2 gain for the Gustafsson controller. */
-    double Gustafsson_k2;
+    /*! The k2 gain for the Gustafsson controller for the RK78 integrator. */
+    double RK78_Gustafsson_k2;
+
+    /*! The integral gain for the PID controller for the ESDIRK54 integrator. */
+    double ESDIRK54_PID_gain_I;
+
+    /*! The proportional gain for the PID controller for the ESDIRK54 integrator. */
+    double ESDIRK54_PID_gain_P;
+
+    /*! The derivative gain for the PID controller for the ESDIRK54 integrator. */
+    double ESDIRK54_PID_gain_D;
+
+    /*! The k1 gain for the Gustafsson controller for the ESDIRK54 integrator. */
+    double ESDIRK54_Gustafsson_k1;
+
+    /*! The k2 gain for the Gustafsson controller for the ESDIRK54 integrator. */
+    double ESDIRK54_Gustafsson_k2;
 
     /*! The maximum allowed relative step increase. */
     double Max_rel_step_increase;
@@ -555,6 +570,12 @@ struct Integrator_parameters_type {
 
     /*! The adaptive RK7(8) error threshold parameter. Right now, this is used as both an absolute and relative thresholds. */
     double RK_78_rel_accuracy;
+
+    /*! The adaptive ESDIRK5(4) error threshold parameter. Right now, this is used as both an absolute and relative thresholds. */
+    double ESDIRK54_abs_accuracy;
+
+    /*! The adaptive ESDIRK5(4) error threshold parameter. Right now, this is used as both an absolute and relative thresholds. */
+    double ESDIRK54_rel_accuracy;
 
     /*! A multiplicative factor forr the integration step in the range (0, 1] that makes the integrator more stable. */
     double Safety_1;
@@ -594,7 +615,7 @@ struct Integrator_parameters_type {
 struct RHS_wrapper_struct {
 
     Integrator_class* Integrator;
-    void* RHS_params;
+    void* p_Iteration_number;
 
 };
 
@@ -785,6 +806,13 @@ struct s_Ray_log_type {
 
 };
 
+struct s_Adaptive_RK_Integrator_debug_type {
+
+    double* State_error_history;
+    double* N_steps_rejected;
+
+};
+
 struct Results_type {
 
     /* The struct that tholds the metric parameters. */
@@ -792,6 +820,8 @@ struct Results_type {
 
     /* The struct that holds the photon log. */
     s_Ray_log_type Ray_log_struct;
+
+    s_Adaptive_RK_Integrator_debug_type RK_integrator_debug_log;
 
     /* Array that holds the integrated intensity for each polarization component. */
     double Intensity[e_Stokes_param_num]{};

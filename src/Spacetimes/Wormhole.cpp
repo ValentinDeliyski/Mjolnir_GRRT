@@ -157,31 +157,6 @@ Metric_type Wormhole_class::get_d2r_metric(const double* const State_Vector) con
     return s_d2r_Metric;
 }
 
-int Wormhole_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
-
-
-    double& r_obs = p_Initial_Conditions->Observer_params.distance;
-    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
-
-    p_Initial_Conditions->Init_Momentum[e_t] = -1.0;
-    p_Initial_Conditions->Init_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
-    p_Initial_Conditions->Init_Momentum[e_theta] = p_theta_data[photon];
-
-    double& p_theta = p_Initial_Conditions->Init_Momentum[e_theta];
-    double& J = p_Initial_Conditions->Init_Momentum[e_phi];
-
-    double& N = p_Initial_Conditions->Init_metric.Lapse_function;
-    double& omega = p_Initial_Conditions->Init_metric.Shift_function;
-
-    double rad_potential = -(p_theta * p_theta + J * J / sin(theta_obs) / sin(theta_obs)) * N * N / r_obs / r_obs + (1 - omega * J) * (1 - omega * J);
-
-    double(*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
-
-    p_Initial_Conditions->Init_Momentum[e_r] = sqrt(rad_potential) / N / sqrt(metric[1][1]) * r_obs / sqrt(pow(r_obs, 2) - pow(1, 2)) * metric[1][1];
-
-    return 0;
-}
-
 void Wormhole_class::get_EOM(const double* const State_Vector, double* const Derivatives) const{
 
     double sqrt_r2 = sqrt(State_Vector[e_r] * State_Vector[e_r] + this->R_Throat * this->R_Throat);

@@ -96,15 +96,6 @@ public:
 
     };
 
-    /* --------------------------------------------- Initial conditions derived from images -------------------------------------------- */
-
-    virtual int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return ERROR;
-
-    };
 
     /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
@@ -156,10 +147,6 @@ public:
     Metric_type get_dtheta_metric(const double* const State_Vector) const override;
     Metric_type get_d2r_metric(const double* const State_Vector) const override;
 
-    /* Initial conditions derived from images */
-
-    int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
-
     /* Equations of motion */
 
     void get_EOM(const double* const State_vector, double* const Derivatives) const override;
@@ -186,10 +173,6 @@ public:
     Metric_type get_dr_metric(const double* const State_Vector) const override;
     Metric_type get_dtheta_metric(const double* const State_Vector) const override;
     Metric_type get_d2r_metric(const double* const State_Vector) const override;
-
-    /* Initial conditions derived from images */
-
-    int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
     /* Equations of motion */
 
@@ -230,10 +213,6 @@ public:
     Metric_type get_dtheta_metric(const double* const State_Vector) const override;
     Metric_type get_d2r_metric(const double* const State_Vector) const override;
 
-    /* Initial conditions derived from images */
-
-    int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
-
     /* Equations of motion */
 
     void get_EOM(const double* const State_vector, double* const Derivatives) const override;
@@ -268,10 +247,6 @@ public:
     Metric_type get_dr_metric(const double* const State_Vector) const override;
     Metric_type get_dtheta_metric(const double* const State_Vector) const override;
     Metric_type get_d2r_metric(const double* const State_Vector) const override;
-
-    /* Initial conditions derived from images */
-
-    int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
     /* Equations of motion */
 
@@ -308,10 +283,6 @@ public:
     Metric_type get_dtheta_metric(const double* const State_Vector) const override;
     Metric_type get_d2r_metric(const double* const State_Vector) const override;
 
-    /* Initial conditions derived from images */
-
-    int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
-
     /* Equations of motion */
 
     void get_EOM(const double* const State_vector, double* const Derivatives) const override;
@@ -347,10 +318,6 @@ public:
     Metric_type get_dtheta_metric(const double* const State_Vector) const override;
     Metric_type get_d2r_metric(const double* const State_Vector) const override;
 
-    /* Initial conditions derived from images */
-
-    int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
-
     /* Equations of motion */
 
     void get_EOM(const double* const State_vector, double* const Derivatives) const override;
@@ -383,10 +350,6 @@ public:
     Metric_type get_metric(const double* const State_Vector) const override;
     Metric_type get_dr_metric(const double* const State_Vector) const override;
     Metric_type get_dtheta_metric(const double* const State_Vector) const override;
-
-    /* Initial conditions derived from images */
-
-    int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
     /* Equations of motion */
 
@@ -455,10 +418,6 @@ public:
     void get_EOM_Jacobian(const double* const State_Vector, double Jacobian[e_Dynamic_state_size][e_Dynamic_state_size]) override;
 
     std::complex<double> get_largest_EOM_eigenvalue(const double* const State_Vector) override;
-
-    /* --------------------------------------------- Initial conditions derived from images -------------------------------------------- */
-
-    int get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) override;
 
     /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 

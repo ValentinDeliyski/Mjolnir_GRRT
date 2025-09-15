@@ -521,10 +521,20 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 abs accuracy parameter!" << "\n"; return ERROR; }
     Integrator_params->RK_78_abs_accuracy = std::stod(temp_param_var->GetText());
 
-    // -------------------- RK78 accuracy
+    // -------------------- RK78 rel accuracy
     temp_param_var = Integrator_element->FirstChildElement("RK78_rel_accuracy");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 rel accuracy parameter!" << "\n"; return ERROR; }
     Integrator_params->RK_78_rel_accuracy = std::stod(temp_param_var->GetText());
+
+    // -------------------- ESDIRK54 abs accuracy
+    temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_abs_accuracy");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 abs accuracy parameter!" << "\n"; return ERROR; }
+    Integrator_params->ESDIRK54_abs_accuracy = std::stod(temp_param_var->GetText());
+
+    // -------------------- ESDIRK54 rel accuracy
+    temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_rel_accuracy");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 rel accuracy parameter!" << "\n"; return ERROR; }
+    Integrator_params->ESDIRK54_rel_accuracy = std::stod(temp_param_var->GetText());
 
     // -------------------- Step controller safety 1
     temp_param_var = Integrator_element->FirstChildElement("step_controller_safety_factor_1");
@@ -536,30 +546,56 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller safety parameter 2!" << "\n"; return ERROR; }
     Integrator_params->Safety_2 = std::stod(temp_param_var->GetText());
 
-    // -------------------- PID controller I gain
-    temp_param_var = Integrator_element->FirstChildElement("PID_controller_I_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the PID controller I gain!" << "\n"; return ERROR; }
-    Integrator_params->PID_gain_I = std::stod(temp_param_var->GetText());
+    // -------------------- RK78 PID controller I gain
+    temp_param_var = Integrator_element->FirstChildElement("RK78_PID_controller_I_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 PID controller I gain!" << "\n"; return ERROR; }
+    Integrator_params->RK78_PID_gain_I = std::stod(temp_param_var->GetText());
 
-    // -------------------- PID controller P gain
-    temp_param_var = Integrator_element->FirstChildElement("PID_controller_P_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the PID controller P gain!" << "\n"; return ERROR; }
-    Integrator_params->PID_gain_P = std::stod(temp_param_var->GetText());
+    // -------------------- RK78 PID controller P gain
+    temp_param_var = Integrator_element->FirstChildElement("RK78_PID_controller_P_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 PID controller P gain!" << "\n"; return ERROR; }
+    Integrator_params->RK78_PID_gain_P = std::stod(temp_param_var->GetText());
 
-    // -------------------- PID controller D gain
-    temp_param_var = Integrator_element->FirstChildElement("PID_controller_D_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the PID controller D gain!" << "\n"; return ERROR; }
-    Integrator_params->PID_gain_D = std::stod(temp_param_var->GetText());
+    // -------------------- RK78 PID controller D gain
+    temp_param_var = Integrator_element->FirstChildElement("RK78_PID_controller_D_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 PID controller D gain!" << "\n"; return ERROR; }
+    Integrator_params->RK78_PID_gain_D = std::stod(temp_param_var->GetText());
 
-    // -------------------- Gustafsson controller k_1 gain
-    temp_param_var = Integrator_element->FirstChildElement("Gustafsson_controller_k_1");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the Gustafsson controller k_1 gain!" << "\n"; return ERROR; }
-    Integrator_params->Gustafsson_k1 = std::stod(temp_param_var->GetText());
+    // -------------------- RK78 Gustafsson controller k_1 gain
+    temp_param_var = Integrator_element->FirstChildElement("RK78_Gustafsson_controller_k_1");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 Gustafsson controller k_1 gain!" << "\n"; return ERROR; }
+    Integrator_params->RK78_Gustafsson_k1 = std::stod(temp_param_var->GetText());
 
-    // -------------------- Gustafsson controller k_2 gain
-    temp_param_var = Integrator_element->FirstChildElement("Gustafsson_controller_k_2");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the Gustafsson controller k_2 gain!" << "\n"; return ERROR; }
-    Integrator_params->Gustafsson_k2 = std::stod(temp_param_var->GetText());
+    // -------------------- RK78 Gustafsson controller k_2 gain
+    temp_param_var = Integrator_element->FirstChildElement("RK78_Gustafsson_controller_k_2");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 Gustafsson controller k_2 gain!" << "\n"; return ERROR; }
+    Integrator_params->RK78_Gustafsson_k2 = std::stod(temp_param_var->GetText());
+
+    // -------------------- ESDIRK54 PID controller I gain
+    temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_PID_controller_I_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 PID controller I gain!" << "\n"; return ERROR; }
+    Integrator_params->ESDIRK54_PID_gain_I = std::stod(temp_param_var->GetText());
+
+    // -------------------- ESDIRK54 PID controller P gain
+    temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_PID_controller_P_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 PID controller P gain!" << "\n"; return ERROR; }
+    Integrator_params->ESDIRK54_PID_gain_P = std::stod(temp_param_var->GetText());
+
+    // -------------------- ESDIRK54 PID controller D gain
+    temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_PID_controller_D_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 PID controller D gain!" << "\n"; return ERROR; }
+    Integrator_params->ESDIRK54_PID_gain_D = std::stod(temp_param_var->GetText());
+
+    // -------------------- ESDIRK54 Gustafsson controller k_1 gain
+    temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_Gustafsson_controller_k_1");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 Gustafsson controller k_1 gain!" << "\n"; return ERROR; }
+    Integrator_params->ESDIRK54_Gustafsson_k1 = std::stod(temp_param_var->GetText());
+
+    // -------------------- ESDIRK54 Gustafsson controller k_2 gain
+    temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_Gustafsson_controller_k_2");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 Gustafsson controller k_2 gain!" << "\n"; return ERROR; }
+    Integrator_params->ESDIRK54_Gustafsson_k2 = std::stod(temp_param_var->GetText());
+
 
     // -------------------- Max relative step increase
     temp_param_var = Integrator_element->FirstChildElement("Max_rel_step_increase");
@@ -1096,7 +1132,7 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
         temp_param_var = Spline_XML.FirstChildElement("Metric_spline_coefficients");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric spline coefficients node!" << "\n"; return ERROR; }
 
-        if (OK != parse_numerical_metric_XML(temp_param_var, Metric_params)) { return ERROR; }
+        if (OK != parse_numerical_metric_XML(temp_param_var, Metric_params)) { std::cout << "Failed to parse the metric XML!" << "\n"; return ERROR; }
 
         temp_param_var = Metric_element->FirstChildElement("Horizon_radius");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the horizon radius!" << "\n"; return ERROR; }

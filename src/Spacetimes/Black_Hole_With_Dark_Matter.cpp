@@ -157,36 +157,6 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dtheta_metric(const double*
 
 }
 
-int Black_Hole_w_Dark_Matter_Halo_class::get_initial_conditions_from_file(Initial_conditions_type* p_Initial_Conditions, double J_data[], double p_theta_data[], int photon) {
-
-    double& r_obs = p_Initial_Conditions->Observer_params.distance;
-    double& theta_obs = p_Initial_Conditions->Observer_params.inclination;
-
-    p_Initial_Conditions->Init_Momentum[e_phi] = -J_data[photon] * sin(theta_obs);
-    p_Initial_Conditions->Init_Momentum[e_theta] = p_theta_data[photon];
-
-    double& J = p_Initial_Conditions->Init_Momentum[e_phi];
-
-    double A_0 = this->Halo_Mass / this->Compactness;
-
-    double ksi = 2 * A_0 - this->Halo_Mass + 4 * this->Mass;
-    double Y = sqrt(this->Halo_Mass / ksi) * (2 * atan((r_obs + A_0 + this->Halo_Mass) / sqrt(this->Halo_Mass * ksi)) - M_PI);
-    double dr_Y = 2 / ksi / (1 + (r_obs + A_0 + this->Halo_Mass) * (r_obs + A_0 + this->Halo_Mass) / this->Mass / ksi);
-
-    double exp_y = exp(Y);
-
-    double f = (1 - 2 * this->Mass / r_obs) * exp_y;
-
-    double rad_potential = 1. - f * J * J / (r_obs * r_obs);
-
-    double(*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
-
-    p_Initial_Conditions->Init_Momentum[e_r] = sqrt(rad_potential) * metric[1][1];
-
-    return OK;
-
-}
-
 void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
 
     const double& r = State_vector[e_r];

@@ -18,16 +18,23 @@ class Integrator():
     __slots__ = ("init_stepsize",
                  "RK78_abs_accuracy", 
                  "RK78_rel_accuracy", 
+                 "ESDIRK54_abs_accuracy", 
+                 "ESDIRK54_rel_accuracy", 
                  "Step_controller_type",
                  "step_controller_safety_factor_1",
                  "step_controller_safety_factor_2",
-                 "PID_controller_I_gain",
-                 "PID_controller_P_gain",
-                 "PID_controller_D_gain",
+                 "RK78_PID_controller_I_gain",
+                 "RK78_PID_controller_P_gain",
+                 "RK78_PID_controller_D_gain",
+                 "ESDIRK54_PID_controller_I_gain",
+                 "ESDIRK54_PID_controller_P_gain",
+                 "ESDIRK54_PID_controller_D_gain",
                  "Max_rel_step_increase",
                  "Min_rel_step_increase",
-                 "Gustafsson_controller_k_1", 
-                 "Gustafsson_controller_k_2", 
+                 "RK78_Gustafsson_controller_k_1", 
+                 "RK78_Gustafsson_controller_k_2", 
+                 "ESDIRK54_Gustafsson_controller_k_1", 
+                 "ESDIRK54_Gustafsson_controller_k_2", 
                  "max_integration_count",
                  "simpson_method_accuracy",
                  "max_affine_parameter",
@@ -229,16 +236,23 @@ class Simulation_configurator:
     def _configure_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
                                              RK78_abs_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
                                              RK78_rel_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
+                                             ESDIRK54_abs_accuracy: dict[str, float | str] = {"Value": 1e-8, "Unit": "[-]"},
+                                             ESDIRK54_rel_accuracy: dict[str, float | str] = {"Value": 1e-8, "Unit": "[-]"},
                                              Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
                                              Safety_factor_1: dict[str, float | str] = {"Value": 0.9, "Unit": "[-]"},
                                              Safety_factor_2: dict[str, float | str] = {"Value": 1e-35, "Unit": "[-]"},
                                              Max_rel_step_increase: dict[str, float | str] = {"Value": 2, "Unit": "[-]"},
                                              Min_rel_step_increase: dict[str, float | str] = {"Value": 0.01, "Unit": "[-]"},
-                                             Step_controller_I_gain: dict[str, float | str] = {"Value": -0.58 / 7, "Unit": "[-]"},
-                                             Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 7, "Unit": "[-]"},
-                                             Step_controller_D_gain: dict[str, float | str] = {"Value": -0.1 / 7, "Unit": "[-]"},
-                                             Gustafsson_controller_k_1: dict[str, float | str] = {"Value": -0.367 / 7, "Unit": "[-]"},
-                                             Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 7, "Unit": "[-]"},
+                                             RK78_Step_controller_I_gain: dict[str, float | str] = {"Value": -0.58 / 7, "Unit": "[-]"},
+                                             RK78_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 7, "Unit": "[-]"},
+                                             RK78_Step_controller_D_gain: dict[str, float | str] = {"Value": -0.1 / 7, "Unit": "[-]"},
+                                             RK78_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": -0.367 / 7, "Unit": "[-]"},
+                                             RK78_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 7, "Unit": "[-]"},
+                                             ESDIRK54_Step_controller_I_gain: dict[str, float | str] = {"Value": -0.58 / 5, "Unit": "[-]"},
+                                             ESDIRK54_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 5, "Unit": "[-]"},
+                                             ESDIRK54_Step_controller_D_gain: dict[str, float | str] = {"Value": -0.1 / 5, "Unit": "[-]"},
+                                             ESDIRK54_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": -0.367 / 5, "Unit": "[-]"},
+                                             ESDIRK54_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 5, "Unit": "[-]"},
                                              Max_integration_count: dict[str, float | str] = {"Value": 1e7, "Unit": "[-]"},
                                              simpson_method_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"},
                                              max_affine_parameter: dict[str, float | str] = {"Value": 1e6, "Unit": "[M]"},
@@ -253,16 +267,25 @@ class Simulation_configurator:
         self.integrator.init_stepsize = Init_stepsize
         self.integrator.RK78_abs_accuracy = RK78_abs_accuracy
         self.integrator.RK78_rel_accuracy = RK78_rel_accuracy
+        self.integrator.ESDIRK54_abs_accuracy = ESDIRK54_abs_accuracy
+        self.integrator.ESDIRK54_rel_accuracy = ESDIRK54_rel_accuracy
         self.integrator.Step_controller_type = Step_controller_type
         self.integrator.step_controller_safety_factor_1 = Safety_factor_1
         self.integrator.step_controller_safety_factor_2 = Safety_factor_2
         self.integrator.Max_rel_step_increase = Max_rel_step_increase
         self.integrator.Min_rel_step_increase = Min_rel_step_increase
-        self.integrator.PID_controller_I_gain = Step_controller_I_gain
-        self.integrator.PID_controller_P_gain = Step_controller_P_gain
-        self.integrator.PID_controller_D_gain = Step_controller_D_gain
-        self.integrator.Gustafsson_controller_k_1 = Gustafsson_controller_k_1
-        self.integrator.Gustafsson_controller_k_2 = Gustafsson_controller_k_2
+        self.integrator.RK78_PID_controller_I_gain = RK78_Step_controller_I_gain
+        self.integrator.RK78_PID_controller_P_gain = RK78_Step_controller_P_gain
+        self.integrator.RK78_PID_controller_D_gain = RK78_Step_controller_D_gain
+        self.integrator.RK78_Gustafsson_controller_k_1 = RK78_Gustafsson_controller_k_1
+        self.integrator.RK78_Gustafsson_controller_k_2 = RK78_Gustafsson_controller_k_2
+        
+        self.integrator.ESDIRK54_PID_controller_I_gain = ESDIRK54_Step_controller_I_gain
+        self.integrator.ESDIRK54_PID_controller_P_gain = ESDIRK54_Step_controller_P_gain
+        self.integrator.ESDIRK54_PID_controller_D_gain = ESDIRK54_Step_controller_D_gain
+        self.integrator.ESDIRK54_Gustafsson_controller_k_1 = ESDIRK54_Gustafsson_controller_k_1
+        self.integrator.ESDIRK54_Gustafsson_controller_k_2 = ESDIRK54_Gustafsson_controller_k_2
+        
         self.integrator.max_integration_count  = Max_integration_count
         self.integrator.simpson_method_accuracy = simpson_method_accuracy
         self.integrator.max_affine_parameter = max_affine_parameter

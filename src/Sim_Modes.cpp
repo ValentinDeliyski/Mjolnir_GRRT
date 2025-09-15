@@ -155,13 +155,13 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         std::cout << '\n' << "Generating image for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << "...\n";
 
-        for (int V_pixel_num = 0; V_pixel_num <= Y_resolution - 1; V_pixel_num++) {
+        for (int V_pixel_num = 0; V_pixel_num < Y_resolution; V_pixel_num++) {
 
             if (p_Sim_Context->p_Init_Conditions->Print_to_console) { print_progress(progress, Y_resolution - 1, false); }
 
             progress += 1;
 
-            for (int H_pixel_num = 0; H_pixel_num <= X_resolution - 1; H_pixel_num++) {
+            for (int H_pixel_num = 0; H_pixel_num < X_resolution; H_pixel_num++) {
 
                 /*  ------------------ This function polulates the initial momentum inside the s_Initial_Conditions struct ------------------ */
                 get_intitial_conditions_from_angles(p_Sim_Context->p_Init_Conditions,
@@ -242,7 +242,7 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
 
     p_Sim_Context->File_manager->open_image_output_file();
 
-    for (int photon = 0; photon <= p_Sim_Context->File_manager->sim_mode_2_ray_number - 1; photon += 1) {
+    for (int photon_idx = 0; photon_idx <= p_Sim_Context->File_manager->sim_mode_2_ray_number - 1; photon_idx += 1) {
 
         /*
 
@@ -250,7 +250,7 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
 
         */
 
-        p_Sim_Context->p_Spacetime->get_initial_conditions_from_file(p_Sim_Context->p_Init_Conditions, p_phi_data, p_theta_data, photon);
+        get_initial_conditions_from_image_coords(p_Sim_Context->p_Init_Conditions, p_phi_data[photon_idx], p_theta_data[photon_idx]);
 
         /*
 
@@ -272,7 +272,7 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
            and therefore not automatically reinitialized to 0s. I have to manually do it. */
         Zero_results_struct(p_Ray_results);
 
-        print_progress(photon, p_Sim_Context->File_manager->sim_mode_2_ray_number - 1, true);
+        print_progress(photon_idx, p_Sim_Context->File_manager->sim_mode_2_ray_number - 1, true);
 
     }
 
@@ -287,7 +287,7 @@ void run_simulation_mode_3(const Simulation_Context_type* const p_Sim_Context, R
     double& X_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_X_init;
     double& Y_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_Y_init;
 
-    p_Sim_Context->p_Spacetime->get_initial_conditions_from_file(p_Sim_Context->p_Init_Conditions, (double*) &X_init, (double*) &Y_init, 0);
+    get_initial_conditions_from_image_coords(p_Sim_Context->p_Init_Conditions, X_init, Y_init);
 
     Propagate_ray(p_Sim_Context, p_Ray_results);
 

@@ -90,6 +90,8 @@ class Simulation_Parser():
                 self.Q_Intensity_log: list[float] = []
                 self.U_Intensity_log: list[float] = []
                 self.V_Intensity_log: list[float] = []
+                self.State_error_log: list[float] = []
+                self.Rejected_steps_log: list[int] = []
                 
                 Data_parser = DictReader(file, delimiter = ",")
                 
@@ -112,6 +114,12 @@ class Simulation_Parser():
                     self.Q_Intensity_log.append(float(row["Synchotron Intensity Q [Jy/sRad]"]))
                     self.U_Intensity_log.append(float(row["Synchotron Intensity U [Jy/sRad]"]))
                     self.V_Intensity_log.append(float(row["Synchotron Intensity V [Jy/sRad]"]))
+                    self.State_error_log.append(float(row["State Error [-]"]))
+                    
+                    try:
+                        self.Rejected_steps_log.append(int(row["Number of rejected steps [-]"]))    
+                    except:
+                        self.Rejected_steps_log.append(int(float(row["Number of rejected steps [-]"])))   
                 
     def get_total_flux(self, obs_pos: float, unit: str = "Jy") -> float:
         
@@ -205,14 +213,14 @@ class Simulation_Parser():
 
         return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, Celestial_theta, Celestial_phi
     
-    def get_photon_log(self) -> tuple[tuple, tuple, tuple, list, list]:
+    def get_photon_log(self) -> tuple[tuple, tuple, tuple, list, list, tuple]:
         
         Position_tuple = self.t_coord, self.r_coord, self.theta_coord, self.phi_coord
         Momentum_tuple = self.p_t, self.p_r, self.p_theta, self.p_phi
         Emission_tuple = self.I_Intensity_log, self.Q_Intensity_log, self.U_Intensity_log, self.V_Intensity_log
+        Debug_tuple = self.State_error_log, self.Rejected_steps_log
         
-        return Position_tuple, Momentum_tuple, Emission_tuple, self.integration_step, self.affine_param
-                
+        return Position_tuple, Momentum_tuple, Emission_tuple, self.integration_step, self.affine_param, Debug_tuple
         
     def export_ehtim_data(self, Spacetime: str, data: NDArray, path: str) -> None:
 
