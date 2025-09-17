@@ -35,7 +35,7 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     // Tell GLFW we are using the CORE profile -> we only have the modern functions
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(aspect_ratio * 1200, 1200, "Mjolnir GRRT", NULL, NULL);
+    window = glfwCreateWindow(1024, 1024 / aspect_ratio, "Mjolnir GRRT", NULL, NULL);
 
     // Introduce the window into the current context
     glfwMakeContextCurrent(window);
@@ -46,8 +46,8 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     // Load GLAD so it configures OpenGL
     gladLoadGL();
 
-    // Specify the viewport of OpenGL in the Window -> x = [0, aspect_ratio * 1200], y = [0, 1200]
-    glViewport(0, 0, aspect_ratio * 1200, 1200);
+    // Specify the viewport of OpenGL in the Window -> x = [0, aspect_ratio * 1024], y = [0, 1024]
+    glViewport(0, 0, 1024, 1024 / aspect_ratio);
 
     // The simulation image is interpreted as a texture
     GLuint texture = init_texture();

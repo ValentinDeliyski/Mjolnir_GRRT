@@ -220,7 +220,7 @@ Return_Values Wormhole_class::load_parameters(const Metric_parameters_type* cons
         return ERROR;
     }
 
-    if (isnan(p_Metric_Parameters->Stop_At_Throat) || isinf(p_Metric_Parameters->Stop_At_Throat)) {
+    if (true != p_Metric_Parameters->Stop_At_Throat && false != p_Metric_Parameters->Stop_At_Throat) {
 
         std::cout << "Invalid value for the \"Stop at throat\" flag: " << p_Metric_Parameters->Stop_At_Throat << "\n";
 
