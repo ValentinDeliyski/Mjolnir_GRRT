@@ -25,35 +25,35 @@ void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
     switch (p_Sim_context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
     case Kerr:
-        p_Sim_context->p_Spacetime = new Kerr_class;
+        p_Sim_context->p_Spacetime = new Kerr_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Wormhole:      
-        p_Sim_context->p_Spacetime = new Wormhole_class;
+        p_Sim_context->p_Spacetime = new Wormhole_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Reg_Black_Hole:       
-        p_Sim_context->p_Spacetime = new RBH_class;
+        p_Sim_context->p_Spacetime = new RBH_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Janis_Newman_Winicour:       
-        p_Sim_context->p_Spacetime = new JNW_class;
+        p_Sim_context->p_Spacetime = new JNW_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Einstein_Gauss_Bonnet:       
-        p_Sim_context->p_Spacetime = new Gauss_Bonnet_class;
+        p_Sim_context->p_Spacetime = new Gauss_Bonnet_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case BH_w_Dark_Matter:      
-        p_Sim_context->p_Spacetime = new Black_Hole_w_Dark_Matter_Halo_class;
+        p_Sim_context->p_Spacetime = new Black_Hole_w_Dark_Matter_Halo_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Numerical:
-        p_Sim_context->p_Spacetime = new Numerical_metric;
+        p_Sim_context->p_Spacetime = new Numerical_metric(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Minkowski:
-        p_Sim_context->p_Spacetime = new Minkowski_class;
+        p_Sim_context->p_Spacetime = new Minkowski_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     }
@@ -96,8 +96,6 @@ int main(int argument_count, char** cmd_line_args) {
 
     // Populate the Spacetime class instance 
     Allocate_Spacetime_Class(&s_Sim_Context);
-
-    if (ERROR == s_Sim_Context.p_Spacetime->load_parameters(&s_Sim_Context.p_Init_Conditions->Metric_parameters)) { throw std::runtime_error("Invalid metric parameters!"); };
 
     // Get the observer position and populate the Observer class instance.
     s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);

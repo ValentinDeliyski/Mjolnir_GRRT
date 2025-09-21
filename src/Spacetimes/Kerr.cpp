@@ -1,5 +1,39 @@
 #include "Spacetimes.h"
 
+Kerr_class::Kerr_class(const Metric_parameters_type* const p_Metric_Parameters) {
+
+    if (isnan(p_Metric_Parameters->Spin) || isinf(p_Metric_Parameters->Spin)) { 
+        
+        throw std::runtime_error(std::format("Invalid value for the spin parameter: {}", p_Metric_Parameters->Spin));
+    
+    }
+
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the distance to the singular point: {}", p_Metric_Parameters->Min_distance_to_singular_point));
+
+    }
+
+    this->Spin_Param = p_Metric_Parameters->Spin;
+    this->Horizon_radius = 0;
+
+    if (this->Spin_Param * this->Spin_Param < 1) {
+
+        this->Horizon_radius = this->Mass * (1 + sqrt(1 - this->Spin_Param * this->Spin_Param));
+
+    }
+
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
+
+}
+
 double* Kerr_class::get_ISCO() {
 
     double Z_1 = 1 + pow(1 - this->Spin_Param * this->Spin_Param, 1. / 3) * (pow(1 + this->Spin_Param, 1. / 3) + pow(1 - this->Spin_Param, 1. / 3));
@@ -227,43 +261,4 @@ bool Kerr_class::terminate_integration(const double* const State_vector) {
     return scatter || hit_horizon;
 
 };
-
-Return_Values Kerr_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
-
-    if (isnan(p_Metric_Parameters->Spin) || isinf(p_Metric_Parameters->Spin)) {
-
-        std::cout << "Invalid value for the spin parameter: " << p_Metric_Parameters->Spin << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
-
-        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
-
-        std::cout << "Invalid value for the distance to the singular point: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
-
-        return ERROR;
-    }
-
-    this->Spin_Param = p_Metric_Parameters->Spin;
-    this->Horizon_radius = 0;
-
-    if (this->Spin_Param * this->Spin_Param < 1) {
-
-        this->Horizon_radius = this->Mass * (1 + sqrt(1 - this->Spin_Param * this->Spin_Param));
-        
-    }
-
-    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
-    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
-
-    return OK;
-
-}
 

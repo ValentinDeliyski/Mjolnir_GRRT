@@ -1,5 +1,17 @@
 #include "Spacetimes.h"
 
+Minkowski_class::Minkowski_class(const Metric_parameters_type* const p_Metric_Parameters){
+
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
+
+    }
+
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+
+}
+
 Metric_type Minkowski_class::get_metric(const double* const State_Vector) const {
 
     Metric_type s_Minkowski_metric{};
@@ -104,19 +116,3 @@ bool Minkowski_class::terminate_integration(const double* const State_vector) {
     return State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0;
 
 };
-
-Return_Values Minkowski_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
-
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
-
-        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
-
-        return ERROR;
-    }
-
-    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
-
-    return OK;
-
-}
-

@@ -1,5 +1,38 @@
 #include "Spacetimes.h"
 
+Black_Hole_w_Dark_Matter_Halo_class::Black_Hole_w_Dark_Matter_Halo_class(const Metric_parameters_type* const p_Metric_Parameters) {
+
+    if (isnan(p_Metric_Parameters->Compactness) || isinf(p_Metric_Parameters->Compactness) || p_Metric_Parameters->Compactness < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the compactness: {}", p_Metric_Parameters->Compactness));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Halo_Mass) || isinf(p_Metric_Parameters->Halo_Mass) || p_Metric_Parameters->Halo_Mass < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the halo mass: {}", p_Metric_Parameters->Halo_Mass));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the distance to the singular point: {}", p_Metric_Parameters->Min_distance_to_singular_point));
+
+    }
+
+    this->Compactness = p_Metric_Parameters->Compactness;
+    this->Halo_Mass = p_Metric_Parameters->Halo_Mass;
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
+
+}
+
 double* Black_Hole_w_Dark_Matter_Halo_class::get_ISCO() {
 
     /**************************************************************************
@@ -208,42 +241,3 @@ bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(const double* co
     return scatter || hit_horizon;
 
 };
-
-Return_Values Black_Hole_w_Dark_Matter_Halo_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
-
-    if (isnan(p_Metric_Parameters->Compactness) || isinf(p_Metric_Parameters->Compactness) || p_Metric_Parameters->Compactness < 0) {
-
-        std::cout << "Invalid value for the compactness: " << p_Metric_Parameters->Compactness << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Halo_Mass) || isinf(p_Metric_Parameters->Halo_Mass) || p_Metric_Parameters->Halo_Mass < 0) {
-
-        std::cout << "Invalid value for the halo mass: " << p_Metric_Parameters->Halo_Mass << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
-
-        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
-
-        std::cout << "Invalid value for the distance to the singular point: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
-
-        return ERROR;
-    }
-
-    this->Compactness = p_Metric_Parameters->Compactness;
-    this->Halo_Mass = p_Metric_Parameters->Halo_Mass;
-    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
-    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
-
-    return OK;
-
-}

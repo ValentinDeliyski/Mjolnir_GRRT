@@ -1,5 +1,48 @@
 #include "Spacetimes.h"
 
+Wormhole_class::Wormhole_class(const Metric_parameters_type* const p_Metric_Parameters){
+
+
+    if (isnan(p_Metric_Parameters->Spin) || isinf(p_Metric_Parameters->Spin)) {
+
+        throw std::runtime_error(std::format("Invalid value for the spin parameter: {}", p_Metric_Parameters->Spin));
+
+    }
+
+    if (true != p_Metric_Parameters->Stop_At_Throat && false != p_Metric_Parameters->Stop_At_Throat) {
+
+        throw std::runtime_error(std::format("Invalid value for the \"Stop at throat\" flag: {}", p_Metric_Parameters->Stop_At_Throat));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Redshift_Parameter) || isinf(p_Metric_Parameters->Redshift_Parameter) || p_Metric_Parameters->Redshift_Parameter < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the redshift parameter: {}", p_Metric_Parameters->Redshift_Parameter));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the distance to the throat: {}", p_Metric_Parameters->Min_distance_to_singular_point));
+
+    }
+
+    this->Spin_Param = p_Metric_Parameters->Spin;
+    this->Redshift_Param = p_Metric_Parameters->Redshift_Parameter;
+    this->Stop_at_Throat = p_Metric_Parameters->Stop_At_Throat;
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+
+    // I just reuse the "Min_distance_to_singular_point" for the min throat distance because it serves the same purpose.
+    this->Min_distance_to_throat = p_Metric_Parameters->Min_distance_to_singular_point;
+
+}
+
 double* Wormhole_class::get_ISCO() {
 
     double M = this->Mass;
@@ -209,54 +252,4 @@ bool Wormhole_class::terminate_integration(const double* const State_vector) {
         return scatter || scatter_other_side;
 
     }
-};
-
-Return_Values Wormhole_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
-
-    if (isnan(p_Metric_Parameters->Spin) || isinf(p_Metric_Parameters->Spin)) {
-
-        std::cout << "Invalid value for the spin parameter: " << p_Metric_Parameters->Spin << "\n";
-
-        return ERROR;
-    }
-
-    if (true != p_Metric_Parameters->Stop_At_Throat && false != p_Metric_Parameters->Stop_At_Throat) {
-
-        std::cout << "Invalid value for the \"Stop at throat\" flag: " << p_Metric_Parameters->Stop_At_Throat << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Redshift_Parameter) || isinf(p_Metric_Parameters->Redshift_Parameter) || p_Metric_Parameters->Redshift_Parameter < 0) {
-
-        std::cout << "Invalid value for the redshift parameter: " << p_Metric_Parameters->Redshift_Parameter << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
-
-        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
-
-        std::cout << "Invalid value for the distance to the throat: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
-
-        return ERROR;
-    }
- 
-    this->Spin_Param = p_Metric_Parameters->Spin;
-    this->Redshift_Param = p_Metric_Parameters->Redshift_Parameter;
-    this->Stop_at_Throat = p_Metric_Parameters->Stop_At_Throat;
-    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
-
-    // I just reuse the "Min_distance_to_singular_point" for the min throat distance because it serves the same purpose.
-    this->Min_distance_to_throat = p_Metric_Parameters->Min_distance_to_singular_point;
-
-    return OK;
-
-
 }

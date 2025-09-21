@@ -655,14 +655,9 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the max step size!" << "\n"; return ERROR; }
     Integrator_params->Max_stepsize = std::stod(temp_param_var->GetText());
 
-    // -------------------- Step stability check threshold
-    temp_param_var = Integrator_element->FirstChildElement("Step_stability_check_threshold");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step stability check threshold!" << "\n"; return ERROR; }
-    Integrator_params->Step_stability_check_threshold = std::stod(temp_param_var->GetText());
-
     // -------------------- Radiative transfer integrator
     temp_param_var = Integrator_element->FirstChildElement("radiative_transfer_integrator_type");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the max step size!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the radiative transfer integrator type!" << "\n"; return ERROR; }
     std::string Radiative_transfer_integrator_type = temp_param_var->GetText();
 
     if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "Analytic")) {
@@ -683,6 +678,35 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     else {
 
         std::cout << "Unsupported radiative transfer integrator type!" << "\n";
+
+        return ERROR;
+
+    }
+
+    // -------------------- Default gegodesic integrator
+    temp_param_var = Integrator_element->FirstChildElement("default_geodesic_integrator_type");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the geodesic integrator type!" << "\n"; return ERROR; }
+    std::string Default_geodesic_integrator_type = temp_param_var->GetText();
+
+
+    if (0 == strcmp(static_cast<const char*>(Default_geodesic_integrator_type.c_str()), "RK78_Fehlberg")) {
+
+        Integrator_params->e_Default_geodesic_integrator = RK78_Fehlberg;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Default_geodesic_integrator_type.c_str()), "RK78_DP")) {
+
+        Integrator_params->e_Default_geodesic_integrator = RK78_DP;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Default_geodesic_integrator_type.c_str()), "ESDIRK54")) {
+
+        Integrator_params->e_Default_geodesic_integrator = ESDIRK54;
+
+    }
+    else {
+
+        std::cout << "Unsupported geodesic integrator type!" << "\n";
 
         return ERROR;
 
@@ -830,25 +854,50 @@ Return_Values static parse_observer_parameters(tinyxml2::XMLElement* Observer_el
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the camera rotation angle!" << "\n"; return ERROR; }
     Observer_params->cam_rotation_angle = std::stod(temp_param_var->GetText());
 
-    // -------------------- Image Y min
+    // -------------------- Image linear Y min
     temp_param_var = Observer_element->FirstChildElement("Image_y_min");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window Y min!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window linear Y min!" << "\n"; return ERROR; }
     Observer_params->y_min = std::stod(temp_param_var->GetText());
 
-    // -------------------- Image Y max
+    // -------------------- Image linear Y max
     temp_param_var = Observer_element->FirstChildElement("Image_y_max");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window Y max!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window linear Y max!" << "\n"; return ERROR; }
     Observer_params->y_max = std::stod(temp_param_var->GetText());
 
-    // -------------------- Image X min
+    // -------------------- Image linear X min
     temp_param_var = Observer_element->FirstChildElement("Image_x_min");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window X min!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window linear X min!" << "\n"; return ERROR; }
     Observer_params->x_min = std::stod(temp_param_var->GetText());
 
-    // -------------------- Image X max
+    // -------------------- Image linear X max
     temp_param_var = Observer_element->FirstChildElement("Image_x_max");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window X max!" << "\n"; return ERROR; }
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window linear X max!" << "\n"; return ERROR; }
     Observer_params->x_max = std::stod(temp_param_var->GetText());
+
+    // -------------------- Image angular Y min
+    temp_param_var = Observer_element->FirstChildElement("Image_y_angle_min");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window angular Y min!" << "\n"; return ERROR; }
+    Observer_params->y_angle_min = std::stod(temp_param_var->GetText());
+
+    // -------------------- Image angular Y max
+    temp_param_var = Observer_element->FirstChildElement("Image_y_angle_max");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window angular Y max!" << "\n"; return ERROR; }
+    Observer_params->y_angle_max = std::stod(temp_param_var->GetText());
+
+    // -------------------- Image angular X min
+    temp_param_var = Observer_element->FirstChildElement("Image_x_angle_min");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window angular X min!" << "\n"; return ERROR; }
+    Observer_params->x_angle_min = std::stod(temp_param_var->GetText());
+
+    // -------------------- Image angular X max
+    temp_param_var = Observer_element->FirstChildElement("Image_x_angle_max");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse observation window angular X max!" << "\n"; return ERROR; }
+    Observer_params->x_angle_max = std::stod(temp_param_var->GetText());
+
+    // -------------------- Use angular coords flag
+    temp_param_var = Observer_element->FirstChildElement("Use_angular_coords");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the \"use angular coords\" flag!" << "\n"; return ERROR; }
+    Observer_params->Use_angular_coords = bool(std::stoi(temp_param_var->GetText()));
 
     // -------------------- Image resolution Y
     temp_param_var = Observer_element->FirstChildElement("Resolution_y");

@@ -1,6 +1,6 @@
 from numpy.typing import NDArray
 from numpy import float64, bool_
-from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones
+from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes
 
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
@@ -124,37 +124,37 @@ class Sim_Visualizer():
         Stripe_width: float = pi / 400
         
         Stripe_center_phi = linspace(-pi, pi, N_stripes + 1)
-        Stripe_center_theta = linspace(0, pi, int(N_stripes / 2) + 1)
+        Stripe_center_theta = linspace(0 , pi, int(N_stripes / 2) + 1)
         
         for px in range(X_resolution):
 
             for py in range(Y_resolution):
-                  
+                
                 # Black rays
-                if Celestial_Phi[px][py] > 1e99 or Celestial_Theta[px][py] > 1e99:
+                if Celestial_Phi[py][px] > 1e99 or Celestial_Theta[py][px] > 1e99:
                     Celestial_sphere_pattern[px, py] = 0, 0, 0
                     
                 # The red quadrant
-                elif Celestial_Phi[px][py] < 0 and Celestial_Theta[px][py] < pi / 2:
+                elif Celestial_Phi[py][px] < 0 and Celestial_Theta[py][px] < pi / 2:
                     Celestial_sphere_pattern[px, py] = 255, 0, 0
                     
                 # The yellow quadrant
-                elif Celestial_Phi[px][py] < 0 and Celestial_Theta[px][py] > pi / 2: 
+                elif Celestial_Phi[py][px] < 0 and Celestial_Theta[py][px] > pi / 2: 
                     Celestial_sphere_pattern[px, py] = 255, 255, 0
                     
                 # The green quadrant
-                elif Celestial_Phi[px][py] > 0 and Celestial_Theta[px][py] < pi / 2:
+                elif Celestial_Phi[py][px] > 0 and Celestial_Theta[py][px] < pi / 2:
                     Celestial_sphere_pattern[px, py] = 0, 255, 0
         
                 # The blue quadrant
-                elif Celestial_Phi[px][py] > 0 and Celestial_Theta[px][py] > pi / 2:
+                elif Celestial_Phi[py][px] > 0 and Celestial_Theta[py][px] > pi / 2:
                     Celestial_sphere_pattern[px, py] = 0, 0, 255
                                                      
-                if (abs(Celestial_Phi[px][py] - find_nearest(Stripe_center_phi, Celestial_Phi[px][py])) < Stripe_width or
-                    abs(Celestial_Theta[px][py] - find_nearest(Stripe_center_theta, Celestial_Theta[px][py])) < Stripe_width):
+                if (abs(Celestial_Phi[py][px] - find_nearest(Stripe_center_phi, Celestial_Phi[py][px])) < Stripe_width or
+                    abs(Celestial_Theta[py][px] - find_nearest(Stripe_center_theta, Celestial_Theta[py][px])) < Stripe_width):
                             Celestial_sphere_pattern[px, py] = 0, 0, 0
                         
-        return Celestial_sphere_pattern
+        return swapaxes(Celestial_sphere_pattern, 0, 1)
         
     def plot_ray_tracer_results(self, 
                                 Export_data_for_Ehtim: bool, 
@@ -291,7 +291,7 @@ class Sim_Visualizer():
                 # Convert the spectral density at y = 0 to brightness temperature, normalized to 10^9 Kelvin
                 X_resolution: int = int(self.Sim_Parsers[Sim_number].Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
                 
-                T_Brightness: NDArray[float64] = Data_to_plot[int(X_resolution / 2)]
+                T_Brightness: NDArray[float64] = Data_to_plot[int(X_resolution / 2) - 1]
                 T_Brightness_norm: float     = max(T_Brightness)
                 T_Brightness_min_norm: float = min(T_Brightness)
                 x_coords: NDArray[float64]   = linspace(axes_limits[0], axes_limits[1], X_resolution)

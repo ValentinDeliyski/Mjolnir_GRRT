@@ -11,12 +11,19 @@ class Simulation_Parser():
     def __init__(self, File_name: str) -> None:
 
         self.Simulation_metadata: dict = {}
+        self.Raw_simulation_header: str = ""
         
         with open(File_name + ".txt", 'r') as file:
 
             Header_parser: Reader = reader(file, delimiter = ":")
             
             for line in Header_parser:
+                
+                for String in line: 
+                    self.Raw_simulation_header = self.Raw_simulation_header + String + ": "
+                    
+                self.Raw_simulation_header = self.Raw_simulation_header[:-2] + "\n"
+                
                 if len(line) == 2:
                     self.Simulation_metadata.update({str(line[0]).strip(): str(line[1]).strip()})
                 
@@ -24,22 +31,22 @@ class Simulation_Parser():
                     break
 
             if (int(self.Simulation_metadata["Active Simulation Mode"]) == 1):
-                
-                X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
-                Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+     
+                X_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[0])
+                Y_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[2])
                 
                 Array_size = X_resolution * Y_resolution    
 
-                self.X_coords: NDArray      = zeros(Array_size)
-                self.Y_coords: NDArray      = zeros(Array_size)
-                self.I_Intensity: NDArray   = zeros(Array_size)
-                self.Q_Intensity: NDArray   = zeros(Array_size)
-                self.U_Intensity: NDArray   = zeros(Array_size)
-                self.V_Intensity: NDArray   = zeros(Array_size)
-                self.Disk_redshift: NDArray = zeros(Array_size)
-                self.Disk_flux: NDArray     = zeros(Array_size)
-                self.Celestial_theta: NDArray = zeros(Array_size)
-                self.Celestial_phi: NDArray   = zeros(Array_size)
+                self.X_coords: NDArray[float64] = zeros(Array_size)
+                self.Y_coords: NDArray[float64] = zeros(Array_size)
+                self.I_Intensity: NDArray[float64] = zeros(Array_size)
+                self.Q_Intensity: NDArray[float64] = zeros(Array_size)
+                self.U_Intensity: NDArray[float64] = zeros(Array_size)
+                self.V_Intensity: NDArray[float64] = zeros(Array_size)
+                self.Disk_redshift: NDArray[float64] = zeros(Array_size)
+                self.Disk_flux: NDArray[float64] = zeros(Array_size)
+                self.Celestial_theta: NDArray[float64] = zeros(Array_size)
+                self.Celestial_phi: NDArray[float64] = zeros(Array_size)
 
                 Data_parser = DictReader(file, delimiter = ",")
                 index = 0

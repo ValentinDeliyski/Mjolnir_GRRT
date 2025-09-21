@@ -1,5 +1,39 @@
 #include "Spacetimes.h"
 
+RBH_class::RBH_class(const Metric_parameters_type* const p_Metric_Parameters){
+
+    if (isnan(p_Metric_Parameters->RBH_Parameter) || isinf(p_Metric_Parameters->RBH_Parameter) || p_Metric_Parameters->RBH_Parameter < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the metric parameter: ", p_Metric_Parameters->RBH_Parameter));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the scattering radius: ", p_Metric_Parameters->Scattering_radius));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the distance to the singular point: ", p_Metric_Parameters->Min_distance_to_singular_point));
+
+    }
+
+    this->Horizon_radius = 0;
+
+    if (this->Parameter > 2 * this->Mass) {
+
+        this->Horizon_radius = sqrt(4 * this->Mass * this->Mass - this->Parameter * this->Parameter);
+
+    }
+
+    this->Parameter = p_Metric_Parameters->RBH_Parameter;
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
+
+}
+
 double* RBH_class::get_ISCO() {
 
     static double r_ISCO[2]{};
@@ -153,44 +187,5 @@ bool RBH_class::terminate_integration(const double* const State_vector) {
     const bool hit_horizon = State_vector[e_r] - this->Horizon_radius < this->Min_distance_to_singular_point;
 
     return scatter || hit_horizon;
-
-}
-
-Return_Values RBH_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
-
-    if (isnan(p_Metric_Parameters->RBH_Parameter) || isinf(p_Metric_Parameters->RBH_Parameter) || p_Metric_Parameters->RBH_Parameter < 0) {
-        
-        std::cout << "Invalid value for the metric parameter: " << p_Metric_Parameters->RBH_Parameter << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
-
-        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
-
-        std::cout << "Invalid value for the distance to the singular point: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
-
-        return ERROR;
-    }
-
-    this->Horizon_radius = 0;
-
-    if (this->Parameter > 2 * this->Mass) {
-
-        this->Horizon_radius = sqrt(4 * this->Mass * this->Mass - this->Parameter * this->Parameter);
-
-    }
-
-    this->Parameter = p_Metric_Parameters->RBH_Parameter;
-    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
-    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
-
-    return OK;
 
 }

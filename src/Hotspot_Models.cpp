@@ -1,5 +1,5 @@
 #include "Hotspot_Models.h"
-
+#include <format>
 Hotspot_model_type::Hotspot_model_type(Simulation_Context_type* p_Sim_Context) {
 
     if (nullptr != p_Sim_Context) {
@@ -118,9 +118,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
     
     if (isnan(p_Emission_medium_state->Density) || isinf(p_Emission_medium_state->Density) || p_Emission_medium_state->Density < 0) {
 
-        std::cout << "Invalid hotspot density profile: " << p_Emission_medium_state->Density << "\n";
-
-        exit(ERROR);
+        throw std::runtime_error(std::format("Invalid hotspot density profile: {}", p_Emission_medium_state->Density));
 
     }
 
@@ -147,9 +145,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     if (isnan(p_Emission_medium_state->Temperature) || isinf(p_Emission_medium_state->Temperature) || p_Emission_medium_state->Temperature < 0) {
 
-        std::cout << "Invalid hotspot temperature profile: " << p_Emission_medium_state->Temperature << "\n";
-
-        exit(ERROR);
+        throw std::runtime_error(std::format("Invalid hotspot temperature profile: {}", p_Emission_medium_state->Temperature));
 
     }
 

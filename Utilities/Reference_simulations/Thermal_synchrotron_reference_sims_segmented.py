@@ -11,7 +11,8 @@ sys.path.append(parent_directory)
 
 from Mjolnir_Configurator import Simulation_configurator
 from Support_functions.Parsers import Units_class, Simulation_Parser
-from numpy import pi, tan, sqrt, array, flip
+from numpy import pi, tan, sqrt, array, flip, append, float64
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 import subprocess
 
@@ -68,8 +69,8 @@ class Thermal_syhnchrotron_reference_sims:
         self.Nominal_Image_x_max = (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS) 
         self.Nominal_Image_y_max = (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS) 
 
-        self.Nominal_Resolution_x = 512
-        self.Nominal_Resolution_y = 512
+        self.Nominal_Resolution_x = 2048
+        self.Nominal_Resolution_y = 2048
 
         self.Segment_number = 8
         
@@ -79,6 +80,11 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.integrator.RK78_abs_accuracy  = {"Value": 1e-13, "Unit": "[-]"}
         self.Simulation_configurator.integrator.RK78_rel_accuracy  = {"Value": 1e-13, "Unit": "[-]"}
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
+        
+        self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 10, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.radiative_transfer_integrator_type = {"Value": "RK5", "Unit": "[-]"}
+        self.Simulation_configurator.integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
 
         """ The simulation output file path """
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
@@ -132,31 +138,75 @@ class Thermal_syhnchrotron_reference_sims:
         subprocess.call(args, shell = True)
 
     def Combine_segmented_output_files(self):
+        
+        X_coords: NDArray[float64]      = array([])
+        Y_coords: NDArray[float64]      = array([])
+        I_Intensity: NDArray[float64]   = array([])
+        Q_Intensity: NDArray[float64]   = array([])
+        U_Intensity: NDArray[float64]   = array([])
+        V_Intensity: NDArray[float64]   = array([])
+        Disk_redshift: NDArray[float64] = array([])
+        Disk_flux: NDArray[float64]     = array([])
+        Celestial_theta: NDArray[float64] = array([])
+        Celestial_phi: NDArray[float64]   = array([])
 
-        Total_image_intensity = []
-
+        Raw_simulation_header: str = ""
+        PT_model_active: bool = False
+        
         for Segment_idx in range(self.Segment_number):
 
             Output_file_path = self.Simulation_configurator.file_manager.Output_file_directory + "\\Reference_Simulation_1_Segment_{}\\Kerr".format(Segment_idx) 
             Sim_parser = Simulation_Parser(Output_file_path)
-            Total_image_intensity.append(Sim_parser.I_Intensity)
+        
+            PT_model_active = Sim_parser.Simulation_metadata["Active disk model"] == "Page-Thorne"
+            
+            X_coords = append(X_coords, Sim_parser.X_coords)
+            Y_coords = append(Y_coords, Sim_parser.Y_coords)
+            I_Intensity = append(I_Intensity, Sim_parser.I_Intensity)
+            Q_Intensity = append(Q_Intensity, Sim_parser.Q_Intensity)
+            U_Intensity = append(U_Intensity, Sim_parser.U_Intensity)
+            V_Intensity = append(V_Intensity, Sim_parser.V_Intensity)
+            Disk_redshift = append(Disk_redshift, Sim_parser.Disk_redshift)
+            Disk_flux = append(Disk_flux, Sim_parser.Disk_flux)
+            Celestial_theta = append(Celestial_theta, Sim_parser.Celestial_theta)
+            Celestial_phi = append(Celestial_phi, Sim_parser.Celestial_phi)
+            
+            Raw_simulation_header = Sim_parser.Raw_simulation_header
+            
+        """ ============================ Flatten all arrays, so I can write in the combined file easily ============================ """
+            
+        X_coords = X_coords.flatten()
+        Y_coords = Y_coords.flatten()
+        I_Intensity = I_Intensity.flatten()
+        Q_Intensity = Q_Intensity.flatten()
+        U_Intensity = U_Intensity.flatten()
+        V_Intensity = V_Intensity.flatten()
+        Disk_redshift = Disk_redshift.flatten()
+        Disk_flux = Disk_flux.flatten()
+        Celestial_theta = Celestial_theta.flatten()
+        Celestial_phi = Celestial_phi.flatten()
+            
+        if not os.path.isdir(self.Simulation_configurator.file_manager.Output_file_directory + "\\Reference_Simulation_1"):
+            os.mkdir(self.Simulation_configurator.file_manager.Output_file_directory + "\\Reference_Simulation_1")
+        
+        with open(self.Simulation_configurator.file_manager.Output_file_directory + "\\Reference_Simulation_1\\" + self.Simulation_configurator.simulation_name["Value"].split("_Segment")[0] + ".txt", "w") as file:
+            file.write(Raw_simulation_header)
+            
+            if not PT_model_active:
+            
+                file.write("Image X Coord [M],Image Y Coord [M],Synchotron Intensity I [Jy/sRad],Synchotron Intensity Q [Jy/sRad],Synchotron Intensity U [Jy/sRad],Synchotron Intensity V [Jy/sRad],Celestial Sphere Crossing Theta [Rad],Celestial Sphere Crossing Phi [Rad]\n")
+            
+                for X_coord, Y_coord, I, Q, U, V, Theta, Phi in zip(X_coords, Y_coords, I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Celestial_theta, Celestial_phi):
+                    file.write("{},{},{},{},{},{},{}, {}\n".format(X_coord, Y_coord, I, Q, U, V, Theta, Phi))
 
-        Total_image_intensity = array(Total_image_intensity)
-        Total_image_intensity = Total_image_intensity.flatten().reshape(self.Nominal_Resolution_x, self.Nominal_Resolution_y)
-
-        Total_image_intensity = flip(Total_image_intensity, axis = 0)
-
-        Fig = plt.figure().add_subplot(111)
-        Fig.imshow(Total_image_intensity, cmap="hot")
-
-        plt.show()
+        print("Segments exported to single file in " + self.Simulation_configurator.file_manager.Output_file_directory + "\\Reference_Simulation_1")
 
 if __name__ == "__main__":
 
     Thermal_syhnchrotron_reference_sims_instance = Thermal_syhnchrotron_reference_sims()
 
     Thermal_syhnchrotron_reference_sims_instance.Segment_number = 8
-
+    
     Segment_list = []
 
     for Segment_idx in range(Thermal_syhnchrotron_reference_sims_instance.Segment_number):

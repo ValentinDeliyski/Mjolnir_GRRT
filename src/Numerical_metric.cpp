@@ -2,33 +2,24 @@
 #include "General_math_functions.h"
 #include "General_GR_functions.h"
 
-Return_Values Numerical_metric::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
+Numerical_metric::Numerical_metric(const Metric_parameters_type* const p_Metric_Parameters) {
 
     if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
 
-        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
+        throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
 
-        return ERROR;
     }
 
     if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point)) {
 
-        std::cout << "Invalid value for the distance to the throat: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
+        throw std::runtime_error(std::format("Invalid value for the distance to the throat: {}", p_Metric_Parameters->Min_distance_to_singular_point));
 
-        return ERROR;
     }
 
     this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
     this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
 
     this->Parameters = p_Metric_Parameters->Numerical_metric_params;
-
-    this->GSL_workspace = gsl_eigen_nonsymmv_alloc(8);
-    this->EOM_Eigenvalues = gsl_vector_complex_alloc(8);
-    this->EOM_Eigenvectors = gsl_matrix_complex_alloc(8, 8);
-    this->EOM_Jacobian_gsl_matrix = gsl_matrix_alloc(8, 8);
-
-    return OK;
 
 }
 
@@ -286,43 +277,6 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
 
         return Corrected_Potentials;
 
-    case Second_mixed_derivative:
-
-        Corrected_Potentials = this->evaluate_all_splines(s_Splnie_args.Radial_natural_param, s_Splnie_args.Theta_natural_param, s_Splnie_args.Radial_idx, s_Splnie_args.Theta_idx, Derivative_selector);
-
-        /* ------- This is correcting by the factor d(natural_parameter)/d(x_compactified) ------- */
-        derivative_correction_factor_1 = 1 / (this->Parameters.Compactified_radial_grid[s_Splnie_args.Radial_idx] - this->Parameters.Compactified_radial_grid[s_Splnie_args.Radial_idx - 1]);
-
-        /* ------- This is correcting by the factor d(x_compactified)/d(x_uncompactified) ------- */
-        derivative_correction_factor_1 *= (1 - s_Splnie_args.r_coord_compactified) * (1 - s_Splnie_args.r_coord_compactified);
-
-        /* ------- This is correcting by the factor d(x_uncompactified)/d(r) ------- */
-        derivative_correction_factor_1 *= s_Splnie_args.r_coord * (1 - s_Splnie_args.r_coord_compactified) / s_Splnie_args.r_coord_compactified;
-
-        /* ------- This is correcting by the factor d(natural_parameter)/d(theta) ------- */
-        derivative_correction_factor_1 *= 1 / (this->Parameters.Theta_grid[s_Splnie_args.Theta_idx] - this->Parameters.Theta_grid[s_Splnie_args.Theta_idx - 1]);
-
-        Corrected_Potentials.F_0 *= derivative_correction_factor_1;
-        Corrected_Potentials.F_1 *= derivative_correction_factor_1;
-        Corrected_Potentials.F_2 *= derivative_correction_factor_1;
-        Corrected_Potentials.W   *= derivative_correction_factor_1;
-
-        return Corrected_Potentials;
-
-    case Second_theta_derivative:
-
-        Corrected_Potentials = this->evaluate_all_splines(s_Splnie_args.Radial_natural_param, s_Splnie_args.Theta_natural_param, s_Splnie_args.Radial_idx, s_Splnie_args.Theta_idx, Derivative_selector);
-
-        /* ------- This is correcting by the factor d(natural_parameter)/d(theta) ------- */
-        derivative_correction_factor_1 = 1 / (this->Parameters.Theta_grid[s_Splnie_args.Theta_idx] - this->Parameters.Theta_grid[s_Splnie_args.Theta_idx - 1]);
-
-        Corrected_Potentials.F_0 *= derivative_correction_factor_1 * derivative_correction_factor_1;
-        Corrected_Potentials.F_1 *= derivative_correction_factor_1 * derivative_correction_factor_1;
-        Corrected_Potentials.F_2 *= derivative_correction_factor_1 * derivative_correction_factor_1;
-        Corrected_Potentials.W   *= derivative_correction_factor_1 * derivative_correction_factor_1;
-
-        return Corrected_Potentials;
-
     default:
 
         return this->evaluate_all_splines(s_Splnie_args.Radial_natural_param, s_Splnie_args.Theta_natural_param, s_Splnie_args.Radial_idx, s_Splnie_args.Theta_idx, Derivative_selector);
@@ -330,6 +284,7 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
     }
 
 }
+
 
 Metric_type Numerical_metric::get_metric(const double* const State_Vector) const {
 
@@ -671,7 +626,7 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, i
     default:
 
         s_d2r_Metric.Metric[e_t][e_t] = -exp_2F_0 * (d2r_N + 4 * dr_N * dr_F_0 + 2 * N * d2r_F_0 + 4 * N * dr_F_0 * dr_F_0)
-            + 2 * exp_2F_2 * sin_theta * sin_theta * (W * W * d2r_F_2 + 2 * W * W * dr_F_2 * dr_F_2 + 4 * W * dr_W * dr_F_2 + dr_W * dr_W + W * d2r_W);
+                                      + 2 * exp_2F_2 * sin_theta * sin_theta * (W * W * d2r_F_2 + 2 * W * W * dr_F_2 * dr_F_2 + 4 * W * dr_W * dr_F_2 + dr_W * dr_W + W * d2r_W);
         s_d2r_Metric.Metric[e_t][e_phi] = -exp_2F_2 * sin_theta * sin_theta * (2 * dr_W + 4 * W * dr_F_2 + 4 * r * dr_W * dr_F_2 + 2 * r * W * d2r_F_2 + 4 * r * W * dr_F_2 * dr_F_2 + r * d2r_W);
 
         break;
@@ -684,340 +639,6 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, i
     s_d2r_Metric.Metric[e_phi][e_phi] = 2 * exp_2F_2 * (1 + 4 * r * dr_F_2 + 2 * r * r * dr_F_2 * dr_F_2 + r * r * d2r_F_2) * sin_theta * sin_theta;
 
     return s_d2r_Metric;
-}
-
-Metric_type Numerical_metric::get_d2theta_metric(const double* const State_Vector) const {
-
-    /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
-
-    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
-
-    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
-
-    return this->get_d2theta_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
-
-}
-
-Metric_type Numerical_metric::get_d2theta_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
-
-    /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
-
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
-
-    const double& sin_theta = sin(theta);
-    const double& cos_theta = cos(theta);
-    const double& N = 1 - this->Parameters.Horizon_radius / r;
-
-    /* -------------------------------------------------------------- Evaluate the metric potentials spline -------------------------------------------------------------- */
-
-    Spline_arguments_type s_Spline_args{};
-
-    s_Spline_args.r_coord = r;
-    s_Spline_args.r_coord_compactified = compactify_radial_coordiante(s_Spline_args.r_coord);
-    s_Spline_args.Radial_idx = Radial_grid_idx;
-    s_Spline_args.Theta_idx = Theta_grid_idx;
-
-    s_Spline_args.Radial_natural_param = (s_Spline_args.r_coord_compactified - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1])
-                                       / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
-
-    s_Spline_args.Theta_natural_param = (State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1])
-                                      / (this->Parameters.Theta_grid[Theta_grid_idx] - this->Parameters.Theta_grid[Theta_grid_idx - 1]);
-
-    const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(s_Spline_args, None);
-    const Numerical_metric_potentials_type s_dtheta_Potentials = this->compute_metric_components_from_spline(s_Spline_args, First_theta_derivative);
-    const Numerical_metric_potentials_type s_d2theta_Potentials = this->compute_metric_components_from_spline(s_Spline_args, Second_theta_derivative);
-
-    /* ------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-
-    /* ---- References for the sake of readability ---- */
-
-    const double& W = s_Potentials.W;
-    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
-    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
-    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
-
-    const double& dtheta_W   = s_dtheta_Potentials.W;
-    const double& dtheta_F_0 = s_dtheta_Potentials.F_0;
-    const double& dtheta_F_1 = s_dtheta_Potentials.F_1;
-    const double& dtheta_F_2 = s_dtheta_Potentials.F_2;
-
-    const double& d2theta_W   = s_d2theta_Potentials.W;
-    const double& d2theta_F_0 = s_d2theta_Potentials.F_0;
-    const double& d2theta_F_1 = s_d2theta_Potentials.F_1;
-    const double& d2theta_F_2 = s_d2theta_Potentials.F_2;
-
-    /* ------------------------------------------------ */
-
-    Metric_type s_d2theta_Metric{};
-
-    s_d2theta_Metric.Metric[e_t][e_t] = -2 * N * exp_2F_0 * (d2theta_F_0 + 2 * dtheta_F_0 * dtheta_F_0)
-        + 2 * exp_2F_2 * sin_theta * sin_theta * (W * W * d2theta_F_2 + 2 * W * W * dtheta_F_2 * dtheta_F_2 + 4 * W * dtheta_W * dtheta_F_2 + dtheta_W * dtheta_W + W * d2theta_W - W * W)
-        + 8 * exp_2F_2 * sin_theta * cos_theta * (dtheta_F_2 * W * W + W * dtheta_W) + 2 * exp_2F_2 * W * W * cos_theta * cos_theta;
-
-    s_d2theta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * sin_theta * sin_theta * (2 * d2theta_F_2 * W + 4 * dtheta_F_2 * dtheta_F_2 * W + 4 * dtheta_F_2 * dtheta_W + d2theta_W - 2 * W)
-        - exp_2F_2 * r * sin_theta * cos_theta * (dtheta_W + 2 * dtheta_F_2 * W) - 2 * exp_2F_2 * W * r * cos_theta * cos_theta;
-
-    switch (this->Parameters.e_Anzatz) {
-
-    case e_Anzatz_2:
-
-        s_d2theta_Metric.Metric[e_t][e_t] *= r * r;
-        s_d2theta_Metric.Metric[e_t][e_phi] *= r;
-
-        break;
-
-    default:
-
-        break;
-
-    }
-
-    s_d2theta_Metric.Metric[e_phi][e_t] = s_d2theta_Metric.Metric[e_t][e_phi];
-    s_d2theta_Metric.Metric[e_r][e_r] = 2 * exp_2F_1 / N * (2 * dtheta_F_1 * dtheta_F_1 + d2theta_F_1);
-    s_d2theta_Metric.Metric[e_theta][e_theta] = 2 * exp_2F_1 * r * r * (2 * dtheta_F_1 * dtheta_F_1 + d2theta_F_1);
-    s_d2theta_Metric.Metric[e_phi][e_phi] = 2 * exp_2F_2 * r * r * (sin_theta * sin_theta * d2theta_F_2 + 2 * dtheta_F_2 * sin_theta * cos_theta + 2 * sin_theta * sin_theta * dtheta_F_2 * dtheta_F_2 + cos_theta * cos_theta - sin_theta * sin_theta);
-
-    return s_d2theta_Metric;
-}
-
-Metric_type Numerical_metric::get_dr_dtheta_metric(const double* const State_Vector) const {
-
-    /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
-
-    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
-
-    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
-
-    return this->get_dr_dtheta_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
-
-}
-
-Metric_type Numerical_metric::get_dr_dtheta_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
-
-    /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
-
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
-
-    const double& sin_theta = sin(theta);
-    const double& cos_theta = cos(theta);
-    const double& N = 1 - this->Parameters.Horizon_radius / r;
-    const double& dr_N = this->Parameters.Horizon_radius / r / r;
-
-    /* -------------------------------------------------------------- Evaluate the metric potentials spline -------------------------------------------------------------- */
-
-    Spline_arguments_type s_Spline_args{};
-
-    s_Spline_args.r_coord = r;
-    s_Spline_args.r_coord_compactified = compactify_radial_coordiante(s_Spline_args.r_coord);
-    s_Spline_args.Radial_idx = Radial_grid_idx;
-    s_Spline_args.Theta_idx = Theta_grid_idx;
-
-    s_Spline_args.Radial_natural_param = (s_Spline_args.r_coord_compactified - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1])
-                                       / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
-
-    s_Spline_args.Theta_natural_param = (State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1])
-                                      / (this->Parameters.Theta_grid[Theta_grid_idx] - this->Parameters.Theta_grid[Theta_grid_idx - 1]);
-
-    const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(s_Spline_args, None);
-    const Numerical_metric_potentials_type s_dr_Potentials = this->compute_metric_components_from_spline(s_Spline_args, First_radial_derivative);
-    const Numerical_metric_potentials_type s_dtheta_Potentials = this->compute_metric_components_from_spline(s_Spline_args, First_theta_derivative);
-    const Numerical_metric_potentials_type s_dr_dtheta_Potentials = this->compute_metric_components_from_spline(s_Spline_args, Second_mixed_derivative);
-
-    /* ------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
-
-    /* ------ References for the sake of readability ------ */
-
-    const double& W = s_Potentials.W;
-    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
-    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
-    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
-
-    const double& dtheta_W   = s_dtheta_Potentials.W;
-    const double& dtheta_F_0 = s_dtheta_Potentials.F_0;
-    const double& dtheta_F_1 = s_dtheta_Potentials.F_1;
-    const double& dtheta_F_2 = s_dtheta_Potentials.F_2;
-
-    const double& dr_W   = s_dr_Potentials.W;
-    const double& dr_F_0 = s_dr_Potentials.F_0;
-    const double& dr_F_1 = s_dr_Potentials.F_1;
-    const double& dr_F_2 = s_dr_Potentials.F_2;
-
-    const double& dr_dtheta_W = s_dr_dtheta_Potentials.W;
-    const double& dr_dtheta_F_0 = s_dr_dtheta_Potentials.F_0;
-    const double& dr_dtheta_F_1 = s_dr_dtheta_Potentials.F_1;
-    const double& dr_dtheta_F_2 = s_dr_dtheta_Potentials.F_2;
-
-    /* ------------------------------------------------------ */
-
-    Metric_type s_dr_dtheta_Metric{};
-
-    switch (this->Parameters.e_Anzatz) {
-
-    case e_Anzatz_2:
-
-        /* TODO: fix these */
-
-        s_dr_dtheta_Metric.Metric[e_t][e_t] = 0;
-
-        s_dr_dtheta_Metric.Metric[e_t][e_phi] = 0;
-
-        break;
-
-
-    default:
-
-        s_dr_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * (dr_N * dtheta_F_0 + 2 * N * dr_F_0 * dtheta_F_0 + N * dr_dtheta_F_0)
-                                            + (4 * dtheta_F_2 * dr_F_2 * W * W + 4 * W * dtheta_W * dr_F_2 + 2 * dr_dtheta_F_2 * W * W + 4 * dtheta_F_2 * dr_W * W + 2 * dtheta_W * dr_W + 2 * dr_dtheta_W * W) * exp_2F_2 * sin_theta * sin_theta
-                                            + (4 * dr_F_2 * W * W + 4 * W * dr_W) * exp_2F_2 * sin_theta * cos_theta;
-
-        s_dr_dtheta_Metric.Metric[e_t][e_phi] = -2 * (2 * dr_F_2 * W * r + dr_W * r + W) * (sin_theta * cos_theta + dtheta_F_2 * sin_theta * sin_theta) * exp_2F_2 
-                                              - (2 * dr_dtheta_F_2 * W * r + 2 * dr_F_2 * dtheta_W * r + dr_dtheta_W * r + dtheta_W) * exp_2F_2 * sin_theta * sin_theta;
-
-        break;
-
-    }
-
-    s_dr_dtheta_Metric.Metric[e_phi][e_t] = s_dr_dtheta_Metric.Metric[e_t][e_phi];
-    s_dr_dtheta_Metric.Metric[e_r][e_r] = 2 * exp_2F_1 / N * dtheta_F_1 * (2 * dr_F_1 - dr_N / N) + 2 * exp_2F_1 / N * dr_dtheta_F_1;
-    s_dr_dtheta_Metric.Metric[e_theta][e_theta] = 2 * exp_2F_1 * (2 * dr_F_1 * dtheta_F_1 * r * r + dr_dtheta_F_1 * r * r + 2 * dtheta_F_1 * r);
-    s_dr_dtheta_Metric.Metric[e_phi][e_phi] = 2 * exp_2F_2 * (2 * dr_F_2 * dtheta_F_2 * r * r + dr_dtheta_F_2 * r * r + 2 * dtheta_F_2 * r) * sin_theta * sin_theta
-                                            + 4 * exp_2F_2 * (r * r * dr_F_2 + r) * sin_theta * cos_theta;
-
-    return s_dr_dtheta_Metric;
-
-}
-
-void Numerical_metric::get_EOM_Jacobian(const double* const State_Vector, double Jacobian[e_Dynamic_state_size][e_Dynamic_state_size]) {
-
-    /* The Jacobian for the EOM in an axially symmetric spacetime in vacuum has the following form:
-        |---------------------------------------------------------------------------------------------------------------------------------------------|
-        |0,          d_r g^{t a}p_a,             d_\theta g^{t a}p_a,       0,  |   g^{tt},         0,                      0,             g^{t\phi}  |
-        |0,          d_r g^{r a}p_a,             d_\theta g^{r a}p_a,       0,  |     0,         g^{rr},                    0,                 0      |
-        |0,        d_r g^{\theta a}p_a,       d_\theta g^{\theta a}p_a,     0,  |     0,            0,               g^{\theta\theta},         0      |
-        |0,         d_r g^{\phi a}p_a,         d_\theta g^{\phi a}p_a,      0,  | g^{t\phi},        0,                      0,            g^{\phi\phi}|
-        |-----------------------------------------------------------------------|---------------------------------------------------------------------|
-        |0,                0,                              0,               0,  |     0,     -d_r g^{t a}p_a,      -d_\theta g^{t a}p_a,       0,     |
-        |0,     -1/2 d^2_r g^{ab}p_ap_b,   -1/2 d^2_{r\theta} g^{ab}p_ap_b, 0,  |     0,     -d_r g^{r a}p_a,      -d_\theta g^{r a}p_a,       0,     |
-        |0, -1/2 d^2_{r\theta} g^{ab}p_ap_b, -1/2 d^2_\theta g^{ab}p_ap_b,  0,  |     0,   -d_r g^{\theta a}p_a, -d_\theta g^{\theta a}p_a,    0,     |
-        |0,                0,                              0,               0,  |     0,    -d_r g^{\phi a}p_a,   -d_\theta g^{\phi a}p_a,     0,     |
-        |---------------------------------------------------------------------------------------------------------------------------------------------| */
-
-    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
-
-    const int Radial_grid_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const int Theta_grid_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
-
-    memset(Jacobian, 0, sizeof(double) * 64);
-
-    const Metric_type s_Metric = this->get_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
-    const Metric_type s_dr_Metric = this->get_dr_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
-    const Metric_type s_dtheta_Metric = this->get_dtheta_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
-    const Metric_type s_d2r_Metric = this->get_d2r_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
-    const Metric_type s_d2theta_Metric = this->get_d2theta_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
-    const Metric_type s_dr_dtheta_Metric = this->get_dr_dtheta_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
-
-    /* ------- Compute the derivatives in the inverse metric ------- */
-
-    double inv_Metric[4][4]{};
-    invert_metric(inv_Metric, s_Metric.Metric);
-
-    double dr_inv_metric[4][4]{};
-    get_derivative_of_inverse_metric(inv_Metric, s_dr_Metric.Metric, dr_inv_metric);
-
-    double dtheta_inv_metric[4][4]{};
-    get_derivative_of_inverse_metric(inv_Metric, s_dtheta_Metric.Metric, dtheta_inv_metric);
-
-    double d2r_inv_metric[4][4]{};
-    get_second_derivative_of_inverse_metric(inv_Metric, dr_inv_metric, s_dr_Metric.Metric, s_d2r_Metric.Metric, d2r_inv_metric);
-
-    double d2theta_inv_metric[4][4]{};
-    get_second_derivative_of_inverse_metric(inv_Metric, dtheta_inv_metric, s_dtheta_Metric.Metric, s_d2theta_Metric.Metric, d2theta_inv_metric);
-
-    double dr_dtheta_inv_metric[4][4]{};
-    get_second_mixed_derivative_of_inverse_metric(inv_Metric, dtheta_inv_metric, s_dr_Metric.Metric, s_dtheta_Metric.Metric, s_dr_dtheta_Metric.Metric, dr_dtheta_inv_metric);
-
-    /* -------------------------- Compute the contractions with the photon momentum --------------------------*/
-
-    for (int idx = 0; idx < 4; idx++) {
-
-        Jacobian[0][1] += dr_inv_metric[e_t][idx] * State_Vector[idx + e_p_t];
-        Jacobian[1][1] += dr_inv_metric[e_r][idx] * State_Vector[idx + e_p_t];
-        Jacobian[2][1] += dr_inv_metric[e_theta][idx] * State_Vector[idx + e_p_t];
-        Jacobian[3][1] += dr_inv_metric[e_phi][idx] * State_Vector[idx + e_p_t];
-
-        Jacobian[0][2] += dtheta_inv_metric[e_t][idx] * State_Vector[idx + e_p_t];
-        Jacobian[1][2] += dtheta_inv_metric[e_r][idx] * State_Vector[idx + e_p_t];
-        Jacobian[2][2] += dtheta_inv_metric[e_theta][idx] * State_Vector[idx + e_p_t];
-        Jacobian[3][2] += dtheta_inv_metric[e_phi][idx] * State_Vector[idx + e_p_t];
-
-        Jacobian[4][5] -= dr_inv_metric[e_t][idx] * State_Vector[idx + e_p_t];
-        Jacobian[5][5] -= dr_inv_metric[e_r][idx] * State_Vector[idx + e_p_t];
-        Jacobian[6][5] -= dr_inv_metric[e_theta][idx] * State_Vector[idx + e_p_t];
-        Jacobian[7][5] -= dr_inv_metric[e_phi][idx] * State_Vector[idx + e_p_t];
-
-        Jacobian[4][6] -= dtheta_inv_metric[e_t][idx] * State_Vector[idx + e_p_t];
-        Jacobian[5][6] -= dtheta_inv_metric[e_r][idx] * State_Vector[idx + e_p_t];
-        Jacobian[6][6] -= dtheta_inv_metric[e_theta][idx] * State_Vector[idx + e_p_t];
-        Jacobian[7][6] -= dtheta_inv_metric[e_phi][idx] * State_Vector[idx + e_p_t];
-
-        for (int idx_2 = 0; idx_2 < 4; idx_2++) {
-
-            Jacobian[5][1] -= 0.5 * d2r_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
-            Jacobian[6][1] -= 0.5 * dr_dtheta_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
-            Jacobian[5][2] -= 0.5 * dr_dtheta_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
-            Jacobian[6][2] -= 0.5 * d2theta_inv_metric[idx][idx_2] * State_Vector[idx + e_p_t] * State_Vector[idx_2 + e_p_t];
-
-        }
-
-    }
-
-    Jacobian[0][4] = inv_Metric[e_t][e_t];
-    Jacobian[0][7] = inv_Metric[e_t][e_phi];
-    Jacobian[1][5] = inv_Metric[e_r][e_r];
-    Jacobian[2][6] = inv_Metric[e_theta][e_theta];
-    Jacobian[3][7] = inv_Metric[e_phi][e_phi];
-    Jacobian[3][4] = inv_Metric[e_t][e_phi];
-
-}
-
-std::complex<double> Numerical_metric::get_largest_EOM_eigenvalue(const double* const State_Vector) {
-
-    double EOM_Jacobian[e_Dynamic_state_size][e_Dynamic_state_size]{};
-
-    this->get_EOM_Jacobian(State_Vector, EOM_Jacobian);
-
-    for (int idx_1 = 0; idx_1 < e_Dynamic_state_size; idx_1++) {
-
-        for (int idx_2 = 0; idx_2 < e_Dynamic_state_size; idx_2++) {
-
-            gsl_matrix_set(this->EOM_Jacobian_gsl_matrix, idx_1, idx_2, EOM_Jacobian[idx_1][idx_2]);
-
-        }
-    }
-
-    gsl_eigen_nonsymmv(this->EOM_Jacobian_gsl_matrix, this->EOM_Eigenvalues, this->EOM_Eigenvectors, this->GSL_workspace);
-
-    std::complex<double> Largest_eigenvalue{};
-
-    for (int idx = 0; idx < 8; idx++) {
-    
-        double Current_eigenvalue_norm = gsl_complex_abs(gsl_vector_complex_get(this->EOM_Eigenvalues, idx));
-
-        if (Current_eigenvalue_norm > std::abs(Largest_eigenvalue)) {
-
-            Largest_eigenvalue.real(GSL_REAL(gsl_vector_complex_get(this->EOM_Eigenvalues, idx)));
-            Largest_eigenvalue.imag(GSL_IMAG(gsl_vector_complex_get(this->EOM_Eigenvalues, idx)));
-
-        }
-
-    }
-
-    return Largest_eigenvalue;
-
 }
 
 void Numerical_metric::get_EOM(const double* const State_Vector, double* const Derivatives) const {

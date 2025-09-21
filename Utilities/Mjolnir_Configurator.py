@@ -41,6 +41,7 @@ class Integrator():
                  "use_adaptive_step",
                  "max_stepsize",
                  "radiative_transfer_integrator_type",
+                 "default_geodesic_integrator_type",
                  "Step_stability_check_threshold")
 
 class Disk_model():
@@ -147,6 +148,11 @@ class Observer():
                  "Image_y_max",
                  "Image_x_min",
                  "Image_x_max",
+                 "Image_y_angle_min",
+                 "Image_y_angle_max", 
+                 "Image_x_angle_min", 
+                 "Image_x_angle_max", 
+                 "Use_angular_coords",
                  "Resolution_y",
                  "Resolution_x",
                  "Include_polarization",
@@ -243,15 +249,15 @@ class Simulation_configurator:
                                              Safety_factor_2: dict[str, float | str] = {"Value": 1e-35, "Unit": "[-]"},
                                              Max_rel_step_increase: dict[str, float | str] = {"Value": 2, "Unit": "[-]"},
                                              Min_rel_step_increase: dict[str, float | str] = {"Value": 0.01, "Unit": "[-]"},
-                                             RK78_Step_controller_I_gain: dict[str, float | str] = {"Value": -0.58 / 7, "Unit": "[-]"},
+                                             RK78_Step_controller_I_gain: dict[str, float | str] = {"Value": 0.58 / 7, "Unit": "[-]"},
                                              RK78_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 7, "Unit": "[-]"},
-                                             RK78_Step_controller_D_gain: dict[str, float | str] = {"Value": -0.1 / 7, "Unit": "[-]"},
-                                             RK78_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": -0.367 / 7, "Unit": "[-]"},
+                                             RK78_Step_controller_D_gain: dict[str, float | str] = {"Value": 0.1 / 7, "Unit": "[-]"},
+                                             RK78_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.367 / 7, "Unit": "[-]"},
                                              RK78_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 7, "Unit": "[-]"},
-                                             ESDIRK54_Step_controller_I_gain: dict[str, float | str] = {"Value": -0.58 / 5, "Unit": "[-]"},
+                                             ESDIRK54_Step_controller_I_gain: dict[str, float | str] = {"Value": 0.58 / 5, "Unit": "[-]"},
                                              ESDIRK54_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 5, "Unit": "[-]"},
-                                             ESDIRK54_Step_controller_D_gain: dict[str, float | str] = {"Value": -0.1 / 5, "Unit": "[-]"},
-                                             ESDIRK54_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": -0.367 / 5, "Unit": "[-]"},
+                                             ESDIRK54_Step_controller_D_gain: dict[str, float | str] = {"Value": 0.1 / 5, "Unit": "[-]"},
+                                             ESDIRK54_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.367 / 5, "Unit": "[-]"},
                                              ESDIRK54_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 5, "Unit": "[-]"},
                                              Max_integration_count: dict[str, float | str] = {"Value": 1e7, "Unit": "[-]"},
                                              simpson_method_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"},
@@ -259,6 +265,7 @@ class Simulation_configurator:
                                              use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},
                                              max_stepsize: dict[str, int | str] = {"Value": 5, "Unit": "[M]"},
                                              radiative_transfer_integrator_type: dict[str, str] = {"Value": "Implicit Trapezoid", "Unit": "[-]"},
+                                             default_geodesic_integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"},   
                                              Step_stability_check_threshold: dict[str, float | str] = {"Value": 0.01, "Unit": "[M]"}):
 
         self.integrator = Integrator()
@@ -292,6 +299,7 @@ class Simulation_configurator:
         self.integrator.use_adaptive_step = use_adaptive_step
         self.integrator.max_stepsize = max_stepsize
         self.integrator.radiative_transfer_integrator_type = radiative_transfer_integrator_type
+        self.integrator.default_geodesic_integrator_type = default_geodesic_integrator_type
         self.integrator.Step_stability_check_threshold = Step_stability_check_threshold
 
     def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},
@@ -303,6 +311,11 @@ class Simulation_configurator:
                                   Image_y_max: dict[str, float | str] = {"Value":  15, "Unit": "[M]"},
                                   Image_x_min: dict[str, float | str] = {"Value": -15, "Unit": "[M]"},
                                   Image_x_max: dict[str, float | str] = {"Value":  15, "Unit": "[M]"},
+                                  Image_y_angle_min: dict[str, float | str] = {"Value": 0, "Unit": "[Rad]"},
+                                  Image_y_angle_max: dict[str, float | str] = {"Value": 0, "Unit": "[Rad]"},
+                                  Image_x_angle_min: dict[str, float | str] = {"Value": 0, "Unit": "[Rad]"},
+                                  Image_x_angle_max: dict[str, float | str] = {"Value": 0, "Unit": "[Rad]"},
+                                  Use_angular_coords: dict[str, int | str] = {"Value": 0, "Unit": "[-]"},
                                   Resolution_y: dict[str, int | str] = {"Value": 2048, "Unit": "[-]"},
                                   Resolution_x: dict[str, int | str] = {"Value": 2048, "Unit": "[-]"},
                                   Observation_frequency: dict[str, float | str] = {"Value": 230e9, "Unit": "[Hz]"},
@@ -319,6 +332,13 @@ class Simulation_configurator:
         self.observer.Image_y_max  = Image_y_max
         self.observer.Image_x_min  = Image_x_min
         self.observer.Image_x_max  = Image_x_max
+        
+        self.observer.Image_y_angle_min = Image_y_angle_min
+        self.observer.Image_y_angle_max = Image_y_angle_max
+        self.observer.Image_x_angle_min = Image_x_angle_min
+        self.observer.Image_x_angle_max = Image_x_angle_max
+        self.observer.Use_angular_coords = Use_angular_coords
+        
         self.observer.Resolution_x = Resolution_x
         self.observer.Resolution_y = Resolution_y
 

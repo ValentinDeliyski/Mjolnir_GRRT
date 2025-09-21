@@ -96,15 +96,15 @@ void Step_controller_class::update_step(const double* const State_Vector, Geodes
 
     case PID:
 
-        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, PID_gain_I) *
+        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, -PID_gain_I) *
                                                         pow(this->prev_err, PID_gain_P) *
-                                                        pow(this->sec_prev_err, PID_gain_D);
+                                                        pow(this->sec_prev_err, -PID_gain_D);
 
         break;
 
     default:
 
-        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, Gustafsson_k1) *
+        Rel_step_increase = this->Parameters.Safety_1 * pow(this->current_err, -Gustafsson_k1) *
                                                         pow(this->current_err / this->prev_err, Gustafsson_k2);
 
         break;
@@ -136,8 +136,7 @@ Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Co
     this->Max_integration_count_reached = false;
     this->Step_too_small = false;
 
-    /* ---------- Placeholder ------------ */
-    this->e_Active_integrator = RK78_adaptive_step;
+    this->e_Active_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Default_geodesic_integrator;
 
     this->p_Init_conditions = p_Sim_Context->p_Init_Conditions;
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
@@ -222,8 +221,8 @@ void Integrator_class::Run_ESDIRK54() {
 
     double state_error[e_Dynamic_state_size]{};
 
-    double New_State_vector_O6[e_Dynamic_state_size]{};
-    double New_State_vector_O5[e_Dynamic_state_size]{};
+    double New_State_vector_main[e_Dynamic_state_size]{};
+    double New_State_vector_embeded[e_Dynamic_state_size]{};
 
     /* ---------------------- Set the RHS log to zero (just in case) ---------------------- */
     memset(this->Intermediate_RHS_log, 0, sizeof(double) * RK78_size * e_Dynamic_state_size);
@@ -252,8 +251,6 @@ void Integrator_class::Run_ESDIRK54() {
 
             if (GSL_SUCCESS != Root_finder_status) {
 
-                /* TODO ERROR HANDLING */
-
                 this->p_Step_controller->step /= 2;
                 this->continue_integration = false;
 
@@ -271,24 +268,24 @@ void Integrator_class::Run_ESDIRK54() {
 
     for (int state_idx = 0; state_idx < e_Dynamic_state_size; state_idx++) {
 
-        New_State_vector_O6[state_idx] = this->get_current_State_Vector()[state_idx];
-        New_State_vector_O5[state_idx] = this->get_current_State_Vector()[state_idx];
+        New_State_vector_main[state_idx] = this->get_current_State_Vector()[state_idx];
+        New_State_vector_embeded[state_idx] = this->get_current_State_Vector()[state_idx];
 
         for (int derivative_idx = 0; derivative_idx < ESDIRK54_size; derivative_idx++) {
 
-            New_State_vector_O6[state_idx] += -this->p_Step_controller->step * ESDIRK54_Coeff_sol[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
-            New_State_vector_O5[state_idx] += -this->p_Step_controller->step * ESDIRK54_Coeff_test_sol[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
+            New_State_vector_main[state_idx] += -this->p_Step_controller->step * ESDIRK54_Coeff_sol_main[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
+            New_State_vector_embeded[state_idx] += -this->p_Step_controller->step * ESDIRK54_Coeff_sol_embeded[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
 
         }
 
-        state_error[state_idx] = New_State_vector_O6[state_idx] - New_State_vector_O5[state_idx];
+        state_error[state_idx] = New_State_vector_main[state_idx] - New_State_vector_embeded[state_idx];
 
     }
 
-    if (ERROR == this->Run_NaN_checker(New_State_vector_O6, New_State_vector_O5)) { return; }
+    if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
-    this->p_Step_controller->update_state_errors(New_State_vector_O6, state_error, this->e_Active_integrator);
-    this->p_Step_controller->update_step(New_State_vector_O6, this->e_Active_integrator);
+    this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator);
+    this->p_Step_controller->update_step(New_State_vector_main, this->e_Active_integrator);
 
     if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step) {
 
@@ -303,7 +300,7 @@ void Integrator_class::Run_ESDIRK54() {
 
     if (this->continue_integration) {
 
-        this->Update_ray_log(New_State_vector_O6);
+        this->Update_ray_log(New_State_vector_main);
         this->Update_debug_log();
 
         this->N_steps_rejected = 0;
@@ -333,17 +330,35 @@ bool Integrator_class::Run_NaN_checker(const double* const New_State, const doub
 
 }
 
-void Integrator_class::Run_RK78() {
+void Integrator_class::Run_RK78(Geodesic_Integrator_enums e_Active_integrator) {
+
+    if (RK78_Fehlberg != e_Active_integrator && RK78_DP != e_Active_integrator) {
+
+        throw std::runtime_error("Wrong active integrator in Run_RK78!");
+
+    }
 
     memset(this->Intermediate_RHS_log, 0, sizeof(double) * RK78_size * e_Dynamic_state_size);
+
+    auto Stage_coeff = this->RK78_DP_Coeff_deriv;
+    auto Main_solution_coeff = this->RK78_DP_Coeff_sol_main;
+    auto Embedded_solution_coeff = this->RK78_DP_Coeff_sol_embeded;
+
+    if (RK78_Fehlberg == e_Active_integrator) {
+
+        Stage_coeff = this->RK78_Fhelberg_Coeff_deriv;
+        Main_solution_coeff = this->RK78_Fhelberg_Coeff_sol_main;
+        Embedded_solution_coeff = this->RK78_Fhelberg_Coeff_sol_embeded;
+
+    }
 
     const double* State_Vector = this->get_current_State_Vector();
  
     double state_error[e_Dynamic_state_size]{};
     double temp_State_vector[e_Dynamic_state_size]{};
 
-    double New_State_vector_O8[e_Dynamic_state_size]{};
-    double New_State_vector_O9[e_Dynamic_state_size]{};
+    double New_State_vector_main[e_Dynamic_state_size]{};
+    double New_State_vector_embeded[e_Dynamic_state_size]{};
 
     for (int iteration = 0; iteration < RK78_size; iteration++) {
 
@@ -353,7 +368,7 @@ void Integrator_class::Run_RK78() {
 
             for (int derivative_idx = 0; derivative_idx < iteration; derivative_idx++) {
 
-                temp_State_vector[state_idx] += -this->p_Step_controller->step * RK78_Coeff_deriv[iteration][derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
+                temp_State_vector[state_idx] += -this->p_Step_controller->step * Stage_coeff[iteration][derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
 
             }
         }
@@ -364,24 +379,24 @@ void Integrator_class::Run_RK78() {
 
     for (int state_idx = 0; state_idx < e_Dynamic_state_size; state_idx++) {
 
-        New_State_vector_O8[state_idx] = State_Vector[state_idx];
-        New_State_vector_O9[state_idx] = State_Vector[state_idx];
+        New_State_vector_main[state_idx] = State_Vector[state_idx];
+        New_State_vector_embeded[state_idx] = State_Vector[state_idx];
 
         for (int derivative_idx = 0; derivative_idx < RK78_size; derivative_idx++) {
 
-            New_State_vector_O8[state_idx] += -this->p_Step_controller->step * RK78_Coeff_sol[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
-            New_State_vector_O9[state_idx] += -this->p_Step_controller->step * RK78_Coeff_test_sol[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
+            New_State_vector_main[state_idx] += -this->p_Step_controller->step * Main_solution_coeff[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
+            New_State_vector_embeded[state_idx] += -this->p_Step_controller->step * Embedded_solution_coeff[derivative_idx] * this->Intermediate_RHS_log[state_idx + derivative_idx * e_Dynamic_state_size];
 
         }
 
-        state_error[state_idx] = New_State_vector_O8[state_idx] - New_State_vector_O9[state_idx];
+        state_error[state_idx] = New_State_vector_main[state_idx] - New_State_vector_embeded[state_idx];
 
     }
 
-    if (ERROR == this->Run_NaN_checker(New_State_vector_O8, New_State_vector_O9)) { return; }
+    if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
-    this->p_Step_controller->update_state_errors(New_State_vector_O8, state_error, this->e_Active_integrator);
-    this->p_Step_controller->update_step(New_State_vector_O8, this->e_Active_integrator);
+    this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator);
+    this->p_Step_controller->update_step(New_State_vector_main, this->e_Active_integrator);
 
     if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step){
 
@@ -397,7 +412,7 @@ void Integrator_class::Run_RK78() {
 
     if (this->continue_integration) {
 
-        this->Update_ray_log(New_State_vector_O8);
+        this->Update_ray_log(New_State_vector_main);
         this->Update_debug_log();
         
         this->N_steps_rejected = 0;
@@ -448,7 +463,7 @@ void Integrator_class::Propagate_ray() {
 
     default:
 
-        this->Run_RK78();
+        this->Run_RK78(this->e_Active_integrator);
         this->Check_integration_complete_status();
 
         if (this->Max_integration_count_reached || this->Step_too_small || this->NaN_checker_count > 5) {

@@ -18,13 +18,24 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
 
     // Calculate the aspect ratio of the rendering window
 
-    float Y_angle_max = atan2(p_Init_Conditions->Observer_params.y_max, p_Init_Conditions->Observer_params.distance);
-    float Y_angle_min = atan2(p_Init_Conditions->Observer_params.y_min, p_Init_Conditions->Observer_params.distance);
-    float X_angle_max = atan2(p_Init_Conditions->Observer_params.x_max, p_Init_Conditions->Observer_params.distance);
-    float X_angle_min = atan2(p_Init_Conditions->Observer_params.x_min, p_Init_Conditions->Observer_params.distance);
+    float Y_angle_max = p_Init_Conditions->Observer_params.y_angle_max;
+    float Y_angle_min = p_Init_Conditions->Observer_params.y_angle_min;
+    float X_angle_max = p_Init_Conditions->Observer_params.x_angle_max;
+    float X_angle_min = p_Init_Conditions->Observer_params.x_angle_min;
 
     float aspect_ratio = (X_angle_max - X_angle_min) / (Y_angle_max - Y_angle_min);
+    
+    if (!p_Init_Conditions->Observer_params.Use_angular_coords) {
 
+        Y_angle_max = atan2(p_Init_Conditions->Observer_params.y_max, p_Init_Conditions->Observer_params.distance);
+        Y_angle_min = atan2(p_Init_Conditions->Observer_params.y_min, p_Init_Conditions->Observer_params.distance);
+        X_angle_max = atan2(p_Init_Conditions->Observer_params.x_max, p_Init_Conditions->Observer_params.distance);
+        X_angle_min = atan2(p_Init_Conditions->Observer_params.x_min, p_Init_Conditions->Observer_params.distance);
+
+        aspect_ratio = (X_angle_max - X_angle_min) / (Y_angle_max - Y_angle_min);
+
+    }
+    
     // Initialize GLFW
     glfwInit();   
 

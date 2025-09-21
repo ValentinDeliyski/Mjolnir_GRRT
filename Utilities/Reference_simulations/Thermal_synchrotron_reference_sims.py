@@ -11,7 +11,7 @@ sys.path.append(parent_directory)
 
 from Mjolnir_Configurator import Simulation_configurator
 from Support_functions.Parsers import Units_class, Simulation_Parser
-from numpy import pi, tan, sqrt
+from numpy import pi, tan, sqrt, arctan
 import subprocess
 
 class bcolors:
@@ -68,19 +68,25 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.observer.Image_y_max = {"Value":  (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         self.Simulation_configurator.observer.Image_x_min = {"Value": -(self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         self.Simulation_configurator.observer.Image_x_max = {"Value":  (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
-        
-        self.Simulation_configurator.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
+
+        self.Simulation_configurator.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
-        
-        """ Kill the Novikov-Thorne disk """
-        self.Simulation_configurator.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
     
-        self.Simulation_configurator.integrator.RK45_accuracy      = {"Value": 1e-13, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-13, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-13, "Unit": "[-]"}
+        
+        self.Simulation_configurator.integrator.default_geodesic_integrator_type = {"Value": "RK78_DP", "Unit": "[-]"}
+        
+        self.Simulation_configurator.integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
-
+        
+        self.Simulation_configurator.integrator.radiative_transfer_integrator_type = {"Value": "RK5", "Unit": "[-]"}
+        
+        self.Simulation_configurator.integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
+        
     def Run_and_eval_sim_1(self):
         
         """ This simulation corresponds to the "low spin circ/thin" one in https://arxiv.org/pdf/2206.12066. Their results are presented on the top 4 panels
@@ -108,30 +114,21 @@ class Thermal_syhnchrotron_reference_sims:
         """ Run the simulation """
         filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Reference_Simulation_1\\Reference_Simulation_1_input.xml"
         args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 0"
-        subprocess.call(args, shell = True)
+        # subprocess.call(args, shell = True)
                 
         """ Evaluate the simulataion results """
-        Sim_parser_n0 = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_1" + "\\Kerr_n0")
-        Total_flux_n0 = Sim_parser_n0.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
+        Sim_parser = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_1" + "\\Kerr")
+        Total_flux = Sim_parser.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
         
-        Sim_parser_n1 = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_1" + "\\Kerr_n1")
-        Total_flux_n1 = Sim_parser_n1.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
+        print("Total Flux = {} [Jy]".format(round(Total_flux, 4)))
         
-        Sim_parser_n2 = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_1" + "\\Kerr_n2")
-        Total_flux_n2 = Sim_parser_n2.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
-        
-        Sim_parser_n3 = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_1" + "\\Kerr_n3")
-        Total_flux_n3 = Sim_parser_n3.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
-        
-        Total_flux = Total_flux_n0 + Total_flux_n1 + Total_flux_n2 + Total_flux_n3
-        
-        print(Total_flux)
+        Relative_error = abs(Total_flux - 546) / 546
         
         try:
-            assert(abs(Total_flux - 546) / 546 < 0.01)
-            print(f"{bcolors.OKGREEN}Simulation 1 pass with a relative error of {{}} %.{bcolors.ENDC}".format(round(abs(Total_flux - 546) / 546 * 100,2)))
+            assert(Relative_error < 0.01)
+            print(f"{bcolors.OKGREEN}Simulation 1 pass with a relative error of {{}} %.{bcolors.ENDC}".format(round(Relative_error * 100, 2)))
         except:
-            print(f"{bcolors.FAIL}Simulation 1 fail with a relative error of {{}} %.{bcolors.ENDC}".format(round(abs(Total_flux - 546) / 546 * 100,2)))
+            print(f"{bcolors.FAIL}Simulation 1 fail with a relative error of {{}} %.{bcolors.ENDC}".format(round(Relative_error * 100, 2)))
         
     def Run_and_eval_sim_2(self):
         
@@ -163,27 +160,18 @@ class Thermal_syhnchrotron_reference_sims:
         subprocess.call(args, shell = True)
                 
         """ Evaluate the simulataion results """
-        Sim_parser_n0 = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_2" + "\\Kerr_n0")
-        Total_flux_n0 = Sim_parser_n0.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
+        Sim_parser = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_2" + "\\Kerr")
+        Total_flux = Sim_parser.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
         
-        Sim_parser_n1 = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_2" + "\\Kerr_n1")
-        Total_flux_n1 = Sim_parser_n1.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
-        
-        Sim_parser_n2 = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_2" + "\\Kerr_n2")
-        Total_flux_n2 = Sim_parser_n2.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
-        
-        Sim_parser_n3 = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_2" + "\\Kerr_n3")
-        Total_flux_n3 = Sim_parser_n3.get_total_flux(self.Units.M87_DISTANCE_GEOMETRICAL, unit = "mJy")
-        
-        Total_flux = Total_flux_n0 + Total_flux_n1 + Total_flux_n2 + Total_flux_n3
+        print("Total Flux = {} [Jy]".format(round(Total_flux, 4)))
         
         Relative_error = abs(Total_flux - 651) / 651
         
         try:
             assert(Relative_error < 0.01)
-            print(f"{bcolors.OKGREEN}Simulation 2 pass with a relative error of {{}} %.{bcolors.ENDC}".format(round(Relative_error * 100,2)))
+            print(f"{bcolors.OKGREEN}Simulation 2 pass with a relative error of {{}} %.{bcolors.ENDC}".format(round(Relative_error * 100, 2)))
         except:
-            print(f"{bcolors.FAIL}Simulation 2 fail with a relative error of {{}} %.{bcolors.ENDC}".format(round(Relative_error * 100,2)))
+            print(f"{bcolors.FAIL}Simulation 2 fail with a relative error of {{}} %.{bcolors.ENDC}".format(round(Relative_error * 100, 2)))
         
 Thermal_syhnchrotron_reference_sims_instance = Thermal_syhnchrotron_reference_sims()
 
@@ -193,4 +181,4 @@ Sim_2_thread = threading.Thread(target = Thermal_syhnchrotron_reference_sims_ins
 Sim_1_thread.start()
 time.sleep(1)
 
-Sim_2_thread.start()
+# Sim_2_thread.start()

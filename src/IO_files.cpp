@@ -62,7 +62,7 @@ void File_manager_class::write_observer_metadata(std::ofstream* Output_file) {
                      << this->p_Initial_Conditions->Observer_params.y_min << ","
                      << this->p_Initial_Conditions->Observer_params.y_max
                      << '\n'
-                     << "Simulation Resolutoin: "
+                     << "Simulation Resolution: "
                      << this->p_Initial_Conditions->Observer_params.resolution_x
                      << " x "
                      << this->p_Initial_Conditions->Observer_params.resolution_y

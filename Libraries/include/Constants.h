@@ -14,12 +14,8 @@ Real Nyström_Deriv_coeffs[Nyström_size][Nyström_size] = { {   0.,      0.,      
 
 Real Nyström_Coeff_sol[Nyström_size] = { 23. / 192 , 0., 125. / 192, 0., -27. / 64, 125. / 192 };
 
-const int RK78_size	= 13;   // Number of integration sub-steps
-
+const int RK78_size	= 13;
 const int ESDIRK54_size = 7;
-
-Real RK78_Coeff_sol[RK78_size]      = { 41. / 840, 0, 0, 0, 0, 34. / 105, 9. / 35, 9. / 35, 9. / 280, 9. / 280, 41. / 840,     0,         0};
-Real RK78_Coeff_test_sol[RK78_size] = {     0,     0, 0, 0, 0, 34. / 105, 9. / 35, 9. / 35, 9. / 280, 9. / 280,     0,     41. / 840, 41. / 840 };
 
 const std::complex<double> complex_i = { 0.0, 1.0 };
 

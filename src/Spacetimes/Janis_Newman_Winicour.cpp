@@ -1,5 +1,38 @@
 #include "Spacetimes.h"
 
+JNW_class::JNW_class(const Metric_parameters_type* const p_Metric_Parameters) {
+
+    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
+
+    }
+
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the distance to the singular point: {}", p_Metric_Parameters->Min_distance_to_singular_point));
+
+    }
+
+    if (isnan(p_Metric_Parameters->JNW_Gamma_Parameter) || isinf(p_Metric_Parameters->JNW_Gamma_Parameter) || p_Metric_Parameters->JNW_Gamma_Parameter < 0) {
+
+        throw std::runtime_error(std::format("Invalid value for the gamma parameter: {}", p_Metric_Parameters->JNW_Gamma_Parameter));
+
+    }
+
+    this->Gamma = p_Metric_Parameters->JNW_Gamma_Parameter;
+    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
+    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
+    this->Horizon_radius = 0.0;
+
+    if (this->Gamma < 1.0) {
+
+        this->Horizon_radius = this->Mass + sqrt(this->Mass * this->Mass - this->Gamma * this->Gamma);
+
+    }
+
+}
+
 double* JNW_class::get_ISCO() {
 
     static double r_ISCO[2]{};
@@ -208,43 +241,4 @@ bool JNW_class::terminate_integration(const double* const State_vector) {
 
     return scatter || hit_horizon;
 };
-
-Return_Values JNW_class::load_parameters(const Metric_parameters_type* const p_Metric_Parameters) {
-
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
-
-        std::cout << "Invalid value for the scattering radius: " << p_Metric_Parameters->Scattering_radius << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
-
-        std::cout << "Invalid value for the distance to the singular point: " << p_Metric_Parameters->Min_distance_to_singular_point << "\n";
-
-        return ERROR;
-    }
-
-    if (isnan(p_Metric_Parameters->JNW_Gamma_Parameter) || isinf(p_Metric_Parameters->JNW_Gamma_Parameter) || p_Metric_Parameters->JNW_Gamma_Parameter < 0) {
-
-        std::cout << "Invalid value for the gamma parameter: " << p_Metric_Parameters->JNW_Gamma_Parameter << "\n";
-
-        return ERROR;
-
-    }
-
-    this->Gamma = p_Metric_Parameters->JNW_Gamma_Parameter;
-    this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
-    this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
-    this->Horizon_radius = 0.0;
-
-    if (this->Gamma < 1.0) {
-
-        this->Horizon_radius = this->Mass + sqrt(this->Mass * this->Mass - this->Gamma * this->Gamma);
-
-    }
-
-    return OK;
-
-}
 

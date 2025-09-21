@@ -108,20 +108,23 @@ void static Zero_results_struct(Results_type* const p_Ray_results) {
 }
 
 void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, Rendering_engine* const Renderer, Results_type* const p_Ray_results) {
-        
-        /*
-        
-        Referebces to some sim parameters for the sake of readability
-        
-        */
 
         int& X_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_x;
         int& Y_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_y;
 
-        double Y_angle_max = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.y_max, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
-        double Y_angle_min = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.y_min, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
-        double X_angle_max = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.x_max, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
-        double X_angle_min = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.x_min, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+        double Y_angle_max = p_Sim_Context->p_Init_Conditions->Observer_params.y_angle_max;
+        double Y_angle_min = p_Sim_Context->p_Init_Conditions->Observer_params.y_angle_min;
+        double X_angle_max = p_Sim_Context->p_Init_Conditions->Observer_params.x_angle_max;
+        double X_angle_min = p_Sim_Context->p_Init_Conditions->Observer_params.x_angle_min;
+
+        if (!p_Sim_Context->p_Init_Conditions->Observer_params.Use_angular_coords) {
+
+            Y_angle_max = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.y_max, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+            Y_angle_min = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.y_min, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+            X_angle_max = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.x_max, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+            X_angle_min = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.x_min, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
+
+        }
 
         // Having a non-even resolution means that for a symmetric observation window, there will be a vertical line of pixels that coorespond 
         // to photons with zero azimuthal angular momentum. In that case the behavior of the theta and phi coordinates swap, and theta becomes unbounded.

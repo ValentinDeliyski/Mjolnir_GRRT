@@ -4,124 +4,33 @@
 #include <complex>
 #include <iostream>
 #include <cmath>
-#include "gsl/gsl_complex_math.h"
-#include "gsl/gsl_complex.h"
-#include "gsl/gsl_blas.h"
-#include "gsl/gsl_matrix.h"
-#include "gsl/gsl_eigen.h"
+#include <format>
 
 class Spacetime_Base_Class {
 
 public:
 
-    virtual double* get_ISCO() {
+    virtual double* get_ISCO() { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_ISCO!"); };
 
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return NULL;
-
-    };
-
-    virtual double* get_Photon_Sphere() {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return NULL;
-
-    };
+    virtual double* get_Photon_Sphere() { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_Photon_sphere!"); };
 
     /* --------------------------------------------------- Metric and its derivatives --------------------------------------------------- */
 
-    virtual Metric_type get_metric(const double* const State_Vector) const  {
+    virtual Metric_type get_metric(const double* const State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_metric!"); };
 
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
+    virtual Metric_type get_dr_metric(const double* const State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dr_metric!"); };
 
-        return {};
+    virtual Metric_type get_dtheta_metric(const double* const State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dtheta_metric!"); };
 
-    };
-
-    virtual Metric_type get_dr_metric(const double* const State_Vector) const  {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return {};
-
-    };
-
-    virtual Metric_type get_dtheta_metric(const double* const State_Vector) const  {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return {};
-
-    };
-
-    virtual Metric_type get_d2r_metric(const double* const State_Vector) const  {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return {};
-
-    };
-
-    virtual Metric_type get_d2theta_metric(const double* const State_Vector) const  {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return {};
-
-    };
-
-    virtual Metric_type get_dr_dtheta_metric(const double* const State_Vector) const {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return {};
-
-    };
-
-    /* ------------------------------------------- The Jacobian of the locally linearized EOM ------------------------------------------- */
-
-    virtual void get_EOM_Jacobian(const double* const State_Vector, double Jacobian[e_Dynamic_state_size][e_Dynamic_state_size]) {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-    };
-
-    virtual std::complex<double> get_largest_EOM_eigenvalue(const double* const State_Vector) {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return 0.0;
-
-    };
-
+    virtual Metric_type get_d2r_metric(const double* const State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_d2r_metric!"); };
 
     /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
-    virtual void get_EOM(const double* const State_vector, double* const Derivatives) const {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!'\n'";
-    
-    };
+    virtual void get_EOM(const double* const State_vector, double* const Derivatives) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_EOM!"); };
 
     /* ---------------------------------------------- Integration Termination Conditions ----------------------------------------------- */
 
-    virtual bool terminate_integration(const double* const State_vector) {
-
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return true; 
-    
-    };
-
-    virtual Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) {
-    
-        std::cout << "Using Base Spacetime Class - Something Broke!" << '\n';
-
-        return ERROR;
-    
-    };
+    virtual bool terminate_integration(const double* const State_vector) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in terminate_integration!"); };
 
 };
 
@@ -136,6 +45,8 @@ private:
     double Min_distance_to_singular_point;
 
 public:
+
+    Kerr_class(const Metric_parameters_type* const Metric_Parameters);
 
     double* get_ISCO() override;
     double* get_Photon_Sphere() override;
@@ -154,9 +65,7 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
-
-    Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
-     
+   
 };
 
 class Minkowski_class : public Spacetime_Base_Class {
@@ -166,6 +75,8 @@ private:
     double Scattering_radius;
 
 public:
+
+    Minkowski_class(const Metric_parameters_type* const p_Metric_Parameters);
 
     /* Metric and its derivatives */
 
@@ -181,8 +92,6 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
-
-    Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
 };
 
@@ -202,6 +111,7 @@ private:
 
 public:
 
+    Wormhole_class(const Metric_parameters_type* const p_Metric_Parameters);
 
     double* get_ISCO();
     double* get_Photon_Sphere();
@@ -220,8 +130,6 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
-
-    Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
 };
 
@@ -238,6 +146,8 @@ private:
 
 public:
 
+    RBH_class(const Metric_parameters_type* const p_Metric_Parameters);
+
     double* get_ISCO();
     double* get_Photon_Sphere();
 
@@ -255,8 +165,6 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
-
-    Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
 };
 
@@ -273,6 +181,8 @@ private:
 
 public:
 
+    JNW_class(const Metric_parameters_type* const p_Metric_Parameters);
+
     double* get_ISCO();
     double* get_Photon_Sphere();
 
@@ -291,13 +201,11 @@ public:
 
     bool terminate_integration(const double* const State_vector) override;
 
-    Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
-
 };
 
 class Gauss_Bonnet_class : public Spacetime_Base_Class {
 
-private:;
+private:
 
     double Mass = 1.0;
     double Gamma;
@@ -307,6 +215,8 @@ private:;
     double Horizon_radius;
 
 public:
+
+    Gauss_Bonnet_class(const Metric_parameters_type* const p_Metric_Parameters);
 
     double* get_ISCO() ;
     double* get_Photon_Sphere() ;
@@ -326,8 +236,6 @@ public:
 
     bool terminate_integration(const double* const State_vector) override;
 
-    Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
-
 };
 
 class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
@@ -342,6 +250,8 @@ private:
     double Min_distance_to_singular_point;
 
 public:
+
+    Black_Hole_w_Dark_Matter_Halo_class(const Metric_parameters_type* const p_Metric_Parameters);
 
     double* get_ISCO();
 
@@ -359,21 +269,12 @@ public:
 
     bool terminate_integration(const double* const State_vector) override;
 
-    Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
-
 };
 
 class Numerical_metric : public Spacetime_Base_Class {
 
 private:
-
-    /* ------------------------ Pointers to memory allocated for the gsl functions that evaluate the EOM Jacobian ------------------------ */
-
-    gsl_eigen_nonsymmv_workspace* GSL_workspace;
-    gsl_vector_complex* EOM_Eigenvalues;
-    gsl_matrix_complex* EOM_Eigenvectors;
-    gsl_matrix* EOM_Jacobian_gsl_matrix;
-
+    
     Numerical_metric_params_type Parameters;
 
     double Scattering_radius;
@@ -399,10 +300,10 @@ private:
     Metric_type get_dr_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
     Metric_type get_dtheta_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
     Metric_type get_d2r_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
-    Metric_type get_d2theta_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
-    Metric_type get_dr_dtheta_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
 
 public:
+
+    Numerical_metric(const Metric_parameters_type* const p_Metric_Parameters);
 
     /* --------------------------------------------- Metric and its derivatives (wrappers) ---------------------------------------------- */
 
@@ -410,14 +311,6 @@ public:
     Metric_type get_dr_metric(const double* const State_Vector) const override;
     Metric_type get_dtheta_metric(const double* const State_Vector) const override;
     Metric_type get_d2r_metric(const double* const State_Vector) const override;
-    Metric_type get_d2theta_metric(const double* const State_Vector) const override;
-    Metric_type get_dr_dtheta_metric(const double* const State_Vector) const override;
-
-    /* ------------------------------------------- The Jacobian of the locally linearized EOM ------------------------------------------- */
-
-    void get_EOM_Jacobian(const double* const State_Vector, double Jacobian[e_Dynamic_state_size][e_Dynamic_state_size]) override;
-
-    std::complex<double> get_largest_EOM_eigenvalue(const double* const State_Vector) override;
 
     /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
@@ -426,8 +319,6 @@ public:
     /* ---------------------------------------------- Integration Termination Conditions ----------------------------------------------- */
 
     bool terminate_integration(const double* const State_vector) override;
-
-    Return_Values load_parameters(const Metric_parameters_type* const Metric_Parameters) override;
 
 };
 
