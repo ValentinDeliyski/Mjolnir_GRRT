@@ -18,19 +18,19 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
 
     // Calculate the aspect ratio of the rendering window
 
-    float Y_angle_max = p_Init_Conditions->Observer_params.y_angle_max;
-    float Y_angle_min = p_Init_Conditions->Observer_params.y_angle_min;
-    float X_angle_max = p_Init_Conditions->Observer_params.x_angle_max;
-    float X_angle_min = p_Init_Conditions->Observer_params.x_angle_min;
+    float Y_angle_max = float(p_Init_Conditions->Observer_params.y_angle_max);
+    float Y_angle_min = float(p_Init_Conditions->Observer_params.y_angle_min);
+    float X_angle_max = float(p_Init_Conditions->Observer_params.x_angle_max);
+    float X_angle_min = float(p_Init_Conditions->Observer_params.x_angle_min);
 
     float aspect_ratio = (X_angle_max - X_angle_min) / (Y_angle_max - Y_angle_min);
     
     if (!p_Init_Conditions->Observer_params.Use_angular_coords) {
 
-        Y_angle_max = atan2(p_Init_Conditions->Observer_params.y_max, p_Init_Conditions->Observer_params.distance);
-        Y_angle_min = atan2(p_Init_Conditions->Observer_params.y_min, p_Init_Conditions->Observer_params.distance);
-        X_angle_max = atan2(p_Init_Conditions->Observer_params.x_max, p_Init_Conditions->Observer_params.distance);
-        X_angle_min = atan2(p_Init_Conditions->Observer_params.x_min, p_Init_Conditions->Observer_params.distance);
+        Y_angle_max = float(atan2(p_Init_Conditions->Observer_params.y_max, p_Init_Conditions->Observer_params.distance));
+        Y_angle_min = float(atan2(p_Init_Conditions->Observer_params.y_min, p_Init_Conditions->Observer_params.distance));
+        X_angle_max = float(atan2(p_Init_Conditions->Observer_params.x_max, p_Init_Conditions->Observer_params.distance));
+        X_angle_min = float(atan2(p_Init_Conditions->Observer_params.x_min, p_Init_Conditions->Observer_params.distance));
 
         aspect_ratio = (X_angle_max - X_angle_min) / (Y_angle_max - Y_angle_min);
 
@@ -46,7 +46,7 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     // Tell GLFW we are using the CORE profile -> we only have the modern functions
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(1024, 1024 / aspect_ratio, "Mjolnir GRRT", NULL, NULL);
+    window = glfwCreateWindow(1024, int(1024. / aspect_ratio), "Mjolnir GRRT", NULL, NULL);
 
     // Introduce the window into the current context
     glfwMakeContextCurrent(window);
@@ -58,7 +58,7 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     gladLoadGL();
 
     // Specify the viewport of OpenGL in the Window -> x = [0, aspect_ratio * 1024], y = [0, 1024]
-    glViewport(0, 0, 1024, 1024 / aspect_ratio);
+    glViewport(0, 0, 1024, int(1024. / aspect_ratio));
 
     // The simulation image is interpreted as a texture
     GLuint texture = init_texture();
@@ -158,25 +158,6 @@ void Rendering_engine::set_pixel_color(float Intensity, int texture_indexer) {
     texture_buffer[texture_indexer + 0] = R;
     texture_buffer[texture_indexer + 1] = G;
     texture_buffer[texture_indexer + 2] = B;
-
-}
-
-void Rendering_engine::set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J) {
-
-    double theta = (State_vector[e_theta] + old_state[e_theta]) / 2;
-    double phi = (State_vector[e_phi] + old_state[e_phi]) / 2;
-
-    if (J*J < 1e-5) {
-
-        phi = phi + M_PI_2;
-
-    }
-
-    float grayscale_value = pow((1 + sin(10 * phi) * sin(10 * theta)) / 2, 1.0 / 5);
-
-    texture_buffer[texture_indexer]     = grayscale_value;
-    texture_buffer[texture_indexer + 1] = grayscale_value;
-    texture_buffer[texture_indexer + 2] = grayscale_value;
 
 }
 

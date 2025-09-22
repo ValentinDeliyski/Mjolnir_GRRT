@@ -16,11 +16,11 @@ void static print_progress(int current, int max, bool lens_from_file) {
 
     if (current != 0) {
 
-        current_digits = floor(log10(current) + 1);
+        current_digits = int(floor(log10(current) + 1));
 
     }
 
-    int max_digits = floor(log10(max) + 1);
+    int max_digits = int(floor(log10(max) + 1));
 
     if (current == 0) {
 
@@ -74,12 +74,12 @@ void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray
 
     if (e_Page_Thorne == Disk_model) {
 
-        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Flux_PT * pow(p_Ray_results->Redshift_PT, 4);
+        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = float(p_Ray_results->Flux_PT * pow(p_Ray_results->Redshift_PT, 4));
 
     }
     else {
 
-        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = p_Ray_results->Intensity[I];
+        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = float(p_Ray_results->Intensity[I]);
 
     }
 
@@ -198,7 +198,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
     }
 
-void run_simulation_mode_1(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
+void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
        
         /*
 
@@ -225,7 +225,7 @@ void run_simulation_mode_1(const Simulation_Context_type* const p_Sim_Context, R
 
     }
 
-void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
+void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
     /*
 
@@ -285,7 +285,7 @@ void run_simulation_mode_2(const Simulation_Context_type* const p_Sim_Context, R
 
 }
 
-void run_simulation_mode_3(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
+void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
     double& X_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_X_init;
     double& Y_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_Y_init;

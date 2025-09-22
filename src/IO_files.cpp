@@ -571,7 +571,7 @@ void File_manager_class::write_simulation_metadata() {
 
     *Output_file << "============================================================ SIMULATION METADATA ============================================================" << "\n";
 
-    *Output_file << "Active Simulation Mode: " << p_Initial_Conditions->Simulation_mode << '\n';  
+    *Output_file << "Active Simulation Mode: " << static_cast<int>(p_Initial_Conditions->Simulation_mode) << '\n';  
     
     this->write_metric_metadata(Output_file);
     this->write_observer_metadata(Output_file); 
@@ -584,7 +584,7 @@ void File_manager_class::write_simulation_metadata() {
                                     << "\n";
 
 
-    if (p_Initial_Conditions->Simulation_mode != 3) {
+    if (p_Initial_Conditions->Simulation_mode != Make_geodesic_log) {
 
         *Output_file << "Image X Coord [M],"
             << "Image Y Coord [M],";
@@ -605,7 +605,7 @@ void File_manager_class::write_simulation_metadata() {
         *Output_file << "Celestial Sphere Crossing Theta [Rad],"
                                      << "Celestial Sphere Crossing Phi [Rad],";
 
-        if (p_Initial_Conditions->Simulation_mode == 2) {
+        if (p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
 
             *Output_file << ", Source r Coord [M],"
                 << "Source Phi Coord [Rad],"
@@ -721,7 +721,7 @@ void File_manager_class::open_image_output_file() {
 
     // Loop over all the files and populate the (so far empty) 
     
-    if (this->p_Initial_Conditions->Simulation_mode == 3) {
+    if (this->p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
 
         if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
@@ -741,7 +741,7 @@ void File_manager_class::open_image_output_file() {
 
     }
 
-    if (this->p_Initial_Conditions->Simulation_mode == 1) {
+    if (this->p_Initial_Conditions->Simulation_mode == Image_generation) {
 
         if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
@@ -775,121 +775,120 @@ void File_manager_class::open_image_output_file() {
 
 void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
-    Image_Output_File << s_Ray_results->Image_Coords[e_x]
-                                    << ","
-                                    << s_Ray_results->Image_Coords[e_y]
-                                    << "," 
-                                    << std::setprecision(15);
+    this->Image_Output_File << s_Ray_results->Image_Coords[e_x]
+                            << ","
+                            << s_Ray_results->Image_Coords[e_y]
+                            << "," 
+                            << std::setprecision(15);
 
     if (e_Page_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
-        Image_Output_File << s_Ray_results->Redshift_PT
-                                        << ","
-                                        << s_Ray_results->Flux_PT
-                                        << ",";
+        this->Image_Output_File << s_Ray_results->Redshift_PT
+                                << ","
+                                << s_Ray_results->Flux_PT
+                                << ",";
     }
     else {
 
-        Image_Output_File << s_Ray_results->Intensity[I] * CGS_TO_JANSKY
-                                        << ","
-                                        << s_Ray_results->Intensity[Q] * CGS_TO_JANSKY
-                                        << ","
-                                        << s_Ray_results->Intensity[U] * CGS_TO_JANSKY
-                                        << ","
-                                        << s_Ray_results->Intensity[V] * CGS_TO_JANSKY
-                                        << ",";
+        this->Image_Output_File << s_Ray_results->Intensity[I] * CGS_TO_JANSKY
+                                << ","
+                                << s_Ray_results->Intensity[Q] * CGS_TO_JANSKY
+                                << ","
+                                << s_Ray_results->Intensity[U] * CGS_TO_JANSKY
+                                << ","
+                                << s_Ray_results->Intensity[V] * CGS_TO_JANSKY
+                                << ",";
     }
 
-    Image_Output_File << s_Ray_results->Celestial_sphere_crossing_coords[e_theta]
-                                    << ","
-                                    << s_Ray_results->Celestial_sphere_crossing_coords[e_phi];
+    this->Image_Output_File << s_Ray_results->Celestial_sphere_crossing_coords[e_theta]
+                            << ","
+                            << s_Ray_results->Celestial_sphere_crossing_coords[e_phi];
 
-    if (p_Initial_Conditions->Simulation_mode == 2) {
+    if (p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
 
-        Image_Output_File << ","
-                                        << s_Ray_results->Source_Coords[e_r]
-                                        << ","
-                                        << s_Ray_results->Source_Coords[e_phi]
-                                        << ","
-                                        << s_Ray_results->Photon_Momentum[e_r]
-                                        << ","
-                                        << s_Ray_results->Photon_Momentum[e_theta]
-                                        << ","
-                                        << s_Ray_results->Photon_Momentum[e_phi]
-                                        << ",";
+        this->Image_Output_File << ","
+                                << s_Ray_results->Source_Coords[e_r]
+                                << ","
+                                << s_Ray_results->Source_Coords[e_phi]
+                                << ","
+                                << s_Ray_results->Photon_Momentum[e_r]
+                                << ","
+                                << s_Ray_results->Photon_Momentum[e_theta]
+                                << ","
+                                << s_Ray_results->Photon_Momentum[e_phi]
+                                << ",";
 
             switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
 
             case Kerr:
-                Image_Output_File << s_Ray_results->Metric_parameters.Spin;
+                this->Image_Output_File << s_Ray_results->Metric_parameters.Spin;
                 break;
 
             case Wormhole:
-                Image_Output_File << s_Ray_results->Metric_parameters.Spin
-                                                << "," 
-                                                << s_Ray_results->Metric_parameters.Redshift_Parameter;
+                this->Image_Output_File << s_Ray_results->Metric_parameters.Spin
+                                        << "," 
+                                        << s_Ray_results->Metric_parameters.Redshift_Parameter;
                 break;
 
             case Reg_Black_Hole:
-                Image_Output_File << s_Ray_results->Metric_parameters.RBH_Parameter;
+                this->Image_Output_File << s_Ray_results->Metric_parameters.RBH_Parameter;
      
                 break;
 
             case Janis_Newman_Winicour:
-                Image_Output_File << s_Ray_results->Metric_parameters.JNW_Gamma_Parameter;
+                this->Image_Output_File << s_Ray_results->Metric_parameters.JNW_Gamma_Parameter;
                 break;
 
             case Einstein_Gauss_Bonnet:
-                Image_Output_File << s_Ray_results->Metric_parameters.GB_Gamma_Parameter;
+                this->Image_Output_File << s_Ray_results->Metric_parameters.GB_Gamma_Parameter;
                 break;
 
             case BH_w_Dark_Matter:
-                Image_Output_File << s_Ray_results->Metric_parameters.Halo_Mass
-                                                << ","
-                                                << s_Ray_results->Metric_parameters.Compactness;
+                this->Image_Output_File << s_Ray_results->Metric_parameters.Halo_Mass
+                                        << ","
+                                        << s_Ray_results->Metric_parameters.Compactness;
                 break;
             }
     }
 
-    Image_Output_File << '\n';
+    this->Image_Output_File << '\n';
 
-    
 }
 
 void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
-    Log_Output_File << std::setprecision(15);
+    this->Log_Output_File << std::setprecision(15);
 
     for (int log_index = 0; log_index <= s_Ray_results->Ray_log_struct.Log_length; log_index++) {
 
         for (int state_index = 0; state_index < e_Full_state_size; state_index++) {
 
-            Log_Output_File << s_Ray_results->Ray_log_struct.Ray_path_log[state_index + log_index * e_Full_state_size] << ",";
+            this->Log_Output_File << s_Ray_results->Ray_log_struct.Ray_path_log[state_index + log_index * e_Full_state_size] << ",";
           
         }
 
         for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
 
-            Log_Output_File  << s_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][0 + 2 * log_index] << ",";
+            this->Log_Output_File  << s_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][0 + 2 * log_index] << ",";
 
         }
 
-        Log_Output_File << s_Ray_results->RK_integrator_debug_log.State_error_history[log_index] << ",";
-        Log_Output_File << s_Ray_results->RK_integrator_debug_log.N_steps_rejected[log_index];
+        this->Log_Output_File << s_Ray_results->RK_integrator_debug_log.State_error_history[log_index] << ",";
+        this->Log_Output_File << s_Ray_results->RK_integrator_debug_log.N_steps_rejected[log_index];
 
-        Log_Output_File << '\n';
+        this->Log_Output_File << '\n';
     }
    
 };
 
 void File_manager_class::close_image_output_files() {
 
-    Image_Output_File.close();
+    this->Image_Output_File.close();
     
 }
 
 void File_manager_class::close_log_output_file() {
 
-    Log_Output_File.close();
+    this->Log_Output_File.close();
 
 }

@@ -55,8 +55,8 @@ class Phenomenological_syhnchrotron_reference_sims:
         
         """ Accretion disk setup """
             
-        self.Simulation_configurator.disk_model.Ensamble_type   = {"Value": "Phenomenological", "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Density_profile = {"Value": "Exponential Law",  "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Ensamble_type = {"Value": "Phenomenological", "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Disk_Model    = {"Value": "Colab_test_1",  "Unit": "[-]"}
         self.Simulation_configurator.emission_models.Emission_coeff = {"Value": 3e-18, "Unit": "[erg / (cm^3 s sr Hz)]"}
         
         self.Simulation_configurator.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
@@ -78,28 +78,16 @@ class Phenomenological_syhnchrotron_reference_sims:
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
-        
-        """ Kill the Novikov-Thorne disk """
-        self.Simulation_configurator.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
     
-        self.Simulation_configurator.integrator.RK45_accuracy      = {"Value": 1e-13, "Unit": "[-]"}
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
+        
+        self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 10, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.radiative_transfer_integrator_type = {"Value": "RK5", "Unit": "[-]"}
 
     def get_total_flux(self, sim_path: str) -> float:
         
-        Sim_parser_n0 = Simulation_Parser(sim_path + "\\Kerr_n0")
-        Total_flux_n0 = Sim_parser_n0.get_total_flux(self.Object_Geometrical_distance, unit = "Jy")
-        
-        Sim_parser_n1 = Simulation_Parser(sim_path + "\\Kerr_n1")
-        Total_flux_n1 = Sim_parser_n1.get_total_flux(self.Object_Geometrical_distance, unit = "Jy")
-        
-        Sim_parser_n2 = Simulation_Parser(sim_path + "\\Kerr_n2")
-        Total_flux_n2 = Sim_parser_n2.get_total_flux(self.Object_Geometrical_distance, unit = "Jy")
-        
-        Sim_parser_n3 = Simulation_Parser(sim_path + "\\Kerr_n3")
-        Total_flux_n3 = Sim_parser_n3.get_total_flux(self.Object_Geometrical_distance, unit = "Jy")
-        
-        return Total_flux_n0 + Total_flux_n1 + Total_flux_n2 + Total_flux_n3
+        return Simulation_Parser(sim_path + "\\Kerr").get_total_flux(self.Object_Geometrical_distance, unit = "Jy")
 
     def Run_and_eval_test_sim_2(self) -> None:
         
@@ -107,9 +95,8 @@ class Phenomenological_syhnchrotron_reference_sims:
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        # I define my disk scale height as 1 / their disk scale height - so their zero I turn into a very large (but finite) number
-        self.Simulation_configurator.disk_model.Density_exp_height_scale = {"Value": 1e100, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Density_exp_radial_scale = {"Value": 10, "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Vertical_scale = {"Value": 0, "Unit": "[cos(angle)]"}
+        self.Simulation_configurator.disk_model.Radial_scale = {"Value": 10, "Unit": "[M]"}
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff   = {"Value": 0, "Unit": "[?]"}
         self.Simulation_configurator.emission_models.Emission_power_law = {"Value": -2, "Unit": "[-]"}
@@ -150,8 +137,8 @@ class Phenomenological_syhnchrotron_reference_sims:
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Density_exp_height_scale  = {"Value": 3 / 10, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Density_exp_radial_scale  = {"Value": 10, "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Vertical_scale  = {"Value": 10 / 3, "Unit": "[tan(angle)]"}
+        self.Simulation_configurator.disk_model.Radial_scale  = {"Value": 10, "Unit": "[M]"}
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff   = {"Value": 0, "Unit": "[?]"}
         self.Simulation_configurator.emission_models.Emission_power_law = {"Value": 0, "Unit": "[-]"}
@@ -192,8 +179,8 @@ class Phenomenological_syhnchrotron_reference_sims:
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Density_exp_height_scale  = {"Value": 3 / 10, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Density_exp_radial_scale  = {"Value": 10, "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Vertical_scale  = {"Value": 10 / 3, "Unit": "[tan(angle)]"}
+        self.Simulation_configurator.disk_model.Radial_scale  = {"Value": 10, "Unit": "[M]"}
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff   = {"Value": 1e5, "Unit": "[?]"}
         self.Simulation_configurator.emission_models.Emission_power_law = {"Value": 0, "Unit": "[-]"}
@@ -230,12 +217,15 @@ class Phenomenological_syhnchrotron_reference_sims:
             
     def Run_and_eval_test_sim_5(self) -> None:
         
+        """ The disk here is really thin and this is a hack-y (and slow...) way of making sure the itnegrator does not jump over it """
+        self.Simulation_configurator.integrator.max_stepsize = {"Value": 0.5, "Unit": "[-]"}
+        
         """ Central black hole setup """
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Density_exp_height_scale  = {"Value": 3 / 100, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Density_exp_radial_scale  = {"Value": 10, "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Vertical_scale  = {"Value": 100 / 3, "Unit": "[tan(angle)]"}
+        self.Simulation_configurator.disk_model.Radial_scale  = {"Value": 10, "Unit": "[M]"}
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff   = {"Value": 1e6, "Unit": "[?]"}
         self.Simulation_configurator.emission_models.Emission_power_law = {"Value": 0, "Unit": "[-]"}
@@ -281,10 +271,10 @@ if __name__ == "__main__":
 
     """ Run the simulation threads - the sleep calls inbetween are so the input file has time to actually generate. """
 
-    Sim_2_thread.start()
+    # Sim_2_thread.start()
     time.sleep(1)
     Sim_3_thread.start()
     time.sleep(1)
-    Sim_4_thread.start()
-    time.sleep(1)
-    Sim_5_thread.start()
+    # Sim_4_thread.start()
+    # time.sleep(1)
+    # Sim_5_thread.start()

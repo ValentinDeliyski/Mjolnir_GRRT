@@ -329,7 +329,7 @@ void RK5_radiative_transfer(double* const Emission_Functions,
 
             for (int idx = 0; idx < 4; idx++) {
 
-                Temp_Stokes_Vector[idx] += Nyström_Deriv_coeffs[RK5_stage][derivative_indexer] * RHS[idx + derivative_indexer * e_Stokes_param_num] * State_Vector[e_step];
+                Temp_Stokes_Vector[idx] += Nyström_Deriv_coeffs[RK5_stage][derivative_indexer] * RHS[idx + derivative_indexer * e_Stokes_param_num] * State_Vector[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass;
 
             }
 
@@ -371,7 +371,7 @@ void RK5_radiative_transfer(double* const Emission_Functions,
 
         for (int deriv_idx = 0; deriv_idx < Nyström_size; deriv_idx++) {
 
-            Stokes_Vector[idx] += State_Vector[e_step] * Nyström_Coeff_sol[deriv_idx] * RHS[idx + deriv_idx * e_Stokes_param_num];
+            Stokes_Vector[idx] += State_Vector[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass * Nyström_Coeff_sol[deriv_idx] * RHS[idx + deriv_idx * e_Stokes_param_num];
 
         }
     }

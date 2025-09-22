@@ -114,7 +114,7 @@ class Thermal_syhnchrotron_reference_sims:
         """ Run the simulation """
         filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Reference_Simulation_1\\Reference_Simulation_1_input.xml"
         args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 0"
-        # subprocess.call(args, shell = True)
+        subprocess.call(args, shell = True)
                 
         """ Evaluate the simulataion results """
         Sim_parser = Simulation_Parser(parent_directory + "Reference_simulations\\Reference_Simulation_1" + "\\Kerr")

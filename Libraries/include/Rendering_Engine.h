@@ -49,8 +49,6 @@
 
             void update_max_intensity(float Intensity);
 
-            void set_background_pattern_color(double State_vector[], double old_state[], int texture_indexer, double J);
-
             /***************************************
             |									   |
             | Classes that abstract the OpenGL api |

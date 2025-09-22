@@ -14,9 +14,27 @@
 #include "Rendering_Engine.h"
 #include "Structs.h"
 #include "Sim_Modes.h"
-#include "Console_printing.h"
 
 #include "Input_parser.h"
+
+void static print_ASCII_art() {
+
+  std::cout << " __       __                    __            __                   ______   _______   _______   ________   \n"
+            << "/  \\     /  |                  /  |          /  |                 /      \\ /       \\ /      \\ /        |  \n"
+            << "$$  \\   /$$ |     __   ______  $$ | _______  $$/   ______        /$$$$$$  |$$$$$$$  |$$$$$$$  |$$$$$$$$/   \n"
+            << "$$$  \\ /$$$ |    /  | /      \\ $$ |/       \\ /  | /      \\       $$ | _$$/ $$ |__$$ |$$ |__$$ |   $$ |     \n"
+            << "$$$$  /$$$$ |    $$/ /$$$$$$  |$$ |$$$$$$$  |$$ |/$$$$$$  |      $$ |/    |$$    $$< $$    $$<    $$ |     \n"
+            << "$$ $$ $$/$$ |    /  |$$ |  $$ |$$ |$$ |  $$ |$$ |$$ |  $$/       $$ |$$$$ |$$$$$$$  |$$$$$$$  |   $$ |     \n"
+            << "$$ |$$$/ $$ |    $$ |$$ \\__$$ |$$ |$$ |  $$ |$$ |$$ |            $$ \\__$$ |$$ |  $$ |$$ |  $$ |   $$ |     \n"
+            << "$$ | $/  $$ |    $$ |$$    $$/ $$ |$$ |  $$ |$$ |$$ |            $$    $$/ $$ |  $$ |$$ |  $$ |   $$ |     \n"
+            << "$$/      $$/__   $$ | $$$$$$/  $$/ $$/   $$/ $$/ $$/              $$$$$$/  $$/   $$/ $$/   $$/    $$/      \n"
+            << "           /  \\__$$ |                                                                                      \n"
+            << "           $$    $$/                                                                                       \n"
+            << "            $$$$$$/                                                                                        \n";
+
+        std::cout << '\n';
+
+}
 
 void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
 
@@ -126,21 +144,15 @@ int main(int argument_count, char** cmd_line_args) {
     s_Ray_results.RK_integrator_debug_log.N_steps_rejected = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
     s_Ray_results.RK_integrator_debug_log.State_error_history = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
 
-    // Compute the dimentionless sclaes, and save them in the "Ray_results" struct for later use (the code gets messy otherwise).
-    s_Ray_results.Length_scale = s_Sim_Context.p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
-    s_Ray_results.Intensity_scale = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * s_Sim_Context.p_Init_Conditions->Observer_params.obs_frequency * s_Ray_results.Length_scale;
-
     for (int index = I; index < e_Stokes_param_num; index++) {
 
         s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[2 * s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
 
     }
 
-    Console_Printer_class Console_Printer;
-    
     if (s_Sim_Context.p_Init_Conditions->Print_to_console) { 
 
-        Console_Printer.print_ASCII_art();
+        print_ASCII_art();
 
     }
 
@@ -153,15 +165,15 @@ int main(int argument_count, char** cmd_line_args) {
     switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
    
     default:
-         run_simulation_mode_1(&s_Sim_Context, &s_Ray_results);
+         run_image_generation(&s_Sim_Context, &s_Ray_results);
          break;
    
-    case 2:
-         run_simulation_mode_2(&s_Sim_Context, &s_Ray_results);
+    case Make_geodesic_sweep:
+         run_geodesic_sweep(&s_Sim_Context, &s_Ray_results);
          break;
 
-    case 3:
-         run_simulation_mode_3(&s_Sim_Context, &s_Ray_results);
+    case Make_geodesic_log:
+         make_geodesic_log(&s_Sim_Context, &s_Ray_results);
          break;
  
     }

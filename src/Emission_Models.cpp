@@ -780,7 +780,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
     /* The dimensionless frequency needs to get extracted from the p_Transfer_args pointer, but it first needs to be recast to not-void.
        This happens in the scopes of the switch statemeent below, so I create a variable here to store it. */
-    double  frequency_dim{};
+    double  frequency{};
     double& obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
     switch (e_Ensamble_type) {
@@ -791,7 +791,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
         this->get_thermal_synchrotron_absorbtion_fit_functions(static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args), p_Emission_medium_state, p_Transfer_functions->Emission_functions, p_Transfer_functions->Absorbtion_functions);
         this->get_thermal_synchrotron_faradey_fit_functions(static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Faradey_functions);
 
-        frequency_dim = static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args)->frequency / obs_frequency;
+        frequency = static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args)->frequency;
 
         break;
 
@@ -801,7 +801,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
         this->get_kappa_synchrotron_absorbtion_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Absorbtion_functions);
         this->get_kappa_synchrotron_faradey_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Faradey_functions);
 
-        frequency_dim = static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args)->frequency / obs_frequency;
+        frequency = static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args)->frequency;
 
         break;
 
@@ -809,7 +809,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
         this->get_phenomenological_synchrotron_fit_functions(static_cast<const Phenomenological_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions);
 
-        frequency_dim = static_cast<const Phenomenological_transfer_f_arguments_type*>(p_Transfer_args)->frequency / obs_frequency;
+        frequency = static_cast<const Phenomenological_transfer_f_arguments_type*>(p_Transfer_args)->frequency;
 
         break;
 
@@ -822,27 +822,27 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
     /* The below coefficients pop up in the dimentionless radiative transfer equation. */
 
-    const double f_cyclo_dim    = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS) / obs_frequency;
-    const double distance_scale = p_Sim_Context->p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
-    const double transport_matrix_ratio = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS * distance_scale / C_LIGHT_CGS / obs_frequency / M_ELECTRON_CGS;
+    const double f_cyclo    = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    //const double distance_scale = p_Sim_Context->p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
+    //const double transport_matrix_ratio = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS * distance_scale / C_LIGHT_CGS / obs_frequency / M_ELECTRON_CGS;
 
     /* ================================================ The emission functions ================================================ */
 
-    p_Transfer_functions->Emission_functions[I] *= (p_Emission_medium_state->Density / Global_density_scale) * f_cyclo_dim;
-    p_Transfer_functions->Emission_functions[Q] *= (p_Emission_medium_state->Density / Global_density_scale) * f_cyclo_dim;
-    p_Transfer_functions->Emission_functions[V] *= (p_Emission_medium_state->Density / Global_density_scale) * f_cyclo_dim;
+    p_Transfer_functions->Emission_functions[I] *= p_Emission_medium_state->Density * f_cyclo * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS;
+    p_Transfer_functions->Emission_functions[Q] *= p_Emission_medium_state->Density * f_cyclo * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS;
+    p_Transfer_functions->Emission_functions[V] *= p_Emission_medium_state->Density * f_cyclo * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS;
 
     /* ================================================ The absorbtion functions ================================================ */
 
-    p_Transfer_functions->Absorbtion_functions[I] *= (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio / frequency_dim;
-    p_Transfer_functions->Absorbtion_functions[Q] *= (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio / frequency_dim;
-    p_Transfer_functions->Absorbtion_functions[V] *= (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio / frequency_dim;
+    p_Transfer_functions->Absorbtion_functions[I] *= p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / frequency / M_ELECTRON_CGS / C_LIGHT_CGS;
+    p_Transfer_functions->Absorbtion_functions[Q] *= p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / frequency / M_ELECTRON_CGS / C_LIGHT_CGS;
+    p_Transfer_functions->Absorbtion_functions[V] *= p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / frequency / M_ELECTRON_CGS / C_LIGHT_CGS;
 
     /* ================================================ The faradey functions ================================================ */
     /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33. */
 
-    p_Transfer_functions->Faradey_functions[Q] *= -(p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio * (f_cyclo_dim / frequency_dim) * (f_cyclo_dim / frequency_dim) / frequency_dim;
-    p_Transfer_functions->Faradey_functions[V] *= 2 * (p_Emission_medium_state->Density / Global_density_scale) * transport_matrix_ratio * (f_cyclo_dim / frequency_dim) / frequency_dim;
+    p_Transfer_functions->Faradey_functions[Q] *= -p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS * f_cyclo * f_cyclo / M_ELECTRON_CGS / C_LIGHT_CGS / frequency / frequency / frequency;
+    p_Transfer_functions->Faradey_functions[V] *= 2 * p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS * f_cyclo / M_ELECTRON_CGS / C_LIGHT_CGS / frequency / frequency;
 
 }
 

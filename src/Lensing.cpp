@@ -44,12 +44,6 @@ void static log_ray_emission(double Stokes_Vector[e_Stokes_param_num], double Op
         p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][0 + 2 * log_index] = Stokes_Vector[stokes_idx] ;
         p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][1 + 2 * log_index] = Optical_depth;
 
-        if (3 != Sim_mode) {
-
-            p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][0 + 2 * log_index] *= p_Ray_Results->Intensity_scale;
-
-        }
-
     }
 
 }
@@ -135,7 +129,7 @@ bool static Propagate_Stokes_vector(Radiative_Transfer_Integrator e_Integrator,
         Analytic_Radiative_Transfer(const_cast<double*>(Total_Transfer_Functions.Emission_functions),
                                     const_cast<double*>(Total_Transfer_Functions.Absorbtion_functions),
                                     const_cast<double*>(Total_Transfer_Functions.Faradey_functions),
-                                    State_Vector[e_step],
+                                    State_Vector[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass,
                                     Stokes_Vector);
 
         break;
@@ -145,7 +139,7 @@ bool static Propagate_Stokes_vector(Radiative_Transfer_Integrator e_Integrator,
         Implicit_Trapezoid_Radiative_Transfer(const_cast<double*>(Total_Transfer_Functions.Emission_functions),
                                               const_cast<double*>(Total_Transfer_Functions.Absorbtion_functions),
                                               const_cast<double*>(Total_Transfer_Functions.Faradey_functions),
-                                              State_Vector[e_step], 
+                                              State_Vector[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass,
                                               Stokes_Vector);
         break;
 
@@ -760,7 +754,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     for (int idx = 0; idx < e_Stokes_param_num; idx++) {
 
-        p_Ray_results->Intensity[idx] = Stokes_Vector[idx] * p_Ray_results->Intensity_scale;
+        p_Ray_results->Intensity[idx] = Stokes_Vector[idx];
 
     }
 

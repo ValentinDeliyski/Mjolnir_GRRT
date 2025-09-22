@@ -280,32 +280,32 @@ private:
     double Scattering_radius;
     double Min_distance_to_singular_point;
 
-    /* ------------------------------ Functions that evaluate the cubic B-spline of the metric potentials ------------------------------- */
+    /* ------------------------------ Functions that evaluate the cubic B-spline of the metric potentials ------------------------------ */
 
-    void get_control_point_matrix(const double* const Control_vector, const int r_idx, const int theta_idx, double Control_matrix[4][4]) const;
+    void get_control_point_matrix(const double* const Control_vector, const long long r_idx, const long long theta_idx, double Control_matrix[4][4]) const;
     void get_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
     void get_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
     void get_second_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
 
     double evaluate_single_spline(const double Control_point_matrix[4][4], const double Radial_natural_parameter, const double Theta_natural_parameter, Derivative_selector_enums Derivative_selector) const;
 
-    Numerical_metric_potentials_type evaluate_all_splines(const double radial_natural_param, const double theta_natural_param, int radial_grid_idx, int theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
+    Numerical_metric_potentials_type evaluate_all_splines(const double radial_natural_param, const double theta_natural_param, long long radial_grid_idx, long long theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
     Numerical_metric_potentials_type compute_metric_components_from_spline(Spline_arguments_type s_Splnie_args, Derivative_selector_enums Derivative_selector) const;
 
     double compactify_radial_coordiante(const double r) const;
 
-    /* --------------------------------------------------- Metric and its derivatives --------------------------------------------------- */
+    /* --------------------------------------------------- Metric and its derivatives -------------------------------------------------- */
 
-    Metric_type get_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
-    Metric_type get_dr_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
-    Metric_type get_dtheta_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
-    Metric_type get_d2r_metric(const double* const State_Vector, int radial_grid_idx, int theta_grid_idx) const;
+    Metric_type get_metric(const double* const State_Vector, long long radial_grid_idx, long long theta_grid_idx) const;
+    Metric_type get_dr_metric(const double* const State_Vector, long long radial_grid_idx, long long theta_grid_idx) const;
+    Metric_type get_dtheta_metric(const double* const State_Vector, long long radial_grid_idx, long long theta_grid_idx) const;
+    Metric_type get_d2r_metric(const double* const State_Vector, long long radial_grid_idx, long long theta_grid_idx) const;
 
 public:
 
     Numerical_metric(const Metric_parameters_type* const p_Metric_Parameters);
 
-    /* --------------------------------------------- Metric and its derivatives (wrappers) ---------------------------------------------- */
+    /* --------------------------------------------- Metric and its derivatives (wrappers) --------------------------------------------- */
 
     Metric_type get_metric(const double* const State_Vector) const override;
     Metric_type get_dr_metric(const double* const State_Vector) const override;

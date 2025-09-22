@@ -78,13 +78,10 @@ class Hotspot_reference_sims:
         
         self.Simulation_configurator.observer.Resolution_x = {"Value": 512, "Unit": "[-]"}
         self.Simulation_configurator.observer.Resolution_y = {"Value": 512, "Unit": "[-]"}
-       
-        """ Kill the Novikov-Thorne disk """
-        self.Simulation_configurator.NT_model_params.Evaluate_NT_disk = {"Value": 0, "Unit": "[-]"}
         
         """ Configure the integrator """
         self.Simulation_configurator.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK45_accuracy        = {"Value": 1e-13, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK78_accuracy        = {"Value": 1e-13, "Unit": "[-]"}
         
         self.Simulation_configurator.integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
         

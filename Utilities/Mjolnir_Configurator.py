@@ -214,7 +214,7 @@ class Simulation_configurator:
                  emission_pitch_angle_samples_to_average: dict[str, int | str] = {"Value": 50, "Units": "[-]"},
                  object_mass: dict[str, float | str] = {"Value": 6.2e9, "Unit": "[M_sun]"},
                  simulation_name: dict[str, str] = {"Value": "Test_Simulation", "Unit": "[-]"},
-                 simulation_mode: dict[str, int | str] = {"Value": 1, "Unit": "[-]"}, 
+                 simulation_mode: dict[str, int | str] = {"Value": 0, "Unit": "[-]"}, 
                  sim_mode_2_param_value_number: dict[str, int | str] = {"Value": 1, "Unit": "[-]"},
                  sim_mode_3_X_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
                  sim_mode_3_Y_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
@@ -864,7 +864,7 @@ if __name__ == "__main__":
     
     Sim_config.metric_parameters.Numerical_metric_spline_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/Galin_numerical_config_II.XML"
 
-    Sim_config.simulation_mode = {"Value": 1, "Unit": "[-]"}
+    Sim_config.simulation_mode = {"Value": 0, "Unit": "[-]"}
 
     Sim_config.object_mass = {"Value": 6.2e9, "Unit": "[M_sun]"}
 

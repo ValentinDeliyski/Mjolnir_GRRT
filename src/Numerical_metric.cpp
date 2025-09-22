@@ -31,13 +31,13 @@ double Numerical_metric::compactify_radial_coordiante(const double r) const {
     return x_uncompactified / (1 + x_uncompactified);
 }
 
-inline void Numerical_metric::get_control_point_matrix(const double* const Control_vector, const int r_idx, const int theta_idx, double Control_matrix[4][4]) const {
+inline void Numerical_metric::get_control_point_matrix(const double* const Control_vector, const long long r_idx, const long long theta_idx, double Control_matrix[4][4]) const {
 
     /* The reference for this implementation is one of the python example scrips in this document: https://hal.science/hal-03017566/document. */
 
-    for (int radial_offset = 0; radial_offset < 4; radial_offset++) {
+    for (long long radial_offset = 0; radial_offset < 4; radial_offset++) {
 
-        for (int theta_offset = 0; theta_offset < 4; theta_offset++) {
+        for (long long theta_offset = 0; theta_offset < 4; theta_offset++) {
 
             Control_matrix[radial_offset][theta_offset] = Control_vector[r_idx + radial_offset + theta_offset * (this->Parameters.Radial_grid_size + 2) + theta_idx * (this->Parameters.Radial_grid_size + 2)];
             Control_matrix[radial_offset][theta_offset] = Control_vector[r_idx + radial_offset + theta_offset * (this->Parameters.Radial_grid_size + 2) + theta_idx * (this->Parameters.Radial_grid_size + 2)];
@@ -148,7 +148,7 @@ double Numerical_metric::evaluate_single_spline(const double Control_point_matri
 
 }
 
-Numerical_metric_potentials_type Numerical_metric::evaluate_all_splines(const double radial_natural_param, const double theta_narual_param, int Radial_grid_idx, int Theta_grid_idx, Derivative_selector_enums Derivative_selector) const {
+Numerical_metric_potentials_type Numerical_metric::evaluate_all_splines(const double radial_natural_param, const double theta_narual_param, long long Radial_grid_idx, long long Theta_grid_idx, Derivative_selector_enums Derivative_selector) const {
 
     Numerical_metric_potentials_type s_Metric_potentials{};
 
@@ -292,14 +292,14 @@ Metric_type Numerical_metric::get_metric(const double* const State_Vector) const
 
     const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
 
-    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const auto Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
     return this->get_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
 
 }
 
-Metric_type Numerical_metric::get_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
+Metric_type Numerical_metric::get_metric(const double* const State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
 
@@ -375,14 +375,14 @@ Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector) co
 
     const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
 
-    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const auto Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
     return this->get_dr_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
 
 }
 
-Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
+Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
 
@@ -460,16 +460,16 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
 
     /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
 
-    const double& r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
 
-    const int& Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const int& Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const auto Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
     return this->get_dtheta_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
 
 }
 
-Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
+Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
 
@@ -549,14 +549,14 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector) c
 
     const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
 
-    const int Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const int Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const auto Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
     return this->get_d2r_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
 
 }
 
-Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, int Radial_grid_idx, int Theta_grid_idx) const {
+Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
 
@@ -646,8 +646,8 @@ void Numerical_metric::get_EOM(const double* const State_Vector, double* const D
     memset(Derivatives, 0, e_Dynamic_state_size * sizeof(double));
 
     const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
-    const int Radial_grid_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const int Theta_grid_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const auto Radial_grid_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
+    const auto Theta_grid_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
     const Metric_type Metric = this->get_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);
     const Metric_type dr_Metric = this->get_dr_metric(State_Vector, Radial_grid_idx, Theta_grid_idx);

@@ -199,3 +199,11 @@ enum Geodesic_Integrator_enums: std::underlying_type_t <std::byte> {
     ESDIRK54 = 2
 
 };
+
+enum Simulation_mode_enums: std::underlying_type_t <std::byte> {
+
+    Image_generation = 0,
+    Make_geodesic_sweep = 1,
+    Make_geodesic_log = 2,
+
+};

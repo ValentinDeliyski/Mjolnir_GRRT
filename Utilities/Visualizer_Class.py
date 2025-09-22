@@ -115,8 +115,8 @@ class Sim_Visualizer():
             idx = (abs(array - value)).argmin()
             return array[idx]
              
-        X_resolution: int = int(self.Sim_Parsers[0].Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
-        Y_resolution: int = int(self.Sim_Parsers[0].Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+        X_resolution: int = int(self.Sim_Parsers[0].Simulation_metadata["Simulation Resolution"].split(" ")[0])
+        Y_resolution: int = int(self.Sim_Parsers[0].Simulation_metadata["Simulation Resolution"].split(" ")[2])
 
         Celestial_sphere_pattern = zeros((X_resolution, Y_resolution, 3))
         
@@ -289,7 +289,7 @@ class Sim_Visualizer():
                 T_Brightness_Subplot: Axes = Main_Figure.add_subplot(100 * len(self.Frequency_Bins) + 20 + (2 * Sim_number + 2))
 
                 # Convert the spectral density at y = 0 to brightness temperature, normalized to 10^9 Kelvin
-                X_resolution: int = int(self.Sim_Parsers[Sim_number].Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
+                X_resolution: int = int(self.Sim_Parsers[Sim_number].Simulation_metadata["Simulation Resolution"].split(" ")[0])
                 
                 T_Brightness: NDArray[float64] = Data_to_plot[int(X_resolution / 2) - 1]
                 T_Brightness_norm: float     = max(T_Brightness)

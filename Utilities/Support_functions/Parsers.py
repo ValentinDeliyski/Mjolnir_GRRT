@@ -30,7 +30,7 @@ class Simulation_Parser():
                 if -1 != line[0].find("Simulation Results"):
                     break
 
-            if (int(self.Simulation_metadata["Active Simulation Mode"]) == 1):
+            if (int(self.Simulation_metadata["Active Simulation Mode"]) == 0):
      
                 X_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[0])
                 Y_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[2])
@@ -78,7 +78,7 @@ class Simulation_Parser():
                     except:
                         break
         
-            if (int(self.Simulation_metadata["Active Simulation Mode"]) == 3):
+            if (int(self.Simulation_metadata["Active Simulation Mode"]) == 2):
 
                 self.t_coord: list[float]     = []
                 self.r_coord: list[float]     = []
@@ -136,8 +136,8 @@ class Simulation_Parser():
         Window_limits = self.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
         Window_limits = [float(Limit) for Limit in Window_limits]
         
-        X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
-        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+        X_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[0])
+        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[2])
         
         Pixel_area: float = (abs(Window_limits[1] - Window_limits[0]) * 
                              abs(Window_limits[3] - Window_limits[2]) / X_resolution / Y_resolution / obs_pos**2)
@@ -165,8 +165,8 @@ class Simulation_Parser():
         Window_limits = self.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
         Window_limits = [float(Limit) for Limit in Window_limits]
         
-        X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
-        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+        X_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[0])
+        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[2])
         
         Pixel_area: float = (abs(Window_limits[1] - Window_limits[0]) * 
                              abs(Window_limits[3] - Window_limits[2]) / X_resolution / Y_resolution / obs_pos**2)
@@ -191,8 +191,8 @@ class Simulation_Parser():
         """ The arrays first need to be reshaped into 2D ones, then flipped along the x axis, 
             because mpl treats y = 0 as the top, and the ray-tracer (openGL) treats it as the bottom. """
         
-        X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
-        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+        X_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[0])
+        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[2])
             
         I_Intensity = self.I_Intensity.reshape(Y_resolution, X_resolution)
         I_Intensity = flip(I_Intensity, axis = 0)

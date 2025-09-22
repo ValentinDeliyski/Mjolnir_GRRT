@@ -1016,7 +1016,7 @@ Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML
     if (Compactified_radial_grid_element == nullptr) { std::cout << "Failed to parse the compactified radial coordinate grid knots node!" << "\n"; return ERROR; }
 
     /* Parse the length of the controll vector and allocate an array to hold it. */
-    double Grid_size = std::stoi(Compactified_radial_grid_element->Attribute("Grid_size"));
+    int Grid_size = std::stoi(Compactified_radial_grid_element->Attribute("Grid_size"));
     Metric_params->Numerical_metric_params.Compactified_radial_grid = new double[Grid_size];
     Metric_params->Numerical_metric_params.Radial_grid_size = Grid_size;
 
@@ -1298,7 +1298,7 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
 
     temp_param_var = Root_node->FirstChildElement("Simulation_mode");
     if (temp_param_var == nullptr) { std::cout << "Failed to find the simulation mode!" << "\n"; return ERROR; }
-    p_Initial_conditions->Simulation_mode = std::stoi(temp_param_var->GetText());
+    p_Initial_conditions->Simulation_mode = static_cast<Simulation_mode_enums>(std::stoi(temp_param_var->GetText()));
 
     temp_param_var = Root_node->FirstChildElement("Sim_mode_2_param_value_number");
     if (temp_param_var == nullptr) { std::cout << "Failed to find the simulation mode 2 number of metric parameter values!" << "\n"; return ERROR; }

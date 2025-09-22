@@ -278,7 +278,7 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
 
     // ----------------------------------------------------------------------------------- //
 
-    double Q_coeff{}; // This if f(X_K) from the reference
+    double Q_coeff{}; // This is f(X_K) from the reference
     double V_coeff{}; // This is g(X_k) from the reference
 
     if (fabs(p_Transfer_args->kappa - 3.5) < 0.01) {
@@ -334,7 +334,7 @@ void Emission_models_class::get_phenomenological_synchrotron_fit_functions(const
        For the sake of unifying all emission models I want to add on this factor in a single caller function, for all emission models (Thermal, kappa and so on).
        This phenomenological model does not have this factor included for the sake of simplicity (unlike the other models). For this reason I divide by it
        in this function, while the caller multiplies by it afterwards. This amounts to multiplying by one, but it allows me to have only one function (the caller)
-       that adds on the units to the transfer functions. This makes reducing the radiative transfer to a dimensionless problem a lot more straightforward. */
+       that adds on the units to the transfer functions. */
     double common_factor_emission = Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * p_Transfer_args->f_cyclo;
 
     /* The common factor for the absorbtion function is different, but it serves the same purpose. */
