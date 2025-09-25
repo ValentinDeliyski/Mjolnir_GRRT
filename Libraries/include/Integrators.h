@@ -1,12 +1,9 @@
 #pragma once
-#include "General_math_functions.h"
 #include "Enumerations.h"
 #include "Spacetimes.h"
-#include "Constants.h"
 #include "Structs.h"
 #include "gsl\gsl_multiroots.h"
-#include <functional>
-#include <cmath>
+
 
 class Step_controller_class {
 

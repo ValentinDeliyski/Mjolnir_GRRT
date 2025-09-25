@@ -1,5 +1,5 @@
 #include "Hotspot_Models.h"
-#include <format>
+
 Hotspot_model_type::Hotspot_model_type(Simulation_Context_type* p_Sim_Context) {
 
     if (nullptr != p_Sim_Context) {
@@ -7,12 +7,7 @@ Hotspot_model_type::Hotspot_model_type(Simulation_Context_type* p_Sim_Context) {
         this->s_Hotspot_params = p_Sim_Context->p_Init_Conditions->Hotspot_params;
 
     }
-    else {
-
-        std::cout << "Could not load the hotspot parameter struct! \n";
-        exit(ERROR);
-
-    }
+    else { throw std::runtime_error("Could not load the hotspot parameter struct! \n"); }
 
 }
 
@@ -62,10 +57,7 @@ double Hotspot_model_type::get_hotspot_profile(const Hotspot_profile_parameters_
 
         return pow(p_Profile_parameters->Power_law_scale / p_Profile_parameters->Power_law_variable, p_Profile_parameters->Power_law_power) * exponent_term;
 
-    default:
-
-        std::cout << "Unsupported hotspot profile type! \n";
-        exit(ERROR);
+    default: throw std::runtime_error("Unsupported hotspot profile type! \n");
 
     }
 
@@ -118,7 +110,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
     
     if (isnan(p_Emission_medium_state->Density) || isinf(p_Emission_medium_state->Density) || p_Emission_medium_state->Density < 0) {
 
-        throw std::runtime_error(std::format("Invalid hotspot density profile: {}", p_Emission_medium_state->Density));
+        throw std::runtime_error(std::format("Invalid hotspot density profile: {} \n", p_Emission_medium_state->Density));
 
     }
 
@@ -145,7 +137,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     if (isnan(p_Emission_medium_state->Temperature) || isinf(p_Emission_medium_state->Temperature) || p_Emission_medium_state->Temperature < 0) {
 
-        throw std::runtime_error(std::format("Invalid hotspot temperature profile: {}", p_Emission_medium_state->Temperature));
+        throw std::runtime_error(std::format("Invalid hotspot temperature profile: {} \n", p_Emission_medium_state->Temperature));
 
     }
 

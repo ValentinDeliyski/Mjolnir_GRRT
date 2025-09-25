@@ -1,6 +1,4 @@
 #include "Spacetimes.h"
-#include "General_math_functions.h"
-#include "General_GR_functions.h"
 
 Numerical_metric::Numerical_metric(const Metric_parameters_type* const p_Metric_Parameters) {
 
@@ -131,10 +129,7 @@ double Numerical_metric::evaluate_single_spline(const double Control_point_matri
 
         break;
 
-    default:
-
-        std::cout << "Unsupported numerical metric derivative! \n";
-        exit(ERROR);
+    default: throw std::runtime_error("Unsupported numerical metric derivative! \n");
 
     }
 

@@ -1,9 +1,11 @@
 #pragma once
 #define _USE_MATH_DEFINES
+
 #include "Structs.h"
-#include <complex>
+#include "General_math_functions.h"
+#include "General_GR_functions.h"
+
 #include <iostream>
-#include <cmath>
 #include <format>
 
 class Spacetime_Base_Class {

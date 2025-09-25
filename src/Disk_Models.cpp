@@ -7,12 +7,7 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
         this->s_Disk_params = p_Sim_Context->p_Init_Conditions->Disk_params;
 
     }
-    else {
-
-        std::cout << "Could not load the disk parameter struct! \n";
-        exit(ERROR);
-
-    }
+    else { throw std::runtime_error("Could not load the disk parameter struct! \n"); }
 
 }
 
@@ -43,10 +38,7 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
         Profile = std::exp(-std::pow(Exponent_arg, 2) / 2);
         break;
 
-    default:
-
-        std::cout << "Unsupported disk profile type! \n";
-        exit(ERROR);
+    default: throw std::runtime_error("Unsupported disk profile type! \n");
 
     }
 
@@ -183,26 +175,19 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
         break;
         
-    default:
-
-        std::cout << "Unsupported disk profile type! \n";
-        exit(ERROR);
+    default: throw std::runtime_error("Unsupported disk profile type! \n");
 
     }
 
     if (isnan(p_Emission_medium_state->Density) || isinf(p_Emission_medium_state->Density) || p_Emission_medium_state->Density < 0) {
 
-        std::cout << "Invalid disk density profile: " << p_Emission_medium_state->Density << "\n";
-
-        exit(ERROR);
+        throw std::runtime_error(std::format("Invalid disk density profile: {} \n", p_Emission_medium_state->Density));
 
     }
 
     if (isnan(p_Emission_medium_state->Temperature) || isinf(p_Emission_medium_state->Temperature) || p_Emission_medium_state->Temperature < 0) {
 
-        std::cout << "Invalid disk temperature profile: " << p_Emission_medium_state->Temperature << "\n";
-
-        exit(ERROR);
+        throw std::runtime_error(std::format("Invalid disk temperature profile: {} \n", p_Emission_medium_state->Temperature));
 
     }
 

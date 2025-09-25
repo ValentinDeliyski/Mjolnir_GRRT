@@ -35,14 +35,14 @@ private:
 
     // ====================== Thermally Distributed synchrotron Fit Functions ====================== //
 
-       //! Evaluates the thermal sychrotron emission fit functions.
-       /*! Evaluates the thermal sychrotron emission fit functions, based on the source: https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf
-       *
-       *   \param [in] Transfer_arags - Pointer to a struct containing the dimensionless parameter that the fit functions depend on, its weird fractional powers,
-       *                               the dimentionless electron temperature, its weird powers, and the pitch angle.
-       *   \param [out] Emission_functions - Pointer to the array that holds the fit functions.
-       *   \return Nothing
-       */
+    //! Evaluates the thermal sychrotron emission fit functions.
+    /*! Evaluates the thermal sychrotron emission fit functions, based on the source: https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf
+     *
+     *   \param [in] Transfer_arags - Pointer to a struct containing the dimensionless parameter that the fit functions depend on, its weird fractional powers,
+     *                               the dimentionless electron temperature, its weird powers, and the pitch angle.
+     *   \param [out] Emission_functions - Pointer to the array that holds the fit functions.
+     *   \return Nothing
+     */
     void get_thermal_synchrotron_emission_fit_functions(const Thermal_transfer_f_arguments_type* const Transfer_arags,
                                                         double* const Emission_functions) const;
 
@@ -54,12 +54,12 @@ private:
 
     //! Evaluates the thermal sychrotron Faradey fit functions.
     /*! Evaluates the thermal sychrotron Faradey fit functions, based on this source: https://arxiv.org/pdf/1602.03184.pdf
-    *
-    *   \param [in] Transfer_arags - Pointer to the struct containing the dimensionless parameter that the fit functions depend on, its weird fractional powers,
-    *                                the dimentionless electron temperature, its weird powers, and the pitch angle.
-    *   \param [out] Faradey_fucntions - Pointer to the array that holds the evaluated Faradey functions.
-    *   \return Nothing
-    */
+     *
+     *   \param [in] Transfer_arags - Pointer to the struct containing the dimensionless parameter that the fit functions depend on, its weird fractional powers,
+     *                                the dimentionless electron temperature, its weird powers, and the pitch angle.
+     *   \param [out] Faradey_fucntions - Pointer to the array that holds the evaluated Faradey functions.
+     *   \return Nothing
+     */
     void get_thermal_synchrotron_faradey_fit_functions(const Thermal_transfer_f_arguments_type* const Transfer_arags,
                                                        double* const Faradey_fucntions) const;
 
@@ -67,25 +67,25 @@ private:
 
     //! Evaluates the kappa sychrotron emission fit functions.
     /*! Evaluates the kappa sychrotron emission fit functions, based on the source: https://arxiv.org/pdf/1602.08749
-    *
-    *
-    *   \param [in] p_Transfer_args - Pointer to the struct containing the dimensionless parameter that the fit functions depend on, its weird fractional powers,
-    *                                 the dimentionless electron temperature, its weird powers, and the pitch angle.
-    *    \param [out] Emission_functions - Pointer to the array that holds the fit functions.
-    *   \return Nothing
-    */
+     *
+     *
+     *   \param [in] p_Transfer_args - Pointer to the struct containing the dimensionless parameter that the fit functions depend on, its weird fractional powers,
+     *                                 the dimentionless electron temperature, its weird powers, and the pitch angle.
+     *    \param [out] Emission_functions - Pointer to the array that holds the fit functions.
+     *   \return Nothing
+     */
     void get_kappa_synchrotron_emission_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
                                                       double* const Emission_functions) const;
 
     //! Evaluates the kappa sychrotron absorbtion fit functions.
     /*! Evaluates the kappa sychrotron absorbtion fit functions, based on the source: https://arxiv.org/pdf/1602.08749
-    *
-    *
-    *   \param [in] p_Transfer_args - Pointer to the struct containing the dimensionless parameter that the fit functions depend on, its weird fractional powers,
-    *                                 the dimentionless electron temperature, its weird powers, and the pitch angle.
-    *   \param [out] Absorbtion_functions - Pointer to the array that holds the fit functions.
-    *   \return Nothing
-    */
+     *
+     *
+     *   \param [in] p_Transfer_args - Pointer to the struct containing the dimensionless parameter that the fit functions depend on, its weird fractional powers,
+     *                                 the dimentionless electron temperature, its weird powers, and the pitch angle.
+     *   \param [out] Absorbtion_functions - Pointer to the array that holds the fit functions.
+     *   \return Nothing
+     */
     void get_kappa_synchrotron_absorbtion_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
                                                         double* const Absorbtion_functions) const;
 

@@ -1,4 +1,11 @@
 #pragma once
+#include "General_GR_functions.h"
+#include "Rendering_Engine.h"
+#include "IO_files.h"
+#include "Lensing.h"
+
+#include <iostream>
+#include <thread>
 
 struct Simulation_Context_type;
 struct Results_type;

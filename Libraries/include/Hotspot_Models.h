@@ -1,6 +1,7 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include <iostream>
+#include <format>
 #include "Structs.h"
 #include "General_math_functions.h"
 

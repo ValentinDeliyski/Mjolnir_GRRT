@@ -1,14 +1,4 @@
-#pragma once
-#include "IO_files.h"
-#include "Constants.h"
-#include "General_GR_functions.h"
-#include "Rendering_Engine.h"
-#include "Disk_models.h"
-#include "Lensing.h"
-#include <thread>
-#include "Spacetimes.h"
-
-#include <iostream>
+#include "Sim_Modes.h"
 
 void static print_progress(int current, int max, bool lens_from_file) {
 
