@@ -80,104 +80,114 @@ void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
 
 int main(int argument_count, char** cmd_line_args) {
 
-    std::string Input_file_path{};
-    bool print_to_console{};
-    if (argument_count == 5 && 0 == strcmp(cmd_line_args[1], "-in") && 0 == strcmp(cmd_line_args[3], "-print_to_console")) {
+    try {
 
-        Input_file_path = cmd_line_args[2];
-        print_to_console = std::stoi(cmd_line_args[4]);
+        std::string Input_file_path{};
+        bool print_to_console{};
+        if (argument_count == 5 && 0 == strcmp(cmd_line_args[1], "-in") && 0 == strcmp(cmd_line_args[3], "-print_to_console")) {
+
+            Input_file_path = cmd_line_args[2];
+            print_to_console = std::stoi(cmd_line_args[4]);
+
+        }
+        else {
+
+            std::cout << "To run Mjolnir, use the following call structure:" << "\n";
+            std::cout << "Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__ -print_to_console __1 FOR YES 0 FOR NO__" << "\n";
+
+            throw std::runtime_error("To run Mjolnir, use the following call structure:\n Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__ -print_to_console __1 FOR YES 0 FOR NO__ \n");
+
+        }
+
+        /*
+
+        |============================== Define the Simulation Context struct ==============================|
+
+        */
+
+        Simulation_Context_type s_Sim_Context{};
+
+        s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
+
+        if (ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)) { throw std::runtime_error("Could not parse input file!"); }
+
+        s_Sim_Context.p_Init_Conditions->Print_to_console = print_to_console;
+        s_Sim_Context.p_Init_Conditions->Hotspot_params.Profile_params.Coord_time_offset += s_Sim_Context.p_Init_Conditions->Observer_params.distance;
+
+        // Populate the Spacetime class instance 
+        Allocate_Spacetime_Class(&s_Sim_Context);
+
+        // Get the observer position and populate the Observer class instance.
+        s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
+
+        double init_state[4] = { s_Sim_Context.p_Init_Conditions->Observer_params.init_time,
+                                s_Sim_Context.p_Init_Conditions->Observer_params.distance,
+                                s_Sim_Context.p_Init_Conditions->Observer_params.inclination,
+                                s_Sim_Context.p_Init_Conditions->Observer_params.azimuth };
+
+        Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_metric(init_state);
+
+        memcpy(&s_Sim_Context.p_Init_Conditions->Init_metric, &s_init_Metric, sizeof(Metric_type));
+
+        // Populate the Emission Model class instances
+        s_Sim_Context.p_Emission_Model = new Emission_models_class(&s_Sim_Context);
+        s_Sim_Context.p_Emission_Model->precompute_electron_pitch_angles(s_Sim_Context.p_Init_Conditions);
+
+        // Allocate the Page-Thorne Model class
+        s_Sim_Context.p_PT_model = new Page_Thorne_Model_class(&s_Sim_Context);
+
+        // Populate the File Manager class instance
+        s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions);
+
+        // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
+        static Results_type s_Ray_results{};
+
+        s_Ray_results.Ray_log_struct.Ray_path_log = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size];
+        s_Ray_results.RK_integrator_debug_log.N_steps_rejected = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
+        s_Ray_results.RK_integrator_debug_log.State_error_history = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
+
+        for (int index = I; index < e_Stokes_param_num; index++) {
+
+            s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[2 * s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
+
+        }
+
+        if (s_Sim_Context.p_Init_Conditions->Print_to_console) {
+
+            print_ASCII_art();
+
+        }
+
+        /*
+
+        |============================== Run the simulation ==============================|
+
+        */
+
+        switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
+
+        default:
+            run_image_generation(&s_Sim_Context, &s_Ray_results);
+            break;
+
+        case Make_geodesic_sweep:
+            run_geodesic_sweep(&s_Sim_Context, &s_Ray_results);
+            break;
+
+        case Make_geodesic_log:
+            make_geodesic_log(&s_Sim_Context, &s_Ray_results);
+            break;
+
+        }
+
+        return OK;
 
     }
-    else {
+    catch (const std::exception& error) {
 
-        std::cout << "To run Mjolnir, use the following call structure:" << "\n";
-        std::cout << "Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__ -print_to_console __1 FOR YES 0 FOR NO__" << "\n";
-
-        throw std::runtime_error("To run Mjolnir, use the following call structure:\n Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__ -print_to_console __1 FOR YES 0 FOR NO__ \n");
+        std::cerr << error.what() << std::endl;
+        return ERROR;
 
     }
-
-    /*
-    
-    |============================== Define the Simulation Context struct ==============================|
-    
-    */
-
-    Simulation_Context_type s_Sim_Context{};
-
-    s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
-
-    if (ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)){ throw std::runtime_error("Could not parse input file!"); }
-
-    s_Sim_Context.p_Init_Conditions->Print_to_console = print_to_console;
-    s_Sim_Context.p_Init_Conditions->Hotspot_params.Profile_params.Coord_time_offset += s_Sim_Context.p_Init_Conditions->Observer_params.distance;
-
-    // Populate the Spacetime class instance 
-    Allocate_Spacetime_Class(&s_Sim_Context);
-
-    // Get the observer position and populate the Observer class instance.
-    s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
-
-    double init_state[4] = {s_Sim_Context.p_Init_Conditions->Observer_params.init_time,
-                            s_Sim_Context.p_Init_Conditions->Observer_params.distance,
-                            s_Sim_Context.p_Init_Conditions->Observer_params.inclination,
-                            s_Sim_Context.p_Init_Conditions->Observer_params.azimuth };
-
-    Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_metric(init_state);
-    
-    memcpy(&s_Sim_Context.p_Init_Conditions->Init_metric, &s_init_Metric, sizeof(Metric_type));
-
-    // Populate the Emission Model class instances
-    s_Sim_Context.p_Emission_Model = new Emission_models_class(&s_Sim_Context);
-    s_Sim_Context.p_Emission_Model->precompute_electron_pitch_angles(s_Sim_Context.p_Init_Conditions);
-
-    // Allocate the Page-Thorne Model class
-    s_Sim_Context.p_PT_model = new Page_Thorne_Model_class(&s_Sim_Context);
-
-    // Populate the File Manager class instance
-    s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions);
-
-    // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
-    static Results_type s_Ray_results{};
-
-    s_Ray_results.Ray_log_struct.Ray_path_log = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size];
-    s_Ray_results.RK_integrator_debug_log.N_steps_rejected = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
-    s_Ray_results.RK_integrator_debug_log.State_error_history = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
-
-    for (int index = I; index < e_Stokes_param_num; index++) {
-
-        s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[2 * s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
-
-    }
-
-    if (s_Sim_Context.p_Init_Conditions->Print_to_console) { 
-
-        print_ASCII_art();
-
-    }
-
-    /*
-
-    |============================== Run the simulation ==============================|
-
-    */
-
-    switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
-   
-    default:
-         run_image_generation(&s_Sim_Context, &s_Ray_results);
-         break;
-   
-    case Make_geodesic_sweep:
-         run_geodesic_sweep(&s_Sim_Context, &s_Ray_results);
-         break;
-
-    case Make_geodesic_log:
-         make_geodesic_log(&s_Sim_Context, &s_Ray_results);
-         break;
- 
-    }
-
-    return OK;
 
 }

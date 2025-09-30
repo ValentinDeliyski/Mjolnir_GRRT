@@ -1271,7 +1271,7 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     tinyxml2::XMLDocument xml_doc;
 
     tinyxml2::XMLError e_parse_result = xml_doc.LoadFile(static_cast<const char*>(input_file_path.c_str()));
-    if (e_parse_result != tinyxml2::XML_SUCCESS) { return ERROR; }
+    if (e_parse_result != tinyxml2::XML_SUCCESS) { std::cout << "Failed to find the input XML!" << "\n"; return ERROR; }
 
     tinyxml2::XMLElement* Root_node = xml_doc.FirstChildElement("Simulation_Input");
     if (Root_node == nullptr) { return ERROR; }

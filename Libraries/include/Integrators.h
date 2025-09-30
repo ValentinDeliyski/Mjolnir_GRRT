@@ -4,7 +4,6 @@
 #include "Structs.h"
 #include "gsl\gsl_multiroots.h"
 
-
 class Step_controller_class {
 
 public:

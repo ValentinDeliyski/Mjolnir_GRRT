@@ -20,9 +20,9 @@ class Simulation_Parser():
             for line in Header_parser:
                 
                 for String in line: 
-                    self.Raw_simulation_header = self.Raw_simulation_header + String + ": "
+                    self.Raw_simulation_header = self.Raw_simulation_header + String + ":"
                     
-                self.Raw_simulation_header = self.Raw_simulation_header[:-2] + "\n"
+                self.Raw_simulation_header = self.Raw_simulation_header[:-1] + "\n"
                 
                 if len(line) == 2:
                     self.Simulation_metadata.update({str(line[0]).strip(): str(line[1]).strip()})
