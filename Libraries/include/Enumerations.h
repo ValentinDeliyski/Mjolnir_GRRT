@@ -96,7 +96,7 @@ enum Disk_model_enums : std::underlying_type_t <std::byte> {
     e_Colab_test_1 = 2,
 
     /* This is the model from https://articles.adsabs.harvard.edu/pdf/1974ApJ...191..499P */
-    e_Page_Thorne = 3,
+    e_Novikov_Thorne = 3,
 
     /* This model exists for testing purposes (see the plasma integration tests in https://www.aanda.org/articles/aa/pdf/2020/09/aa38573-20.pdf )*/
     e_Debug_constant_density = 4
@@ -196,7 +196,8 @@ enum Geodesic_Integrator_enums: std::underlying_type_t <std::byte> {
 
     RK78_Fehlberg = 0,
     RK78_DP = 1,
-    ESDIRK54 = 2
+    ESDIRK54 = 2,
+    RK54 = 3
 
 };
 

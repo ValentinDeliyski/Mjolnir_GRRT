@@ -161,9 +161,9 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
         *Output_file << "Active disk model: Colaboration_test_1\n";
         break;
 
-    case e_Page_Thorne:
+    case e_Novikov_Thorne:
 
-        *Output_file << "Active disk model: Page-Thorne\n";
+        *Output_file << "Active disk model: Novikov-Thorne\n";
         break;
     }
 
@@ -181,15 +181,15 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
                      << "Disk Temperature cutoff radius: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_cutoff_radius << "\n"
                      << "Disk Temperature cutoff scale: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_cutoff_scale << "\n";
     }
-    else if (e_Page_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+    else if (e_Novikov_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
 
         *Output_file << "--------------------------- Model Parameters\n"
                      << "Inner Disk Radius [M]: "
-                     << this->p_Initial_Conditions->Disk_params.Page_Thorne_params.r_in
+                     << this->p_Initial_Conditions->Disk_params.Novikov_Thorne_params.r_in
                      << "\n"
                      << "Outer Disk Radius [M]: "
-                     << this->p_Initial_Conditions->Disk_params.Page_Thorne_params.r_out
+                     << this->p_Initial_Conditions->Disk_params.Novikov_Thorne_params.r_out
                      << "\n";
     }
     else {
@@ -199,7 +199,7 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
                      << "Disk Vertical Scale: " << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Vertical_scale << "\n";
     }
 
-    if (e_Page_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+    if (e_Novikov_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
         *Output_file << "Maximum Density [g / cm^3]: " << this->p_Initial_Conditions->Disk_params.Electron_density_scale << "\n"
                      << "Maximum Temperature [K]: " << this->p_Initial_Conditions->Disk_params.Electron_temperature_scale << "\n";
@@ -207,7 +207,7 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
 
     *Output_file << "--------------------------- Magnetic Field Parameters\n";
 
-    if (e_Page_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+    if (e_Novikov_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
         *Output_file << "Disk Magnetization [-]: " << this->p_Initial_Conditions->Disk_params.Magnetization << "\n";
 
@@ -235,7 +235,7 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
 
     }
 
-    if (e_Page_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+    if (e_Novikov_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
         switch (this->p_Initial_Conditions->Disk_params.e_Mag_field_magnitude_profile) {
 
@@ -587,23 +587,25 @@ void File_manager_class::write_simulation_metadata() {
     if (p_Initial_Conditions->Simulation_mode != Make_geodesic_log) {
 
         *Output_file << "Image X Coord [M],"
-            << "Image Y Coord [M],";
+                     << "Image Y Coord [M],";
 
-        if (e_Page_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model){
+        if (e_Novikov_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model){
 
            *Output_file << "Synchotron Intensity I [Jy/sRad],"
-                                        << "Synchotron Intensity Q [Jy/sRad],"
-                                        << "Synchotron Intensity U [Jy/sRad],"
-                                        << "Synchotron Intensity V [Jy/sRad],";
+                        << "Synchotron Intensity Q [Jy/sRad],"
+                        << "Synchotron Intensity U [Jy/sRad],"
+                        << "Synchotron Intensity V [Jy/sRad],"
+                        << "Final t Coordinate [M],";
         }
         else {
 
             *Output_file << "Disk Redshift [-],"
-                                         << "Disk Flux [M_dot/M^2],";
+                         << "Disk Flux [M_dot/M^2],"
+                         << "t Coordinate At Disk";
         }
 
         *Output_file << "Celestial Sphere Crossing Theta [Rad],"
-                                     << "Celestial Sphere Crossing Phi [Rad],";
+                     << "Celestial Sphere Crossing Phi [Rad],";
 
         if (p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
 
@@ -781,11 +783,13 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
                             << "," 
                             << std::setprecision(15);
 
-    if (e_Page_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+    if (e_Novikov_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
         this->Image_Output_File << s_Ray_results->Redshift_PT
                                 << ","
                                 << s_Ray_results->Flux_PT
+                                << ","
+                                << s_Ray_results->Thin_Disk_State_Vector[e_t]
                                 << ",";
     }
     else {
@@ -797,6 +801,8 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
                                 << s_Ray_results->Intensity[U] * CGS_TO_JANSKY
                                 << ","
                                 << s_Ray_results->Intensity[V] * CGS_TO_JANSKY
+                                << ","
+                                << s_Ray_results->Final_State_Vector[e_t]
                                 << ",";
     }
 
@@ -807,15 +813,15 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
     if (p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
 
         this->Image_Output_File << ","
-                                << s_Ray_results->Source_Coords[e_r]
+                                << s_Ray_results->Thin_Disk_State_Vector[e_r]
                                 << ","
-                                << s_Ray_results->Source_Coords[e_phi]
+                                << s_Ray_results->Thin_Disk_State_Vector[e_phi]
                                 << ","
-                                << s_Ray_results->Photon_Momentum[e_r]
+                                << s_Ray_results->Thin_Disk_State_Vector[e_p_r]
                                 << ","
-                                << s_Ray_results->Photon_Momentum[e_theta]
+                                << s_Ray_results->Thin_Disk_State_Vector[e_p_theta]
                                 << ","
-                                << s_Ray_results->Photon_Momentum[e_phi]
+                                << s_Ray_results->Thin_Disk_State_Vector[e_p_phi]
                                 << ",";
 
             switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {

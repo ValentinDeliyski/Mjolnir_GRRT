@@ -1,26 +1,48 @@
-#include "Page_Thorne_Model.h"
+#include "Novikov_Thorne_Model.h"
 
-Page_Thorne_Model_class::Page_Thorne_Model_class(Simulation_Context_type* p_Sim_Context) {
+Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* p_Sim_Context) {
 
-    this->r_in  = p_Sim_Context->p_Init_Conditions->Disk_params.Page_Thorne_params.r_in;
-    this->r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Page_Thorne_params.r_out;
+    this->r_in  = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_in;
+    this->r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_out;
 
     this->flux_integral_accuracy = p_Sim_Context->p_Init_Conditions->Integrator_params.Simpson_accuracy;
 
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
     this->e_Spacetime = p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime;
 
+    this->e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_geometry;
+
+    this->Disk_veclovity_vector = new double[4];
+
+    this->current_flux_integration_step = 0;
+    this->max_flux_integration_teps = 500;
+
+    memcpy(this->Mag_field_geometry, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
+
+}
+Novikov_Thorne_Model_class::~Novikov_Thorne_Model_class() {
+
+    free(this->Disk_veclovity_vector);
+
 };
 
-double Page_Thorne_Model_class::Keplerian_angular_velocity(const double* const State_Vector) {
+double Novikov_Thorne_Model_class::Keplerian_angular_velocity(const double* const State_Vector) {
 
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_metric(State_Vector);
 
-    return (-s_dr_Metric.Metric[e_t][e_phi] - sqrt(s_dr_Metric.Metric[e_t][e_phi] * s_dr_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi])) / s_dr_Metric.Metric[e_phi][e_phi];
+    double Angular_velocity = (-s_dr_Metric.Metric[e_t][e_phi] + sqrt(s_dr_Metric.Metric[e_t][e_phi] * s_dr_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi])) / s_dr_Metric.Metric[e_phi][e_phi];
+
+    if (isnan(Angular_velocity) || isinf(Angular_velocity) || isnan(Angular_velocity) || isinf(Angular_velocity)) {
+
+        throw std::runtime_error(std::format("Invalid Novikov-Thorne angular velocity at: r = {}: Omega = {}", State_Vector[e_r], Angular_velocity));
+
+    }
+
+    return Angular_velocity;
 
 }
 
-double Page_Thorne_Model_class::dr_Keplerian_angular_velocity(const double* const State_Vector) {
+double Novikov_Thorne_Model_class::dr_Keplerian_angular_velocity(const double* const State_Vector) {
 
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_metric(State_Vector);
     Metric_type s_d2r_Metric = this->p_Spacetime->get_d2r_metric(State_Vector);
@@ -29,72 +51,83 @@ double Page_Thorne_Model_class::dr_Keplerian_angular_velocity(const double* cons
 
     double Kepler = this->Keplerian_angular_velocity(State_Vector);
 
-    return  - Kepler / s_dr_Metric.Metric[e_phi][e_phi] * s_d2r_Metric.Metric[e_phi][e_phi] + (-s_d2r_Metric.Metric[e_t][e_phi]
-            + 1.0 / root / 2 * (2 * s_dr_Metric.Metric[e_t][e_phi] * s_d2r_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_d2r_Metric.Metric[e_phi][e_phi]
-            - s_d2r_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi])) / s_dr_Metric.Metric[e_phi][e_phi];
+    double dr_Kepler = -Kepler / s_dr_Metric.Metric[e_phi][e_phi] * s_d2r_Metric.Metric[e_phi][e_phi] + (-s_d2r_Metric.Metric[e_t][e_phi]
+                     + 1.0 / root / 2 * (2 * s_dr_Metric.Metric[e_t][e_phi] * s_d2r_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_d2r_Metric.Metric[e_phi][e_phi]
+                     - s_d2r_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi])) / s_dr_Metric.Metric[e_phi][e_phi];
 
-}
+    if (isnan(dr_Kepler) || isinf(dr_Kepler) || isnan(dr_Kepler) || isinf(dr_Kepler)) {
 
-double Page_Thorne_Model_class::Redshift(const double* const State_Vector, Observer_class* const p_Observer) {
-
-    const double& r_source  = State_Vector[e_r];
-    const double& theta_source = State_Vector[e_theta];
-
-    const double* U_obs = p_Observer->get_obs_velocity();
-
-    /* Get the source 4-velocity */
-    Metric_type s_Metric_source = this->p_Spacetime->get_metric(State_Vector);
-
-    double Kepler = this->Keplerian_angular_velocity(State_Vector);
-    double Gamma  = 1 / sqrt(-s_Metric_source.Metric[0][0] - 2 * s_Metric_source.Metric[0][3] * Kepler - s_Metric_source.Metric[3][3] * Kepler * Kepler);
-
-    if (isnan(Gamma) || isinf(Gamma) || isnan(Kepler) || isinf(Kepler)) {
-
-        std::cout << "Invalid NT disk 4-velocity: "
-            << "Gamma = "
-            << Gamma
-            << "\n"
-            << "Kepler = "
-            << "\n"
-            << Kepler
-            << "\n";
-
-        exit(ERROR);
+        throw std::runtime_error(std::format("Invalid Novikov-Thorne angular velocity derivative at: r = {}: dr_Omega = {}", State_Vector[e_r], dr_Kepler));
 
     }
 
-    double U_source[4] = { Gamma, 0, 0, Gamma * Kepler };
+    return dr_Kepler;
+}
 
-    return  (-U_obs[0] + U_obs[3] * State_Vector[e_p_phi]) / (-U_source[0] + U_source[3] * State_Vector[e_p_phi]);
+double* Novikov_Thorne_Model_class::get_disk_velocity_vector(const double* const State_Vector) {
 
+    const double& r_source = State_Vector[e_r];
+    const double& theta_source = State_Vector[e_theta];
+
+    Metric_type s_Metric_source = this->p_Spacetime->get_metric(State_Vector);
+
+    double Angular_velocity = this->Keplerian_angular_velocity(State_Vector);
+    double u_t = 1 / sqrt(-s_Metric_source.Metric[e_t][e_t] - 2 * s_Metric_source.Metric[e_t][e_phi] * Angular_velocity - s_Metric_source.Metric[e_phi][e_phi] * Angular_velocity * Angular_velocity);
+
+    if (isnan(u_t) || isinf(u_t) || isnan(Angular_velocity) || isinf(Angular_velocity)) {
+
+        throw std::runtime_error(std::format("Invalid Novikov-Thorne disk 4-velocity at r = {}: u_t = {}, Angular velocity = {}", State_Vector[e_r], u_t, Angular_velocity));
+
+    }
+
+    this->Disk_veclovity_vector[e_t] = u_t;
+    this->Disk_veclovity_vector[e_r] = 0.0;
+    this->Disk_veclovity_vector[e_theta] = 0.0;
+    this->Disk_veclovity_vector[e_phi] = u_t * Angular_velocity;
+
+    return this->Disk_veclovity_vector;
 
 }
 
-double Page_Thorne_Model_class::disk_Energy(const double* const State_Vector) {
+double Novikov_Thorne_Model_class::disk_Energy(const double* const State_Vector) {
 
     Metric_type s_Metric_source = this->p_Spacetime->get_metric(State_Vector);
 
     double Kepler = this->Keplerian_angular_velocity(State_Vector);
 
     double root = sqrt(-s_Metric_source.Metric[e_t][e_t] - 2 * s_Metric_source.Metric[e_t][e_phi] * Kepler - s_Metric_source.Metric[e_phi][e_phi] * Kepler * Kepler);
+    double Disk_Energy = -(s_Metric_source.Metric[e_t][e_t] + s_Metric_source.Metric[e_t][e_phi] * Kepler) / root;
 
-    return  -(s_Metric_source.Metric[e_t][e_t] + s_Metric_source.Metric[e_t][e_phi] * Kepler) / root;
+    if (isnan(Disk_Energy) || isinf(Disk_Energy) || isnan(Disk_Energy) || isinf(Disk_Energy)) {
+
+        throw std::runtime_error(std::format("Invalid Novikov-Thorne disk energy at r = {}: E = {}", State_Vector[e_r], Disk_Energy));
+
+    }
+
+    return Disk_Energy;
 
 }
 
-double Page_Thorne_Model_class::disk_Angular_Momentum(const double* const State_Vector) {
+double Novikov_Thorne_Model_class::disk_Angular_Momentum(const double* const State_Vector) {
 
     Metric_type s_Metric_source = this->p_Spacetime->get_metric(State_Vector);
 
     double Kepler = this->Keplerian_angular_velocity(State_Vector);
 
     double root = sqrt(-s_Metric_source.Metric[e_t][e_t] - 2 * s_Metric_source.Metric[e_t][e_phi] * Kepler - s_Metric_source.Metric[e_phi][e_phi] * Kepler * Kepler);
+    double Disk_angular_momentum = (s_Metric_source.Metric[e_phi][e_phi] * Kepler + s_Metric_source.Metric[e_t][e_phi]) / root;
 
-    return  (s_Metric_source.Metric[e_phi][e_phi] * Kepler + s_Metric_source.Metric[e_t][e_phi]) / root;
+    if (isnan(Disk_angular_momentum) || isinf(Disk_angular_momentum) || isnan(Disk_angular_momentum) || isinf(Disk_angular_momentum)) {
+
+        throw std::runtime_error(std::format("Invalid Novikov-Thorne disk angular momentum at r = {}: L_z = {}", State_Vector[e_r], Disk_angular_momentum));
+
+    }
+
+    return  Disk_angular_momentum;
 
 }
 
-double Page_Thorne_Model_class::Flux_integrand(const double* const State_Vector) {
+double Novikov_Thorne_Model_class::Flux_integrand(const double* const State_Vector) {
 
     Metric_type s_Metric = this->p_Spacetime->get_metric(State_Vector);
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_metric(State_Vector);
@@ -111,11 +144,27 @@ double Page_Thorne_Model_class::Flux_integrand(const double* const State_Vector)
 
     double dr_L = (s_dr_Metric.Metric[e_phi][e_phi] * Kepler + s_Metric.Metric[e_phi][e_phi] * dr_Kepler + s_dr_Metric.Metric[e_t][e_phi]) / root - L / root / root / 2 * dr_root;
 
-    return (E - Kepler * L) * dr_L;
+    double Flux_integrand = (E - Kepler * L) * dr_L;
+
+    if (isnan(Flux_integrand) || isinf(Flux_integrand) || isnan(Flux_integrand) || isinf(Flux_integrand)) {
+
+        throw std::runtime_error(std::format("Invalid Novikov-Thorne disk flux integrand at r = {}: Integrand = {}", State_Vector[e_r], Flux_integrand));
+
+    }
+
+    return Flux_integrand;
 
 }
 
-double Page_Thorne_Model_class::solve_Flux_integral(double r_in, const double* const State_Vector, double tolerance) {
+double Novikov_Thorne_Model_class::solve_Flux_integral(double r_in, const double* const State_Vector, double tolerance) {
+
+    if (this->current_flux_integration_step > this->max_flux_integration_teps) {
+
+        throw std::runtime_error("Novikov-Thorne flux integral not converging!");
+
+    }
+
+    this->current_flux_integration_step += 1;
 
     const double& lower_bound = r_in;
     const double& upper_bound = State_Vector[e_r];
@@ -152,22 +201,9 @@ double Page_Thorne_Model_class::solve_Flux_integral(double r_in, const double* c
     double S_2 = S_left + S_right;
     double S_1 = (upper_bound - lower_bound) / 6 * (F_lower_bound + 4 * F_mid_point + F_upper_bound);
 
-    double error;
-
-    if (S_2 >= S_1) {
-
-        error = S_2 - S_1;
-
-    }
-    else {
-
-        error = S_1 - S_2;
-
-    }
-
     double integral;
 
-    if (error < 15 * tolerance) {
+    if (fabs(S_2 - S_1) < 15 * tolerance) {
 
         integral = S_2 + (S_2 - S_1) / 15;
 
@@ -183,9 +219,10 @@ double Page_Thorne_Model_class::solve_Flux_integral(double r_in, const double* c
     }
 
     return integral;
+
 }
 
-double Page_Thorne_Model_class::get_flux(const double* const State_Vector) {
+double Novikov_Thorne_Model_class::get_flux(const double* const State_Vector) {
 
     Metric_type s_Metric = this->p_Spacetime->get_metric(State_Vector);
 
@@ -199,6 +236,8 @@ double Page_Thorne_Model_class::get_flux(const double* const State_Vector) {
     double Flux_coeff = -dr_Kepler / ((E_disk - Kepler * L_disk) * (E_disk - Kepler * L_disk)) / (4 * M_PI * sqrt(-metric_det));
 
     double Flux_integral = solve_Flux_integral(this->r_in, State_Vector, this->flux_integral_accuracy);
+
+    this->current_flux_integration_step = 0;
 
     return Flux_coeff * Flux_integral;
 

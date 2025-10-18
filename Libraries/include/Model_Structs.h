@@ -57,7 +57,7 @@ struct Hotspot_model_params_type {
 
 };
 
-struct Page_Thorne_params_type {
+struct Novikov_Thorne_params_type {
 
 	double r_in;
 

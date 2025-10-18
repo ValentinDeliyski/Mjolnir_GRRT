@@ -78,8 +78,8 @@ class Disk_model():
 
                  "Threshold_relative_density",
                  
-                 "r_in_PT_disk",
-                 "r_out_PT_disk")
+                 "r_in_NT_disk",
+                 "r_out_NT_disk")
     
 class Hotspot_model():
 
@@ -206,6 +206,7 @@ class Simulation_configurator:
                  "sim_mode_2_param_value_number",
                  "sim_mode_3_X_init",
                  "sim_mode_3_Y_init",
+                 "min_image_order",
                  "max_image_order")
 
     def __init__(self, 
@@ -218,7 +219,8 @@ class Simulation_configurator:
                  sim_mode_2_param_value_number: dict[str, int | str] = {"Value": 1, "Unit": "[-]"},
                  sim_mode_3_X_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
                  sim_mode_3_Y_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
-                 max_image_order: dict[str, int | str] = {"Value": 3, "Unit": "[-]"},):
+                 min_image_order: dict[str, int | str] = {"Value": 0, "Unit": "[-]"},
+                 max_image_order: dict[str, int | str] = {"Value": 10, "Unit": "[-]"},):
 
         self.average_emission_pitch_angle = Average_emission_pitch_angle
         self.thermalize_emission_medium = thermalize_emission_medium
@@ -229,6 +231,7 @@ class Simulation_configurator:
         self.sim_mode_2_param_value_number = sim_mode_2_param_value_number
         self.sim_mode_3_X_init = sim_mode_3_X_init
         self.sim_mode_3_Y_init = sim_mode_3_Y_init
+        self.min_image_order = min_image_order
         self.max_image_order = max_image_order
 
         self._configure_integrator_settings()
@@ -252,8 +255,8 @@ class Simulation_configurator:
                                              RK78_Step_controller_I_gain: dict[str, float | str] = {"Value": 0.58 / 7, "Unit": "[-]"},
                                              RK78_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 7, "Unit": "[-]"},
                                              RK78_Step_controller_D_gain: dict[str, float | str] = {"Value": 0.1 / 7, "Unit": "[-]"},
-                                             RK78_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.367 / 7, "Unit": "[-]"},
-                                             RK78_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 7, "Unit": "[-]"},
+                                             RK78_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.367 / 8, "Unit": "[-]"},
+                                             RK78_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 8, "Unit": "[-]"},
                                              ESDIRK54_Step_controller_I_gain: dict[str, float | str] = {"Value": 0.58 / 5, "Unit": "[-]"},
                                              ESDIRK54_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 5, "Unit": "[-]"},
                                              ESDIRK54_Step_controller_D_gain: dict[str, float | str] = {"Value": 0.1 / 5, "Unit": "[-]"},
@@ -452,8 +455,8 @@ class Simulation_configurator:
                                     
                                     Threshold_relative_density: dict[str, float | str] = {"Value": 1e-3, "Unit": "[-]"},
                                     
-                                    r_in_PT_disk: dict[str, float | str] = {"Value": 6, "Unit": "[M]"},
-                                    r_out_PT_disk: dict[str, float | str] = {"Value": 25, "Unit": "[M]"}):
+                                    r_in_NT_disk: dict[str, float | str] = {"Value": 6, "Unit": "[M]"},
+                                    r_out_NT_disk: dict[str, float | str] = {"Value": 25, "Unit": "[M]"}):
         
         self.disk_model = Disk_model()
 
@@ -490,8 +493,8 @@ class Simulation_configurator:
         
         self.disk_model.Threshold_relative_density = Threshold_relative_density 
         
-        self.disk_model.r_in_PT_disk = r_in_PT_disk
-        self.disk_model.r_out_PT_disk = r_out_PT_disk
+        self.disk_model.r_in_NT_disk = r_in_NT_disk
+        self.disk_model.r_out_NT_disk = r_out_NT_disk
 
     def _configure_hotspot_model(self, Ensamble_type: dict[str, str] = {"Value": "Kappa", "Unit": "[-]"},
                                        Density_profile: dict[str, str] = {"Value": "Gaussian", "Unit": "[-]"},
@@ -592,6 +595,7 @@ class Simulation_configurator:
         ET.SubElement(XML_root_node, "Sim_mode_2_param_value_number", units = str(self.sim_mode_2_param_value_number["Unit"])).text = "{}".format(self.sim_mode_2_param_value_number["Value"])
         ET.SubElement(XML_root_node, "Sim_mode_3_X_init", units = str(self.sim_mode_3_X_init["Unit"])).text = "{}".format(self.sim_mode_3_X_init["Value"])
         ET.SubElement(XML_root_node, "Sim_mode_3_Y_init", units = str(self.sim_mode_3_Y_init["Unit"])).text = "{}".format(self.sim_mode_3_Y_init["Value"])
+        ET.SubElement(XML_root_node, "Min_image_order", units = str(self.min_image_order["Unit"])).text = "{}".format(self.min_image_order["Value"])
         ET.SubElement(XML_root_node, "Max_image_order", units = str(self.max_image_order["Unit"])).text = "{}".format(self.max_image_order["Value"])
         
         # ============ Generate the metric XML section ============ #
@@ -652,8 +656,8 @@ class Simulation_configurator:
 
         # ============ Generate the accretion disk XML section ============ #
         
-        Page_Thorne_parameters = ["r_in",
-                                  "r_out"]
+        Novikov_Thorne_parameters = ["r_in",
+                                    "r_out"]
 
         Common_RIAF_parameters = ["Opening_angle",
                                   "Density_power_law_scale",
@@ -668,15 +672,15 @@ class Simulation_configurator:
         Colab_test_1_parameteres = ["Radial_scale",
                                     "Vertical_scale"]
 
-        Common_slots = [slot for slot in self.disk_model.__slots__ if slot not in Common_RIAF_parameters + Colab_test_1_parameteres + ["Radial_velocity_fraction"] + Page_Thorne_parameters + ["Disk_Model"]]
+        Common_slots = [slot for slot in self.disk_model.__slots__ if slot not in Common_RIAF_parameters + Colab_test_1_parameteres + ["Radial_velocity_fraction"] + Novikov_Thorne_parameters + ["Disk_Model"]]
 
         Disk_subelement = ET.SubElement(XML_root_node, "Accretion_Disk") 
         
         Sub_element = ET.SubElement(Disk_subelement, "Disk_Model", units = "[-]").text = "{}".format(self.disk_model.Disk_Model["Value"])
         
-        if self.disk_model.Disk_Model["Value"] == "Page-Thorne":     
-            Sub_element = ET.SubElement(Disk_subelement, "r_in", units = "[M]").text = "{}".format(self.disk_model.r_in_PT_disk["Value"])
-            Sub_element = ET.SubElement(Disk_subelement, "r_out", units = "[M]").text = "{}".format(self.disk_model.r_out_PT_disk["Value"])
+        if self.disk_model.Disk_Model["Value"] == "Novikov-Thorne":     
+            Sub_element = ET.SubElement(Disk_subelement, "r_in", units = "[M]").text = "{}".format(self.disk_model.r_in_NT_disk["Value"])
+            Sub_element = ET.SubElement(Disk_subelement, "r_out", units = "[M]").text = "{}".format(self.disk_model.r_out_NT_disk["Value"])
             Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry", units = "[-]").text = "{}".format(self.disk_model.Mag_field_geometry["Value"])
             Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry_r", units = "[M]").text = "{}".format(self.disk_model.Mag_field_geometry_r["Value"])
             Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry_theta", units = "[M]").text = "{}".format(self.disk_model.Mag_field_geometry_theta["Value"])

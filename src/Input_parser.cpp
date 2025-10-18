@@ -269,23 +269,23 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Colab_test_1")) { Disk_params->e_Disk_model = e_Colab_test_1; }
 
-    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Page-Thorne")) { Disk_params->e_Disk_model = e_Page_Thorne; }
+    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Novikov-Thorne")) { Disk_params->e_Disk_model = e_Novikov_Thorne; }
 
     else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Debug_constant_density")) { Disk_params->e_Disk_model = e_Debug_constant_density; }
 
     else { std::cout << "Unsupported disk model!" << "\n"; return ERROR; }
 
-    // ----------------- Parse the Page-Thorne parameters
+    // ----------------- Parse the Novikov-Thorne parameters
 
-    if (e_Page_Thorne == Disk_params->e_Disk_model) {
+    if (e_Novikov_Thorne == Disk_params->e_Disk_model) {
 
         temp_param_var = Accretion_disk_element->FirstChildElement("r_in");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the inner Page-Thorne radius!" << "\n"; return ERROR; }
-        Disk_params->Page_Thorne_params.r_in = std::stod(temp_param_var->GetText());
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the inner Novikov-Thorne radius!" << "\n"; return ERROR; }
+        Disk_params->Novikov_Thorne_params.r_in = std::stod(temp_param_var->GetText());
 
         temp_param_var = Accretion_disk_element->FirstChildElement("r_out");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the inner Page-Thorne radius!" << "\n"; return ERROR; }
-        Disk_params->Page_Thorne_params.r_out = std::stod(temp_param_var->GetText());
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the inner Novikov-Thorne radius!" << "\n"; return ERROR; }
+        Disk_params->Novikov_Thorne_params.r_out = std::stod(temp_param_var->GetText());
 
         temp_param_var = Accretion_disk_element->FirstChildElement("Mag_field_geometry");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field geometry enum!" << "\n"; return ERROR; }
@@ -702,6 +702,11 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     else if (0 == strcmp(static_cast<const char*>(Default_geodesic_integrator_type.c_str()), "ESDIRK54")) {
 
         Integrator_params->e_Default_geodesic_integrator = ESDIRK54;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Default_geodesic_integrator_type.c_str()), "RK54")) {
+
+        Integrator_params->e_Default_geodesic_integrator = RK54;
 
     }
     else {
@@ -1311,6 +1316,10 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     temp_param_var = Root_node->FirstChildElement("Sim_mode_3_Y_init");
     if (temp_param_var == nullptr) { std::cout << "Failed to find sim mode 3 Y init!" << "\n"; return ERROR; }
     p_Initial_conditions->Sim_mode_3_Y_init = std::stod(temp_param_var->GetText());
+
+    temp_param_var = Root_node->FirstChildElement("Min_image_order");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find min image order!" << "\n"; return ERROR; }
+    p_Initial_conditions->Min_order = std::stoi(temp_param_var->GetText());
 
     temp_param_var = Root_node->FirstChildElement("Max_image_order");
     if (temp_param_var == nullptr) { std::cout << "Failed to find max image order!" << "\n"; return ERROR; }

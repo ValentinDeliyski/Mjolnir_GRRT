@@ -84,10 +84,8 @@ Metric_type Kerr_class::get_metric(const double* const State_Vector) const {
     s_Metric.Metric[e_theta][e_theta] = rho2;
     s_Metric.Metric[e_phi][e_phi]     = (r2 + a * a + 2 * M * r * a * a / rho2 * sin_theta * sin_theta) * sin_theta * sin_theta;
 
-    double sigma2 = (r2 + a * a) * (r2 + a * a) - a * a * delta * sin_theta * sin_theta;
-
     s_Metric.Lapse_function = sqrt(-s_Metric.Metric[e_t][e_t] + s_Metric.Metric[e_t][e_phi] * s_Metric.Metric[e_t][e_phi] / s_Metric.Metric[e_phi][e_phi]);
-    s_Metric.Shift_function = 2 * a * r / sigma2;
+    s_Metric.Shift_function = -s_Metric.Metric[e_t][e_phi] / s_Metric.Metric[e_phi][e_phi];
 
     return s_Metric;
 

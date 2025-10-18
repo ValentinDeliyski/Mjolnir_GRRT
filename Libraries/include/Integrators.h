@@ -38,6 +38,29 @@ class Integrator_class {
 
 private:
 
+    /* ====================================================== The adaptive DP RK5(4) Butcher table ====================================================== */
+
+    const double RK54_Coeff_deriv[RK78_size][RK78_size - 1] =
+    {
+        {       0,               0,              0,             0,            0,           0   , 0., 0., 0., 0., 0., 0.},
+        {    1. / 5,             0,              0,             0,            0,           0   , 0., 0., 0., 0., 0., 0.},
+        {    3. / 40,         9. / 40,           0,             0,            0,           0   , 0., 0., 0., 0., 0., 0.},
+        {   44. / 45,       -56. / 15,       32. / 9,           0,            0,           0   , 0., 0., 0., 0., 0., 0.},
+        {19372. / 6561,  -25360. / 2187,  64448. / 6561,  -212. / 729,        0,           0   , 0., 0., 0., 0., 0., 0.},
+        { 9017. / 3168,    -355. / 33,    46732. / 5247,    49. / 176, -5103. / 18656,     0   , 0., 0., 0., 0., 0., 0.},
+        {   35. / 384,           0,         500. / 1113,   125. / 192, -2187. / 6784,  11. / 84, 0., 0., 0., 0., 0., 0.},
+        {       0.,              0,              0.,            0.,           0.,          0.,   0., 0., 0., 0., 0., 0.},
+        {       0.,              0,              0.,            0.,           0.,          0.,   0., 0., 0., 0., 0., 0.},
+        {       0.,              0,              0.,            0.,           0.,          0.,   0., 0., 0., 0., 0., 0.},
+        {       0.,              0,              0.,            0.,           0.,          0.,   0., 0., 0., 0., 0., 0.},
+        {       0.,              0,              0.,            0.,           0.,          0.,   0., 0., 0., 0., 0., 0.},
+        {       0.,              0,              0.,            0.,           0.,          0.,   0., 0., 0., 0., 0., 0.}
+    };
+
+    const double RK54_Coeff_sol_main[RK78_size] = { 35. / 384, 0, 500. / 1113, 125. / 192, -2187. / 6784, 11. / 84, 0., 0., 0.,0., 0., 0., 0. };
+
+    const double RK54_Coeff_test_embeded[RK78_size] = { 5179. / 57600, 0, 7571. / 16695, 393. / 640, -92097. / 339200, 187. / 2100, 1. / 40, 0., 0., 0., 0., 0., 0. };
+
     /* ====================================================== The adaptive RK-Fehlberg 7(8) Butcher table ====================================================== */
 
     // The coefficients are from https://ntrs.nasa.gov/api/citations/19680027281/downloads/19680027281.pdf, table X
@@ -116,6 +139,7 @@ private:
     /* --------------------------------------------------------- */
 
     double Intermediate_RHS_log[RK78_size * e_Dynamic_state_size]{};
+    double Current_Dynamic_state[e_Dynamic_state_size];
 
     Geodesic_Integrator_enums e_Active_integrator;
     Initial_conditions_type* p_Init_conditions;
@@ -133,7 +157,7 @@ private:
 
     bool Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded);
 
-    void Run_RK78(Geodesic_Integrator_enums e_Active_integrator);
+    void Run_Explicit_Runge_Kutta(Geodesic_Integrator_enums e_Active_integrator);
 
     void Run_ESDIRK54();
 

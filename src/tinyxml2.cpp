@@ -824,7 +824,7 @@ XMLNode::~XMLNode()
     }
 }
 
-// ChildElementCount was originally suggested by msteiger on the sourceforge page for TinyXML and modified by KB1SPH for TinyXML-2.
+// ChildElementCount was originally suggested by msteiger on the sourceforge Novikov for TinyXML and modified by KB1SPH for TinyXML-2.
 
 int XMLNode::ChildElementCount(const char *value) const {
 	int count = 0;

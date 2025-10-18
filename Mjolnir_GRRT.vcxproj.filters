@@ -64,7 +64,7 @@
     <ClCompile Include="src\Disk_Models.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Page_Thorne_disk_model.cpp">
+    <ClCompile Include="src\Novikov_Thorne_disk_model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Input_parser.cpp">
@@ -141,7 +141,7 @@
     <ClInclude Include="Libraries\include\Disk_Models.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\Page_Thorne_model.h">
+    <ClInclude Include="Libraries\include\Novikov_Thorne_model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\Model_Structs.h">

@@ -453,8 +453,8 @@ extern "C" {
 #define GLFW_KEY_LEFT               263
 #define GLFW_KEY_DOWN               264
 #define GLFW_KEY_UP                 265
-#define GLFW_KEY_PAGE_UP            266
-#define GLFW_KEY_PAGE_DOWN          267
+#define GLFW_KEY_Novikov_UP            266
+#define GLFW_KEY_Novikov_DOWN          267
 #define GLFW_KEY_HOME               268
 #define GLFW_KEY_END                269
 #define GLFW_KEY_CAPS_LOCK          280

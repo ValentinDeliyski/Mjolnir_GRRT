@@ -36,13 +36,14 @@ class Simulation_Parser():
                 Y_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[2])
                 
                 Array_size = X_resolution * Y_resolution    
-
+            
                 self.X_coords: NDArray[float64] = zeros(Array_size)
                 self.Y_coords: NDArray[float64] = zeros(Array_size)
                 self.I_Intensity: NDArray[float64] = zeros(Array_size)
                 self.Q_Intensity: NDArray[float64] = zeros(Array_size)
                 self.U_Intensity: NDArray[float64] = zeros(Array_size)
                 self.V_Intensity: NDArray[float64] = zeros(Array_size)
+                self.Final_t_coord: NDArray[float64] = zeros(Array_size)
                 self.Disk_redshift: NDArray[float64] = zeros(Array_size)
                 self.Disk_flux: NDArray[float64] = zeros(Array_size)
                 self.Celestial_theta: NDArray[float64] = zeros(Array_size)
@@ -58,7 +59,7 @@ class Simulation_Parser():
                         self.X_coords[index] = float(row["Image X Coord [M]"])
                         self.Y_coords[index] = float(row["Image Y Coord [M]"])
 
-                        if ("Page-Thorne" == self.Simulation_metadata["Active disk model"]):
+                        if ("Novikov-Thorne" == self.Simulation_metadata["Active disk model"]):
                             
                             self.Disk_redshift[index]  = float(row["Disk Redshift [-]"])
                             self.Disk_flux[index]  = float(row["Disk Flux [M_dot/M^2]"])
@@ -69,6 +70,8 @@ class Simulation_Parser():
                             self.Q_Intensity[index]  = float(row["Synchotron Intensity Q [Jy/sRad]"])
                             self.U_Intensity[index]  = float(row["Synchotron Intensity U [Jy/sRad]"])
                             self.V_Intensity[index]  = float(row["Synchotron Intensity V [Jy/sRad]"])       
+                            
+                            self.Final_t_coord[index] = float(row["Final t Coordinate [M]"])  
                             
                             self.Celestial_theta[index] = float(row["Celestial Sphere Crossing Theta [Rad]"])       
                             self.Celestial_phi[index]  = float(row["Celestial Sphere Crossing Phi [Rad]"])

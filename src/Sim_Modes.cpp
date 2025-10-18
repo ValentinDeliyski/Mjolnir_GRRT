@@ -62,7 +62,7 @@ void static Rendering_function(std::stop_token stop_token, Rendering_engine* Ren
 
 void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray_results, Rendering_engine* const Renderer) {
 
-    if (e_Page_Thorne == Disk_model) {
+    if (e_Novikov_Thorne == Disk_model) {
 
         Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = float(p_Ray_results->Flux_PT * pow(p_Ray_results->Redshift_PT, 4));
 
@@ -80,10 +80,14 @@ void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray
 void static Zero_results_struct(Results_type* const p_Ray_results) {
 
     memset(p_Ray_results, 0, e_Stokes_param_num * sizeof(double));
-    memset(p_Ray_results->Source_Coords, 0, 4 * sizeof(double));
-    memset(p_Ray_results->Photon_Momentum, 0, 4 * sizeof(double));
+
+    memset(p_Ray_results->Final_State_Vector, 0, e_Full_state_size * sizeof(double));
+    memset(p_Ray_results->Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));
+
     memset(&p_Ray_results->Flux_PT, 0, sizeof(double));
     memset(&p_Ray_results->Redshift_PT, 0, sizeof(double));
+
+    memset(&p_Ray_results->Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));
 
     p_Ray_results->Ray_log_struct.Log_length = 0;
     p_Ray_results->Ray_log_struct.Log_offset = 0;
@@ -91,9 +95,6 @@ void static Zero_results_struct(Results_type* const p_Ray_results) {
     memset(&p_Ray_results->Image_Coords, 0, 2 * sizeof(double));
 
     memset(&p_Ray_results->Celestial_sphere_crossing_coords, 0, 4 * sizeof(double));
-
-    memset(&p_Ray_results->Photon_Momentum, 0, 4 * sizeof(double));
-    memset(&p_Ray_results->Source_Coords, 0, 4 * sizeof(double));
 
 }
 

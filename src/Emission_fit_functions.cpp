@@ -278,7 +278,7 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
 
     // ----------------------------------------------------------------------------------- //
 
-    double Q_coeff{}; // This is f(X_K) from the reference
+    double Q_coeff{}; // This is f(X_k) from the reference
     double V_coeff{}; // This is g(X_k) from the reference
 
     if (fabs(p_Transfer_args->kappa - 3.5) < 0.01) {

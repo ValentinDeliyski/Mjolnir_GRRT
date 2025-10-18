@@ -21,91 +21,28 @@ void get_derivative_of_inverse_metric(const double inv_Metric[4][4], const doubl
 
 }
 
-void get_second_derivative_of_inverse_metric(const double inv_Metric[4][4],
-                                             const double deriv_inv_Metric[4][4],
-                                             const double deriv_Metric[4][4], 
-                                             const double second_deriv_Metric[4][4], 
-                                             double second_deriv_inv_Metric[4][4]) {
-
-    memset(second_deriv_inv_Metric, 0, sizeof(double) * 16);
-
-    double temp_matrix[4][4]{}, term_1[4][4]{}, term_2[4][4]{}, term_3[4][4]{};
-
-    matrix_matrix_multiply(deriv_Metric, inv_Metric, temp_matrix);
-    matrix_matrix_multiply(deriv_inv_Metric, temp_matrix, term_1);
-
-    matrix_matrix_multiply(second_deriv_Metric, inv_Metric, temp_matrix);
-    matrix_matrix_multiply(inv_Metric, temp_matrix, term_2);
-
-    matrix_matrix_multiply(deriv_Metric, deriv_inv_Metric, temp_matrix);
-    matrix_matrix_multiply(inv_Metric, temp_matrix, term_3);
-
-    for (int left_idx = 0; left_idx < 4; left_idx++) {
-
-        for (int right_idx = 0; right_idx < 4; right_idx++) {
-
-            second_deriv_inv_Metric[left_idx][right_idx] = -term_1[left_idx][right_idx] - term_2[left_idx][right_idx] - term_3[left_idx][right_idx];
-
-        }
-
-    }
-
-}
-
-void get_second_mixed_derivative_of_inverse_metric(const double inv_Metric[4][4],
-                                                   const double dtheta_inv_Metric[4][4],
-                                                   const double dr_Metric[4][4],
-                                                   const double dtheta_Metric[4][4],
-                                                   const double second_deriv_Metric[4][4], 
-                                                   double second_deriv_inv_Metric[4][4]) {
-
-    memset(second_deriv_inv_Metric, 0, sizeof(double) * 16);
-
-    double temp_matrix[4][4]{}, term_1[4][4]{}, term_2[4][4]{}, term_3[4][4]{};
-
-    matrix_matrix_multiply(dr_Metric, inv_Metric, temp_matrix);
-    matrix_matrix_multiply(dtheta_inv_Metric, temp_matrix, term_1);
-
-    matrix_matrix_multiply(second_deriv_Metric, inv_Metric, temp_matrix);
-    matrix_matrix_multiply(inv_Metric, temp_matrix, term_2);
-
-    matrix_matrix_multiply(dr_Metric, dtheta_inv_Metric, temp_matrix);
-    matrix_matrix_multiply(inv_Metric, temp_matrix, term_3);
-
-    for (int left_idx = 0; left_idx < 4; left_idx++) {
-
-        for (int right_idx = 0; right_idx < 4; right_idx++) {
-
-            second_deriv_inv_Metric[left_idx][right_idx] = -term_1[left_idx][right_idx] - term_2[left_idx][right_idx] - term_3[left_idx][right_idx];
-
-        }
-
-    }
-
-}
-
 void invert_metric(double Inv_metric[4][4], const double Metric[4][4]) {
 
-    double g2 = Metric[0][3] * Metric[0][3] - Metric[3][3] * Metric[0][0];
+    double g2 = Metric[e_t][e_phi] * Metric[e_t][e_phi] - Metric[e_phi][e_phi] * Metric[e_t][e_t];
 
-    Inv_metric[0][0] = -Metric[3][3] / g2;
-    Inv_metric[0][3] = Metric[0][3] / g2;
-    Inv_metric[3][0] = Inv_metric[0][3];
-    Inv_metric[1][1] = 1. / Metric[1][1];
-    Inv_metric[2][2] = 1. / Metric[2][2];
-    Inv_metric[3][3] = -Metric[0][0] / g2;
+    Inv_metric[e_t][e_t] = -Metric[e_phi][e_phi] / g2;
+    Inv_metric[e_t][e_phi] = Metric[0][e_phi] / g2;
+    Inv_metric[e_phi][e_t] = Inv_metric[0][e_phi];
+    Inv_metric[e_r][e_r] = 1. / Metric[e_r][e_r];
+    Inv_metric[e_theta][e_theta] = 1. / Metric[e_theta][e_theta];
+    Inv_metric[e_phi][e_phi] = -Metric[e_t][e_t] / g2;
 
 }
 
 double get_metric_det(const double Metric[4][4]) {
 
-    return Metric[0][0] * Metric[1][1] * Metric[2][2] * Metric[3][3] * (1 - Metric[0][3] * Metric[0][3] / (Metric[0][0] * Metric[3][3]));
+    return Metric[e_t][e_t] * Metric[e_r][e_r] * Metric[e_theta][e_theta] * Metric[e_phi][e_phi] * (1 - Metric[e_t][e_phi] * Metric[e_t][e_phi] / (Metric[e_t][e_t] * Metric[e_phi][e_phi]));
 
 }
 
-double get_eq_induced_metric_det(const double metric[4][4]) {
+double get_eq_induced_metric_det(const double Metric[4][4]) {
 
-    return metric[0][0] * metric[1][1] * metric[3][3] * (1 - metric[0][3] * metric[0][3] / (metric[0][0] * metric[3][3]));
+    return Metric[e_t][e_t] * Metric[e_r][e_r] * Metric[e_phi][e_phi] * (1 - Metric[e_t][e_phi] * Metric[e_t][e_phi] / (Metric[e_t][e_t] * Metric[e_phi][e_phi]));
 
 }
 
@@ -148,11 +85,8 @@ double get_complex_4vec_norm(const std::complex<double>* const Vector, const dou
 
     default:
 
-        std::cout << "Unsupported Tensor type - something broke in the get_4vec_norm function!" << "\n";
+        throw std::runtime_error("Unsupported Tensor type - something broke in the get_4vec_norm function!");
 
-        exit(ERROR);
-
-        break;
     }
 
     return std::sqrt(std::abs(vec_norm_squrated));
@@ -173,20 +107,21 @@ void Normalize_complex_vector(std::complex<double>* const Vector, const double M
 
 }
 
-void Contravariant_coord_to_ZAMO(const double Metric[4][4], const double* const Contravariant_Vector, double* const ZAMO_Vector) {
+void Contravariant_coord_to_ZAMO(const Metric_type* const p_Metric, const double* const Contravariant_Vector, double* const ZAMO_Vector) {
 
-    // TODO: Make this more obvious
+    ZAMO_Vector[e_t] = p_Metric->Lapse_function * Contravariant_Vector[e_t];
+    ZAMO_Vector[e_r] = sqrt(p_Metric->Metric[e_r][e_r])  * Contravariant_Vector[e_r];
+    ZAMO_Vector[e_theta] = sqrt(p_Metric->Metric[e_theta][e_theta]) * Contravariant_Vector[e_theta];
+    ZAMO_Vector[e_phi] = sqrt(p_Metric->Metric[e_phi][e_phi]) * (Contravariant_Vector[e_phi] - p_Metric->Shift_function * Contravariant_Vector[e_t]);
 
-    double alpha = sqrt(-Metric[0][0] + Metric[0][3] * Metric[0][3] / Metric[3][3]);
-    double beta = Metric[0][3] / Metric[3][3];
+}
 
-    double p_t = Metric[0][0] * Contravariant_Vector[0] + Metric[0][3] * Contravariant_Vector[3];
-    double p_phi = Metric[3][3] * Contravariant_Vector[3] + Metric[0][3] * Contravariant_Vector[0];
+void ZAMO_to_Contravariant_coord(const Metric_type* const p_Metric, const double* const ZAMO_Vector, double* const Contravariant_Vector) {
 
-    ZAMO_Vector[0] = -(1 / alpha * p_t - beta / alpha * p_phi);
-    ZAMO_Vector[1] = sqrt(Metric[1][1]) * Contravariant_Vector[1];
-    ZAMO_Vector[2] = sqrt(Metric[2][2]) * Contravariant_Vector[2];
-    ZAMO_Vector[3] = 1 / sqrt(Metric[3][3]) * p_phi;
+    Contravariant_Vector[e_t] = ZAMO_Vector[e_t] / p_Metric->Lapse_function;
+    Contravariant_Vector[e_r] = ZAMO_Vector[e_r] / sqrt(p_Metric->Metric[e_r][e_r]);
+    Contravariant_Vector[e_theta] = ZAMO_Vector[e_theta] / sqrt(p_Metric->Metric[e_theta][e_theta]);
+    Contravariant_Vector[e_phi] = p_Metric->Shift_function / p_Metric->Lapse_function * ZAMO_Vector[e_t] + ZAMO_Vector[e_phi] / sqrt(p_Metric->Metric[e_phi][e_phi]);
 
 }
 
@@ -214,17 +149,17 @@ void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Cond
 
     double(*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
 
-    g2 = pow(metric[0][3], 2) - metric[0][0] * metric[3][3];
-    ksi = sqrt(metric[3][3] / g2);
-    gamma = -metric[0][3] / metric[3][3] * ksi;
+    g2 = pow(metric[e_t][e_phi], 2) - metric[e_t][e_t] * metric[e_phi][e_phi];
+    ksi = sqrt(metric[e_phi][e_phi] / g2);
+    gamma = -metric[e_t][e_phi] / metric[e_phi][e_phi] * ksi;
 
     L_z = sqrt(metric[3][3]) * sin(H_angle + 2 * M_PI) * cos(V_angle);
     E = (1 + gamma * L_z) / ksi;
 
     p_Initial_Conditions->Init_Momentum[e_t]     = -1;
     p_Initial_Conditions->Init_Momentum[e_phi]   = L_z / E;
-    p_Initial_Conditions->Init_Momentum[e_theta] = sqrt(metric[2][2]) * sin(V_angle) / E;
-    p_Initial_Conditions->Init_Momentum[e_r]     = sqrt(metric[1][1]) * cos(H_angle + 2 * M_PI) * cos(V_angle) / E;
+    p_Initial_Conditions->Init_Momentum[e_theta] = sqrt(metric[e_theta][e_theta]) * sin(V_angle) / E;
+    p_Initial_Conditions->Init_Momentum[e_r]     = sqrt(metric[e_r][e_r]) * cos(H_angle + 2 * M_PI) * cos(V_angle) / E;
 
 }
 
@@ -232,9 +167,9 @@ void get_image_coordinates(Initial_conditions_type* p_Initial_Conditions, double
 
     double(*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
 
-    double g2    = pow(metric[0][3], 2) - metric[0][0] * metric[3][3];
-    double ksi   = sqrt(metric[3][3] / g2);
-    double gamma = -metric[0][3] / metric[3][3] * ksi;
+    double g2 = pow(metric[e_t][e_phi], 2) - metric[e_t][e_t] * metric[e_phi][e_phi];
+    double ksi = sqrt(metric[e_phi][e_phi] / g2);
+    double gamma = -metric[e_t][e_phi] / metric[e_phi][e_phi] * ksi;
 
     double& r_0  = p_Initial_Conditions->Observer_params.distance;
     double& J    = p_Initial_Conditions->Init_Momentum[e_phi];
@@ -252,40 +187,48 @@ double get_redshift(const double* const State_Vector, const double* const U_sour
 
 }
 
-void get_Lorentz_boost_matrix(double Boost_matrix[4][4], const double* const U_source) {
+void get_Lorentz_boost_matrix(double Boost_matrix[4][4], const double* const U_source_ZAMO, bool Inverse_boost) {
 
-    double V_r     = U_source[1] / U_source[0];
-    double V_theta = U_source[2] / U_source[0];
-    double V_phi   = U_source[3] / U_source[0];
+    double V_r     = U_source_ZAMO[e_r] / U_source_ZAMO[e_t];
+    double V_theta = U_source_ZAMO[e_theta] / U_source_ZAMO[e_t];
+    double V_phi   = U_source_ZAMO[e_phi] / U_source_ZAMO[e_t];
+
+    if (Inverse_boost) {
+
+        V_r *= -1;
+        V_theta *= -1;
+        V_phi *= -1;
+
+    }
 
     double V_squared = V_r * V_r + V_theta * V_theta + V_phi * V_phi;
 
     double gamma = 1.0 / sqrt(1 - V_squared);
 
-    Boost_matrix[0][0] = gamma;
-    Boost_matrix[0][1] = gamma * V_r;
-    Boost_matrix[0][2] = gamma * V_theta;
-    Boost_matrix[0][3] = gamma * V_phi;
+    Boost_matrix[e_t][e_t]     =  gamma;
+    Boost_matrix[e_t][e_r]     = -gamma * V_r;
+    Boost_matrix[e_t][e_theta] = -gamma * V_theta;
+    Boost_matrix[e_t][e_phi]   = -gamma * V_phi;
 
-    for (int index = 1; index <= 3; index += 1) {
+    for (int index = e_r; index <= e_phi; index += 1) {
 
-        Boost_matrix[index][0] = Boost_matrix[0][index];
+        Boost_matrix[index][e_t] = Boost_matrix[e_t][index];
 
     }
 
-    Boost_matrix[1][1] = 1 + (gamma - 1) * V_r * V_r / V_squared;
-    Boost_matrix[1][2] = (gamma - 1) * V_r * V_theta / V_squared;
-    Boost_matrix[1][3] = (gamma - 1) * V_r * V_phi / V_squared;
+    Boost_matrix[e_r][e_r]     = 1 + (gamma - 1) * V_r * V_r / V_squared;
+    Boost_matrix[e_r][e_theta] = (gamma - 1) * V_r * V_theta / V_squared;
+    Boost_matrix[e_r][e_phi]   = (gamma - 1) * V_r * V_phi / V_squared;
 
-    Boost_matrix[2][1] = Boost_matrix[1][2];
-    Boost_matrix[3][1] = Boost_matrix[1][3];
+    Boost_matrix[e_theta][e_r] = Boost_matrix[e_r][e_theta];
+    Boost_matrix[e_phi][e_r]   = Boost_matrix[e_r][e_phi];
 
-    Boost_matrix[2][2] = 1 + (gamma - 1) * V_theta * V_theta / V_squared;
-    Boost_matrix[2][3] = (gamma - 1) * V_theta * V_phi / V_squared;
+    Boost_matrix[e_theta][e_theta] = 1 + (gamma - 1) * V_theta * V_theta / V_squared;
+    Boost_matrix[e_theta][e_phi]   = (gamma - 1) * V_theta * V_phi / V_squared;
 
-    Boost_matrix[3][2] = Boost_matrix[2][3];
+    Boost_matrix[e_phi][e_theta] = Boost_matrix[e_theta][e_phi];
 
-    Boost_matrix[3][3] = 1 + (gamma - 1) * V_phi * V_phi / V_squared;
+    Boost_matrix[e_phi][e_phi] = 1 + (gamma - 1) * V_phi * V_phi / V_squared;
 
 }
 
@@ -307,12 +250,6 @@ int compute_image_order(const int N_theta_turning_points, Initial_conditions_typ
     else {
 
         order -= bool(p_Initial_Conditions->Init_Momentum[e_theta] > 0);
-
-    }
-
-    if (order > 3) {
-
-        order = 3;
 
     }
 

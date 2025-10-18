@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "Emission_Models.h"
-#include "Page_Thorne_model.h"
+#include "Novikov_Thorne_model.h"
 #include "General_GR_functions.h"
 #include "Lensing.h"
 
@@ -84,6 +84,7 @@ int main(int argument_count, char** cmd_line_args) {
 
         std::string Input_file_path{};
         bool print_to_console{};
+
         if (argument_count == 5 && 0 == strcmp(cmd_line_args[1], "-in") && 0 == strcmp(cmd_line_args[3], "-print_to_console")) {
 
             Input_file_path = cmd_line_args[2];
@@ -91,9 +92,6 @@ int main(int argument_count, char** cmd_line_args) {
 
         }
         else {
-
-            std::cout << "To run Mjolnir, use the following call structure:" << "\n";
-            std::cout << "Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__ -print_to_console __1 FOR YES 0 FOR NO__" << "\n";
 
             throw std::runtime_error("To run Mjolnir, use the following call structure:\n Mjolnir_GRRT.exe -in __INPUT_FILE_PATH__ -print_to_console __1 FOR YES 0 FOR NO__ \n");
 
@@ -133,8 +131,8 @@ int main(int argument_count, char** cmd_line_args) {
         s_Sim_Context.p_Emission_Model = new Emission_models_class(&s_Sim_Context);
         s_Sim_Context.p_Emission_Model->precompute_electron_pitch_angles(s_Sim_Context.p_Init_Conditions);
 
-        // Allocate the Page-Thorne Model class
-        s_Sim_Context.p_PT_model = new Page_Thorne_Model_class(&s_Sim_Context);
+        // Allocate the Novikov-Thorne Model class
+        s_Sim_Context.p_NT_model = new Novikov_Thorne_Model_class(&s_Sim_Context);
 
         // Populate the File Manager class instance
         s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions);
@@ -185,7 +183,7 @@ int main(int argument_count, char** cmd_line_args) {
     }
     catch (const std::exception& error) {
 
-        std::cerr << error.what() << std::endl;
+        std::cout << std::endl << "Mjolnir ERROR: " << error.what() << std::endl << std::endl;
         return ERROR;
 
     }

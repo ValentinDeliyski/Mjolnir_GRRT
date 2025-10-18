@@ -728,7 +728,7 @@ public:
         return 0;
     }
 
-    // ChildElementCount was originally suggested by msteiger on the sourceforge page for TinyXML and modified by KB1SPH for TinyXML-2.
+    // ChildElementCount was originally suggested by msteiger on the sourceforge Novikov for TinyXML and modified by KB1SPH for TinyXML-2.
 
     int ChildElementCount(const char *value) const;
 

@@ -219,7 +219,9 @@ void Wormhole_class::get_EOM(const double* const State_Vector, double* const Der
     double sin1 = sin(State_Vector[e_theta]);
     double sin2 = sin1 * sin1;
 
-    Derivatives[e_t] = 1.0 / N / N * State_Vector[e_p_r];
+    /* TODO: Fix dt / dlamda */
+
+    Derivatives[e_t] = -1.0 / N / N * State_Vector[e_p_t];
     Derivatives[e_r] = 1.0 / (1 + this->R_Throat / sqrt_r2) * State_Vector[e_p_r];
     Derivatives[e_theta] = 1.0 / (sqrt_r2 * sqrt_r2) * State_Vector[e_p_theta];
     Derivatives[e_phi] = J / (sqrt_r2 * sqrt_r2 * sin2) + omega * (1 - omega * J) / N2;
@@ -237,7 +239,7 @@ void Wormhole_class::get_EOM(const double* const State_Vector, double* const Der
 
 bool Wormhole_class::terminate_integration(const double* const State_vector) {
 
-    const double Scatter_radius_global_coords = sqrt(this->Scattering_radius * this->Scattering_radius + this->R_Throat * this->R_Throat);
+    const double Scatter_radius_global_coords = sqrt(this->Scattering_radius * this->Scattering_radius - this->R_Throat * this->R_Throat);
 
     const bool scatter            = State_vector[e_r] > Scatter_radius_global_coords && State_vector[e_p_r] < 0;
     const bool scatter_other_side = State_vector[e_r] < -Scatter_radius_global_coords;

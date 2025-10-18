@@ -14,6 +14,7 @@ Real Nyström_Deriv_coeffs[Nyström_size][Nyström_size] = { {   0.,      0.,      
 
 Real Nyström_Coeff_sol[Nyström_size] = { 23. / 192 , 0., 125. / 192, 0., -27. / 64, 125. / 192 };
 
+const int RK54_size = 7;
 const int RK78_size	= 13;
 const int ESDIRK54_size = 7;
 

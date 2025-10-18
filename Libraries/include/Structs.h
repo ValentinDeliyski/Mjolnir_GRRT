@@ -8,7 +8,7 @@
 
 class Spacetime_Base_Class;
 class Emission_models_class;
-class Page_Thorne_Model_class;
+class Novikov_Thorne_Model_class;
 class Observer_class;
 class File_manager_class;
 class Integrator_class;
@@ -112,7 +112,7 @@ struct Disk_model_parameters_type {
 
     Colab_test_1_params_type Colab_test_1_params{};
 
-    Page_Thorne_params_type Page_Thorne_params{};
+    Novikov_Thorne_params_type Novikov_Thorne_params{};
 
 };
 
@@ -629,7 +629,7 @@ struct Integrator_parameters_type {
     /*! @brief A additive factor <<1 that ensures no "division by 0" problems occur when calculating the new stepsizes. */
     double Safety_2{};
 
-    /*! @brief The error theshold parameter for the Simpson integral solving method. Currently this is only used in the Page-Thorne flux integral. */
+    /*! @brief The error theshold parameter for the Simpson integral solving method. Currently this is only used in the Novikov-Thorne flux integral. */
     double Simpson_accuracy{};
 
     /*! @brief The maximum allowed (accepted) integration steps. */
@@ -836,8 +836,8 @@ struct Simulation_Context_type {
     /*! @brief Pointer to the class that holds all the emission medium related functions. */
     Emission_models_class* p_Emission_Model{};
 
-    /*! @brief Pointer to the class that holds all the Page-Thorne related functions. */
-    Page_Thorne_Model_class* p_PT_model{};
+    /*! @brief Pointer to the class that holds all the Novikov-Thorne related functions. */
+    Novikov_Thorne_Model_class* p_NT_model{};
 
     /*! @brief Pointer to the class that holds all the file manager related functions. */
     File_manager_class* File_manager{};
@@ -885,28 +885,31 @@ struct Results_type {
     /*! @brief Array that holds the integrated intensity for each polarization component. */
     double Intensity[e_Stokes_param_num]{};
 
-    /*! @brief Array that holds the source coordinates from the Page-Thorne disk.
-       This exists for use in simulation mode 2. */
-    double Source_Coords[4]{};
+    /*! @brief Array that holds the photon state vector when the integration is terminated. */
+    double Final_State_Vector[e_Full_state_size]{};
 
-    /*! @brief Array that holds the photon momentum at the source from the Page-Thorne disk.
+    /*! @brief Array that holds the state vector at the emission point of the Novikov-Thorne disk.
        This exists for use in simulation mode 2. */
-    double Photon_Momentum[4]{};
+    double Thin_Disk_State_Vector[e_Dynamic_state_size]{};
 
     /*! @brief Array that holds the phi and theta coordinates of the ray when it reaches the scattering radius. */
     double Celestial_sphere_crossing_coords[4]{};
 
-    /*! @brief Array that holds the Page-Thorne disk flux. */
+    /*! @brief Boolean that keeps track weather the Novikov-Thorne disk was found by the ray (going from the observer backwards).
+        This exists so the disk image orders overlap correctly in the final image. */
+    bool PT_Disk_found;
+
+    /*! @brief Array that holds the Novikov-Thorne disk flux. */
     double Flux_PT{};
 
-    /*! @brief Array that holds the Page-Thorne disk redshift. */
+    /*! @brief Array that holds the Novikov-Thorne disk redshift. */
     double Redshift_PT{};
 
     /*! @brief Placeholder for an array that will hold the integrated optical depth. */
     double Optical_Depth{};
 
     /*! @brief Array that holds the coordinates of the image on the observer plane.
-       NOTE: These get affected by the cam_rotation_angle parameter of the observer. */
+        NOTE: These get affected by the cam_rotation_angle parameter of the observer. */
     double Image_Coords[2]{};
 
 };

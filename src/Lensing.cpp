@@ -4,7 +4,7 @@
 #include "Constants.h"
 #include "Spacetimes.h"
 
-#include "Page_Thorne_model.h"
+#include "Novikov_Thorne_model.h"
 #include "Emission_Models.h"
 #include "Disk_Models.h"
 
@@ -49,7 +49,7 @@ void static log_ray_emission(double Stokes_Vector[e_Stokes_param_num], double Op
 }
 
 bool static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_Context,
-                                     Results_type* const s_Ray_results,
+                                     Results_type* const p_Ray_results,
                                      const double* const State_vector,
                                      const double* const Old_state, 
                                      const int N_theta_turning_points) {
@@ -69,21 +69,19 @@ bool static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
 
         }
 
-        double& r_in = p_Sim_Context->p_Init_Conditions->Disk_params.Page_Thorne_params.r_in;
-        double& r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Page_Thorne_params.r_out;
+        double& r_in = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_in;
+        double& r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_out;
 
-        if (Crossing_State[e_r] < r_out && Crossing_State[e_r] > r_in){
+        if (Crossing_State[e_r] < r_out && Crossing_State[e_r] > r_in && !p_Ray_results->PT_Disk_found){
 
-            s_Ray_results->Redshift_PT = p_Sim_Context->p_PT_model->Redshift(Crossing_State, p_Sim_Context->p_Observer);
-            s_Ray_results->Flux_PT     = p_Sim_Context->p_PT_model->get_flux(Crossing_State);
+            p_Ray_results->Redshift_PT = get_redshift(Crossing_State, p_Sim_Context->p_NT_model->get_disk_velocity_vector(Crossing_State), p_Sim_Context->p_Observer);
+            p_Ray_results->Flux_PT     = p_Sim_Context->p_NT_model->get_flux(Crossing_State);
+
+            p_Ray_results->PT_Disk_found = true;
 
         }
 
-        s_Ray_results->Source_Coords[e_r]   = Crossing_State[e_r];
-        s_Ray_results->Source_Coords[e_phi] = Crossing_State[e_phi];
-
-        s_Ray_results->Photon_Momentum[e_r]     = Crossing_State[e_p_r];
-        s_Ray_results->Photon_Momentum[e_theta] = Crossing_State[e_p_theta];
+        memcpy(p_Ray_results->Thin_Disk_State_Vector, Crossing_State, e_Dynamic_state_size * sizeof(double));
 
         return true;
     }
@@ -769,6 +767,8 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     Integrator_class Geodesic_Integrator(p_Sim_Context, p_Ray_results);
 
+    p_Ray_results->PT_Disk_found = false;
+
     while (!Geodesic_Integrator.integration_complete) {
 
         Geodesic_Integrator.Propagate_ray();
@@ -781,7 +781,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
             /* ======================================== Evaluate the thin disk models ======================================== */
 
-            if (e_Page_Thorne == p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model && 
+            if (e_Novikov_Thorne == p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model && 
                 Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && 
                 Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
 
@@ -796,8 +796,6 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     }
 
     p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset;
-    p_Ray_results->Photon_Momentum[e_phi] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_phi];
-    p_Ray_results->Photon_Momentum[e_t]   = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
     p_Ray_results->Metric_parameters      = p_Sim_Context->p_Init_Conditions->Metric_parameters;
 
     interpolate_celestial_sphere_crossing(Geodesic_Integrator.get_current_State_Vector(),
@@ -805,9 +803,11 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
                                           p_Sim_Context->p_Init_Conditions->Metric_parameters.Scattering_radius, 
                                           p_Ray_results->Celestial_sphere_crossing_coords);
 
+    memcpy(p_Ray_results->Final_State_Vector, Geodesic_Integrator.get_current_State_Vector(), e_Full_state_size * sizeof(double));
+
     /* =========== Integrate the radiative transfer equations forward along the ray for the RIAF models =========== */
 
-    if (e_Page_Thorne != p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model) {
+    if (e_Novikov_Thorne != p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model) {
 
         Propagate_forward_emission(p_Sim_Context, p_Ray_results, N_theta_turning_points);
 
