@@ -897,13 +897,16 @@ struct Results_type {
 
     /*! @brief Boolean that keeps track weather the Novikov-Thorne disk was found by the ray (going from the observer backwards).
         This exists so the disk image orders overlap correctly in the final image. */
-    bool PT_Disk_found;
+    bool NT_Disk_found;
 
     /*! @brief Array that holds the Novikov-Thorne disk flux. */
-    double Flux_PT{};
+    double Flux_NT{};
+
+    /*! @brief Array that holds the Novikov-Thorne disk polariation vector (transported to the observer) in the ZAMO frame. */
+    double Projected_polarization_vector[2]{};
 
     /*! @brief Array that holds the Novikov-Thorne disk redshift. */
-    double Redshift_PT{};
+    double Redshift_NT{};
 
     /*! @brief Placeholder for an array that will hold the integrated optical depth. */
     double Optical_Depth{};

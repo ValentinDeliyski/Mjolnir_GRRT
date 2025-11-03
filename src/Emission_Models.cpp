@@ -52,9 +52,8 @@ Return_Values Emission_models_class::get_plasma_velocity(const double* const Sta
     case e_Circular_fixed_rate:
 
         /* This is really only intended for the hotspot -> hence the hotspot position is used. */
-
         Omega = 1.0 / pow(p_Sim_Context->p_Init_Conditions->Hotspot_params.Position[e_r], 3. / 2);
-        u_t = 1. / sqrt(-(s_Metric.Metric[e_t][e_t] + s_Metric.Metric[e_phi][e_phi] * Omega * Omega));
+        u_t = 1. / sqrt(-(s_Metric.Metric[e_t][e_t] + + 2 * s_Metric.Metric[e_t][e_phi] * Omega + s_Metric.Metric[e_phi][e_phi] * Omega * Omega));
 
         if (isnan(u_t)) { return ERROR; }
 
@@ -246,11 +245,6 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
         exit(ERROR);
 
     }
-
-    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_r] = cos(State_Vector[e_theta]);
-    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_theta] = -sin(State_Vector[e_theta]);
-    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_phi] = 0;
-
 
 }
 
@@ -591,8 +585,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
     /* This variable exist for the case where the hotspot and disk are in "Thermalized" mode. */
     Emission_medium_state_type Hotspot_state{};
 
-    /* When evaluating the hotspot emission, the metric needs to be evaluated at the point where the hotspot 4-velocity is evlatuated - a.e. at the spot center.*/
-    Metric_type Metric{};
+    Metric_type Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
 
     /* The hotspot is assumed to "screen" the magnetic field of the background accretion disk (unless its magnetic field magnitude is specified as "Background"). 
        Therefore the magnetic field with which the emission functions of the disk are evaluated, depends on the position of the hotspot. This is the reason this boolean is calculated outside the Emission_meidum 
@@ -621,8 +614,6 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
                                                        this->p_Disk_Model->s_Disk_params.Velocity_profile_type,
                                                        this->p_Disk_Model->s_Disk_params.Radial_velocity_fraction,
                                                        Emission_medium_state.Plasma_Velocity);
-
-        Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
 
         /* This function call populates the density and temperature values for the disk - this is why they are not populated along with the magnetic field parameters. */
         Is_inside_disk = this->p_Disk_Model->is_inside_disk(State_Vector, this->p_Disk_Model->s_Disk_params.e_Disk_model, &Emission_medium_state);
@@ -687,9 +678,6 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
     case Hotspot:
 
         if (!Is_inside_hotspot || this->Thermalize_emission_medium) { return; };
-
-
-        Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
 
         Emission_medium_state.Density = Hotspot_state.Density;
         Emission_medium_state.Temperature = Hotspot_state.Temperature;
@@ -822,7 +810,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
     /* The below coefficients pop up in the dimentionless radiative transfer equation. */
 
-    const double f_cyclo    = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    const double f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
     //const double distance_scale = p_Sim_Context->p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
     //const double transport_matrix_ratio = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS * distance_scale / C_LIGHT_CGS / obs_frequency / M_ELECTRON_CGS;
 

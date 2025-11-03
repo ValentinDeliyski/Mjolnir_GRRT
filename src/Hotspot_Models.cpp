@@ -42,7 +42,7 @@ double Hotspot_model_type::get_hotspot_profile(const Hotspot_profile_parameters_
 
     case e_Gaussian:
 
-        return exp(-int_power((p_Profile_parameters->Gaussian_variable - p_Profile_parameters->Gaussian_mean) / p_Profile_parameters->Gaussian_spread, 2) / 2);
+        return exp(-pow((p_Profile_parameters->Gaussian_variable - p_Profile_parameters->Gaussian_mean) / p_Profile_parameters->Gaussian_spread, 2) / 2);
 
     case e_Spherical:
 
@@ -53,7 +53,7 @@ double Hotspot_model_type::get_hotspot_profile(const Hotspot_profile_parameters_
 
     case e_Hybrid_power_gaussian:
 
-        exponent_term = exp(-int_power((p_Profile_parameters->Gaussian_variable - p_Profile_parameters->Gaussian_mean) / p_Profile_parameters->Gaussian_spread, 2) / 2);
+        exponent_term = exp(-pow((p_Profile_parameters->Gaussian_variable - p_Profile_parameters->Gaussian_mean) / p_Profile_parameters->Gaussian_spread, 2) / 2);
 
         return pow(p_Profile_parameters->Power_law_scale / p_Profile_parameters->Power_law_variable, p_Profile_parameters->Power_law_power) * exponent_term;
 

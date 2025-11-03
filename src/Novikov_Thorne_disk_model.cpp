@@ -12,19 +12,14 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
 
     this->e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_geometry;
 
-    this->Disk_veclovity_vector = new double[4];
-
     this->current_flux_integration_step = 0;
     this->max_flux_integration_teps = 500;
 
+    memset(this->Disk_veclovity_vector, 0, 4 * sizeof(double));
+    memset(this->Source_polarization_vector, 0, 4 * sizeof(double));
     memcpy(this->Mag_field_geometry, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
 
 }
-Novikov_Thorne_Model_class::~Novikov_Thorne_Model_class() {
-
-    free(this->Disk_veclovity_vector);
-
-};
 
 double Novikov_Thorne_Model_class::Keplerian_angular_velocity(const double* const State_Vector) {
 
@@ -240,5 +235,46 @@ double Novikov_Thorne_Model_class::get_flux(const double* const State_Vector) {
     this->current_flux_integration_step = 0;
 
     return Flux_coeff * Flux_integral;
+
+}
+
+double* Novikov_Thorne_Model_class::Construct_coord_polarization_vector(const double* const State_Vector) {
+
+    Metric_type s_Metric = this->p_Spacetime->get_metric(State_Vector);
+
+    /* NOTE: This is the covariant momentum */
+    const double* const &Photon_coordinate_momentum_covariant = State_Vector + e_p_t;
+
+    double Photon_coordinate_momentum_contravariant[4]{};
+    Manipulate_index(&s_Metric, Photon_coordinate_momentum_covariant, Photon_coordinate_momentum_contravariant, Raise_index);
+
+    double Photon_ZAMO_momentum[4]{};
+    Contravariant_coord_to_ZAMO(&s_Metric, Photon_coordinate_momentum_contravariant, Photon_ZAMO_momentum);
+
+    double Disk_ZAMO_velocity[4]{};
+    Contravariant_coord_to_ZAMO(&s_Metric, this->get_disk_velocity_vector(State_Vector), Disk_ZAMO_velocity);
+
+    double Boost_matrix[4][4]{};  
+    get_Lorentz_boost_matrix(Boost_matrix, Disk_ZAMO_velocity, false);
+
+    double Photon_plasma_momentum[4]{};
+    mat_vec_multiply_4D(Boost_matrix, Photon_ZAMO_momentum, Photon_plasma_momentum);
+
+    /* =================================== The polarization vector =================================== */
+
+    double Polarization_vector_plasma[4]{};
+
+    // Offset with e_r so I get the spatial components
+    cross_product(Photon_plasma_momentum + e_r, this->Mag_field_geometry, Polarization_vector_plasma + e_r);
+    
+    double inv_Boost_matrix[4][4]{};
+    get_Lorentz_boost_matrix(inv_Boost_matrix, Disk_ZAMO_velocity, true);
+
+    double Polarization_vector_ZAMO[4]{};
+    mat_vec_multiply_4D(inv_Boost_matrix, Polarization_vector_plasma, Polarization_vector_ZAMO);
+
+    ZAMO_to_Contravariant_coord(&s_Metric, Polarization_vector_ZAMO, this->Source_polarization_vector);
+
+    return this->Source_polarization_vector;
 
 }

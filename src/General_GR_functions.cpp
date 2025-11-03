@@ -26,7 +26,7 @@ void invert_metric(double Inv_metric[4][4], const double Metric[4][4]) {
     double g2 = Metric[e_t][e_phi] * Metric[e_t][e_phi] - Metric[e_phi][e_phi] * Metric[e_t][e_t];
 
     Inv_metric[e_t][e_t] = -Metric[e_phi][e_phi] / g2;
-    Inv_metric[e_t][e_phi] = Metric[0][e_phi] / g2;
+    Inv_metric[e_t][e_phi] = Metric[e_t][e_phi] / g2;
     Inv_metric[e_phi][e_t] = Inv_metric[0][e_phi];
     Inv_metric[e_r][e_r] = 1. / Metric[e_r][e_r];
     Inv_metric[e_theta][e_theta] = 1. / Metric[e_theta][e_theta];
@@ -93,6 +93,33 @@ double get_complex_4vec_norm(const std::complex<double>* const Vector, const dou
 
 }
 
+void Manipulate_index(const Metric_type* const p_Metric, const double* const Vector, double* const Result, Index_manipulation_enums Index_operation) {
+
+    memset(Result, 0, 4 * sizeof(double));
+
+    double inv_metric[4][4]{};
+    invert_metric(inv_metric, p_Metric->Metric);
+
+    switch (Index_operation) {
+
+    case Lower_index:
+
+        mat_vec_multiply_4D(p_Metric->Metric, Vector, Result);
+        break;
+
+    case Raise_index:
+        
+        mat_vec_multiply_4D(inv_metric, Vector, Result);
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported index operation! Something broke in the Manipulate_index() function!");
+
+    }
+
+}
+
 void Normalize_complex_vector(std::complex<double>* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type) {
 
     double Vector_norm = get_complex_4vec_norm(Vector, Metric, Vector_type);
@@ -104,24 +131,6 @@ void Normalize_complex_vector(std::complex<double>* const Vector, const double M
         Vector[idx] *= 1.0 / Vector_norm;
 
     }
-
-}
-
-void Contravariant_coord_to_ZAMO(const Metric_type* const p_Metric, const double* const Contravariant_Vector, double* const ZAMO_Vector) {
-
-    ZAMO_Vector[e_t] = p_Metric->Lapse_function * Contravariant_Vector[e_t];
-    ZAMO_Vector[e_r] = sqrt(p_Metric->Metric[e_r][e_r])  * Contravariant_Vector[e_r];
-    ZAMO_Vector[e_theta] = sqrt(p_Metric->Metric[e_theta][e_theta]) * Contravariant_Vector[e_theta];
-    ZAMO_Vector[e_phi] = sqrt(p_Metric->Metric[e_phi][e_phi]) * (Contravariant_Vector[e_phi] - p_Metric->Shift_function * Contravariant_Vector[e_t]);
-
-}
-
-void ZAMO_to_Contravariant_coord(const Metric_type* const p_Metric, const double* const ZAMO_Vector, double* const Contravariant_Vector) {
-
-    Contravariant_Vector[e_t] = ZAMO_Vector[e_t] / p_Metric->Lapse_function;
-    Contravariant_Vector[e_r] = ZAMO_Vector[e_r] / sqrt(p_Metric->Metric[e_r][e_r]);
-    Contravariant_Vector[e_theta] = ZAMO_Vector[e_theta] / sqrt(p_Metric->Metric[e_theta][e_theta]);
-    Contravariant_Vector[e_phi] = p_Metric->Shift_function / p_Metric->Lapse_function * ZAMO_Vector[e_t] + ZAMO_Vector[e_phi] / sqrt(p_Metric->Metric[e_phi][e_phi]);
 
 }
 

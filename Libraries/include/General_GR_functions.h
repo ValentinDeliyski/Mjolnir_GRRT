@@ -43,25 +43,43 @@ double get_eq_induced_metric_det(const double metric[4][4]);
  */
 double get_complex_4vec_norm(const std::complex<double>* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type);
 
+void Manipulate_index(const Metric_type* const p_Metric, const double* const Vector, double* const Result, Index_manipulation_enums Index_operation);
+
 void Normalize_complex_vector(std::complex<double>* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type);
 
 /*! @brief Converts a contravariant vector from the coordinate basis to the ZAMO basis.
  *
  *   \param [in] Metric - Pointer to the metric struct.
  *   \param [in] Contravariant_Vector - Pointer to the contravariant vector.
- *   \param [out] ZAMO_Vector - Pointer to the ZAMO vector.
+ *   \param [out] ZAMO_Vector - Pointer to the contravariant ZAMO vector.
  *   \return Nothing.
  */
-void Contravariant_coord_to_ZAMO(const Metric_type* const p_Metric, const double* const Contravariant_Vector, double* const ZAMO_Vector);
+template<typename Vec_type>
+void Contravariant_coord_to_ZAMO(const Metric_type* const p_Metric, const Vec_type* const Contravariant_Vector, Vec_type* const ZAMO_Vector) {
+
+    ZAMO_Vector[e_t] = p_Metric->Lapse_function * Contravariant_Vector[e_t];
+    ZAMO_Vector[e_r] = sqrt(p_Metric->Metric[e_r][e_r]) * Contravariant_Vector[e_r];
+    ZAMO_Vector[e_theta] = sqrt(p_Metric->Metric[e_theta][e_theta]) * Contravariant_Vector[e_theta];
+    ZAMO_Vector[e_phi] = sqrt(p_Metric->Metric[e_phi][e_phi]) * (Contravariant_Vector[e_phi] - p_Metric->Shift_function * Contravariant_Vector[e_t]);
+
+};
 
 /*! @brief Converts a contravariant vector from the ZAMO basis to the coordinate basis.
  *
  *   \param [in] Metric - Pointer to the metric struct.
- *   \param [in] ZAMO_Vector - Pointer to the ZAMO vector.
+ *   \param [in] ZAMO_Vector - Pointer to the contravariant ZAMO vector.
  *   \param [out] Contravariant_Vector - Pointer to the contravariant vector.
  *   \return Nothing.
  */
-void ZAMO_to_Contravariant_coord(const Metric_type* const p_Metric, const double* const ZAMO_Vector, double* const Contravariant_Vector);
+template<typename Vec_type>
+void ZAMO_to_Contravariant_coord(const Metric_type* const p_Metric, const Vec_type* const ZAMO_Vector, Vec_type* const Contravariant_Vector){
+
+    Contravariant_Vector[e_t] = ZAMO_Vector[e_t] / p_Metric->Lapse_function;
+    Contravariant_Vector[e_r] = ZAMO_Vector[e_r] / sqrt(p_Metric->Metric[e_r][e_r]);
+    Contravariant_Vector[e_theta] = ZAMO_Vector[e_theta] / sqrt(p_Metric->Metric[e_theta][e_theta]);
+    Contravariant_Vector[e_phi] = p_Metric->Shift_function / p_Metric->Lapse_function * ZAMO_Vector[e_t] + ZAMO_Vector[e_phi] / sqrt(p_Metric->Metric[e_phi][e_phi]);
+
+};
 
 /*! @brief Computes the initial 4-momentum of a ray, basaed on its direction angles at the observer, and stores it in the Initial Conditions struct.
  *

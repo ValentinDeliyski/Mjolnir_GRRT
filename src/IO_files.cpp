@@ -600,54 +600,19 @@ void File_manager_class::write_simulation_metadata() {
         else {
 
             *Output_file << "Disk Redshift [-],"
-                         << "Disk Flux [M_dot/M^2],"
-                         << "t Coordinate At Disk";
+                         << "Disk Flux [M_dot/M^2]," 
+                << "Polarization vector X [-],"
+                << "Polarization vector Y [-],"
+                << "Source t Coord [M],"
+                << "Source r Coord [M],"
+                << "Source phi Coord [Rad],"
+                << "Radial Momentum (covariant),"
+                << "Theta Momentum (covariant),"
+                << "Phi Momentum (covariant),";
         }
 
         *Output_file << "Celestial Sphere Crossing Theta [Rad],"
                      << "Celestial Sphere Crossing Phi [Rad],";
-
-        if (p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
-
-            *Output_file << ", Source r Coord [M],"
-                << "Source Phi Coord [Rad],"
-                << "Radial Momentum (covariant),"
-                << "Theta Momentum (covariant),"
-                << "Phi Momentum (covariant),";
-
-            switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
-
-            case Kerr:
-
-                *Output_file << "Spin Parameter,";
-                break;
-
-            case Wormhole:
-
-                *Output_file << "Spin Parameter," << "Redshift Parameter,";
-                break;
-
-            case Reg_Black_Hole:
-
-                *Output_file << "Parameter,";
-                break;
-
-            case Janis_Newman_Winicour:
-
-                *Output_file << "Gamma,";
-                break;
-
-            case Einstein_Gauss_Bonnet:
-
-                *Output_file << "Gamma,";
-                break;
-
-            case BH_w_Dark_Matter:
-
-                *Output_file << "Halo Mass," << "Halo Compactness,";
-                break;
-            }
-        }
 
     } else {
 
@@ -785,11 +750,25 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
     if (e_Novikov_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
-        this->Image_Output_File << s_Ray_results->Redshift_PT
+        this->Image_Output_File << s_Ray_results->Redshift_NT
                                 << ","
-                                << s_Ray_results->Flux_PT
+                                << s_Ray_results->Flux_NT
+                                << ","
+                                << s_Ray_results->Projected_polarization_vector[e_x]
+                                << ","
+                                << s_Ray_results->Projected_polarization_vector[e_y]
                                 << ","
                                 << s_Ray_results->Thin_Disk_State_Vector[e_t]
+                                << ","
+                                << s_Ray_results->Thin_Disk_State_Vector[e_r]
+                                << ","
+                                << s_Ray_results->Thin_Disk_State_Vector[e_phi]
+                                << ","
+                                << s_Ray_results->Thin_Disk_State_Vector[e_p_r]
+                                << ","
+                                << s_Ray_results->Thin_Disk_State_Vector[e_p_theta]
+                                << ","
+                                << s_Ray_results->Thin_Disk_State_Vector[e_p_phi]
                                 << ",";
     }
     else {
@@ -809,53 +788,6 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
     this->Image_Output_File << s_Ray_results->Celestial_sphere_crossing_coords[e_theta]
                             << ","
                             << s_Ray_results->Celestial_sphere_crossing_coords[e_phi];
-
-    if (p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
-
-        this->Image_Output_File << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_r]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_phi]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_p_r]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_p_theta]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_p_phi]
-                                << ",";
-
-            switch (this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
-
-            case Kerr:
-                this->Image_Output_File << s_Ray_results->Metric_parameters.Spin;
-                break;
-
-            case Wormhole:
-                this->Image_Output_File << s_Ray_results->Metric_parameters.Spin
-                                        << "," 
-                                        << s_Ray_results->Metric_parameters.Redshift_Parameter;
-                break;
-
-            case Reg_Black_Hole:
-                this->Image_Output_File << s_Ray_results->Metric_parameters.RBH_Parameter;
-     
-                break;
-
-            case Janis_Newman_Winicour:
-                this->Image_Output_File << s_Ray_results->Metric_parameters.JNW_Gamma_Parameter;
-                break;
-
-            case Einstein_Gauss_Bonnet:
-                this->Image_Output_File << s_Ray_results->Metric_parameters.GB_Gamma_Parameter;
-                break;
-
-            case BH_w_Dark_Matter:
-                this->Image_Output_File << s_Ray_results->Metric_parameters.Halo_Mass
-                                        << ","
-                                        << s_Ray_results->Metric_parameters.Compactness;
-                break;
-            }
-    }
 
     this->Image_Output_File << '\n';
 

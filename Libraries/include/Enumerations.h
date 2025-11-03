@@ -163,7 +163,8 @@ enum Image_Orders: std::underlying_type_t <std::byte> {
 enum Return_Values: std::underlying_type_t <std::byte> {
 
     OK    =  0,
-    ERROR =  1
+    ERROR =  1,
+    NOT_IN_EMISSION_MEDIUM = 2
 
 };
 
@@ -206,5 +207,12 @@ enum Simulation_mode_enums: std::underlying_type_t <std::byte> {
     Image_generation = 0,
     Make_geodesic_sweep = 1,
     Make_geodesic_log = 2,
+
+};
+
+enum Index_manipulation_enums: std::underlying_type_t <std::byte> {
+
+    Raise_index = 0,
+    Lower_index = 1
 
 };

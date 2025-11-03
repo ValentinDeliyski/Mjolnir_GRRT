@@ -86,6 +86,14 @@ void interpolate_celestial_sphere_crossing(const double* const Current_State_Vec
  */
 double dot_product(const double* const Vector_1, const double* const Vector_2, int Vector_size);
 
+/*! @brief Computes a simple cross product between two 3D vectors as Result = Vec_1 X Vec_2.
+ *
+ *  @param [in] vector_1 - Pointer to the first vector.
+ *  @param [in] vector_2 - Pointer to the second vector.
+ *  @return The dot product between the two vectors.
+ */
+void cross_product(const double* const Vec_1, const double* const Vec_2, double* const Result);
+
 /*! @brief Converts vector from spherical coordinates to cartesian.
  *	Converts vector, stored in an array pointed to by "Spherical_Coords", from spherical coordinates to cartesian, and stores
  *	the results in the array, pointed to by "Cartesian_Coords".

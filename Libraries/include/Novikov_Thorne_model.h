@@ -26,7 +26,9 @@ class Novikov_Thorne_Model_class {
         int current_flux_integration_step;
 
         /* @brief Holds the contravariant disk velocity vector. This exists so I can pass the disk velocity to the generic redshift functions easier. */
-        double* Disk_veclovity_vector;
+        double Disk_veclovity_vector[4];
+
+        double Source_polarization_vector[4];
 
         /*! @brief Specifies the direction of the magnetic field. */
         Magnetic_field_geometry_enums e_Mag_field_geometry{};
@@ -50,9 +52,6 @@ class Novikov_Thorne_Model_class {
          *   \return Nothing.
          */
         Novikov_Thorne_Model_class(Simulation_Context_type* p_Sim_Context);
-
-        /*! @brief The class destructor. Frees any allocated by the class memory. */
-        ~Novikov_Thorne_Model_class();
 
         /*! @brief Evaluates the Keplarian angular velocity of the Novikov-Thorne disk model.
          *
@@ -112,5 +111,7 @@ class Novikov_Thorne_Model_class {
          *   \return The Novikov-Thorne flux in units [M_dot / M^2].
          */
         double get_flux(const double* const State_vector);
+
+        double* Construct_coord_polarization_vector(const double* const State_Vector);
 
 };

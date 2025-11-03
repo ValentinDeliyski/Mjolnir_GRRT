@@ -228,9 +228,8 @@ void Kerr_class::get_EOM(const double* const State_vector, double* const Derivat
 
     const double& p_r     = State_vector[e_p_r];
     const double& p_theta = State_vector[e_p_theta];
-    const double& p_t     = State_vector[e_p_t];
 
-    Derivatives[e_t] = ((r2 + this->Spin_Param * this->Spin_Param) / delta * P - this->Spin_Param * (this->Spin_Param * sin2 - J)) / rho2;
+    Derivatives[e_t] = -(r2 + this->Spin_Param * this->Spin_Param + 2 * r * this->Spin_Param * this->Spin_Param / rho2) / delta * State_vector[e_p_t] - 2 * r * this->Spin_Param / rho2 / delta * State_vector[e_p_phi];
     Derivatives[e_r] = delta / rho2 * p_r;
     Derivatives[e_theta] = 1.0 / rho2 * p_theta;
     Derivatives[e_phi] = 1.0 / (delta * rho2) * (P * this->Spin_Param + delta * (J / sin2 - this->Spin_Param));

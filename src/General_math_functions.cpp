@@ -203,6 +203,14 @@ double dot_product(const double* const Vector_1, const double* const Vector_2, i
 
 }
 
+void cross_product(const double* const Vec_1, const double* const Vec_2, double* const Result) {
+
+	Result[e_x] = Vec_1[e_y] * Vec_2[e_z] - Vec_1[e_z] * Vec_2[e_y];
+	Result[e_y] = Vec_1[e_z] * Vec_2[e_x] - Vec_1[e_x] * Vec_2[e_z];
+	Result[e_z] = Vec_1[e_x] * Vec_2[e_y] - Vec_1[e_y] * Vec_2[e_x];
+
+}
+
 void convert_spherical_to_cartesian(const double* const Spherical_Coords, double* const Cartesian_Coords) {
 
 	double sin_theta = sin(Spherical_Coords[e_theta]);

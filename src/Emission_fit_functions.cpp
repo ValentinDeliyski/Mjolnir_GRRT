@@ -146,14 +146,14 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
 
     double power_Q = 3.7 * pow(p_Transfer_args->kappa, -8. / 5.);
 
-    Emission_functions_low[Q] = Common_factor_low / 2;
-    Emission_functions_high[Q] = Common_factor_high * (16.0 / 25 + p_Transfer_args->kappa / 50);
+    Emission_functions_low[Q] = Common_factor_low / 2.;
+    Emission_functions_high[Q] = Common_factor_high * (16.0 / 25. + p_Transfer_args->kappa / 50.);
 
     Emission_functions[Q] = -pow(pow(Emission_functions_low[Q], -power_Q) + pow(Emission_functions_high[Q], -power_Q), -1. / power_Q);
 
     double power_V = 3. * pow(p_Transfer_args->kappa, -3. / 2.);
 
-    Emission_functions_low[V] = Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1., 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
+    Emission_functions_low[V] = Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1, 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
     Emission_functions_high[V] = Common_factor_high * (49.0 / 64 * pow(pow(p_Transfer_args->sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(p_Transfer_args->kappa, -11.0 / 25) / p_Transfer_args->T_electron_dim / p_Transfer_args->sqrt_X;
 
     Emission_functions[V] = pow(pow(Emission_functions_low[V], -power_V) + pow(Emission_functions_high[V], -power_V), -1. / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
@@ -222,7 +222,6 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
 
     Absorbtion_functions[I] = pow(pow(Absorbtion_functions_low[I], -power_I) + pow(Absorbtion_functions_high[I], -power_I), -1.0 / power_I);
 
-
     /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
 
@@ -244,7 +243,6 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
 
 void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
                                                                         double* const Faradey_functions) const{
-
 
     // The reference for these expressions is https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf, equations (51), (52), (53) and (54).
 

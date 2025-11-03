@@ -64,7 +64,7 @@ void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray
 
     if (e_Novikov_Thorne == Disk_model) {
 
-        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = float(p_Ray_results->Flux_PT * pow(p_Ray_results->Redshift_PT, 4));
+        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = float(p_Ray_results->Flux_NT * pow(p_Ray_results->Redshift_NT, 4));
 
     }
     else {
@@ -84,8 +84,9 @@ void static Zero_results_struct(Results_type* const p_Ray_results) {
     memset(p_Ray_results->Final_State_Vector, 0, e_Full_state_size * sizeof(double));
     memset(p_Ray_results->Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));
 
-    memset(&p_Ray_results->Flux_PT, 0, sizeof(double));
-    memset(&p_Ray_results->Redshift_PT, 0, sizeof(double));
+    memset(&p_Ray_results->Flux_NT, 0, sizeof(double));
+    memset(&p_Ray_results->Redshift_NT, 0, sizeof(double));
+    memset(&p_Ray_results->Projected_polarization_vector, 0, 2 * sizeof(double));
 
     memset(&p_Ray_results->Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));
 
@@ -95,6 +96,8 @@ void static Zero_results_struct(Results_type* const p_Ray_results) {
     memset(&p_Ray_results->Image_Coords, 0, 2 * sizeof(double));
 
     memset(&p_Ray_results->Celestial_sphere_crossing_coords, 0, 4 * sizeof(double));
+
+    p_Ray_results->NT_Disk_found = false;
 
 }
 
