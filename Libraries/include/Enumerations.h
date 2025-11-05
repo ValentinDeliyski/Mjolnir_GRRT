@@ -216,3 +216,10 @@ enum Index_manipulation_enums: std::underlying_type_t <std::byte> {
     Lower_index = 1
 
 };
+
+enum Event_detection_enums: std::underlying_type_t <std::byte> {
+
+    Equatorial_crossing = 0,
+    Celestial_sphere_crossing = 1
+
+};

@@ -41,7 +41,7 @@ class Simulation:
         """ Central black hole setup"""
         self.Simulation_configurator.metric_parameters.Metric_type = {"Value": "Kerr",  "Unit": "[-]"}
         self.Simulation_configurator.object_mass                   = {"Value": 4.297e6, "Unit": "[M_sun]"}
-        self.Simulation_configurator.metric_parameters.Spin        = {"Value": 0.00001, "Unit": "[M]"}
+        self.Simulation_configurator.metric_parameters.Spin        = {"Value": 0, "Unit": "[M]"}
         self.Object_distance                                       = {"Value": 8.277e3, "Unit": "[Pc]"}
         self.Simulation_configurator.max_image_order               = {"Value": 0, "Unit": "[-]"}
         
@@ -51,9 +51,9 @@ class Simulation:
         self.Simulation_configurator.disk_model.r_in_NT_disk = {"Value": 6, "Unit": "[M]"} 
         self.Simulation_configurator.disk_model.r_out_NT_disk = {"Value": 25, "Unit": "[M]"} 
         
-        self.Simulation_configurator.disk_model.Mag_field_geometry_r     = {"Value": 0, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Mag_field_geometry_theta = {"Value": 1, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Mag_field_geometry_phi   = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Mag_field_geometry_r     = {"Value": 0.7, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Mag_field_geometry_theta = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Mag_field_geometry_phi   = {"Value": 0.9, "Unit": "[-]"}
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
@@ -75,8 +75,8 @@ class Simulation:
         
         """ Configure the integrator """
         
-        self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-13, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK78_rel_accuracy = {"Value": 1e-13, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-14, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK78_rel_accuracy = {"Value": 1e-14, "Unit": "[-]"}
         self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 5, "Unit": "[-]"}
         self.Simulation_configurator.integrator.max_stepsize = {"Value": 50, "Unit": "[-]"}
         

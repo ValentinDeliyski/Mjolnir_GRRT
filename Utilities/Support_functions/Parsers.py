@@ -43,9 +43,21 @@ class Simulation_Parser():
                 self.Q_Intensity: NDArray[float64] = zeros(Array_size)
                 self.U_Intensity: NDArray[float64] = zeros(Array_size)
                 self.V_Intensity: NDArray[float64] = zeros(Array_size)
+
                 self.Final_t_coord: NDArray[float64] = zeros(Array_size)
+
                 self.Disk_redshift: NDArray[float64] = zeros(Array_size)
                 self.Disk_flux: NDArray[float64] = zeros(Array_size)
+                self.Source_t: NDArray[float64] = zeros(Array_size)
+                self.Source_r: NDArray[float64] = zeros(Array_size)
+                self.Source_phi: NDArray[float64] = zeros(Array_size)
+                self.Source_p_r: NDArray[float64] = zeros(Array_size)
+                self.Source_p_theta: NDArray[float64] = zeros(Array_size)
+                self.Source_p_phi: NDArray[float64] = zeros(Array_size)
+
+                self.Polarization_vec_X: NDArray[float64] = zeros(Array_size)
+                self.Polarization_vec_Y: NDArray[float64] = zeros(Array_size)
+
                 self.Celestial_theta: NDArray[float64] = zeros(Array_size)
                 self.Celestial_phi: NDArray[float64] = zeros(Array_size)
 
@@ -61,8 +73,18 @@ class Simulation_Parser():
 
                         if ("Novikov-Thorne" == self.Simulation_metadata["Active disk model"]):
                             
-                            self.Disk_redshift[index]  = float(row["Disk Redshift [-]"])
-                            self.Disk_flux[index]  = float(row["Disk Flux [M_dot/M^2]"])
+                            self.Disk_redshift[index] = float(row["Disk Redshift [-]"])
+                            self.Disk_flux[index] = float(row["Disk Flux [M_dot/M^2]"])
+
+                            self.Source_t[index] = float(row["Source t Coord [M]"])
+                            self.Source_r[index] = float(row["Source r Coord [M]"])
+                            self.Source_phi[index] = float(row["Source phi Coord [Rad]"])
+                            self.Source_p_r[index] = float(row["Radial Momentum (covariant)"])
+                            self.Source_p_theta[index] = float(row["Theta Momentum (covariant)"])
+                            self.Source_p_phi[index]  = float(row["Phi Momentum (covariant)"])
+
+                            self.Polarization_vec_X[index] = float(row["Polarization vector X [-]"])
+                            self.Polarization_vec_Y[index] = float(row["Polarization vector Y [-]"])
                             
                         else:
 

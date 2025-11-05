@@ -266,6 +266,12 @@ double* Novikov_Thorne_Model_class::Construct_coord_polarization_vector(const do
 
     // Offset with e_r so I get the spatial components
     cross_product(Photon_plasma_momentum + e_r, this->Mag_field_geometry, Polarization_vector_plasma + e_r);
+
+    for (int idx = e_r; idx <= e_phi; idx++) {
+
+        Polarization_vector_plasma[idx] /= vector_norm(Photon_plasma_momentum + e_r, 3);
+
+    }
     
     double inv_Boost_matrix[4][4]{};
     get_Lorentz_boost_matrix(inv_Boost_matrix, Disk_ZAMO_velocity, true);

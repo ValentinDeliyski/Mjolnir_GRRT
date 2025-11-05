@@ -472,17 +472,7 @@ std::complex<double> get_Penrose_Walker_constant(const double* const State_Vecto
 
     Metric_type s_Metric = p_Spacetime->get_metric(State_Vector);
 
-    invert_metric(inv_metric, s_Metric.Metric);
-
-    for (int left_idx = 0; left_idx <= 3; left_idx++) {
-
-        for (int right_idx = 0; right_idx <= 3; right_idx++) {
-
-            Contravariant_momentum[left_idx] += inv_metric[left_idx][right_idx] * State_Vector[right_idx + e_p_t];
-
-        }
-
-    }
+    Manipulate_index(&s_Metric, State_Vector + e_p_t, Contravariant_momentum, Raise_index);
 
     const double& p_t     = Contravariant_momentum[e_t];
     const double& p_r     = Contravariant_momentum[e_r];

@@ -493,6 +493,125 @@ void Integrator_class::Propagate_ray() {
 
 }
 
+bool Integrator_class::Logate_event(Event_detection_enums e_Event, double* const State_at_Event) {
+
+    int Event_idx{};
+    double Event_target{};
+
+    const double* const Current_State = this->get_current_State_Vector();
+    const double* const Prev_State = this->get_previous_State_Vector();
+
+    switch (e_Event) {
+
+    case Equatorial_crossing:
+
+        if ((Current_State[e_theta] - M_PI_2) * (Prev_State[e_theta] - M_PI_2) > 0) { return false; }
+
+        Event_idx = e_theta;
+        Event_target = M_PI_2;
+
+        break;
+
+    case Celestial_sphere_crossing:
+
+        if ((Current_State[e_r] - this->p_Init_conditions->Metric_parameters.Scattering_radius) *
+            (Prev_State[e_r] - this->p_Init_conditions->Metric_parameters.Scattering_radius) > 0) {
+            return false;
+        }
+
+        Event_idx = e_r;
+        Event_target = this->p_Init_conditions->Metric_parameters.Scattering_radius;
+
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported event type in Integrator_class::Logate_event()!");
+
+    }
+
+    /* ========== Construct the polynomial coefficients - ax^3 + bx^2 + cx + d ========== */
+
+    /* Not every method is a first-same-as-last method, so the current RHS needs to be evaluated, rather than read off from Intermediate_RHS_log.
+       To save on computing it _again_ on each get_dense_output() call, I overwride the last entries in Intermediate_RHS_log. */
+    int RK_size = RK78_size;
+
+    if (RK54 == e_Active_integrator) { RK_size = RK54_size; }
+    else if (ESDIRK54 == e_Active_integrator) { RK_size = ESDIRK54_size; }
+
+    double Current_RHS[e_Dynamic_state_size]{};
+    this->p_Spacetime->get_EOM(Current_State, this->Intermediate_RHS_log + (RK_size - 1) * e_Dynamic_state_size);
+    memcpy(Current_RHS, this->Intermediate_RHS_log + (RK_size - 1) * e_Dynamic_state_size, e_Dynamic_state_size * sizeof(double));
+
+    const double* const &Prev_RHS = this->Intermediate_RHS_log;
+
+    const double& step = -this->p_Step_controller->previous_step;
+
+    const double a_coeff = step * (Current_RHS[Event_idx] + Prev_RHS[Event_idx]) - 2 * (Current_State[Event_idx] - Prev_State[Event_idx]);
+    const double b_coeff = 3 * (Current_State[Event_idx] - Prev_State[Event_idx]) - step * (2 * Prev_RHS[Event_idx] + Current_RHS[Event_idx]);
+    const double c_coeff = step * Prev_RHS[Event_idx];
+    const double d_coeff = Prev_State[Event_idx] - Event_target;
+
+    std::complex<double> Cubic_roots[3]{};
+    get_cubic_polynomial_roots(a_coeff, b_coeff, c_coeff, d_coeff, Cubic_roots);
+
+    double Event_interp_param = -1;
+
+    for (int idx = 0; idx < 3; idx++) {
+
+        if (abs(Cubic_roots[idx].imag()) < 1e-10 && Cubic_roots[idx].real() >= 0 && Cubic_roots[idx].real() <= 1) {
+
+            Event_interp_param = Cubic_roots[idx].real();
+            break;
+
+        }
+
+    }
+
+    /* This check will pass only if no real roots lie in the interval [0, 1], which should never happen. */
+    if (Event_interp_param < 0) { throw std::runtime_error("No real roots in the interval [0,1] were found in Integrator_class::Logate_event()!"); }
+
+    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
+
+        State_at_Event[idx] = this->get_dense_output(Event_interp_param, State_enums(idx), true);
+
+    }
+
+    State_at_Event[e_step] = abs(Event_interp_param * step);
+    State_at_Event[e_affine_param] = Prev_State[e_affine_param] + step;
+
+    return true;
+
+}
+
+const double const Integrator_class::get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const {
+
+    /* The source for this implementation is https://mezbanhabibi.ir/wp-content/uploads/2020/01/ordinary-differential-equations-vol.1.-Nonstiff-problems.pdf, equation (6.7) */
+
+    int RK_size = RK78_size;
+
+    if (RK54 == e_Active_integrator) { RK_size = RK54_size; }
+    else if (ESDIRK54 == e_Active_integrator) { RK_size = ESDIRK54_size; }
+
+    const double* const Current_State = this->get_current_State_Vector();
+    const double* const Prev_State = this->get_previous_State_Vector();
+
+    double Current_RHS[e_Dynamic_state_size]{};
+    memcpy(Current_RHS, this->Intermediate_RHS_log + (RK_size - 1) * e_Dynamic_state_size, e_Dynamic_state_size * sizeof(double));
+    
+    if (!Is_current_RHS_evaluated) {
+
+        this->p_Spacetime->get_EOM(Current_State, Current_RHS);
+
+    }
+
+    const double* const &Prev_RHS = this->Intermediate_RHS_log;
+    const double& step = -this->p_Step_controller->previous_step;
+
+    return (1. - Param) * Prev_State[idx] + Param * Current_State[idx] + Param * (Param - 1.) * ((1. - 2. * Param) * (Current_State[idx] - Prev_State[idx]) + (Param - 1.) * step * Prev_RHS[idx] + Param * step * Current_RHS[idx]);
+
+}
+
 void Integrator_class::Check_integration_complete_status() {
 
     /* This needs to use the internal dynamic state, because it is kept in "global coordainates" (which so far only affects the wormhole). */

@@ -1,7 +1,6 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include "Structs.h"
-#include "Spacetimes.h"
 #include "Enumerations.h"
 #include "General_GR_functions.h"
 #include "General_math_functions.h"

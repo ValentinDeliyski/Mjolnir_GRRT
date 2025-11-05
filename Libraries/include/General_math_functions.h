@@ -5,7 +5,9 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include "Enumerations.h"
+#include <format>
 #include <cmath>
+#include <complex>
 
  /*! @defgroup General_Math_Support_Functions General Math Support Functions
   *  This group contains all the general (non-spacetime specific) supporting math functions, used throughout the code.
@@ -135,5 +137,7 @@ void add_vectors(const double* const vec_1, const double* const vec_2, const int
  *  @return Result - base^exponent.
  */
 double int_power(const double base, const int exponent);
+
+void get_cubic_polynomial_roots(const double a_coeff, const double b_coeff, const double c_coeff, const double d_coeff, std::complex<double>* const roots);
 
 /** @} */ // End of the General_Math_Support_Functions group

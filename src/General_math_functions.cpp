@@ -132,15 +132,28 @@ bool interpolate_equatorial_crossing(const double* const State_Vector,
 
 	/* ---------- Interpolate the covariant momenta at those coorinates ---------- */
 
-	const double crossing_param_momentum = (M_PI_2 - Old_State_Vector[e_theta]) / (State_Vector[e_theta] - Old_State_Vector[e_theta]);
-
 	for (int index = e_p_t; index <= e_p_phi; index++) {
 
-		Crossing_State[index] = crossing_param_momentum * State_Vector[index] + (1 - crossing_param_momentum) * Old_State_Vector[index];
+		Crossing_State[index] = crossing_param_position * State_Vector[index] + (1 - crossing_param_position) * Old_State_Vector[index];
 
 	}
 
+	Crossing_State[e_affine_param] = crossing_param_position * State_Vector[e_affine_param] + (1 - crossing_param_position) * Old_State_Vector[e_affine_param];
+
+	Crossing_State[e_step] = abs(Old_State_Vector[e_affine_param] - Crossing_State[e_affine_param]);
+
 	return true;
+}
+
+void get_cubic_polynomial_roots(const double a_coeff, const double b_coeff, const double c_coeff, const double d_coeff, std::complex<double>* const roots) {
+
+	const std::complex<double> p_coeff = (3 * a_coeff * c_coeff - pow(b_coeff, 2)) / (3 * pow(a_coeff, 2));
+	const std::complex<double> q_coeff = (2 * pow(b_coeff, 3) - 9 * a_coeff * b_coeff * c_coeff + 27 * pow(a_coeff, 2) * d_coeff) / (27 * pow(a_coeff, 3));
+
+	roots[0] = 2. * sqrt(-p_coeff / 3.) * cos(1. / 3 * acos(3. * q_coeff / (2. * p_coeff) * sqrt(-3. / p_coeff))) - b_coeff / (3. * a_coeff);
+	roots[1] = 2. * sqrt(-p_coeff / 3.) * cos(1. / 3 * acos(3. * q_coeff / (2. * p_coeff) * sqrt(-3. / p_coeff)) - 2. * M_PI / .3) - b_coeff / (3. * a_coeff);
+	roots[2] = 2. * sqrt(-p_coeff / 3.) * cos(1. / 3 * acos(3. * q_coeff / (2. * p_coeff) * sqrt(-3. / p_coeff)) - 4. * M_PI / .3) - b_coeff / (3. * a_coeff);
+
 }
 
 void interpolate_celestial_sphere_crossing(const double* const Current_State_Vector_Spherical,
