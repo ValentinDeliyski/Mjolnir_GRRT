@@ -180,9 +180,9 @@ public:
     bool continue_integration;
     bool integration_complete;
 
-    bool Logate_event(Event_detection_enums e_Event, double* const State_at_Event);
+    bool Locate_event(Event_detection_enums e_Event, double* const State_at_Event);
 
-    const double const get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const;
+    const double get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const;
     const double* const get_current_State_Vector() const;
     const double* const get_previous_State_Vector() const;
 

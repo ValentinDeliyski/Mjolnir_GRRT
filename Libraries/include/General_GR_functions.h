@@ -59,7 +59,7 @@ void Contravariant_coord_to_ZAMO(const Metric_type* const p_Metric, const Vec_ty
 
     ZAMO_Vector[e_t] = p_Metric->Lapse_function * Contravariant_Vector[e_t];
     ZAMO_Vector[e_r] = sqrt(p_Metric->Metric[e_r][e_r]) * Contravariant_Vector[e_r];
-    ZAMO_Vector[e_theta] = sqrt(p_Metric->Metric[e_theta][e_theta]) * Contravariant_Vector[e_theta];
+    ZAMO_Vector[e_theta] = -sqrt(p_Metric->Metric[e_theta][e_theta]) * Contravariant_Vector[e_theta];
     ZAMO_Vector[e_phi] = sqrt(p_Metric->Metric[e_phi][e_phi]) * (Contravariant_Vector[e_phi] - p_Metric->Shift_function * Contravariant_Vector[e_t]);
 
 };
@@ -76,7 +76,7 @@ void ZAMO_to_Contravariant_coord(const Metric_type* const p_Metric, const Vec_ty
 
     Contravariant_Vector[e_t] = ZAMO_Vector[e_t] / p_Metric->Lapse_function;
     Contravariant_Vector[e_r] = ZAMO_Vector[e_r] / sqrt(p_Metric->Metric[e_r][e_r]);
-    Contravariant_Vector[e_theta] = ZAMO_Vector[e_theta] / sqrt(p_Metric->Metric[e_theta][e_theta]);
+    Contravariant_Vector[e_theta] = -ZAMO_Vector[e_theta] / sqrt(p_Metric->Metric[e_theta][e_theta]);
     Contravariant_Vector[e_phi] = p_Metric->Shift_function / p_Metric->Lapse_function * ZAMO_Vector[e_t] + ZAMO_Vector[e_phi] / sqrt(p_Metric->Metric[e_phi][e_phi]);
 
 };
@@ -145,4 +145,4 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
 
 void get_initial_conditions_from_image_coords(Initial_conditions_type* p_Initial_Conditions, double Image_X_coord, double Image_Y_coord);
 
-std::complex<double> get_Penrose_Walker_constant(const double* const State_Vector, const Spacetime_Base_Class* const p_Spacetime, const std::complex<double>* const Polarization_Vector);
+std::complex<double> get_Penrose_Walker_constant(const double* const State_Vector, const Simulation_Context_type* const p_Sim_Context, const std::complex<double>* const Polarization_Vector);

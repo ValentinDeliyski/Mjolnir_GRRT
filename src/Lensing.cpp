@@ -505,30 +505,11 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
         p_Ray_results->Flux_NT = p_Sim_Context->p_NT_model->get_flux(State_at_event);
 
         double* Polarization_vector_coord = p_Sim_Context->p_NT_model->Construct_coord_polarization_vector(State_at_event);
-
-        std::complex<double> Test_pol_vec[4];
-
-        for (int idx = 0; idx < 4; idx++) {
-
-            Test_pol_vec[idx] = Polarization_vector_coord[idx];
-
-        }
-
-        double norm{};
-
-        for (int idx = 0; idx < 4; idx++) {
-
-            norm += State_at_event[idx + e_p_t] * Polarization_vector_coord[idx];
-
-        }
-
-        std::complex<double> PW_const = get_Penrose_Walker_constant(State_at_event, p_Sim_Context->p_Spacetime, Test_pol_vec);
-
         Parallel_Transport_Vector(State_at_event, p_Sim_Context->p_Spacetime, Contravariant, Polarization_vector_coord);
 
         /* ====================== Parallel transport the polarization vector back to the observer ====================== */
 
-        for (int log_idx = p_Ray_results->Ray_log_struct.Log_offset - 1; log_idx >= 0; log_idx--) {
+        for (int log_idx = p_Ray_results->Ray_log_struct.Log_offset - 1; log_idx > 0; log_idx--) {
 
             double* Logged_State = &(p_Ray_results->Ray_log_struct.Ray_path_log[log_idx * e_Full_state_size]);
             Parallel_Transport_Vector(Logged_State, p_Sim_Context->p_Spacetime, Contravariant, Polarization_vector_coord);
@@ -538,7 +519,7 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
         double Polarization_vector_ZAMO[4]{};
         Contravariant_coord_to_ZAMO(&p_Sim_Context->p_Init_Conditions->Init_metric, Polarization_vector_coord, Polarization_vector_ZAMO);
 
-        p_Ray_results->Projected_polarization_vector[e_x] = Polarization_vector_ZAMO[e_phi];
+        p_Ray_results->Projected_polarization_vector[e_x] = Polarization_vector_ZAMO[e_phi]; 
         p_Ray_results->Projected_polarization_vector[e_y] = Polarization_vector_ZAMO[e_theta];
 
         /* ============================================================================================================= */
@@ -622,8 +603,8 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Stokes_Vector[I] > 0) {
 
-            std::complex<double> PW_const = get_Penrose_Walker_constant(Logged_ray_path, p_Sim_Context->p_Spacetime, Coord_Basis_Pol_vec);
             Parallel_Transport_Vector(Logged_ray_path, p_Sim_Context->p_Spacetime, Contravariant, Coord_Basis_Pol_vec);
+
         }
 
         /* ======================================================================================================================== */
@@ -693,12 +674,12 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
             /* ======================================== Evaluate the thin disk models ======================================== */
 
-            double State_at_event[e_Full_state_size]{};
+            double State_at_event[e_Full_state_size]{}; 
 
             if (e_Novikov_Thorne == p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model && 
                 Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && 
                 Current_order <= p_Sim_Context->p_Init_Conditions->Max_order &&
-                Geodesic_Integrator.Logate_event(Equatorial_crossing, State_at_event)) {
+                Geodesic_Integrator.Locate_event(Equatorial_crossing, State_at_event)) {
 
                 Evaluate_Equatorial_Disk(p_Sim_Context, p_Ray_results, State_at_event, N_theta_turning_points);
 

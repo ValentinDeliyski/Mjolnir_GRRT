@@ -92,59 +92,6 @@ double get_max_relative_error(const double* const Error_state, const double* con
 	return max_rel_error;
 }
 
-bool interpolate_equatorial_crossing(const double* const State_Vector, 
-									 const double* const Old_State_Vector, 
-									 double* const Crossing_State) {
-
-	// Check weather the equator has been crossed
-	if ((State_Vector[e_theta] - M_PI_2) * (Old_State_Vector[e_theta] - M_PI_2) > 0) { return false; }
-
-	/* ---------- Interpolate the equatorial crossing coorinates between the two photon state vectors (including the coordinate time) ----------  */
-
-	double Current_position_cartesian[3]{};
-	double Previous_position_cartesian[3]{};
-	double Crossing_state_cartesian[3]{};
-
-	convert_spherical_to_cartesian(State_Vector, Current_position_cartesian);
-	convert_spherical_to_cartesian(Old_State_Vector, Previous_position_cartesian);
-
-	double Direction_vector[3]{};
-
-	for (int idx = e_x; idx <= e_z; idx++) {
-		
-		Direction_vector[idx] = Current_position_cartesian[idx] - Previous_position_cartesian[idx]; 
-	
-	}
-
-	const double crossing_param_position = -Previous_position_cartesian[e_z] / Direction_vector[e_z];
-
-	for (int idx = e_x; idx <= e_z; idx++) {
-		
-		Crossing_state_cartesian[idx] = Previous_position_cartesian[idx] + crossing_param_position * Direction_vector[idx];
-	
-	}
-
-	Crossing_State[e_t] = Old_State_Vector[e_t] + crossing_param_position * (State_Vector[e_t] - Old_State_Vector[e_t]);
-
-	/* ---------- The crossing coordinates are currently in cartesian form -> convert them to spherical ---------- */
-
-	convert_cartesian_to_spherical(Crossing_state_cartesian, Crossing_State);
-
-	/* ---------- Interpolate the covariant momenta at those coorinates ---------- */
-
-	for (int index = e_p_t; index <= e_p_phi; index++) {
-
-		Crossing_State[index] = crossing_param_position * State_Vector[index] + (1 - crossing_param_position) * Old_State_Vector[index];
-
-	}
-
-	Crossing_State[e_affine_param] = crossing_param_position * State_Vector[e_affine_param] + (1 - crossing_param_position) * Old_State_Vector[e_affine_param];
-
-	Crossing_State[e_step] = abs(Old_State_Vector[e_affine_param] - Crossing_State[e_affine_param]);
-
-	return true;
-}
-
 void get_cubic_polynomial_roots(const double a_coeff, const double b_coeff, const double c_coeff, const double d_coeff, std::complex<double>* const roots) {
 
 	const std::complex<double> p_coeff = (3 * a_coeff * c_coeff - pow(b_coeff, 2)) / (3 * pow(a_coeff, 2));
@@ -212,7 +159,7 @@ double dot_product(const double* const Vector_1, const double* const Vector_2, i
 
 	}
 
-	return  result;
+	return result;
 
 }
 

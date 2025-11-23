@@ -493,7 +493,7 @@ void Integrator_class::Propagate_ray() {
 
 }
 
-bool Integrator_class::Logate_event(Event_detection_enums e_Event, double* const State_at_Event) {
+bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const State_at_Event) {
 
     int Event_idx{};
     double Event_target{};
@@ -584,7 +584,7 @@ bool Integrator_class::Logate_event(Event_detection_enums e_Event, double* const
 
 }
 
-const double const Integrator_class::get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const {
+const double Integrator_class::get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const {
 
     /* The source for this implementation is https://mezbanhabibi.ir/wp-content/uploads/2020/01/ordinary-differential-equations-vol.1.-Nonstiff-problems.pdf, equation (6.7) */
 

@@ -555,7 +555,7 @@ void File_manager_class::write_simulation_metadata() {
 
     switch (this->p_Initial_Conditions->Simulation_mode){
 
-    case 3:
+    case Make_geodesic_log:
 
         Output_file = &this->Log_Output_File;
         Output_file_number = 1;
@@ -688,7 +688,7 @@ void File_manager_class::open_image_output_file() {
 
     // Loop over all the files and populate the (so far empty) 
     
-    if (this->p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
+    if (this->p_Initial_Conditions->Simulation_mode == Make_geodesic_log) {
 
         if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
@@ -706,9 +706,7 @@ void File_manager_class::open_image_output_file() {
 
         this->Log_Output_File.open(Photon_log_full_path, open_type);
 
-    }
-
-    if (this->p_Initial_Conditions->Simulation_mode == Image_generation) {
+    } else {
 
         if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
@@ -726,8 +724,6 @@ void File_manager_class::open_image_output_file() {
 
 
         this->Image_Output_File.open(Image_full_path, open_type);
-
-        
 
     }
 

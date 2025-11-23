@@ -148,7 +148,7 @@ Metric_type Kerr_class::get_dtheta_metric(const double* const State_Vector) cons
     /* --- Only the non-zero components are exlicitly evaluated. --- */
 
     s_dtheta_Metric.Metric[e_t][e_t]         = 4 * M * r / rho2 / rho2 * (a * a * cos_theta * sin_theta);
-    s_dtheta_Metric.Metric[e_t][e_phi]       = -4 * M * r * a * sin_theta * cos_theta / rho2 * (1 - a * a * sin_theta * sin_theta / rho2);
+    s_dtheta_Metric.Metric[e_t][e_phi]       = -4 * M * r * a * sin_theta * cos_theta / rho2 * (1 + a * a * sin_theta * sin_theta / rho2);
     s_dtheta_Metric.Metric[e_phi][e_t]       = s_dtheta_Metric.Metric[e_t][e_phi];
     s_dtheta_Metric.Metric[e_r][e_r]         = -2 * a * a * cos_theta * sin_theta / delta;
     s_dtheta_Metric.Metric[e_theta][e_theta] = -2 * a * a * cos_theta * sin_theta;
