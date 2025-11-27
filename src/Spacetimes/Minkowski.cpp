@@ -86,7 +86,7 @@ Metric_type Minkowski_class::get_d2r_metric(const double* const State_Vector) co
     return s_d2r_Minkowski_metric;
 }
 
-void Minkowski_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
+void Minkowski_class::get_EOM(const double* const State_vector, double* const Derivatives) {
 
     const double& r = State_vector[e_r];
 

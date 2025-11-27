@@ -31,6 +31,8 @@ JNW_class::JNW_class(const Metric_parameters_type* const p_Metric_Parameters) {
 
     }
 
+    this->Scattered_off_singulariy = false;
+
 }
 
 double* JNW_class::get_ISCO() {
@@ -99,7 +101,7 @@ Metric_type JNW_class::get_metric(const double* const State_Vector) const {
 
     Metric_type s_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_Metric.Metric[e_t][e_t]         = -pow(1 - r_singularity / r, this->Gamma);
     s_Metric.Metric[e_r][e_r]         = -1.0 / s_Metric.Metric[e_t][e_t];
@@ -127,14 +129,14 @@ Metric_type JNW_class::get_dr_metric(const double* const State_Vector) const {
 
     Metric_type s_dr_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dr_Metric.Metric[e_t][e_t]         = -this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2;
     s_dr_Metric.Metric[e_r][e_r]         = 1.0 / (s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t]) * s_dr_Metric.Metric[e_t][e_t];
     s_dr_Metric.Metric[e_theta][e_theta] = 2 * r * pow(1 - r_singularity / r, 1 - this->Gamma) + (1 - this->Gamma) * pow(1 - r_singularity / r, -this->Gamma) * r_singularity;
     s_dr_Metric.Metric[e_phi][e_phi]     = s_dr_Metric.Metric[e_theta][e_theta] * sin_theta * sin_theta;
 
-    s_dr_Metric.Lapse_function = 0;
+    s_dr_Metric.Lapse_function = -1. / (2 * sqrt(-s_Metric.Metric[e_t][e_t])) * s_dr_Metric.Metric[e_t][e_t];
 
     return s_dr_Metric;
 
@@ -148,11 +150,13 @@ Metric_type JNW_class::get_dtheta_metric(const double* const State_Vector) const
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
+    double r_singularity = 2 / this->Gamma;
+
     Metric_type s_dtheta_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
-    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * sin_theta * cos_theta;
+    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * sin_theta * cos_theta * pow(1 - r_singularity / r, 1 - this->Gamma);
 
     return s_dtheta_Metric;
 }
@@ -173,7 +177,7 @@ Metric_type JNW_class::get_d2r_metric(const double* const State_Vector) const {
 
     Metric_type s_d2r_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_d2r_Metric.Metric[e_t][e_t] = -this->Gamma * (this->Gamma - 1) * pow(1 - r_singularity / r, this->Gamma - 2) * r_singularity * r_singularity / r2 / r2
         + 2 * this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2 / r;
@@ -192,7 +196,7 @@ Metric_type JNW_class::get_d2r_metric(const double* const State_Vector) const {
 
 }
 
-void JNW_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
+void JNW_class::get_EOM(const double* const State_vector, double* const Derivatives) {
 
     const double& r = State_vector[e_r];
     const double& J = State_vector[e_p_phi];
@@ -238,6 +242,8 @@ bool JNW_class::terminate_integration(const double* const State_vector) {
     }
 
     const bool scatter = State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0.0;
+
+    if (scatter || hit_horizon) { this->Scattered_off_singulariy = false; }
 
     return scatter || hit_horizon;
 };

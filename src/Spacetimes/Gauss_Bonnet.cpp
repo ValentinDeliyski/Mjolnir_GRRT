@@ -105,7 +105,7 @@ Metric_type Gauss_Bonnet_class::get_metric(const double* const State_Vector) con
 
     Metric_type s_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_Metric.Metric[e_t][e_t]         = -f;
     s_Metric.Metric[e_r][e_r]         = 1. / f;
@@ -132,7 +132,7 @@ Metric_type Gauss_Bonnet_class::get_dr_metric(const double* const State_Vector) 
 
     Metric_type s_dr_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dr_Metric.Metric[e_t][e_t]         = -dr_f;
     s_dr_Metric.Metric[e_r][e_r]         = -1. / f / f * dr_f;
@@ -155,7 +155,7 @@ Metric_type Gauss_Bonnet_class::get_dtheta_metric(const double* const State_Vect
 
     Metric_type s_dtheta_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * sin_theta * cos_theta;
 
@@ -179,7 +179,7 @@ Metric_type Gauss_Bonnet_class::get_d2r_metric(const double* const State_Vector)
 
     Metric_type s_d2r_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_d2r_Metric.Metric[e_t][e_t]         = -d2r_f;
     s_d2r_Metric.Metric[e_r][e_r]         = 2. / f / f / f * dr_f - 1. / f / f * d2r_f;
@@ -192,7 +192,7 @@ Metric_type Gauss_Bonnet_class::get_d2r_metric(const double* const State_Vector)
 
 }
 
-void Gauss_Bonnet_class::get_EOM(const double* const State_vector, double* const Derivatives) const{
+void Gauss_Bonnet_class::get_EOM(const double* const State_vector, double* const Derivatives) {
 
     const double& r = State_vector[e_r];
     const double& J = State_vector[e_p_phi];

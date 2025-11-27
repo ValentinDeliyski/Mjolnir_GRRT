@@ -22,23 +22,6 @@
 #include <iostream>
 #include <complex>
 
-void static log_ray_path(double* State_Vector, Results_type* s_Ray_Results, Initial_conditions_type* p_Init_Conditions){
-
-    const int& log_offset = s_Ray_Results->Ray_log_struct.Log_offset;
-    const double& R_throat = p_Init_Conditions->Metric_parameters.R_throat;
-
-    memcpy(&s_Ray_Results->Ray_log_struct.Ray_path_log[log_offset * e_Full_state_size], State_Vector, e_Full_state_size * sizeof(double));
-
-    // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
-    // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead. 
-    if (Wormhole == p_Init_Conditions->Metric_parameters.e_Spacetime) {
-
-        s_Ray_Results->Ray_log_struct.Ray_path_log[e_r + log_offset * e_Full_state_size] = sqrt(State_Vector[e_r] * State_Vector[e_r] + R_throat * R_throat);
-
-    }
-
-}
-
 void static log_ray_emission(double Stokes_Vector[e_Stokes_param_num], double Optical_depth, Results_type* p_Ray_Results, int log_index, int Sim_mode) {
     
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
@@ -485,16 +468,6 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
                                      Results_type* const p_Ray_results,
                                      double* const State_at_event,
                                      const int N_theta_turning_points) {
-
-    if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
-
-        // The wormhole metric uses the global coordinate ell^2 = r^2 - r_throat^2
-        // Here I convert back to the r coordinate for the NT model evaluation
-        double& R_throat = p_Sim_Context->p_Init_Conditions->Metric_parameters.R_throat;
-
-        State_at_event[e_r] = sqrt(State_at_event[e_r] * State_at_event[e_r] - R_throat * R_throat);
-
-    }
 
     double& r_in = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_in;
     double& r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_out;

@@ -28,7 +28,7 @@ public:
 
     /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
-    virtual void get_EOM(const double* const State_vector, double* const Derivatives) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_EOM!"); };
+    virtual void get_EOM(const double* const State_vector, double* const Derivatives) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_EOM!"); };
 
     /* ---------------------------------------------- Integration Termination Conditions ----------------------------------------------- */
 
@@ -62,7 +62,7 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) override;
 
     /* Integration Termination Conditions */
 
@@ -89,7 +89,7 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) override;
 
     /* Integration Termination Conditions */
 
@@ -127,7 +127,7 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) override;
 
     /* Integration Termination Conditions */
 
@@ -162,7 +162,7 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) override;
 
     /* Integration Termination Conditions */
 
@@ -176,6 +176,9 @@ private:
 
     double Mass = 1.0;
     double Gamma;
+
+
+    bool Scattered_off_singulariy;
 
     double Scattering_radius;
     double Min_distance_to_singular_point;
@@ -197,7 +200,7 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) override;
 
     /* Integration Termination Conditions */
 
@@ -232,7 +235,7 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) override;
 
     /* Integration Termination Conditions */
 
@@ -265,7 +268,7 @@ public:
 
     /* Equations of motion */
 
-    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) override;
 
     /* Integration Termination Conditions */
 
@@ -316,7 +319,7 @@ public:
 
     /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
-    void get_EOM(const double* const State_vector, double* const Derivatives) const override;
+    void get_EOM(const double* const State_vector, double* const Derivatives) override;
 
     /* ---------------------------------------------- Integration Termination Conditions ----------------------------------------------- */
 

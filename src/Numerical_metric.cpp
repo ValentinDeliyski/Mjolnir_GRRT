@@ -636,7 +636,7 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, l
     return s_d2r_Metric;
 }
 
-void Numerical_metric::get_EOM(const double* const State_Vector, double* const Derivatives) const {
+void Numerical_metric::get_EOM(const double* const State_Vector, double* const Derivatives) {
 
     memset(Derivatives, 0, e_Dynamic_state_size * sizeof(double));
 

@@ -69,7 +69,7 @@ Metric_type RBH_class::get_metric(const double* const State_Vector) const {
 
     Metric_type s_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_Metric.Metric[e_t][e_t]         = -(1 - 2 * this->Mass / rho);
     s_Metric.Metric[e_r][e_r]         = -1.0 / s_Metric.Metric[e_t][e_t];
@@ -97,7 +97,7 @@ Metric_type RBH_class::get_dr_metric(const double* const State_Vector) const {
 
     Metric_type s_dr_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dr_Metric.Metric[e_t][e_t]         = -2 * this->Mass * r / rho3;
     s_dr_Metric.Metric[e_r][e_r]         = 1.0 / (s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t]) * s_dr_Metric.Metric[e_t][e_t];
@@ -117,7 +117,7 @@ Metric_type RBH_class::get_dtheta_metric(const double* const State_Vector) const
 
     Metric_type s_dtheta_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * sin_theta * cos_theta;
 
@@ -141,7 +141,7 @@ Metric_type RBH_class::get_d2r_metric(const double* const State_Vector) const {
 
     Metric_type s_d2r_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_d2r_Metric.Metric[e_t][e_t]         = -2 * this->Mass / rho3 + 6 * this->Mass * r2 / (rho5);
     s_d2r_Metric.Metric[e_r][e_r]         = 1.0 / (s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t]) * s_d2r_Metric.Metric[e_t][e_t] - 
@@ -152,7 +152,7 @@ Metric_type RBH_class::get_d2r_metric(const double* const State_Vector) const {
     return s_d2r_Metric;
 }
 
-void RBH_class::get_EOM(const double* const State_vector, double* const Derivatives) const{
+void RBH_class::get_EOM(const double* const State_vector, double* const Derivatives) {
 
     double r = State_vector[e_r];
     double rho = sqrt(r * r + this->Parameter * this->Parameter);

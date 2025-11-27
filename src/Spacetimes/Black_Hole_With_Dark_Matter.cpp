@@ -122,7 +122,7 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_metric(const double* const 
 
     Metric_type s_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_Metric.Metric[e_t][e_t]         = -f;
     s_Metric.Metric[e_r][e_r]         = 1. / (1 - 2 * m / r);
@@ -159,7 +159,7 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dr_metric(const double* con
 
     Metric_type s_dr_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dr_Metric.Metric[e_t][e_t]         = -dr_f;
     s_dr_Metric.Metric[e_r][e_r]         = -1. / (1 - 2 * m / r) / (1 - 2 * m / r) * (2 * m / r2 - 2 / r * dr_m);
@@ -182,7 +182,7 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dtheta_metric(const double*
 
     Metric_type s_dtheta_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * sin_theta * cos_theta;
 
@@ -190,7 +190,7 @@ Metric_type Black_Hole_w_Dark_Matter_Halo_class::get_dtheta_metric(const double*
 
 }
 
-void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
+void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(const double* const State_vector, double* const Derivatives) {
 
     const double& r = State_vector[e_r];
 

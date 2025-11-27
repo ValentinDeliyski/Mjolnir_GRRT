@@ -129,6 +129,8 @@ static int implicit_method_system_wrapper_f(const gsl_vector* gsl_trial_State_Ve
 
 Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results) {
 
+    this->Force_scatter = true;
+
     this->continue_integration = true;
     this->integration_complete = false;
     this->Normal_termination_condition = false;
@@ -421,6 +423,17 @@ void Integrator_class::Run_Explicit_Runge_Kutta(Geodesic_Integrator_enums e_Acti
 
     }
 
+    if (this->p_Init_conditions->Metric_parameters.e_Spacetime == Janis_Newman_Winicour && this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 0.5) {
+
+        if (New_State_vector_main[e_r] - 2 / this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 1e-2 && this->Force_scatter) {
+
+            New_State_vector_main[e_p_r] = -1 * abs(New_State_vector_main[e_p_r]);
+
+            if (this->continue_integration) { this->Force_scatter = false; }
+
+        }
+    }
+
     if (this->continue_integration) {
 
         memcpy(this->Current_Dynamic_state, New_State_vector_main, e_Dynamic_state_size * sizeof(double));
@@ -445,12 +458,13 @@ void Integrator_class::Update_ray_log(const double* const New_State_vector) {
     this->p_Ray_log_struct->Ray_path_log[e_affine_param + log_offset * e_Full_state_size] = this->p_Ray_log_struct->Ray_path_log[e_affine_param + (log_offset - 1) * e_Full_state_size] - this->p_Step_controller->previous_step;
     
     // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
-    // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate instead. 
+    // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate and its momentum instead. 
     if (Wormhole == this->p_Init_conditions->Metric_parameters.e_Spacetime) {
 
         const double& R_throat = this->p_Init_conditions->Metric_parameters.R_throat;
+        this->p_Ray_log_struct->Ray_path_log[e_p_r + log_offset * e_Full_state_size] *= sqrt(1. + R_throat * R_throat / New_State_vector[e_r] / New_State_vector[e_r]);
         this->p_Ray_log_struct->Ray_path_log[e_r + log_offset * e_Full_state_size] = sqrt(New_State_vector[e_r] * New_State_vector[e_r] + R_throat * R_throat);
-
+        
     }
 
 }

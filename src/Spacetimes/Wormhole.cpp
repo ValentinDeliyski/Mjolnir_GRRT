@@ -91,7 +91,7 @@ Metric_type Wormhole_class::get_metric(const double* const State_Vector) const {
 
     Metric_type s_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_Metric.Lapse_function = exp(exponent);
     s_Metric.Shift_function = 2 * this->Spin_Param * this->Mass * this->Mass / r2 / r;
@@ -121,7 +121,7 @@ Metric_type Wormhole_class::get_dr_metric(const double* const State_Vector) cons
 
     Metric_type s_dr_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dr_Metric.Lapse_function = s_Metric.Lapse_function * (1 / r2 + 2 * this->Redshift_Param / (r2 * r));
     s_dr_Metric.Shift_function = -3 * s_Metric.Shift_function / r;
@@ -152,11 +152,9 @@ Metric_type Wormhole_class::get_dtheta_metric(const double* const State_Vector) 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    double exponent = -this->Mass / r - this->Redshift_Param * this->Mass * this->Mass / r2;
-
     Metric_type s_dtheta_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dtheta_Metric.Metric[e_t][e_t]     = 2 * r2 * s_Metric.Shift_function * s_Metric.Shift_function * sin_theta * cos_theta;
     s_dtheta_Metric.Metric[e_t][e_phi]   = -2 * r2 * sin_theta * cos_theta * s_Metric.Shift_function;
@@ -184,7 +182,7 @@ Metric_type Wormhole_class::get_d2r_metric(const double* const State_Vector) con
 
     Metric_type s_d2r_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_d2r_Metric.Lapse_function = dr_N * (1 / r2 + 2 * this->Redshift_Param / (r2 * r)) - N * (2. / (r2 * r) + 6 * this->Redshift_Param / (r2 * r2));
     s_d2r_Metric.Shift_function = -3 * dr_omega / r + 3 * omega / r2;
@@ -200,7 +198,7 @@ Metric_type Wormhole_class::get_d2r_metric(const double* const State_Vector) con
     return s_d2r_Metric;
 }
 
-void Wormhole_class::get_EOM(const double* const State_Vector, double* const Derivatives) const{
+void Wormhole_class::get_EOM(const double* const State_Vector, double* const Derivatives) {
 
     double sqrt_r2 = sqrt(State_Vector[e_r] * State_Vector[e_r] + this->R_Throat * this->R_Throat);
     double d_ell_r = State_Vector[e_r] / sqrt_r2;

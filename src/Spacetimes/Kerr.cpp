@@ -75,7 +75,7 @@ Metric_type Kerr_class::get_metric(const double* const State_Vector) const {
 
     Metric_type s_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_Metric.Metric[e_t][e_t]         = -(1 - 2 * M * r / rho2);
     s_Metric.Metric[e_t][e_phi]       = -2 * M * r * a * sin_theta * sin_theta / rho2;
@@ -109,7 +109,7 @@ Metric_type Kerr_class::get_dr_metric(const double* const State_Vector) const {
 
     Metric_type s_dr_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dr_Metric.Metric[e_t][e_t]         = -2 * M / rho2 * (2 * r2 / rho2 - 1);
     s_dr_Metric.Metric[e_t][e_phi]       = 2 * M * a * sin_theta * sin_theta / rho2 * (2 * r2 / rho2 - 1);
@@ -145,7 +145,7 @@ Metric_type Kerr_class::get_dtheta_metric(const double* const State_Vector) cons
 
     Metric_type s_dtheta_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_dtheta_Metric.Metric[e_t][e_t]         = 4 * M * r / rho2 / rho2 * (a * a * cos_theta * sin_theta);
     s_dtheta_Metric.Metric[e_t][e_phi]       = -4 * M * r * a * sin_theta * cos_theta / rho2 * (1 + a * a * sin_theta * sin_theta / rho2);
@@ -183,7 +183,7 @@ Metric_type Kerr_class::get_d2r_metric(const double* const State_Vector) const {
 
     Metric_type s_d2r_Metric{};
 
-    /* --- Only the non-zero components are exlicitly evaluated. --- */
+    /* --- Only the non-zero components are explicitly evaluated. --- */
 
     s_d2r_Metric.Metric[e_t][e_t]         = 4 * M * r / rho2 / rho2 * (4 * r2 / rho2 - 3);
     s_d2r_Metric.Metric[e_t][e_phi]       = -4 * M * a * r * sin_theta * sin_theta / rho2 / rho2 * (4 * r2 / rho2 - 3);
@@ -207,7 +207,7 @@ Metric_type Kerr_class::get_d2r_metric(const double* const State_Vector) const {
     return s_d2r_Metric;
 }
 
-void Kerr_class::get_EOM(const double* const State_vector, double* const Derivatives) const {
+void Kerr_class::get_EOM(const double* const State_vector, double* const Derivatives) {
 
     const double& r = State_vector[e_r];
     double r2 = r * r;
