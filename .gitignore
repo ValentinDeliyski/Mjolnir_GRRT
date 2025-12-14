@@ -349,17 +349,15 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-.rar
-.vscode
-Utilities/
+*.rar
+*.vscode
+*.txt
 Sim_Results/
 
-!Utilities/Ehtim/Ehtim_Input_Data/Arrays
-!Utilities/Ehtim/Ehtim_Launcher.py
-!Utilities/Mjolnir_Configurator.py
-!Utilities/Support_functions
-!Utilities/Reference_simulations/Thermal_synchrotron_reference_sims.py
-!Utilities/Reference_simulations/Hotspot_reference_sims.py
-!Utilities/Reference_simulations/Wormhole_simulations.py
+Utilities/Reference_simulations/**
+Utilities/Wormhole_sim_paper
+Utilities/Figure_Scripts
+Utilities/Numerical_metric_runs
+
 *.csv
 *.XML

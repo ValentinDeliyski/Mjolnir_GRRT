@@ -308,34 +308,31 @@ void static Radiative_transfer_RHS(const double* const Emission_Functions,
 
 }
 
-void RK5_radiative_transfer(double* const Emission_Functions,
-                            double* const Absorbtion_Functions,
-                            double* const Faradey_Functions,
-                            double* const State_Vector,
+void RK5_radiative_transfer(double* const State_Vector_Global,
                             const Simulation_Context_type* p_Sim_Context,
                             double* const Stokes_Vector) {
 
     double RHS[Nyström_size * e_Stokes_param_num]{};
     double EOM[Nyström_size * e_Dynamic_state_size]{};
 
-    double Temp_Stokes_Vector[e_Stokes_param_num]{}, Temp_State_Vector[e_Dynamic_state_size]{};
+    double Temp_Stokes_Vector[e_Stokes_param_num]{}, Temp_State_Vector_Global[e_Full_state_size]{}, Temp_State_Vector_Local[e_Full_state_size]{};
 
     for (int RK5_stage = 0; RK5_stage < Nyström_size; RK5_stage++) {
 
         memcpy(Temp_Stokes_Vector, Stokes_Vector, e_Stokes_param_num * sizeof(double));
-        memcpy(Temp_State_Vector, State_Vector, e_Dynamic_state_size * sizeof(double));
+        memcpy(Temp_State_Vector_Global, State_Vector_Global, e_Full_state_size * sizeof(double));
 
         for (int derivative_indexer = 0; derivative_indexer < RK5_stage; derivative_indexer++) {
 
             for (int idx = 0; idx < 4; idx++) {
 
-                Temp_Stokes_Vector[idx] += Nyström_Deriv_coeffs[RK5_stage][derivative_indexer] * RHS[idx + derivative_indexer * e_Stokes_param_num] * State_Vector[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass;
+                Temp_Stokes_Vector[idx] += Nyström_Deriv_coeffs[RK5_stage][derivative_indexer] * RHS[idx + derivative_indexer * e_Stokes_param_num] * State_Vector_Global[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass;
 
             }
 
             for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
 
-                Temp_State_Vector[idx] += Nyström_Deriv_coeffs[RK5_stage][derivative_indexer] * EOM[idx + derivative_indexer * e_Dynamic_state_size] * State_Vector[e_step];
+                Temp_State_Vector_Global[idx] += Nyström_Deriv_coeffs[RK5_stage][derivative_indexer] * EOM[idx + derivative_indexer * e_Dynamic_state_size] * State_Vector_Global[e_step];
 
             }
         }
@@ -346,7 +343,8 @@ void RK5_radiative_transfer(double* const Emission_Functions,
 
             Transfer_functions_type Temp_Transfer_functions{};
 
-            p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(Temp_State_Vector,
+            p_Sim_Context->p_Spacetime->Convert_global_to_local_coords(Temp_State_Vector_Global, Temp_State_Vector_Global, Temp_State_Vector_Local, e_Full_State_Vector);
+            p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(Temp_State_Vector_Local,
                                                                               p_Sim_Context,
                                                                               static_cast<Emission_medium_enums>(emission_medium),
                                                                               &Temp_Transfer_functions);
@@ -363,7 +361,7 @@ void RK5_radiative_transfer(double* const Emission_Functions,
                                Temp_Stokes_Vector, 
                                RHS + RK5_stage * e_Stokes_param_num);
 
-        p_Sim_Context->p_Spacetime->get_EOM(Temp_State_Vector, EOM + RK5_stage * e_Dynamic_state_size);
+        p_Sim_Context->p_Spacetime->get_EOM(Temp_State_Vector_Global, EOM + RK5_stage * e_Dynamic_state_size);
 
     }
 
@@ -371,7 +369,7 @@ void RK5_radiative_transfer(double* const Emission_Functions,
 
         for (int deriv_idx = 0; deriv_idx < Nyström_size; deriv_idx++) {
 
-            Stokes_Vector[idx] += State_Vector[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass * Nyström_Coeff_sol[deriv_idx] * RHS[idx + deriv_idx * e_Stokes_param_num];
+            Stokes_Vector[idx] += State_Vector_Global[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass * Nyström_Coeff_sol[deriv_idx] * RHS[idx + deriv_idx * e_Stokes_param_num];
 
         }
     }

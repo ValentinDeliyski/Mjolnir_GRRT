@@ -220,10 +220,10 @@ struct Emission_medium_state_type {
     /*! @brief The magnetization of the emission medium at the current point. */
     double Magnetization{};
 
-    /*! @brief Pointer to the plasma velocity array at the current point in geometric units. */
-    double Plasma_Velocity[4]{};
+    /*! @brief Pointer to the plasma velocity array at the current point in geometric units and local coordinates. */
+    double Plasma_Velocity[4];
 
-    /*! @brief Struct that holds the magnetic field. */
+    /*! @brief Struct that holds the magnetic field in local coordinates. */
     Magnetic_fields_type Magnetic_fields{};
 
     /*! @brief Enum that specifies which emission medium is being considered. */
@@ -844,13 +844,16 @@ struct Simulation_Context_type {
 
 };
 
-struct s_Ray_log_type {
+struct Ray_log_type {
 
     /* Pointer to the arrays that hold the intensity and optical depth along the photon trajectory. */
     double* Ray_emission_log[4]{};
 
-    /* Pointer to the array that holds the entire photon trajectory. */
-    double* Ray_path_log{};
+    /* Pointer to the array that holds the entire photon trajectory in local coordinates. */
+    double* Ray_path_log_local{};
+
+    /* Pointer to the array that holds the entire photon trajectory in global coordinates. */
+    double* Ray_path_log_global{};
 
     /* Int that specifies where in the log to write.
        This exists for the sole purpose of minimizing the number of arguments in the functions that write to the photon log. */
@@ -861,7 +864,7 @@ struct s_Ray_log_type {
 
 };
 
-struct s_Adaptive_RK_Integrator_debug_type {
+struct Adaptive_RK_Integrator_debug_type {
 
     /*! @brief Pointer to the log of the state error. Used only in sim mode Make_geodesic_log. */
     double* State_error_history{};
@@ -877,10 +880,10 @@ struct Results_type {
     Metric_parameters_type Metric_parameters{};
 
     /*! @brief The struct that holds the photon log. */
-    s_Ray_log_type Ray_log_struct{};
+    Ray_log_type Ray_log_struct{};
 
     /*! @brief The struct that holds the adaptive integrator debug parameters log. */
-    s_Adaptive_RK_Integrator_debug_type RK_integrator_debug_log{};
+    Adaptive_RK_Integrator_debug_type RK_integrator_debug_log{};
 
     /*! @brief Array that holds the integrated intensity for each polarization component. */
     double Intensity[e_Stokes_param_num]{};

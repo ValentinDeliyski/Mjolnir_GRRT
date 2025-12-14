@@ -129,12 +129,13 @@ public:
     //! Computes the emission medium's plasma 4-velocity
     /*! Computes the emission medium's plasma 4-velocity
      *
-     *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
-     *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to call the metric function
+     *   \param [in] State_Vector_Local - Current photon state vector in local coordinates.
+     *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct
      *   \param [in] Velocity_profile - Enum for the type of velocity profile
-     *   \return Pointer to the 4-velocity vector
+     *   \param [in] Radial_velocity_fraction - The fractional part of the velocity that is in the radial direction [-1, 1]
+     *   \param [out] Plasma_Velocity - Pointer to the array that holds the plasma velocity vectors in local coordinates
      */
-    Return_Values get_plasma_velocity(const double* const State_Vector,
+    Return_Values get_plasma_velocity(const double* const State_Vector_Local,
                                       const Simulation_Context_type* const p_Sim_Context, 
                                       Velocity_enums const Velocity_profile,
                                       double const Radial_velocity_fraction,

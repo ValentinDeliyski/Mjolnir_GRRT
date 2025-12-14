@@ -35,49 +35,61 @@ class Simulation:
         
         self.Units = Units_class()
         self.Simulation_configurator = Simulation_configurator()
-        self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
+        
+        self.Simulation_configurator.simulation_mode = {"Value": 0, "Unit": "[-]"} 
+        self.Simulation_configurator.metric_parameters.WH_stop_at_throat = {"Value": 0, "Unit": "[-]"}  
+        self.Simulation_configurator.file_manager.Sim_mode_2_input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Schwarzschild_r6_20deg_500_photons_direct.csv"
+        
+        self.Simulation_configurator.observer.Include_polarization = {"Value": 1, "Unit": "[-]"}
         self.Simulation_configurator.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[-]"}
         
         """ Central black hole setup"""
         self.Simulation_configurator.metric_parameters.Metric_type = {"Value": "Kerr",  "Unit": "[-]"}
         self.Simulation_configurator.object_mass                   = {"Value": 4.297e6, "Unit": "[M_sun]"}
         self.Simulation_configurator.metric_parameters.Spin        = {"Value": 0, "Unit": "[M]"}
+        self.Simulation_configurator.metric_parameters.WH_redshift = {"Value": 0, "Unit": "[M]"}
         self.Object_distance                                       = {"Value": 8.277e3, "Unit": "[Pc]"}
-        self.Simulation_configurator.max_image_order               = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.min_image_order               = {"Value": 1, "Unit": "[-]"}
+        self.Simulation_configurator.max_image_order               = {"Value": 1, "Unit": "[-]"}
         
         """ Accretion disk setup """   
         self.Simulation_configurator.disk_model.Disk_Model = {"Value": "Novikov-Thorne", "Unit": "[-]"}
         
         self.Simulation_configurator.disk_model.r_in_NT_disk = {"Value": 6, "Unit": "[M]"} 
         self.Simulation_configurator.disk_model.r_out_NT_disk = {"Value": 25, "Unit": "[M]"} 
-        
-        self.Simulation_configurator.disk_model.Mag_field_geometry_r     = {"Value": 0.7, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Mag_field_geometry_theta = {"Value": 0, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Mag_field_geometry_phi   = {"Value": 0.9, "Unit": "[-]"}
+         
+        self.Simulation_configurator.disk_model.Mag_field_geometry_r     = {"Value": 0.1, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Mag_field_geometry_theta = {"Value": 0.2, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Mag_field_geometry_phi   = {"Value": 0.3, "Unit": "[-]"}
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
         
         """ Observer setup """
         self.Simulation_configurator.observer.Distance    = {"Value": 1e4,            "Unit": "[M]"}
-        self.Simulation_configurator.observer.Inclination = {"Value": 150 * pi / 180, "Unit": "[Rad]"}
+        self.Simulation_configurator.observer.Inclination = {"Value": 89 * pi / 180, "Unit": "[Rad]"}
         self.Simulation_configurator.observer.Azimuth     = {"Value": 0,              "Unit": "[Rad]"}
         
-        self.Observer_FOV = {"Value": 400, "Unit": "[micro-arcsec]"}
+        self.Observer_FOV = {"Value": 150, "Unit": "[micro-arcsec]"}
         
-        self.Simulation_configurator.observer.Image_y_min = {"Value": -(self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
-        self.Simulation_configurator.observer.Image_y_max = {"Value":  (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
-        self.Simulation_configurator.observer.Image_x_min = {"Value": -(self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
-        self.Simulation_configurator.observer.Image_x_max = {"Value":  (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_y_min = {"Value": -10, "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_y_max = {"Value":  10, "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_x_min = {"Value": -10, "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_x_max = {"Value":  10, "Unit": "[M]"}
         
         self.Simulation_configurator.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": 256 , "Unit": "[-]"}
         
         """ Configure the integrator """
+        self.Simulation_configurator.integrator.ESDIRK54_abs_accuracy  = {"Value": 1e-9, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.ESDIRK54_rel_accuracy  = {"Value": 1e-9, "Unit": "[-]"}
         
         self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-14, "Unit": "[-]"}
         self.Simulation_configurator.integrator.RK78_rel_accuracy = {"Value": 1e-14, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.max_integration_count  = {"Value": 100000000, "Unit": "[-]"}
         self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 5, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.default_geodesic_integrator_type  = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        
         self.Simulation_configurator.integrator.max_stepsize = {"Value": 50, "Unit": "[-]"}
         
         """ The simulation output file path """
@@ -92,7 +104,7 @@ class Simulation:
             
         """ Run the simulation """
         filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Thin_Disk_Reference_Simulation\\Thin_Disk_Reference_Simulation_input.xml"
-        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 0"
+        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
         subprocess.call(args, shell = True)          
 
 if __name__ == "__main__":

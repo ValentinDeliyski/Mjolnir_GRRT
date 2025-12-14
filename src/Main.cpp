@@ -119,11 +119,11 @@ int main(int argument_count, char** cmd_line_args) {
         s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
 
         double init_state[4] = { s_Sim_Context.p_Init_Conditions->Observer_params.init_time,
-                                s_Sim_Context.p_Init_Conditions->Observer_params.distance,
-                                s_Sim_Context.p_Init_Conditions->Observer_params.inclination,
-                                s_Sim_Context.p_Init_Conditions->Observer_params.azimuth };
+                                 s_Sim_Context.p_Init_Conditions->Observer_params.distance,
+                                 s_Sim_Context.p_Init_Conditions->Observer_params.inclination,
+                                 s_Sim_Context.p_Init_Conditions->Observer_params.azimuth };
 
-        Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_metric(init_state);
+        Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_global_metric(init_state);
 
         memcpy(&s_Sim_Context.p_Init_Conditions->Init_metric, &s_init_Metric, sizeof(Metric_type));
 
@@ -140,7 +140,8 @@ int main(int argument_count, char** cmd_line_args) {
         // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
         static Results_type s_Ray_results{};
 
-        s_Ray_results.Ray_log_struct.Ray_path_log = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size];
+        s_Ray_results.Ray_log_struct.Ray_path_log_local = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size];
+        s_Ray_results.Ray_log_struct.Ray_path_log_global = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size];
         s_Ray_results.RK_integrator_debug_log.N_steps_rejected = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
         s_Ray_results.RK_integrator_debug_log.State_error_history = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
 

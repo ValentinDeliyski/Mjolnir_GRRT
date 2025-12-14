@@ -8,12 +8,13 @@ parent_directory = os.path.abspath('...')
 sys.path.append(parent_directory)
 
 from Support_functions.Parsers import Simulation_Parser
-from Support_functions.Spacetimes_new import Kerr, Wormhole, Regular_Black_Hole, Gauss_Bonnet, Janis_Newman_Winicour, Spacetime
+from Support_functions.Spacetimes_new import Kerr, Wormhole, Regular_Black_Hole, Gauss_Bonnet, Janis_Newman_Winicour, Spacetime, Numerical
 from numpy import array, sqrt, arctan2, dot, cross, append, zeros, sin, diag, pi, cos, flip
 from numpy.linalg import inv, norm
 from numpy.typing import NDArray
 
 import matplotlib.pyplot as plt
+from matplotlib.colorbar import Colorbar 
 from enum import Enum
 
 class Coords(Enum):
@@ -127,20 +128,28 @@ class Polarization_class():
     
     def get_PW_constant(self, Source_r_coord: float, P_ph_coord_con: NDArray, Pol_coord_con: NDArray) -> tuple[float, float]:
         
-        if self.Spacetime_instance.Identify() == self.Spacetime_instance.Spacetime_enums.Kerr.value:
+        if self.Spacetime_instance.Identify() == self.Spacetime_instance.Spacetime_enums.Kerr.value or self.Spacetime_instance.Identify() == self.Spacetime_instance.Spacetime_enums.Numerical.value:
+            
+            a = self.Spacetime_instance.a 
+            
+            if self.Spacetime_instance.Identify() == self.Spacetime_instance.Spacetime_enums.Numerical.value:
+                Source_r_coord = (Source_r_coord + 0.38185489999999966)
             
             kappa_1 = Source_r_coord * (P_ph_coord_con[Coords.e_t.value] * Pol_coord_con[Coords.e_r.value] - P_ph_coord_con[Coords.e_r.value] * Pol_coord_con[Coords.e_t.value])
-            kappa_1 = kappa_1 + Source_r_coord * self.Spacetime_instance.a * (P_ph_coord_con[Coords.e_r.value] * Pol_coord_con[Coords.e_phi.value] - P_ph_coord_con[Coords.e_phi.value] * Pol_coord_con[Coords.e_r.value])
+            kappa_1 = kappa_1 + Source_r_coord * a * (P_ph_coord_con[Coords.e_r.value] * Pol_coord_con[Coords.e_phi.value] - P_ph_coord_con[Coords.e_phi.value] * Pol_coord_con[Coords.e_r.value])
         
-            kappa_2 = -Source_r_coord * ((Source_r_coord**2 + self.Spacetime_instance.a**2) * (P_ph_coord_con[Coords.e_phi.value] * Pol_coord_con[Coords.e_theta.value] - P_ph_coord_con[Coords.e_theta.value] * Pol_coord_con[Coords.e_phi.value]))
-            kappa_2 = kappa_2 + Source_r_coord * self.Spacetime_instance.a * (P_ph_coord_con[Coords.e_t.value] * Pol_coord_con[Coords.e_theta.value] - P_ph_coord_con[Coords.e_theta.value] * Pol_coord_con[Coords.e_t.value])
+            kappa_2 = -Source_r_coord * ((Source_r_coord**2 + a**2) * (P_ph_coord_con[Coords.e_phi.value] * Pol_coord_con[Coords.e_theta.value] - P_ph_coord_con[Coords.e_theta.value] * Pol_coord_con[Coords.e_phi.value]))
+            kappa_2 = kappa_2 + Source_r_coord * a * (P_ph_coord_con[Coords.e_t.value] * Pol_coord_con[Coords.e_theta.value] - P_ph_coord_con[Coords.e_theta.value] * Pol_coord_con[Coords.e_t.value])
             
         else:
-            
-            Metric = self.Spacetime_instance.get_metric(Source_coord, pi / 2)
+
+            Metric = self.Spacetime_instance.get_metric(Source_r_coord, pi / 2)
             
             kappa_1 = sqrt(Metric[Coords.e_phi.value][Coords.e_phi.value] * (-Metric[Coords.e_r.value][Coords.e_r.value] * Metric[Coords.e_t.value][Coords.e_t.value]))
             kappa_1 = kappa_1 * (P_ph_coord_con[Coords.e_t.value] * Pol_coord_con[Coords.e_r.value] - P_ph_coord_con[Coords.e_r.value] * Pol_coord_con[Coords.e_t.value])
+    
+            if Source_coord < 0:
+                kappa_1 = -kappa_1
     
             kappa_2 = -sqrt(Metric[Coords.e_phi.value][Coords.e_phi.value])**3 * (P_ph_coord_con[Coords.e_phi.value] * Pol_coord_con[Coords.e_theta.value] - P_ph_coord_con[Coords.e_theta.value] * Pol_coord_con[Coords.e_phi.value])
     
@@ -154,7 +163,7 @@ class Polarization_class():
 
         """ The math source for this implementation is from https://arxiv.org/pdf/2105.09440. """
         
-        Metric_at_source = self.Spacetime_instance.get_metric(Source_r_coord, theta = pi / 2)
+        Metric_at_source = self.Spacetime_instance.get_metric(Source_r_coord, theta = pi / 2)    
         dr_Metric_at_source = self.Spacetime_instance.get_dr_metric(Source_r_coord, theta = pi / 2)
 
         Photon_Momentum_covariant = append(-1, Photon_Momentum_covariant)
@@ -180,7 +189,7 @@ class Polarization_class():
         Redshift                 = 1 / Photon_fluid_momentum[Coords.e_t.value]
         Projected_Disk_Thickness = abs(Photon_fluid_momentum[Coords.e_t.value] / Photon_fluid_momentum[Coords.e_theta.value])
 
-        if self.Spacetime_instance.Identify() == self.Spacetime_instance.Spacetime_enums.Kerr.value:
+        if self.Spacetime_instance.Identify() == self.Spacetime_instance.Spacetime_enums.Kerr.value or self.Spacetime_instance.Identify() == self.Spacetime_instance.Spacetime_enums.Numerical.value :
 
             alpha_coord = -(Image_Coords[Coords.e_x.value] + self.Spacetime_instance.a * sin(float(self.Sim_metadata["Observer Inclination [Deg]"]) / 180 * pi))
             beta_coord = Image_Coords[Coords.e_y.value]
@@ -196,18 +205,35 @@ class Polarization_class():
         return Transported_Polarization_Vector
 
 if __name__ == "__main__":
+    
+    plt.rcParams['axes.titlepad'] = 20
+    plt.rcParams['text.usetex'] = True
+    plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
-    Sim_path = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Thin_Disk_Reference_Simulation\\Janis_Newman_Winicour"
+    Sim_path = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Thin_Disk_Reference_Simulation\\Einstein_Gauss_Bonnet"
 
     Sim_parser = Simulation_Parser(Sim_path)
     
     match Sim_parser.Simulation_metadata["Spacetime [-]"]:
 
         case "Kerr":
-            Spacetime_instance = Kerr(float(Sim_parser.Simulation_metadata["Spin Parameter [M]"]))
+            Spacetime_instance = Kerr(spin_param = float(Sim_parser.Simulation_metadata["Spin Parameter [M]"]))
+
+        case "Numerical":
+            
+            Metric_path = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Numerical_metrics\\configuration-II.dat"      
+            Spacetime_instance = Numerical(Anzatz = Spacetime.Anzatz_enums.Anzatz_1, 
+                                           Horizon_radius = 0.0662902, 
+                                           M_ADM = 0.415, 
+                                           a_ADM = 0.4136742708291029, 
+                                           Radial_grid_size = 251, 
+                                           Theta_grid_size = 30, 
+                                           Raw_data_path = Metric_path)
 
         case "Wormhole":
-            Spacetime_instance = Wormhole(r_throat = 1.0, parameter = float(Sim_parser.Simulation_metadata["Redshift Parameter [-]"]), use_global_coords = False)
+            Spacetime_instance = Wormhole(r_throat = 1.0, 
+                                          parameter = float(Sim_parser.Simulation_metadata["Redshift Parameter [-]"]), 
+                                          use_global_coords = True)
         
         case "Einstein_Gauss_Bonnet":
             Spacetime_instance = Gauss_Bonnet(Param = float(Sim_parser.Simulation_metadata["Gamma [M^2]"]))
@@ -232,15 +258,24 @@ if __name__ == "__main__":
     
     Polarization_instance = Polarization_class(Spacetime_instance, Sim_parser.Simulation_metadata)
 
-    for P_photon, Source_coord, Image_coord, Flux, Numerical_pol_x, Numerical_pol_y in zip(Photon_momentum, Sim_parser.Source_r, Image_coords, Sim_parser.Disk_flux, Sim_parser.Polarization_vec_X, Sim_parser.Polarization_vec_Y):
+    for P_photon, Source_coord, Image_coord, Flux, Numerical_pol_x, Numerical_pol_y, redshift in zip(Photon_momentum, 
+                                                                                                     Sim_parser.Source_r, 
+                                                                                                     Image_coords, 
+                                                                                                     Sim_parser.Disk_flux, 
+                                                                                                     Sim_parser.Polarization_vec_X, 
+                                                                                                     Sim_parser.Polarization_vec_Y, 
+                                                                                                     Sim_parser.Disk_redshift):
     
+ 
         Numerical_Polarization_Vector_x.append(Numerical_pol_x)
         Numerical_Polarization_Vector_y.append(Numerical_pol_y)
 
-        if (Flux != 0):
+        if (redshift != 0):
             
-            Analytical_Polarization_Vector_x.append(Polarization_instance.get_polarization_vector(P_photon, Source_coord, [0.5, 0, 0.87], Image_coord)[Coords.e_x.value])
-            Analytical_Polarization_Vector_y.append(Polarization_instance.get_polarization_vector(P_photon, Source_coord, [0.5, 0, 0.87], Image_coord)[Coords.e_y.value])
+            # P_photon = Spacetime_instance.__convert_global_to_local_coords__(Source_coord, P_photon)
+    
+            Analytical_Polarization_Vector_x.append(Polarization_instance.get_polarization_vector(P_photon, Source_coord, [0.1, 0.2, 0.3], Image_coord)[Coords.e_x.value])
+            Analytical_Polarization_Vector_y.append(Polarization_instance.get_polarization_vector(P_photon, Source_coord, [0.1, 0.2, 0.3], Image_coord)[Coords.e_y.value])
 
         else:
             Analytical_Polarization_Vector_x.append(0)
@@ -257,11 +292,27 @@ if __name__ == "__main__":
     axes_limits = array([float(Limit) for Limit in axes_limits])
 
     Fig = plt.figure()
-    Comparison_plot_x = Fig.add_subplot(121)
-    Comparison_plot_x.imshow(arctan2(Numerical_Polarization_Vector_x, Numerical_Polarization_Vector_y) - arctan2(Analytical_Polarization_Vector_x, Analytical_Polarization_Vector_y) , cmap = "seismic", vmin = -pi, vmax = pi, extent= tuple(axes_limits))
-
-    Comparison_plot_y = Fig.add_subplot(122)
-    Comparison_plot_y.imshow(Numerical_Polarization_Vector_y - Analytical_Polarization_Vector_y, cmap = "seismic", vmin = -1, vmax = 1)
+    Comparison_plot_EVPA = Fig.add_subplot(131)
+    Delta_EVPA = (arctan2(Numerical_Polarization_Vector_x, Numerical_Polarization_Vector_y) - arctan2(Analytical_Polarization_Vector_x, Analytical_Polarization_Vector_y)) / pi
+    Delta_EVPA[Delta_EVPA > 2 - 1e-3] = Delta_EVPA[Delta_EVPA > 2 - 1e-3] - 2
+    Delta_EVPA[Delta_EVPA < -2 + 1e-3] = Delta_EVPA[Delta_EVPA < -2 + 1e-3] + 2
+    Limit = max(abs(Delta_EVPA.flatten()))
+    Delta_EVPA_image = Comparison_plot_EVPA.imshow(Delta_EVPA, cmap = "seismic", vmax = Limit, vmin = -Limit, extent = tuple(axes_limits))
+    colorbar: Colorbar = Fig.colorbar(Delta_EVPA_image, ax = Comparison_plot_EVPA, fraction = 0.046, pad = 0.04)
+    colorbar.ax.set_title(r"$\Delta$EVPA$/\pi$")
+    
+    Comparison_plot_x = Fig.add_subplot(132)
+    Delta_f_x = (Analytical_Polarization_Vector_x - Numerical_Polarization_Vector_x) / sqrt(Analytical_Polarization_Vector_x**2 + Analytical_Polarization_Vector_y**2 + 1e-20)
+    Limit = max(abs(Delta_f_x.flatten()))
+    Delta_f_x_imgae = Comparison_plot_x.imshow(Delta_f_x, cmap = "seismic", vmax = Limit, vmin = -Limit, extent = tuple(axes_limits))
+    colorbar: Colorbar = Fig.colorbar(Delta_f_x_imgae, ax = Comparison_plot_x, fraction = 0.046, pad = 0.04)
+    colorbar.ax.set_title(r"$\Delta f_x / |\vec{f}|$")
+    
+    Comparison_plot_y = Fig.add_subplot(133)
+    Delta_f_y = (Analytical_Polarization_Vector_y - Numerical_Polarization_Vector_y) / sqrt(Analytical_Polarization_Vector_x**2 + Analytical_Polarization_Vector_y**2 + 1e-20)
+    Limit = max(abs(Delta_f_y.flatten()))
+    Delta_f_y_imgae = Comparison_plot_y.imshow(Delta_f_y, cmap = "seismic", vmax = Limit, vmin = -Limit, extent = tuple(axes_limits))
+    colorbar: Colorbar = Fig.colorbar(Delta_f_y_imgae, ax = Comparison_plot_y, fraction = 0.046, pad = 0.04)
+    colorbar.ax.set_title(r"$\Delta f_y / |\vec{f}|$")
 
     plt.show()
-

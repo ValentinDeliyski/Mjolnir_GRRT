@@ -21,9 +21,6 @@ void Analytic_Radiative_Transfer(double* const emission_functions,
                                  double const step,
                                  double* const Intensity);
 
-void RK5_radiative_transfer(double* const Emission_Functions,
-                            double* const Absorbtion_Functions,
-                            double* const Faradey_Functions,
-                            double* const State_Vector,
+void RK5_radiative_transfer(double* const State_Vector_Global,
                             const Simulation_Context_type* p_Sim_Context,
                             double* const Stokes_Vector);

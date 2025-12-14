@@ -38,7 +38,7 @@
       <Filter>Source Files\Math Library</Filter>
     </ClCompile>
     <ClCompile Include="src\tinyxml2.cpp">
-      <Filter>Source Files\Parsers</Filter>
+      <Filter>Source Files\Math Library\Parsers</Filter>
     </ClCompile>
     <ClCompile Include="src\Spacetimes\Janis_Newman_Winicour.cpp">
       <Filter>Source Files\Spacetimes</Filter>
@@ -68,7 +68,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Input_parser.cpp">
-      <Filter>Source Files\Parsers</Filter>
+      <Filter>Source Files\Math Library\Parsers</Filter>
     </ClCompile>
     <ClCompile Include="src\Numerical_metric.cpp">
       <Filter>Source Files\Spacetimes</Filter>
@@ -982,14 +982,14 @@
     <Filter Include="Source Files\Math Library">
       <UniqueIdentifier>{283272ee-3f51-43c5-af99-d516be249c39}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Parsers">
-      <UniqueIdentifier>{d32fa269-3b63-4359-938c-7fbdc99303a7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Spacetimes">
       <UniqueIdentifier>{6126e746-89c3-430b-b0fd-5bc6a134a42b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\gsl">
       <UniqueIdentifier>{9b6ce5df-5b5b-4aaf-b1e3-91e3c560472d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Math Library\Parsers">
+      <UniqueIdentifier>{d32fa269-3b63-4359-938c-7fbdc99303a7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,6 @@
 #include "Emission_models.h"
 
-Return_Values Emission_models_class::get_plasma_velocity(const double* const State_Vector, 
+Return_Values Emission_models_class::get_plasma_velocity(const double* const Local_State_Vector,
                                                          const Simulation_Context_type* const p_Sim_Context, 
                                                          Velocity_enums const Velocity_profile,
                                                          double const Radial_velocity_fraction,
@@ -11,13 +11,13 @@ Return_Values Emission_models_class::get_plasma_velocity(const double* const Sta
     /* === Initialize some variables === */
     double Omega{}, rho{}, ell{}, u_t{}, u_r{}, u_phi{}, Normalization{}, inv_metric[4][4]{};
 
-    const double& r_source     = State_Vector[e_r];
-    const double& theta_source = State_Vector[e_theta];
+    const double& r_source     = Local_State_Vector[e_r];
+    const double& theta_source = Local_State_Vector[e_theta];
 
-    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
+    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
     invert_metric(inv_metric, s_Metric.Metric);
 
-    Metric_type s_dr_Metric = p_Sim_Context->p_Spacetime->get_dr_metric(State_Vector);
+    Metric_type s_dr_Metric = p_Sim_Context->p_Spacetime->get_dr_local_metric(Local_State_Vector);
 
     if (Minkowski == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
@@ -31,7 +31,7 @@ Return_Values Emission_models_class::get_plasma_velocity(const double* const Sta
         return OK;
 
     }
-
+    
     switch (Velocity_profile) {
 
     case e_Keplarian:
@@ -53,7 +53,7 @@ Return_Values Emission_models_class::get_plasma_velocity(const double* const Sta
 
         /* This is really only intended for the hotspot -> hence the hotspot position is used. */
         Omega = 1.0 / pow(p_Sim_Context->p_Init_Conditions->Hotspot_params.Position[e_r], 3. / 2);
-        u_t = 1. / sqrt(-(s_Metric.Metric[e_t][e_t] + + 2 * s_Metric.Metric[e_t][e_phi] * Omega + s_Metric.Metric[e_phi][e_phi] * Omega * Omega));
+        u_t = 1. / sqrt(-(s_Metric.Metric[e_t][e_t] + 2 * s_Metric.Metric[e_t][e_phi] * Omega + s_Metric.Metric[e_phi][e_phi] * Omega * Omega));
 
         if (isnan(u_t)) { return ERROR; }
 
@@ -123,7 +123,7 @@ Return_Values Emission_models_class::get_plasma_velocity(const double* const Sta
         isnan(Plasma_Velocity[e_phi]) ||
         isinf(Plasma_Velocity[e_phi])) {
 
-        std::cout << "Invalid disk 4-velocity: "
+        std::cout << "Invalid disk 4-velocity in local coordinates: "
                   << "["
                   << Plasma_Velocity[e_t]
                   << ", "
@@ -142,7 +142,7 @@ Return_Values Emission_models_class::get_plasma_velocity(const double* const Sta
 
 }
 
-void Emission_models_class::get_magnetic_field(const double* const State_Vector, 
+void Emission_models_class::get_magnetic_field(const double* const Local_State_Vector, 
                                                const Metric_type* const p_Metric,
                                                Emission_medium_state_type* const Emission_medium_state)  {
 
@@ -169,8 +169,8 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     case Vertical:
 
-        Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_r]     =  cos(State_Vector[e_theta]);
-        Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_theta] = -sin(State_Vector[e_theta]);
+        Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_r]     =  cos(Local_State_Vector[e_theta]);
+        Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_theta] = -sin(Local_State_Vector[e_theta]);
         Emission_medium_state->Magnetic_fields.B_field_eularian_frame[e_phi] = 0;
 
         break;
@@ -190,7 +190,7 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     }
 
-    /* --------------- Normalize the magnetic vector in the Eularian frame. --------------- */
+    /* --------------------------------------------- Normalize the magnetic vector in the Eularian frame. --------------------------------------------- */
 
     double Mag_field_eularian_norm{};
 
@@ -209,6 +209,8 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
         Emission_medium_state->Magnetic_fields.B_field_eularian_frame[idx] /= sqrt(Mag_field_eularian_norm);
 
     }
+
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 
     const double Lorentz_factor = Emission_medium_state->Plasma_Velocity[e_t] * p_Metric->Lapse_function;
 
@@ -237,7 +239,7 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
     case Power_law_based:
 
-        Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm = Emission_medium_state->Magnetic_fields.Mag_field_magnitude_scale * pow(Emission_medium_state->Magnetic_fields.Mag_field_radial_scale / State_Vector[e_r], Emission_medium_state->Magnetic_fields.Mag_field_power);
+        Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm = Emission_medium_state->Magnetic_fields.Mag_field_magnitude_scale * pow(Emission_medium_state->Magnetic_fields.Mag_field_radial_scale / Local_State_Vector[e_r], Emission_medium_state->Magnetic_fields.Mag_field_power);
         break;
 
     default:
@@ -250,12 +252,12 @@ void Emission_models_class::get_magnetic_field(const double* const State_Vector,
 
 double Emission_models_class::get_electron_pitch_angle(const double* const B_field_coord_frame, 
                                                        const double* const Plasma_velocity,
-                                                       const double* const State_Vector, 
+                                                       const double* const Local_State_Vector, 
                                                        const Simulation_Context_type* const p_Sim_Context) {
 
-    double Wave_vec_dot_Plasma_vec = dot_product(State_Vector + e_p_t, Plasma_velocity, 4);
+    double Wave_vec_dot_Plasma_vec = dot_product(Local_State_Vector + e_p_t, Plasma_velocity, 4);
 
-    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
+    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
     double B_field_norm_squared{};
     double B_field_dot_Plasma_vel{};
 
@@ -276,7 +278,7 @@ double Emission_models_class::get_electron_pitch_angle(const double* const B_fie
 
     }
 
-    double Wave_vec_dot_B_field = dot_product(State_Vector + e_p_t, B_field_coord_frame, 4);
+    double Wave_vec_dot_B_field = dot_product(Local_State_Vector + e_p_t, B_field_coord_frame, 4);
     double cos_angle = 1.0; 
 
     if (!isinf(1.0 / Wave_vec_dot_Plasma_vec) && !isinf(1.0 / B_field_norm_squared)) {
@@ -299,15 +301,15 @@ double Emission_models_class::get_electron_pitch_angle(const double* const B_fie
 
 /* =============================================== Thermal synchrotron Transfer Functions =============================================== */
 
-void Emission_models_class::get_thermal_synchrotron_transfer_functions(const double* const State_Vector,
-                                                                              const Simulation_Context_type* const p_Sim_Context,
-                                                                              const Emission_medium_state_type* const p_Emission_medium_state,
-                                                                              Transfer_functions_type* const p_Transfer_functions) {
+void Emission_models_class::get_thermal_synchrotron_transfer_functions(const double* const Local_State_Vector,
+                                                                       const Simulation_Context_type* const p_Sim_Context,
+                                                                       const Emission_medium_state_type* const p_Emission_medium_state,
+                                                                       Transfer_functions_type* const p_Transfer_functions) {
 
     /* === Zero out the transfer functions just in case === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-    double redshift = get_redshift(State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
+    double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
 
     /* Check weather redshift is numerically OK to use in the transfer functions. */
     if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) { return; }
@@ -395,7 +397,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
     else {
 
         /* The magnetic field is the one measured by a comoving with the plasma observer, but expressed in the cooridante frame */
-        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame, p_Emission_medium_state->Plasma_Velocity, State_Vector, p_Sim_Context);
+        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame, p_Emission_medium_state->Plasma_Velocity, Local_State_Vector, p_Sim_Context);
         double sin_pitch_angle = sin(pitch_angle);
 
         double one_over_sqrt_sin = 1.0 / sqrt(sin_pitch_angle);
@@ -430,7 +432,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
  
 /* ========================================== Kappa synchrotron Transfer Functions ========================================== */
 
-void Emission_models_class::get_kappa_synchrotron_transfer_functions(const double* const State_Vector,
+void Emission_models_class::get_kappa_synchrotron_transfer_functions(const double* const Local_State_Vector,
                                                                            const Simulation_Context_type* const p_Sim_Context,
                                                                            const Emission_medium_state_type* const p_Emission_medium_state,
                                                                            Transfer_functions_type* const p_Transfer_functions){
@@ -438,7 +440,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     /* === Zero out the transfer functions just in case === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-    const double redshift = get_redshift(State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
+    const double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
 
     if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) { return; }
 
@@ -512,7 +514,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     else {
 
         /* The magnetic field is the one measured by a comoving with the plasma observer, but expressed in the cooridante frame */
-        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame, p_Emission_medium_state->Plasma_Velocity, State_Vector, p_Sim_Context);
+        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame, p_Emission_medium_state->Plasma_Velocity, Local_State_Vector, p_Sim_Context);
         double sin_pitch_angle = sin(pitch_angle);
 
         double one_over_sqrt_sin    = 1. / sqrt(sin_pitch_angle);
@@ -542,17 +544,17 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
 
 /* ========================================== Phenomenological synchrotron Transfer Functions ========================================== */
 
-void Emission_models_class::get_phenomenological_synchrotron_functions(const double* const State_Vector,
-                                                                              const Simulation_Context_type* const p_Sim_Context, 
-                                                                              const Emission_medium_state_type* const p_Emission_medium_state,
-                                                                              Transfer_functions_type* const p_Transfer_functions) {
+void Emission_models_class::get_phenomenological_synchrotron_functions(const double* const Local_State_Vector,
+                                                                       const Simulation_Context_type* const p_Sim_Context, 
+                                                                       const Emission_medium_state_type* const p_Emission_medium_state,
+                                                                       Transfer_functions_type* const p_Transfer_functions) {
 
     /* === Zero out the transfer functions just in case. === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
     Phenomenological_transfer_f_arguments_type Transfer_args{};
 
-    Transfer_args.redshift = get_redshift(State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
+    Transfer_args.redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
 
     if (isinf(Transfer_args.redshift) || isnan(Transfer_args.redshift) || isinf(1.0 / Transfer_args.redshift)) { return; }
 
@@ -572,7 +574,7 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
 
 /* ============================================ Main "Selector" For The Transfer Functions ============================================ */
 
-void Emission_models_class::get_radiative_transfer_functions(const double* const State_Vector,
+void Emission_models_class::get_radiative_transfer_functions(const double* const Local_State_Vector,
                                                              const Simulation_Context_type* const p_Sim_Context,
                                                              const Emission_medium_enums Emission_medium,
                                                              Transfer_functions_type* const p_Transfer_functions) {
@@ -585,7 +587,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
     /* This variable exist for the case where the hotspot and disk are in "Thermalized" mode. */
     Emission_medium_state_type Hotspot_state{};
 
-    Metric_type Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
+    Metric_type Metric = p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
 
     /* The hotspot is assumed to "screen" the magnetic field of the background accretion disk (unless its magnetic field magnitude is specified as "Background"). 
        Therefore the magnetic field with which the emission functions of the disk are evaluated, depends on the position of the hotspot. This is the reason this boolean is calculated outside the Emission_meidum 
@@ -601,7 +603,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
     bool Is_inside_disk = false;
 
     /* This function call populates the density and temperature values for the hotspot - this is why they are not populated along with the magnetic field parameters. */
-    Is_inside_hotspot = this->p_Hotspot_Model->is_inside_hotspot(State_Vector, &Hotspot_state);
+    Is_inside_hotspot = this->p_Hotspot_Model->is_inside_hotspot(Local_State_Vector, &Hotspot_state);
 
     Return_Values Plasma_velocity_OK{};
 
@@ -609,14 +611,14 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     case Disk:
 
-        Plasma_velocity_OK = this->get_plasma_velocity(State_Vector,
+        Plasma_velocity_OK = this->get_plasma_velocity(Local_State_Vector,
                                                        p_Sim_Context, 
                                                        this->p_Disk_Model->s_Disk_params.Velocity_profile_type,
                                                        this->p_Disk_Model->s_Disk_params.Radial_velocity_fraction,
                                                        Emission_medium_state.Plasma_Velocity);
 
         /* This function call populates the density and temperature values for the disk - this is why they are not populated along with the magnetic field parameters. */
-        Is_inside_disk = this->p_Disk_Model->is_inside_disk(State_Vector, this->p_Disk_Model->s_Disk_params.e_Disk_model, &Emission_medium_state);
+        Is_inside_disk = this->p_Disk_Model->is_inside_disk(Local_State_Vector, this->p_Disk_Model->s_Disk_params.e_Disk_model, &Emission_medium_state);
 
         if (this->Thermalize_emission_medium && (Is_inside_disk || Is_inside_hotspot)) {
 
@@ -682,7 +684,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
         Emission_medium_state.Density = Hotspot_state.Density;
         Emission_medium_state.Temperature = Hotspot_state.Temperature;
 
-        Plasma_velocity_OK = this->get_plasma_velocity(State_Vector,
+        Plasma_velocity_OK = this->get_plasma_velocity(Local_State_Vector,
                                                        p_Sim_Context, 
                                                        this->p_Hotspot_Model->s_Hotspot_params.Velocity_profile_type,
                                                        this->p_Hotspot_Model->s_Hotspot_params.Radial_velocity_fraction, 
@@ -714,18 +716,18 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     if (OK != Plasma_velocity_OK) { return; }
 
-    this->get_magnetic_field(State_Vector, &Metric, &Emission_medium_state);
+    this->get_magnetic_field(Local_State_Vector, &Metric, &Emission_medium_state);
 
     switch (Emission_medium_state.Ensamble_type) {
 
     case(e_Phenomenological_ensamble):
 
-        this->get_phenomenological_synchrotron_functions(State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
+        this->get_phenomenological_synchrotron_functions(Local_State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
         break;
 
     case(e_Kappa_ensamble):
 
-        this->get_kappa_synchrotron_transfer_functions(State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
+        this->get_kappa_synchrotron_transfer_functions(Local_State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
         break;
 
     case(e_Debug_constant_functions):
@@ -735,7 +737,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     default:
 
-        this->get_thermal_synchrotron_transfer_functions(State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
+        this->get_thermal_synchrotron_transfer_functions(Local_State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
         break;
     }
 
@@ -808,11 +810,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
     }
 
-    /* The below coefficients pop up in the dimentionless radiative transfer equation. */
-
     const double f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
-    //const double distance_scale = p_Sim_Context->p_Init_Conditions->central_object_mass * M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
-    //const double transport_matrix_ratio = Global_density_scale * Q_ELECTRON_CGS * Q_ELECTRON_CGS * distance_scale / C_LIGHT_CGS / obs_frequency / M_ELECTRON_CGS;
 
     /* ================================================ The emission functions ================================================ */
 
@@ -890,7 +888,7 @@ Emission_models_class::Emission_models_class(Simulation_Context_type* p_Sim_Cont
     this->p_Disk_Model = new Disk_model_type(p_Sim_Context);
     this->p_Hotspot_Model = new Hotspot_model_type(p_Sim_Context);
 
-    if (NULL != p_Sim_Context) {
+    if (nullptr != p_Sim_Context) {
 
         this->s_Emission_params = p_Sim_Context->p_Init_Conditions->Emission_params;
 

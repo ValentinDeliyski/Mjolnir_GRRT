@@ -117,6 +117,16 @@ void Step_controller_class::update_step(const double* const State_Vector, Geodes
 
     if (this->step > this->Parameters.Max_stepsize) { this->step = this->Parameters.Max_stepsize; };
 
+    //if (abs(State_Vector[e_r] * cos(State_Vector[e_theta])) < 5 && abs(State_Vector[e_r]) < 30) {
+
+    //    if (this->step > 0.001) {
+
+    //        this->step = 0.001;
+
+    //    }
+
+    //}
+
 }
 
 static int implicit_method_system_wrapper_f(const gsl_vector* gsl_trial_State_Vector, void* Params, gsl_vector* gsl_System_to_solve) {
@@ -149,18 +159,23 @@ Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Co
 
     /* ------------------------------ Construct the initial state vector ------------------------------ */ 
 
-    this->p_Ray_log_struct->Ray_path_log[e_t] = p_Sim_Context->p_Init_Conditions->Observer_params.init_time;
-    this->p_Ray_log_struct->Ray_path_log[e_r] = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
-    this->p_Ray_log_struct->Ray_path_log[e_theta] = p_Sim_Context->p_Init_Conditions->Observer_params.inclination;
-    this->p_Ray_log_struct->Ray_path_log[e_phi] = p_Sim_Context->p_Init_Conditions->Observer_params.azimuth;
-    this->p_Ray_log_struct->Ray_path_log[e_p_phi] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_phi];
-    this->p_Ray_log_struct->Ray_path_log[e_p_theta] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_theta];
-    this->p_Ray_log_struct->Ray_path_log[e_p_r] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_r];
-    this->p_Ray_log_struct->Ray_path_log[e_p_t] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
-    this->p_Ray_log_struct->Ray_path_log[e_step] = p_Sim_Context->p_Init_Conditions->Integrator_params.Init_stepzie;
-    this->p_Ray_log_struct->Ray_path_log[e_affine_param] = 0;
+    double* Init_Global_State = this->p_Ray_log_struct->Ray_path_log_global;
+    double* Init_Local_State = this->p_Ray_log_struct->Ray_path_log_local;
 
-    memcpy(this->Current_Dynamic_state, this->p_Ray_log_struct->Ray_path_log, e_Dynamic_state_size * sizeof(double));
+    this->p_Ray_log_struct->Ray_path_log_global[e_t] = p_Sim_Context->p_Init_Conditions->Observer_params.init_time;
+    this->p_Ray_log_struct->Ray_path_log_global[e_r] = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
+    this->p_Ray_log_struct->Ray_path_log_global[e_theta] = p_Sim_Context->p_Init_Conditions->Observer_params.inclination;
+    this->p_Ray_log_struct->Ray_path_log_global[e_phi] = p_Sim_Context->p_Init_Conditions->Observer_params.azimuth;
+    this->p_Ray_log_struct->Ray_path_log_global[e_p_phi] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_phi];
+    this->p_Ray_log_struct->Ray_path_log_global[e_p_theta] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_theta];
+    this->p_Ray_log_struct->Ray_path_log_global[e_p_r] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_r];
+    this->p_Ray_log_struct->Ray_path_log_global[e_p_t] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
+    this->p_Ray_log_struct->Ray_path_log_global[e_step] = p_Sim_Context->p_Init_Conditions->Integrator_params.Init_stepzie;
+    this->p_Ray_log_struct->Ray_path_log_global[e_affine_param] = 0;
+
+    this->p_Spacetime->Convert_global_to_local_coords(Init_Global_State, Init_Global_State, Init_Local_State, e_Full_State_Vector);
+
+    memcpy(this->Current_Dynamic_state, this->p_Ray_log_struct->Ray_path_log_global, e_Dynamic_state_size * sizeof(double));
 
     this->RK_Integrator_debug_log.N_steps_rejected = p_Ray_results->RK_integrator_debug_log.N_steps_rejected;
     this->RK_Integrator_debug_log.State_error_history = p_Ray_results->RK_integrator_debug_log.State_error_history;
@@ -452,20 +467,15 @@ void Integrator_class::Update_ray_log(const double* const New_State_vector) {
     this->p_Ray_log_struct->Log_offset += 1;
     int& log_offset = this->p_Ray_log_struct->Log_offset;
 
-    memcpy(&this->p_Ray_log_struct->Ray_path_log[log_offset * e_Full_state_size], New_State_vector, e_Dynamic_state_size * sizeof(double));
+    memcpy(&this->p_Ray_log_struct->Ray_path_log_global[log_offset * e_Full_state_size], New_State_vector, e_Dynamic_state_size * sizeof(double));
 
-    this->p_Ray_log_struct->Ray_path_log[e_step + log_offset * e_Full_state_size] = this->p_Step_controller->previous_step;
-    this->p_Ray_log_struct->Ray_path_log[e_affine_param + log_offset * e_Full_state_size] = this->p_Ray_log_struct->Ray_path_log[e_affine_param + (log_offset - 1) * e_Full_state_size] - this->p_Step_controller->previous_step;
+    this->p_Ray_log_struct->Ray_path_log_global[e_step + log_offset * e_Full_state_size] = this->p_Step_controller->previous_step;
+    this->p_Ray_log_struct->Ray_path_log_global[e_affine_param + log_offset * e_Full_state_size] = this->p_Ray_log_struct->Ray_path_log_global[e_affine_param + (log_offset - 1) * e_Full_state_size] - this->p_Step_controller->previous_step;
     
-    // The wormhole metric works with a "global" radial coordinate, that goes negative on the other side of the throat.
-    // The emission model can't work with this coordinate, so I log the normal spherical radial coordinate and its momentum instead. 
-    if (Wormhole == this->p_Init_conditions->Metric_parameters.e_Spacetime) {
-
-        const double& R_throat = this->p_Init_conditions->Metric_parameters.R_throat;
-        this->p_Ray_log_struct->Ray_path_log[e_p_r + log_offset * e_Full_state_size] *= sqrt(1. + R_throat * R_throat / New_State_vector[e_r] / New_State_vector[e_r]);
-        this->p_Ray_log_struct->Ray_path_log[e_r + log_offset * e_Full_state_size] = sqrt(New_State_vector[e_r] * New_State_vector[e_r] + R_throat * R_throat);
-        
-    }
+    this->p_Spacetime->Convert_global_to_local_coords(&this->p_Ray_log_struct->Ray_path_log_global[log_offset * e_Full_state_size],
+                                                      &this->p_Ray_log_struct->Ray_path_log_global[log_offset * e_Full_state_size],
+                                                      &this->p_Ray_log_struct->Ray_path_log_local[log_offset * e_Full_state_size],
+                                                      e_Full_State_Vector);
 
 }
 
@@ -507,13 +517,13 @@ void Integrator_class::Propagate_ray() {
 
 }
 
-bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const State_at_Event) {
+bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const Global_State_at_Event, double* const Local_State_at_Event) {
 
     int Event_idx{};
     double Event_target{};
 
-    const double* const Current_State = this->get_current_State_Vector();
-    const double* const Prev_State = this->get_previous_State_Vector();
+    const double* const Current_State = this->get_current_State_Vector_global();
+    const double* const Prev_State = this->get_previous_State_Vector_global();
 
     switch (e_Event) {
 
@@ -528,8 +538,8 @@ bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const
 
     case Celestial_sphere_crossing:
 
-        if ((Current_State[e_r] - this->p_Init_conditions->Metric_parameters.Scattering_radius) *
-            (Prev_State[e_r] - this->p_Init_conditions->Metric_parameters.Scattering_radius) > 0) {
+        if ((abs(Current_State[e_r]) - this->p_Init_conditions->Metric_parameters.Scattering_radius) *
+            (abs(Prev_State[e_r]) - this->p_Init_conditions->Metric_parameters.Scattering_radius) > 0) {
             return false;
         }
 
@@ -540,7 +550,7 @@ bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const
 
     default:
 
-        throw std::runtime_error("Unsupported event type in Integrator_class::Logate_event()!");
+        throw std::runtime_error("Unsupported event type in Integrator_class::Locate_event()!");
 
     }
 
@@ -582,17 +592,19 @@ bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const
 
     }
 
-    /* This check will pass only if no real roots lie in the interval [0, 1], which should never happen. */
-    if (Event_interp_param < 0) { throw std::runtime_error("No real roots in the interval [0,1] were found in Integrator_class::Logate_event()!"); }
+    /* This check will pass only if no real roots lie in the interval [0, 1], which should never happen, but sometimes does for some reason. */
+    if (Event_interp_param < 0) { return false; }
 
     for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
 
-        State_at_Event[idx] = this->get_dense_output(Event_interp_param, State_enums(idx), true);
+        Global_State_at_Event[idx] = this->get_dense_output(Event_interp_param, State_enums(idx), true);
 
     }
 
-    State_at_Event[e_step] = abs(Event_interp_param * step);
-    State_at_Event[e_affine_param] = Prev_State[e_affine_param] + step;
+    Global_State_at_Event[e_step] = abs(Event_interp_param * step);
+    Global_State_at_Event[e_affine_param] = Prev_State[e_affine_param] + step;
+
+    this->p_Spacetime->Convert_global_to_local_coords(Global_State_at_Event, Global_State_at_Event, Local_State_at_Event, e_Full_State_Vector);
 
     return true;
 
@@ -607,8 +619,8 @@ const double Integrator_class::get_dense_output(const double Param, const State_
     if (RK54 == e_Active_integrator) { RK_size = RK54_size; }
     else if (ESDIRK54 == e_Active_integrator) { RK_size = ESDIRK54_size; }
 
-    const double* const Current_State = this->get_current_State_Vector();
-    const double* const Prev_State = this->get_previous_State_Vector();
+    const double* const Current_State = this->get_current_State_Vector_global();
+    const double* const Prev_State = this->get_previous_State_Vector_global();
 
     double Current_RHS[e_Dynamic_state_size]{};
     memcpy(Current_RHS, this->Intermediate_RHS_log + (RK_size - 1) * e_Dynamic_state_size, e_Dynamic_state_size * sizeof(double));
@@ -631,7 +643,7 @@ void Integrator_class::Check_integration_complete_status() {
     /* This needs to use the internal dynamic state, because it is kept in "global coordainates" (which so far only affects the wormhole). */
     this->Normal_termination_condition = this->p_Spacetime->terminate_integration(this->Current_Dynamic_state);
 
-    this->Max_affine_param_reached      = std::abs(this->get_current_State_Vector()[e_affine_param]) >= this->p_Step_controller->Parameters.Max_affine_param;
+    this->Max_affine_param_reached      = std::abs(this->get_current_State_Vector_global()[e_affine_param]) >= this->p_Step_controller->Parameters.Max_affine_param;
     this->Max_integration_count_reached = this->p_Ray_log_struct->Log_offset >= this->p_Step_controller->Parameters.Max_integration_count;
     this->Step_too_small                = this->p_Step_controller->step < std::numeric_limits<double>::min();
 
@@ -702,22 +714,42 @@ void Integrator_class::Check_integration_complete_status() {
 
 }
 
-const double* const Integrator_class::get_current_State_Vector() const {
+const double* const Integrator_class::get_current_State_Vector_global() const {
 
-    return &this->p_Ray_log_struct->Ray_path_log[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
+    return &this->p_Ray_log_struct->Ray_path_log_global[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
 
 }
 
-const double* const Integrator_class::get_previous_State_Vector() const {
+const double* const Integrator_class::get_previous_State_Vector_global() const {
 
     if (this->p_Ray_log_struct->Log_offset > 0) {
 
-        return &this->p_Ray_log_struct->Ray_path_log[(this->p_Ray_log_struct->Log_offset - 1) * e_Full_state_size];
+        return &this->p_Ray_log_struct->Ray_path_log_global[(this->p_Ray_log_struct->Log_offset - 1) * e_Full_state_size];
     }
     else {
 
-        return &this->p_Ray_log_struct->Ray_path_log[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
+        return &this->p_Ray_log_struct->Ray_path_log_global[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
 
     }
     
+}
+
+const double* const Integrator_class::get_current_State_Vector_local() const {
+
+    return &this->p_Ray_log_struct->Ray_path_log_local[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
+
+}
+
+const double* const Integrator_class::get_previous_State_Vector_local() const {
+
+    if (this->p_Ray_log_struct->Log_offset > 0) {
+
+        return &this->p_Ray_log_struct->Ray_path_log_local[(this->p_Ray_log_struct->Log_offset - 1) * e_Full_state_size];
+    }
+    else {
+
+        return &this->p_Ray_log_struct->Ray_path_log_local[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
+
+    }
+
 }

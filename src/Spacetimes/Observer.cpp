@@ -7,7 +7,7 @@ Observer_class::Observer_class(Simulation_Context_type* p_Sim_Context) {
 
     double obs_position[4] = {0, this->obs_params.distance, this->obs_params.inclination, this->obs_params.azimuth };
 
-    Metric_type s_init_Metric = p_Sim_Context->p_Spacetime->get_metric(obs_position);
+    Metric_type s_init_Metric = p_Sim_Context->p_Spacetime->get_global_metric(obs_position);
     p_Sim_Context->p_Init_Conditions->Init_metric.Lapse_function = s_init_Metric.Lapse_function;
     p_Sim_Context->p_Init_Conditions->Init_metric.Shift_function = s_init_Metric.Shift_function;
 

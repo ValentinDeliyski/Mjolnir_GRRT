@@ -89,10 +89,10 @@ double* JNW_class::get_Photon_Sphere() {
 };
 
 
-Metric_type JNW_class::get_metric(const double* const State_Vector) const {
+Metric_type JNW_class::get_local_metric(const double* const Local_State_Vector) const {
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -101,7 +101,7 @@ Metric_type JNW_class::get_metric(const double* const State_Vector) const {
 
     Metric_type s_Metric{};
 
-    /* --- Only the non-zero components are explicitly evaluated. --- */
+    /* ------------------------------------ Only the non-zero components are explicitly evaluated. ------------------------------------ */
 
     s_Metric.Metric[e_t][e_t]         = -pow(1 - r_singularity / r, this->Gamma);
     s_Metric.Metric[e_r][e_r]         = -1.0 / s_Metric.Metric[e_t][e_t];
@@ -115,12 +115,18 @@ Metric_type JNW_class::get_metric(const double* const State_Vector) const {
 
 }
 
-Metric_type JNW_class::get_dr_metric(const double* const State_Vector) const {
+Metric_type JNW_class::get_global_metric(const double* const Global_State_Vector) const {
 
-    Metric_type s_Metric = this->get_metric(State_Vector);
+    return this->get_local_metric(Global_State_Vector);
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+}
+
+Metric_type JNW_class::get_dr_local_metric(const double* const Local_State_Vector) const {
+
+    Metric_type s_Metric = this->get_local_metric(Local_State_Vector);
+
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -129,7 +135,7 @@ Metric_type JNW_class::get_dr_metric(const double* const State_Vector) const {
 
     Metric_type s_dr_Metric{};
 
-    /* --- Only the non-zero components are explicitly evaluated. --- */
+    /* ------------------------------------ Only the non-zero components are explicitly evaluated. ------------------------------------ */
 
     s_dr_Metric.Metric[e_t][e_t]         = -this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2;
     s_dr_Metric.Metric[e_r][e_r]         = 1.0 / (s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_t][e_t]) * s_dr_Metric.Metric[e_t][e_t];
@@ -142,10 +148,16 @@ Metric_type JNW_class::get_dr_metric(const double* const State_Vector) const {
 
 }
 
-Metric_type JNW_class::get_dtheta_metric(const double* const State_Vector) const {
+Metric_type JNW_class::get_dr_global_metric(const double* const Global_State_Vector) const {
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+    return this->get_dr_local_metric(Global_State_Vector);
+
+}
+
+Metric_type JNW_class::get_dtheta_local_metric(const double* const Local_State_Vector) const {
+
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
@@ -154,20 +166,26 @@ Metric_type JNW_class::get_dtheta_metric(const double* const State_Vector) const
 
     Metric_type s_dtheta_Metric{};
 
-    /* --- Only the non-zero components are explicitly evaluated. --- */
+    /* ------------------------------------ Only the non-zero components are explicitly evaluated. ------------------------------------ */
 
     s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * sin_theta * cos_theta * pow(1 - r_singularity / r, 1 - this->Gamma);
 
     return s_dtheta_Metric;
 }
 
-Metric_type JNW_class::get_d2r_metric(const double* const State_Vector) const {
+Metric_type JNW_class::get_dtheta_global_metric(const double* const Global_State_Vector) const {
 
-    Metric_type s_Metric = this->get_metric(State_Vector);
-    Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
+    return this->get_dtheta_local_metric(Global_State_Vector);
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+}
+
+Metric_type JNW_class::get_d2r_local_metric(const double* const Local_State_Vector) const {
+
+    Metric_type s_Metric = this->get_local_metric(Local_State_Vector);
+    Metric_type s_dr_Metric = this->get_dr_local_metric(Local_State_Vector);
+
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -177,7 +195,7 @@ Metric_type JNW_class::get_d2r_metric(const double* const State_Vector) const {
 
     Metric_type s_d2r_Metric{};
 
-    /* --- Only the non-zero components are explicitly evaluated. --- */
+    /* ------------------------------------ Only the non-zero components are explicitly evaluated. ------------------------------------ */
 
     s_d2r_Metric.Metric[e_t][e_t] = -this->Gamma * (this->Gamma - 1) * pow(1 - r_singularity / r, this->Gamma - 2) * r_singularity * r_singularity / r2 / r2
         + 2 * this->Gamma * pow(1 - r_singularity / r, this->Gamma - 1) * r_singularity / r2 / r;
@@ -248,3 +266,63 @@ bool JNW_class::terminate_integration(const double* const State_vector) {
     return scatter || hit_horizon;
 };
 
+
+void JNW_class::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+
+    switch (Entry_to_convert) {
+
+    case e_Full_State_Vector:
+
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, e_Full_state_size * sizeof(double));
+        break;
+
+    case e_Contravariant_vector:
+
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    case e_Covariant_vector:
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    case e_Coordinates:
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported coordinate conversion type. Something Broke in Convert_global_to_local_coords()!");
+
+    }
+
+}
+
+void JNW_class::Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+
+    switch (Entry_to_convert) {
+
+    case e_Full_State_Vector:
+
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, e_Full_state_size * sizeof(double));
+        break;
+
+    case e_Contravariant_vector:
+
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    case e_Covariant_vector:
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    case e_Coordinates:
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported coordinate conversion type. Something Broke in Convert_local_to_global_coords()!");
+
+    }
+
+}

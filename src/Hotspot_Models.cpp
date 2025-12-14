@@ -84,6 +84,13 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
     /* ======================= The spatial part of the density profile ======================= */
 
     Profile_prameters.Gaussian_variable = Distance_to_hotspot_center;
+
+    if (Distance_to_hotspot_center < 3.) {
+
+        int test{};
+
+    }
+
     Profile_prameters.Gaussian_spread   = this->s_Hotspot_params.Profile_params.Density_gaussian_spread;
     Profile_prameters.Gaussian_mean     = 0.0;
 

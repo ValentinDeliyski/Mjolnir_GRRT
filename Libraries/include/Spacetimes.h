@@ -18,21 +18,31 @@ public:
 
     /* --------------------------------------------------- Metric and its derivatives --------------------------------------------------- */
 
-    virtual Metric_type get_metric(const double* const State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_metric!"); };
+    virtual Metric_type get_local_metric(const double* const Local_State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_local_metric!"); };
 
-    virtual Metric_type get_dr_metric(const double* const State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dr_metric!"); };
+    virtual Metric_type get_dr_local_metric(const double* const Local_State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dr_local_metric!"); };
 
-    virtual Metric_type get_dtheta_metric(const double* const State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dtheta_metric!"); };
+    virtual Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dtheta_local_metric!"); };
 
-    virtual Metric_type get_d2r_metric(const double* const State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_d2r_metric!"); };
+    virtual Metric_type get_global_metric(const double* const Global_State_vector) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_global_metric!"); };
+
+    virtual Metric_type get_dr_global_metric(const double* const Global_State_vector) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dr_global_metric!"); };
+
+    virtual Metric_type get_dtheta_global_metric(const double* const Global_State_vector) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dtheta_global_metric!"); };
+
+    virtual Metric_type get_d2r_local_metric(const double* const Local_State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_d2r_local_metric!"); };
 
     /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
-    virtual void get_EOM(const double* const State_vector, double* const Derivatives) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_EOM!"); };
+    virtual void get_EOM(const double* const Global_State_vector, double* const Derivatives) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_EOM!"); };
 
     /* ---------------------------------------------- Integration Termination Conditions ----------------------------------------------- */
 
     virtual bool terminate_integration(const double* const State_vector) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in terminate_integration!"); };
+
+    virtual void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in Convert_global_to_local_coords!"); };
+
+    virtual void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in Convert_global_to_local_coords!"); };
 
 };
 
@@ -55,10 +65,14 @@ public:
 
     /* Metric and its derivatives */
 
-    Metric_type get_metric(const double* const State_Vector) const override;
-    Metric_type get_dr_metric(const double* const State_Vector) const override;
-    Metric_type get_dtheta_metric(const double* const State_Vector) const override;
-    Metric_type get_d2r_metric(const double* const State_Vector) const override;
+    Metric_type get_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dr_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_d2r_local_metric(const double* const Local_State_Vector) const override;
+
+    Metric_type get_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dr_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dtheta_global_metric(const double* const Global_State_Vector) const override;
 
     /* Equations of motion */
 
@@ -67,7 +81,11 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
-   
+
+    void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
+
+    void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
+
 };
 
 class Minkowski_class : public Spacetime_Base_Class {
@@ -82,10 +100,14 @@ public:
 
     /* Metric and its derivatives */
 
-    Metric_type get_metric(const double* const State_Vector) const override;
-    Metric_type get_dr_metric(const double* const State_Vector) const override;
-    Metric_type get_dtheta_metric(const double* const State_Vector) const override;
-    Metric_type get_d2r_metric(const double* const State_Vector) const override;
+    Metric_type get_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dr_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_d2r_local_metric(const double* const Local_State_Vector) const override;
+
+    Metric_type get_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dr_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dtheta_global_metric(const double* const Global_State_Vector) const override;
 
     /* Equations of motion */
 
@@ -94,6 +116,10 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
+
+    void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
+
+    void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
 
 };
 
@@ -105,6 +131,9 @@ private:
     double R_Throat = this->Mass;
     double Spin_Param;
     double Redshift_Param;
+
+    double Affine_param_at_throat_corssing;
+    bool Crossed_throat;
 
     bool Stop_at_Throat;
 
@@ -120,10 +149,14 @@ public:
 
     /* Metric and its derivatives */
 
-    Metric_type get_metric(const double* const State_Vector) const override;
-    Metric_type get_dr_metric(const double* const State_Vector) const override;
-    Metric_type get_dtheta_metric(const double* const State_Vector) const override;
-    Metric_type get_d2r_metric(const double* const State_Vector) const override;
+    Metric_type get_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dr_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_d2r_local_metric(const double* const Local_State_Vector) const override;
+
+    Metric_type get_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dr_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dtheta_global_metric(const double* const Global_State_Vector) const override;
 
     /* Equations of motion */
 
@@ -132,6 +165,10 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
+
+    void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
+
+    void Convert_local_to_global_coords(const double* const State_Vector_Global, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
 
 };
 
@@ -155,10 +192,14 @@ public:
 
     /* Metric and its derivatives */
 
-    Metric_type get_metric(const double* const State_Vector) const override;
-    Metric_type get_dr_metric(const double* const State_Vector) const override;
-    Metric_type get_dtheta_metric(const double* const State_Vector) const override;
-    Metric_type get_d2r_metric(const double* const State_Vector) const override;
+    Metric_type get_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dr_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_d2r_local_metric(const double* const Local_State_Vector) const override;
+
+    Metric_type get_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dr_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dtheta_global_metric(const double* const Global_State_Vector) const override;
 
     /* Equations of motion */
 
@@ -167,6 +208,10 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
+
+    void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
+
+    void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
 
 };
 
@@ -193,10 +238,14 @@ public:
 
     /* Metric and its derivatives */
 
-    Metric_type get_metric(const double* const State_Vector) const override;
-    Metric_type get_dr_metric(const double* const State_Vector) const override;
-    Metric_type get_dtheta_metric(const double* const State_Vector) const override;
-    Metric_type get_d2r_metric(const double* const State_Vector) const override;
+    Metric_type get_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dr_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_d2r_local_metric(const double* const Local_State_Vector) const override;
+
+    Metric_type get_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dr_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dtheta_global_metric(const double* const Global_State_Vector) const override;
 
     /* Equations of motion */
 
@@ -205,6 +254,10 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
+
+    void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
+
+    void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
 
 };
 
@@ -228,10 +281,14 @@ public:
 
     /* Metric and its derivatives */
 
-    Metric_type get_metric(const double* const State_Vector) const override;
-    Metric_type get_dr_metric(const double* const State_Vector) const override;
-    Metric_type get_dtheta_metric(const double* const State_Vector) const override;
-    Metric_type get_d2r_metric(const double* const State_Vector) const override;
+    Metric_type get_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dr_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_d2r_local_metric(const double* const Local_State_Vector) const override;
+
+    Metric_type get_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dr_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dtheta_global_metric(const double* const Global_State_Vector) const override;
 
     /* Equations of motion */
 
@@ -240,6 +297,10 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
+
+    void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
+
+    void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
 
 };
 
@@ -262,9 +323,13 @@ public:
 
     /* Metric and its derivatives */
 
-    Metric_type get_metric(const double* const State_Vector) const override;
-    Metric_type get_dr_metric(const double* const State_Vector) const override;
-    Metric_type get_dtheta_metric(const double* const State_Vector) const override;
+    Metric_type get_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dr_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const override;
+
+    Metric_type get_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dr_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dtheta_global_metric(const double* const Global_State_Vector) const override;
 
     /* Equations of motion */
 
@@ -273,6 +338,10 @@ public:
     /* Integration Termination Conditions */
 
     bool terminate_integration(const double* const State_vector) override;
+
+    void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
+
+    void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
 
 };
 
@@ -312,10 +381,14 @@ public:
 
     /* --------------------------------------------- Metric and its derivatives (wrappers) --------------------------------------------- */
 
-    Metric_type get_metric(const double* const State_Vector) const override;
-    Metric_type get_dr_metric(const double* const State_Vector) const override;
-    Metric_type get_dtheta_metric(const double* const State_Vector) const override;
-    Metric_type get_d2r_metric(const double* const State_Vector) const override;
+    Metric_type get_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dr_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const override;
+    Metric_type get_d2r_local_metric(const double* const Local_State_Vector) const override;
+
+    Metric_type get_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dr_global_metric(const double* const Global_State_Vector) const override;
+    Metric_type get_dtheta_global_metric(const double* const Global_State_Vector) const override;
 
     /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
@@ -324,6 +397,10 @@ public:
     /* ---------------------------------------------- Integration Termination Conditions ----------------------------------------------- */
 
     bool terminate_integration(const double* const State_vector) override;
+
+    void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
+
+    void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
 
 };
 

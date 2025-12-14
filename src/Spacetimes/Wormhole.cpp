@@ -38,6 +38,9 @@ Wormhole_class::Wormhole_class(const Metric_parameters_type* const p_Metric_Para
     this->Stop_at_Throat = p_Metric_Parameters->Stop_At_Throat;
     this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
 
+    this->Affine_param_at_throat_corssing = 0.0;
+    this->Crossed_throat = false;
+
     // I just reuse the "Min_distance_to_singular_point" for the min throat distance because it serves the same purpose.
     this->Min_distance_to_throat = p_Metric_Parameters->Min_distance_to_singular_point;
 
@@ -79,10 +82,10 @@ double* Wormhole_class::get_Photon_Sphere() {
 
 }
 
-Metric_type Wormhole_class::get_metric(const double* const State_Vector) const {
+Metric_type Wormhole_class::get_local_metric(const double* const Local_State_Vector) const {
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -109,19 +112,50 @@ Metric_type Wormhole_class::get_metric(const double* const State_Vector) const {
     return s_Metric;
 }
 
-Metric_type Wormhole_class::get_dr_metric(const double* const State_Vector) const {
+Metric_type Wormhole_class::get_global_metric(const double* const Global_State_Vector) const {
 
-    Metric_type s_Metric = this->get_metric(State_Vector);
+    const double& Ell = Global_State_Vector[e_r];
+    const double& theta = Global_State_Vector[e_theta];
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+    double r = sqrt(Ell * Ell + this->R_Throat * this->R_Throat);
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    double exponent = -this->Mass / r - this->Redshift_Param * this->Mass * this->Mass / r2;
+
+    Metric_type s_Metric{};
+
+    /* ------------------------------------ Only the non-zero components are explicitly evaluated. ------------------------------------ */
+
+    s_Metric.Lapse_function = exp(exponent);
+    s_Metric.Shift_function = 2 * this->Spin_Param * this->Mass * this->Mass / r2 / r;
+
+    s_Metric.Metric[e_t][e_t] = -s_Metric.Lapse_function * s_Metric.Lapse_function +
+        r2 * s_Metric.Shift_function * s_Metric.Shift_function * sin_theta * sin_theta;
+
+    s_Metric.Metric[e_t][e_phi] = -r2 * sin_theta * sin_theta * s_Metric.Shift_function;
+    s_Metric.Metric[e_phi][e_t] = s_Metric.Metric[e_t][e_phi];
+
+    s_Metric.Metric[e_r][e_r] = (1 + this->R_Throat / r);
+    s_Metric.Metric[e_theta][e_theta] = r2;
+    s_Metric.Metric[e_phi][e_phi] = r2 * sin_theta * sin_theta;
+
+    return s_Metric;
+}
+
+Metric_type Wormhole_class::get_dr_local_metric(const double* const Local_State_Vector) const {
+
+    Metric_type s_Metric = this->get_local_metric(Local_State_Vector);
+
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
     Metric_type s_dr_Metric{};
 
-    /* --- Only the non-zero components are explicitly evaluated. --- */
+    /* ------------------------------------ Only the non-zero components are explicitly evaluated. ------------------------------------ */
 
     s_dr_Metric.Lapse_function = s_Metric.Lapse_function * (1 / r2 + 2 * this->Redshift_Param / (r2 * r));
     s_dr_Metric.Shift_function = -3 * s_Metric.Shift_function / r;
@@ -141,12 +175,60 @@ Metric_type Wormhole_class::get_dr_metric(const double* const State_Vector) cons
     return s_dr_Metric;
 }
 
-Metric_type Wormhole_class::get_dtheta_metric(const double* const State_Vector) const {
+Metric_type Wormhole_class::get_dr_global_metric(const double* const Global_State_Vector) const {
 
-    Metric_type s_Metric = this->get_metric(State_Vector);
+    double Local_State_Vector[e_Full_state_size]{};
+    memcpy(Local_State_Vector, Global_State_Vector, e_Full_state_size * sizeof(double));
+    Local_State_Vector[e_r] = sqrt(Global_State_Vector[e_r] * Global_State_Vector[e_r] + this->R_Throat * this->R_Throat);
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+    /* ------------ This is called to get the lapse and shift functions. Technically its not nessicery to call the local metric here,
+                    as the lapse and shift give the same value in both coordinates (no g_tr term). ------------ */
+    Metric_type s_Metric = this->get_local_metric(Local_State_Vector);
+
+    const double& Ell = Global_State_Vector[e_r];
+    const double& theta = Global_State_Vector[e_theta];
+
+    double& r = Local_State_Vector[e_r];
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+
+    double dr_dEll = Ell / r;
+
+    Metric_type s_dEll_Metric{};
+
+    /* ------------------------------------ Only the non-zero components are explicitly evaluated. ------------------------------------ */
+
+    /* -------- The derivatives wrt Ell have an extra dr_dEll factor infront, which will be added on later. For now it is convenient to 
+                use these as derivatives wrt r. ------------ */
+    s_dEll_Metric.Lapse_function = s_Metric.Lapse_function * (1 / r2 + 2 * this->Redshift_Param / (r2 * r));
+    s_dEll_Metric.Shift_function = -3 * s_Metric.Shift_function / r;
+
+    double& N = s_Metric.Lapse_function;
+    double& dr_N = s_dEll_Metric.Lapse_function;
+    double& omega = s_Metric.Shift_function;
+    double& dr_omega = s_dEll_Metric.Shift_function;
+
+    s_dEll_Metric.Metric[e_t][e_t] = (-2 * N * dr_N + 2 * r * omega * (omega + r * dr_omega) * sin_theta * sin_theta) * dr_dEll;
+    s_dEll_Metric.Metric[e_t][e_phi] = (-r * (2 * omega + r * dr_omega) * sin_theta * sin_theta)* dr_dEll;
+    s_dEll_Metric.Metric[e_phi][e_t] = s_dEll_Metric.Metric[e_t][e_phi];
+
+    s_dEll_Metric.Metric[e_r][e_r] = -this->R_Throat / r2 * dr_dEll;
+
+    s_dEll_Metric.Metric[e_theta][e_theta] = 2 * r * dr_dEll;
+    s_dEll_Metric.Metric[e_phi][e_phi] = 2 * r * sin_theta * sin_theta * dr_dEll;
+
+    s_dEll_Metric.Lapse_function *= dr_dEll;
+    s_dEll_Metric.Shift_function *= dr_dEll;
+
+    return s_dEll_Metric;
+}
+
+Metric_type Wormhole_class::get_dtheta_local_metric(const double* const Local_State_Vector) const {
+
+    Metric_type s_Metric = this->get_local_metric(Local_State_Vector);
+
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     double r2 = r * r;
     double sin_theta = sin(theta);
@@ -164,10 +246,38 @@ Metric_type Wormhole_class::get_dtheta_metric(const double* const State_Vector) 
     return s_dtheta_Metric;
 }
 
-Metric_type Wormhole_class::get_d2r_metric(const double* const State_Vector) const {
 
-    Metric_type s_Metric = this->get_metric(State_Vector);
-    Metric_type s_dr_Metric = this->get_dr_metric(State_Vector);
+Metric_type Wormhole_class::get_dtheta_global_metric(const double* const Global_State_Vector) const {
+
+    double Local_State_Vector[e_Full_state_size]{};
+    memcpy(Local_State_Vector, Global_State_Vector, e_Full_state_size * sizeof(double));
+    Local_State_Vector[e_r] = sqrt(Global_State_Vector[e_r] * Global_State_Vector[e_r] + this->R_Throat * this->R_Throat);
+
+    Metric_type s_Metric = this->get_local_metric(Local_State_Vector);
+
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
+
+    double r2 = r * r;
+    double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
+
+    Metric_type s_dtheta_Metric{};
+
+    /* ------------------------------------ Only the non-zero components are explicitly evaluated. ------------------------------------ */
+
+    s_dtheta_Metric.Metric[e_t][e_t] = 2 * r2 * s_Metric.Shift_function * s_Metric.Shift_function * sin_theta * cos_theta;
+    s_dtheta_Metric.Metric[e_t][e_phi] = -2 * r2 * sin_theta * cos_theta * s_Metric.Shift_function;
+    s_dtheta_Metric.Metric[e_phi][e_t] = s_dtheta_Metric.Metric[e_t][e_phi];
+    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r2 * sin_theta * cos_theta;
+
+    return s_dtheta_Metric;
+}
+
+Metric_type Wormhole_class::get_d2r_local_metric(const double* const State_Vector) const {
+
+    Metric_type s_Metric = this->get_local_metric(State_Vector);
+    Metric_type s_dr_Metric = this->get_dr_local_metric(State_Vector);
 
     const double& r = State_Vector[e_r];
     const double& theta = State_Vector[e_theta];
@@ -250,4 +360,77 @@ bool Wormhole_class::terminate_integration(const double* const State_vector) {
         return scatter || scatter_other_side;
 
     }
+}
+
+void Wormhole_class::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+
+    switch (Entry_to_convert) {
+
+    case e_Full_State_Vector:
+
+        if (State_Vector_Global[e_r] < 0) {
+
+            int test{};
+
+        }
+
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, e_Full_state_size * sizeof(double));
+        Local_Vec_to_Convert[e_r] = sqrt(Global_Vec_to_Convert[e_r] * Global_Vec_to_Convert[e_r] + this->R_Throat * this->R_Throat);
+        Local_Vec_to_Convert[e_p_r] *= Local_Vec_to_Convert[e_r] / Global_Vec_to_Convert[e_r];
+
+        break;
+
+    case e_Contravariant_vector:
+
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, 4 * sizeof(double));
+        Local_Vec_to_Convert[e_r] *= State_Vector_Global[e_r] / sqrt(State_Vector_Global[e_r] * State_Vector_Global[e_r] + this->R_Throat * this->R_Throat);
+
+        break;
+
+    case e_Covariant_vector:
+
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, 4 * sizeof(double));
+        Local_Vec_to_Convert[e_r] *= sqrt(State_Vector_Global[e_r] * State_Vector_Global[e_r] + this->R_Throat * this->R_Throat) / State_Vector_Global[e_r];
+
+        break;
+
+    case e_Coordinates:
+
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, 4 * sizeof(double));
+        Local_Vec_to_Convert[e_r] = sqrt(Global_Vec_to_Convert[e_r] * Global_Vec_to_Convert[e_r] - this->R_Throat * this->R_Throat);
+
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported coordinate conversion type. Something Broke in Convert_global_to_local_coords()!");
+
+    }
+
+}
+
+void Wormhole_class::Convert_local_to_global_coords(const double* const State_Vector_Global, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+
+    switch (Entry_to_convert) {
+
+    case e_Contravariant_vector:
+
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, 4 * sizeof(double));
+        Global_Vec_to_Convert[e_r] /= State_Vector_Global[e_r] / sqrt(State_Vector_Global[e_r] * State_Vector_Global[e_r] + this->R_Throat * this->R_Throat);
+
+        break;
+
+    case e_Covariant_vector:
+
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, 4 * sizeof(double));
+        Global_Vec_to_Convert[e_r] /= sqrt(State_Vector_Global[e_r] * State_Vector_Global[e_r] + this->R_Throat * this->R_Throat) / State_Vector_Global[e_r];
+
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported coordinate conversion type. Something Broke in Convert_global_to_local_coords()!");
+
+    }
+
 }

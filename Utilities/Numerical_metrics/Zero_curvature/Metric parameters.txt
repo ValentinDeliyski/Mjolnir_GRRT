@@ -1,0 +1,139 @@
+====================== ZERO CURVATURE CONFIG I ======================
+
+The curvature coupling: kappa = 0;
+
+Solution: rh=0.01_om=0.679241219776405_h0=0.0150918072223610
+ 
+The Black Hole Horizon of the solution: rh = 0.01;  
+ 
+The ADM mass and angular momentum of the solution: M = 0.881990876889021; omega = 0.679241219776405;
+ 
+The ADM mass is : 0.881990876889021
+The mass of the hole is : 0.0034981920971278923
+The mass of the field is : 0.8784944174202612
+The ADM angular momentum is : 0.7258549181881021
+The angular momentum of the hole is : 9.145481718889068 e - 5
+The angular momentum of the field is : 0.7257639237840163
+The normalized charge q is : 0.9998746383033225 
+
+Inner stable prograde region: from 0.029007225621419996 to 0.0489933851711333
+Outer stable prograde region: from 0.268499434023205704 to Infinity
+
+За сенките: r_tilde_Obs = 15 M; r_obs = 12.323540635962083239
+            r_tilde_Sph = 30 M; r_sph = 25.568949984198685633
+
+====================== ZERO CURVATURE CONFIG II ======================
+
+The curvature coupling: kappa = 0;
+
+Solution: rh=0.01_om=0.835271834271409_h0=0.0580074274088523
+ 
+The Black Hole Horizon of the solution: rh = 0.01;  
+ 
+The ADM mass and angular momentum of the solution: M = 0.6482285091988804; omega = 0.835271834271409;
+ 
+The ADM mass is : 0.6482285091988804
+The mass of the hole is : 0.0048717794248864755
+The mass of the field is : 0.6433589248489756
+The ADM angular momentum is : 0.4067618801367276
+The angular momentum of the hole is : 0.0011023192647015986
+The angular momentum of the field is : 0.4056606804896347
+The normalized charge q is : 0.9972927658640905 
+	
+One stable prograde region: from 0.053860812305806299343 to Infinity
+
+За сенките: r_tilde_Obs = 15 M; r_obs = 9.0570781445249900800
+            r_tilde_Sph = 30 M; r_sph = 18.792764156779768646
+
+====================== ZERO CURVATURE CONFIG III ======================
+
+The curvature coupling: kappa = 0;
+ 
+The Black Hole Horizon of the solution: rh = 0.05;
+
+Solution: rh=0.05_om=0.690049460219643_h0=0.0460050921685179
+ 
+The ADM mass and angular momentum of the solution: M = 0.9665945595334484; omega = 0.690049460219643;
+ 
+The ADM mass is : 0.9665945595334484 (0.9082)
+The mass of the hole is : 0.02521200215292363
+The mass of the field is : 0.941493325473748
+The ADM angular momentum is : 0.832898882788929
+The angular momentum of the hole is : 0.004532808339695149
+The angular momentum of the field is : 0.8283094511932471
+The normalized charge q is : 0.9944898093988139
+
+One stable prograde region: from 0.24535551101631749028 to Infinity
+
+За сенките: r_tilde_Obs = 15 M; r_obs = 13.527966620064906452
+            r_tilde_Sph = 30 M; r_sph = 28.042472190228344623
+
+====================== ZERO CURVATURE CONFIG IV ======================
+
+The curvature coupling: kappa = 0;
+ 
+The Black Hole Horizon of the solution: rh = 0.1;
+
+Solution: rh=0.1_om=0.738499261269268_h0=0.0594286954018100
+ 
+The ADM mass and angular momentum of the solution: M = 1.0004304296303965; omega = 0.738499261269268;
+ 
+The ADM mass is : 1.0004304296303965
+The mass of the hole is : 0.08696670494178357
+The mass of the field is : 0.9133649885704338
+The ADM angular momentum is : 0.8535000539005367
+The angular momentum of the hole is : 0.03023933187403869
+The angular momentum of the field is : 0.8231809763527109
+The normalized charge q is : 0.9644767713730467
+
+One stable prograde region: from 0.24029573045223954249 to Infinity
+
+За сенките: r_tilde_Obs = 15 M; r_obs = 14.028182759285211640
+            r_tilde_Sph = 30 M; r_sph = 29.049519212832852458
+			
+====================== ZERO CURVATURE CONFIG V ======================
+
+The curvature coupling: kappa = 0;
+ 
+The Black Hole Horizon of the solution: rh = 0.2;
+
+Solution: rh=0.2_om=0.895538415462029_h0=0.0154793323527768
+ 
+The ADM mass and angular momentum of the solution: M = 0.8787260140984727; omega = 0.895538415462029;
+ 
+The ADM mass is : 0.8787260140984727
+The mass of the hole is : 0.27955481438408675
+The mass of the field is : 0.5989546530944466
+The ADM angular momentum is : 0.6789623031907078
+The angular momentum of the hole is : 0.1011761750639027
+The angular momentum of the field is : 0.5776463082429
+The normalized charge q is : 0.850778173586833
+
+One stable prograde region: from 0.40246624339749035391 to Infinity
+
+За сенките: r_tilde_Obs = 15 M; r_obs = 12.372945999482618923
+            r_tilde_Sph = 30 M; r_sph = 25.571546650869792782
+
+====================== ZERO CURVATURE CONFIG VI ======================
+
+The curvature coupling: kappa = 0;
+ 
+The Black Hole Horizon of the solution: rh = 0.3;
+
+Solution: rh=0.3_om=0.988000
+ 
+The ADM mass and angular momentum of the solution: M = 0.320009597074143; omega = 0.988000;
+ 
+The ADM mass is : 0.320009597074143
+The mass of the hole is : 0.23767290255871582
+The mass of the field is : 0.08233666870401053
+The ADM angular momentum is : 0.12599589859284263
+The angular momentum of the hole is : 0.044377260363108635
+The angular momentum of the field is : 0.08161907156654925
+The normalized charge q is : 0.6477914954224211
+
+One stable prograde region: from 0.63296637310928431723 to Infinity
+
+За сенките: r_tilde_Obs = 15 M; r_obs = 4.6783707743163843401
+            r_tilde_Sph = 30 M; r_sph = 9.4541568019674395356
+

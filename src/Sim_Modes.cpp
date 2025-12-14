@@ -79,7 +79,7 @@ void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray
 
 void static Zero_results_struct(Results_type* const p_Ray_results) {
 
-    memset(p_Ray_results, 0, e_Stokes_param_num * sizeof(double));
+    memset(p_Ray_results->Intensity, 0, e_Stokes_param_num * sizeof(double));
 
     memset(p_Ray_results->Final_State_Vector, 0, e_Full_state_size * sizeof(double));
     memset(p_Ray_results->Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));

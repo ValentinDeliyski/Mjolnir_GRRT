@@ -465,13 +465,13 @@ void get_initial_conditions_from_image_coords(Initial_conditions_type* p_Initial
 
 }
 
-std::complex<double> get_Penrose_Walker_constant(const double* const State_Vector, const Simulation_Context_type* const p_Sim_Context, const std::complex<double>* const Polarization_Vector) {
+std::complex<double> get_Penrose_Walker_constant(const double* const Local_State_Vector, const Simulation_Context_type* const p_Sim_Context, const std::complex<double>* const Polarization_Vector) {
 
     double Contravariant_momentum[4]{};
     double inv_metric[4][4]{};
 
-    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_metric(State_Vector);
-    Manipulate_index(&s_Metric, State_Vector + e_p_t, Contravariant_momentum, Raise_index);
+    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
+    Manipulate_index(&s_Metric, Local_State_Vector + e_p_t, Contravariant_momentum, Raise_index);
 
     const double& p_t     = Contravariant_momentum[e_t];
     const double& p_r     = Contravariant_momentum[e_r];
@@ -479,16 +479,16 @@ std::complex<double> get_Penrose_Walker_constant(const double* const State_Vecto
     const double& p_phi   = Contravariant_momentum[e_phi];
 
     std::complex<double> Kappa_1 = sqrt(-s_Metric.Metric[e_theta][e_theta] * s_Metric.Metric[e_r][e_r] * s_Metric.Metric[e_t][e_t]) * (p_t * Polarization_Vector[e_r] - p_r * Polarization_Vector[e_t]);
-    std::complex<double> Kappa_2 = pow(s_Metric.Metric[e_theta][e_theta], 3.0 / 2) * sin(State_Vector[e_theta]) * (p_theta * Polarization_Vector[e_phi] - p_phi * Polarization_Vector[e_theta]);
+    std::complex<double> Kappa_2 = pow(s_Metric.Metric[e_theta][e_theta], 3.0 / 2) * sin(Local_State_Vector[e_theta]) * (p_theta * Polarization_Vector[e_phi] - p_phi * Polarization_Vector[e_theta]);
 
     if (Kerr == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
         double& Spin = p_Sim_Context->p_Init_Conditions->Metric_parameters.Spin;
 
-        Kappa_1 = p_t * Polarization_Vector[e_r] - p_r * Polarization_Vector[e_t] + Spin * sin(State_Vector[e_theta]) * sin(State_Vector[e_theta]) * (p_r * Polarization_Vector[e_phi] - p_phi * Polarization_Vector[e_r]);
-        Kappa_2 = sin(State_Vector[e_theta]) * ((State_Vector[e_r] * State_Vector[e_r] + Spin * Spin) * (p_phi * Polarization_Vector[e_theta] - p_theta * Polarization_Vector[e_phi]) - Spin * (p_t * Polarization_Vector[e_theta] - p_theta * Polarization_Vector[e_t]));
+        Kappa_1 = p_t * Polarization_Vector[e_r] - p_r * Polarization_Vector[e_t] + Spin * sin(Local_State_Vector[e_theta]) * sin(Local_State_Vector[e_theta]) * (p_r * Polarization_Vector[e_phi] - p_phi * Polarization_Vector[e_r]);
+        Kappa_2 = sin(Local_State_Vector[e_theta]) * ((Local_State_Vector[e_r] * Local_State_Vector[e_r] + Spin * Spin) * (p_phi * Polarization_Vector[e_theta] - p_theta * Polarization_Vector[e_phi]) - Spin * (p_t * Polarization_Vector[e_theta] - p_theta * Polarization_Vector[e_t]));
 
-        return (Kappa_1 - complex_i * Kappa_2) * (State_Vector[e_r] - complex_i * Spin * cos(State_Vector[e_theta]));
+        return (Kappa_1 - complex_i * Kappa_2) * (Local_State_Vector[e_r] - complex_i * Spin * cos(Local_State_Vector[e_theta]));
 
     }
 

@@ -73,15 +73,18 @@ class Phenomenological_syhnchrotron_reference_sims:
         self.Simulation_configurator.observer.Image_x_min = {"Value": -15, "Unit": "[M]"}
         self.Simulation_configurator.observer.Image_x_max = {"Value":  15, "Unit": "[M]"}
         
-        self.Simulation_configurator.observer.Resolution_x = {"Value": 512, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 512, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
     
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
         
-        self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 10, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 2, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-16, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-16, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.max_stepsize  = {"Value": 1, "Unit": "[-]"}
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
         self.Simulation_configurator.integrator.radiative_transfer_integrator_type = {"Value": "RK5", "Unit": "[-]"}
 
@@ -218,10 +221,10 @@ class Phenomenological_syhnchrotron_reference_sims:
     def Run_and_eval_test_sim_5(self) -> None:
         
         """ The disk here is really thin and this is a hack-y (and slow...) way of making sure the itnegrator does not jump over it """
-        self.Simulation_configurator.integrator.max_stepsize = {"Value": 0.5, "Unit": "[-]"}
+        self.Simulation_configurator.integrator.max_stepsize = {"Value": 0.15, "Unit": "[-]"}
         
         """ Central black hole setup """
-        self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
+        self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.0, "Unit": "[M]"}
 
         """ Accretion disk setup """
         self.Simulation_configurator.disk_model.Vertical_scale  = {"Value": 100 / 3, "Unit": "[tan(angle)]"}
@@ -229,9 +232,12 @@ class Phenomenological_syhnchrotron_reference_sims:
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff   = {"Value": 1e6, "Unit": "[?]"}
         self.Simulation_configurator.emission_models.Emission_power_law = {"Value": 0, "Unit": "[-]"}
+    
+        self.Simulation_configurator.min_image_order               = {"Value": 2, "Unit": "[-]"}
+        self.Simulation_configurator.max_image_order               = {"Value": 2, "Unit": "[-]"}
 
         """ The simulation name """
-        self.Simulation_configurator.simulation_name = {"Value": "Phenomenological_Reference_Simulation_5", "Unit": "[-]"}
+        self.Simulation_configurator.simulation_name = {"Value": "Phenomenological_Reference_Simulation_5_3", "Unit": "[-]"}
         
         """ Generate the simulation input/output file paths """
         # This is the "common" output directory, and each simulation will be in its own sub-folder
@@ -273,8 +279,8 @@ if __name__ == "__main__":
 
     # Sim_2_thread.start()
     time.sleep(1)
-    Sim_3_thread.start()
+    # Sim_3_thread.start()
     time.sleep(1)
     # Sim_4_thread.start()
     # time.sleep(1)
-    # Sim_5_thread.start()
+    Sim_5_thread.start()

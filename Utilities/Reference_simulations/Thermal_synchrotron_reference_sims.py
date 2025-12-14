@@ -69,8 +69,8 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.observer.Image_x_min = {"Value": -(self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         self.Simulation_configurator.observer.Image_x_max = {"Value":  (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
 
-        self.Simulation_configurator.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
@@ -181,4 +181,4 @@ Sim_2_thread = threading.Thread(target = Thermal_syhnchrotron_reference_sims_ins
 Sim_1_thread.start()
 time.sleep(1)
 
-# Sim_2_thread.start()
+Sim_2_thread.start()

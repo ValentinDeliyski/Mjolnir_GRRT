@@ -173,20 +173,23 @@ public:
     Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results);
     ~Integrator_class();
 
-    s_Ray_log_type* p_Ray_log_struct;
+    Ray_log_type* p_Ray_log_struct;
     RHS_wrapper_struct RHS_Wrapper_params;
 
     /* ------ This gets filled only in simulation mode 3 ----- */
-    s_Adaptive_RK_Integrator_debug_type RK_Integrator_debug_log;
+    Adaptive_RK_Integrator_debug_type RK_Integrator_debug_log;
 
     bool continue_integration;
     bool integration_complete;
 
-    bool Locate_event(Event_detection_enums e_Event, double* const State_at_Event);
+    bool Locate_event(Event_detection_enums e_Event, double* const State_at_Event_Global, double* const State_at_Event_Local);
 
     const double get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const;
-    const double* const get_current_State_Vector() const;
-    const double* const get_previous_State_Vector() const;
+    const double* const get_current_State_Vector_global() const;
+    const double* const get_current_State_Vector_local() const;
+
+    const double* const get_previous_State_Vector_global() const;
+    const double* const get_previous_State_Vector_local() const;
 
     /* -------------------- This gets called by the RHS wrapper in the ESDIRK54 routine -------------------- */
     int get_implicit_method_system(const gsl_vector* State_Vector, void* Params, gsl_vector* System_to_solve);

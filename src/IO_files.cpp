@@ -797,7 +797,7 @@ void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
         for (int state_index = 0; state_index < e_Full_state_size; state_index++) {
 
-            this->Log_Output_File << s_Ray_results->Ray_log_struct.Ray_path_log[state_index + log_index * e_Full_state_size] << ",";
+            this->Log_Output_File << s_Ray_results->Ray_log_struct.Ray_path_log_global[state_index + log_index * e_Full_state_size] << ",";
           
         }
 

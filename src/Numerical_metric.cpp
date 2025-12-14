@@ -281,25 +281,31 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
 }
 
 
-Metric_type Numerical_metric::get_metric(const double* const State_Vector) const {
+Metric_type Numerical_metric::get_local_metric(const double* const Local_State_Vector) const {
 
     /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
 
-    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+    const double r_compactified = this->compactify_radial_coordiante(Local_State_Vector[e_r]);
 
     const auto Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, Local_State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
-    return this->get_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
+    return this->get_metric(Local_State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
 
 }
 
-Metric_type Numerical_metric::get_metric(const double* const State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
+Metric_type Numerical_metric::get_global_metric(const double* const Global_State_Vector) const {
+
+    return this->get_local_metric(Global_State_Vector);
+
+}
+
+Metric_type Numerical_metric::get_metric(const double* const Local_State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     const double sin_theta = sin(theta);
     const double N = 1 - this->Parameters.Horizon_radius / r;
@@ -316,7 +322,7 @@ Metric_type Numerical_metric::get_metric(const double* const State_Vector, long 
     s_Spline_args.Radial_natural_param = (s_Spline_args.r_coord_compactified - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]) 
                                       / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
 
-    s_Spline_args.Theta_natural_param = (State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1]) 
+    s_Spline_args.Theta_natural_param = (Local_State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1])
                                       / (this->Parameters.Theta_grid[Theta_grid_idx] - this->Parameters.Theta_grid[Theta_grid_idx - 1]);
 
     const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(s_Spline_args, None);
@@ -364,25 +370,31 @@ Metric_type Numerical_metric::get_metric(const double* const State_Vector, long 
 
 }
 
-Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector) const {
+Metric_type Numerical_metric::get_dr_local_metric(const double* const Local_State_Vector) const {
 
     /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
 
-    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+    const double r_compactified = this->compactify_radial_coordiante(Local_State_Vector[e_r]);
 
     const auto Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, Local_State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
-    return this->get_dr_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
+    return this->get_dr_metric(Local_State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
 
 }
 
-Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
+Metric_type Numerical_metric::get_dr_global_metric(const double* const Global_State_Vector) const {
+
+    return this->get_dr_local_metric(Global_State_Vector);
+
+}
+
+Metric_type Numerical_metric::get_dr_metric(const double* const Local_State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     const double sin_theta = sin(theta);
     const double N    = 1 - this->Parameters.Horizon_radius / r;
@@ -400,7 +412,7 @@ Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, lo
     s_Spline_args.Radial_natural_param = (s_Spline_args.r_coord_compactified - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1])
                                        / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
 
-    s_Spline_args.Theta_natural_param = (State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1])
+    s_Spline_args.Theta_natural_param = (Local_State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1])
                                       / (this->Parameters.Theta_grid[Theta_grid_idx] - this->Parameters.Theta_grid[Theta_grid_idx - 1]);
 
     const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(s_Spline_args, None);
@@ -451,20 +463,26 @@ Metric_type Numerical_metric::get_dr_metric(const double* const State_Vector, lo
 
 }
 
-Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector) const {
+Metric_type Numerical_metric::get_dtheta_local_metric(const double* const Local_State_Vector) const {
 
     /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
 
-    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+    const double r_compactified = this->compactify_radial_coordiante(Local_State_Vector[e_r]);
 
     const auto Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, Local_State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
-    return this->get_dtheta_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
+    return this->get_dtheta_metric(Local_State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
 
 }
 
-Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
+Metric_type Numerical_metric::get_dtheta_global_metric(const double* const Global_State_Vector) const {
+
+    return this->get_dtheta_local_metric(Global_State_Vector);
+
+}
+
+Metric_type Numerical_metric::get_dtheta_metric(const double* const Local_State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
 
@@ -472,7 +490,7 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
 
     Spline_arguments_type s_Spline_args{};
 
-    s_Spline_args.r_coord = State_Vector[e_r];
+    s_Spline_args.r_coord = Local_State_Vector[e_r];
     s_Spline_args.r_coord_compactified = compactify_radial_coordiante(s_Spline_args.r_coord);
     s_Spline_args.Radial_idx = Radial_grid_idx;
     s_Spline_args.Theta_idx = Theta_grid_idx;
@@ -480,7 +498,7 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
     s_Spline_args.Radial_natural_param = (s_Spline_args.r_coord_compactified - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1])
                                        / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
 
-    s_Spline_args.Theta_natural_param = (State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1])
+    s_Spline_args.Theta_natural_param = (Local_State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1])
                                       / (this->Parameters.Theta_grid[Theta_grid_idx] - this->Parameters.Theta_grid[Theta_grid_idx - 1]);
 
     const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(s_Spline_args, None);
@@ -490,8 +508,8 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
 
     /* ---- References for the sake of readability ---- */
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     const double& W        = s_Potentials.W;
     const double exp_2F_0 = exp(2 * s_Potentials.F_0);
@@ -538,25 +556,25 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const State_Vector
 
 }
 
-Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector) const {
+Metric_type Numerical_metric::get_d2r_local_metric(const double* const Local_State_Vector) const {
 
     /* ---------------- This is a wrapper function for compatability with the radiative transfer part of the code ---------------- */
 
-    const double r_compactified = this->compactify_radial_coordiante(State_Vector[e_r]);
+    const double r_compactified = this->compactify_radial_coordiante(Local_State_Vector[e_r]);
 
     const auto Radial_grid_upper_idx = std::upper_bound(this->Parameters.Compactified_radial_grid, this->Parameters.Compactified_radial_grid + this->Parameters.Radial_grid_size, r_compactified) - this->Parameters.Compactified_radial_grid;
-    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, State_Vector[e_theta]) - this->Parameters.Theta_grid;
+    const auto Theta_grid_upper_idx = std::upper_bound(this->Parameters.Theta_grid, this->Parameters.Theta_grid + this->Parameters.Theta_grid_size, Local_State_Vector[e_theta]) - this->Parameters.Theta_grid;
 
-    return this->get_d2r_metric(State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
+    return this->get_d2r_metric(Local_State_Vector, Radial_grid_upper_idx, Theta_grid_upper_idx);
 
 }
 
-Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
+Metric_type Numerical_metric::get_d2r_metric(const double* const Local_State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
 
     /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
 
-    const double& r = State_Vector[e_r];
-    const double& theta = State_Vector[e_theta];
+    const double& r = Local_State_Vector[e_r];
+    const double& theta = Local_State_Vector[e_theta];
 
     const double& sin_theta = sin(theta);
     const double& N = 1 - this->Parameters.Horizon_radius / r;
@@ -575,7 +593,7 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, l
     s_Spline_args.Radial_natural_param = (s_Spline_args.r_coord_compactified - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1])
                                        / (this->Parameters.Compactified_radial_grid[Radial_grid_idx] - this->Parameters.Compactified_radial_grid[Radial_grid_idx - 1]);
 
-    s_Spline_args.Theta_natural_param = (State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1])
+    s_Spline_args.Theta_natural_param = (Local_State_Vector[e_theta] - this->Parameters.Theta_grid[Theta_grid_idx - 1])
                                       / (this->Parameters.Theta_grid[Theta_grid_idx] - this->Parameters.Theta_grid[Theta_grid_idx - 1]);
 
     const Numerical_metric_potentials_type s_Potentials = this->compute_metric_components_from_spline(s_Spline_args, None);
@@ -595,7 +613,7 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, l
     const double& dr_F_0 = s_dr_Potentials.F_0;
     const double& dr_F_1 = s_dr_Potentials.F_1;
     const double& dr_F_2 = s_dr_Potentials.F_2;
-
+    
     const double& d2r_W = s_d2r_Potentials.W;
     const double& d2r_F_0 = s_d2r_Potentials.F_0;
     const double& d2r_F_1 = s_d2r_Potentials.F_1;
@@ -609,11 +627,10 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const State_Vector, l
 
     case e_Anzatz_2:
 
-        /* TODO: fix these */
-
         s_d2r_Metric.Metric[e_t][e_t] = -exp_2F_0 * (d2r_N + 4 * dr_N * dr_F_0 + 2 * N * d2r_F_0 + 4 * N * dr_F_0 * dr_F_0)
-                                      + 2 * exp_2F_2 * r * r * sin_theta * sin_theta * (W * W * d2r_F_2 + 2 * W * W * dr_F_2 * dr_F_2 + 4 * W * dr_W * dr_F_2 + dr_W * dr_W + W * d2r_W)
-                                      + 2 * exp_2F_2 * sin_theta * sin_theta * (4 * r * W * W *dr_F_2 + 4 * r * W * dr_W + W * W);
+                                      + exp_2F_2 * sin_theta * sin_theta * (2 * d2r_F_2 * r * r * W * W + 4 * dr_F_2 * dr_F_2 * r * r * W * W + 8 * dr_F_2 * r * W * W + 8 * dr_F_2 * dr_W * r * r * W + 2 * W * W + 8 * r * W * dr_W
+                                                                            + 2 * r * r * dr_W * dr_W + 2 * r * r * W * d2r_W);
+
         s_d2r_Metric.Metric[e_t][e_phi] = -exp_2F_2 * sin_theta * sin_theta * (4 * r * dr_W + 8 * r * W * dr_F_2 + 4 * r * r * dr_W * dr_F_2 + 2 * r * r * W * d2r_F_2 + r * r * d2r_W + 4 * r * r * W * dr_F_2 * dr_F_2 + 2 * W);
 
         break;
@@ -703,3 +720,63 @@ bool Numerical_metric::terminate_integration(const double* const State_vector) {
 
     return scatter || hit_horizon;
 };
+
+void Numerical_metric::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+
+    switch (Entry_to_convert) {
+
+    case e_Full_State_Vector:
+
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, e_Full_state_size * sizeof(double));
+        break;
+
+    case e_Contravariant_vector:
+
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    case e_Covariant_vector:
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    case e_Coordinates:
+        memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported coordinate conversion type. Something Broke in Convert_global_to_local_coords()!");
+
+    }
+
+}
+
+void Numerical_metric::Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+
+    switch (Entry_to_convert) {
+
+    case e_Full_State_Vector:
+
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, e_Full_state_size * sizeof(double));
+        break;
+
+    case e_Contravariant_vector:
+
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    case e_Covariant_vector:
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    case e_Coordinates:
+        memcpy(Global_Vec_to_Convert, Local_Vec_to_Convert, 4 * sizeof(double));
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported coordinate conversion type. Something Broke in Convert_local_to_global_coords()!");
+
+    }
+
+}

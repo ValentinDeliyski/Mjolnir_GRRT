@@ -86,6 +86,9 @@ class Simulation_Parser():
                             self.Polarization_vec_X[index] = float(row["Polarization vector X [-]"])
                             self.Polarization_vec_Y[index] = float(row["Polarization vector Y [-]"])
                             
+                            self.Celestial_theta[index] = float(row["Celestial Sphere Crossing Theta [Rad]"])       
+                            self.Celestial_phi[index]  = float(row["Celestial Sphere Crossing Phi [Rad]"])
+                            
                         else:
 
                             self.I_Intensity[index]  = float(row["Synchotron Intensity I [Jy/sRad]"])

@@ -223,3 +223,12 @@ enum Event_detection_enums: std::underlying_type_t <std::byte> {
     Celestial_sphere_crossing = 1
 
 };
+
+enum Coord_conversion_enums: std::underlying_type_t <std::byte> {
+
+    e_Coordinates = 0,
+    e_Covariant_vector = 1,
+    e_Contravariant_vector = 2,
+    e_Full_State_Vector = 3
+
+};
