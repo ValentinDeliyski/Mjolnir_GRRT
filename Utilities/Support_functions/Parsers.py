@@ -96,7 +96,7 @@ class Simulation_Parser():
                             self.U_Intensity[index]  = float(row["Synchotron Intensity U [Jy/sRad]"])
                             self.V_Intensity[index]  = float(row["Synchotron Intensity V [Jy/sRad]"])       
                             
-                            self.Final_t_coord[index] = float(row["Final t Coordinate [M]"])  
+                            # self.Final_t_coord[index] = float(row["Final t Coordinate [M]"])  
                             
                             self.Celestial_theta[index] = float(row["Celestial Sphere Crossing Theta [Rad]"])       
                             self.Celestial_phi[index]  = float(row["Celestial Sphere Crossing Phi [Rad]"])
@@ -245,8 +245,14 @@ class Simulation_Parser():
         
         Celestial_phi = self.Celestial_phi.reshape(Y_resolution, X_resolution)
         Celestial_phi = flip(Celestial_phi, axis =  0)
+        
+        Pol_vec_x = self.Polarization_vec_X.reshape(Y_resolution, X_resolution)
+        Pol_vec_x = flip(Pol_vec_x, axis =  0)
+        
+        Pol_vec_y = self.Polarization_vec_Y.reshape(Y_resolution, X_resolution)
+        Pol_vec_y = flip(Pol_vec_y, axis =  0)
 
-        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, Celestial_theta, Celestial_phi
+        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, Pol_vec_x, Pol_vec_y, Celestial_theta, Celestial_phi
     
     def get_photon_log(self) -> tuple[tuple, tuple, tuple, list, list, tuple]:
         

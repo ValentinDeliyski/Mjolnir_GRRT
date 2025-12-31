@@ -440,7 +440,7 @@ void Integrator_class::Run_Explicit_Runge_Kutta(Geodesic_Integrator_enums e_Acti
 
     if (this->p_Init_conditions->Metric_parameters.e_Spacetime == Janis_Newman_Winicour && this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 0.5) {
 
-        if (New_State_vector_main[e_r] - 2 / this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 1e-2 && this->Force_scatter) {
+        if (New_State_vector_main[e_r] - 2 * this->p_Init_conditions->Metric_parameters.Mass / this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 1e-2 && this->Force_scatter) {
 
             New_State_vector_main[e_p_r] = -1 * abs(New_State_vector_main[e_p_r]);
 

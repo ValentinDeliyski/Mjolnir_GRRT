@@ -27,6 +27,8 @@ private:
 	std::ofstream Image_Output_File;
 	std::ofstream Log_Output_File;
 
+	std::filesystem::path Image_full_path;
+
 	Initial_conditions_type *p_Initial_Conditions;
 
 	bool Truncate_files{};
@@ -45,7 +47,7 @@ private:
 
 		File_manager_class(Initial_conditions_type* p_Initial_Conditions);
 
-		void open_image_output_file();
+		void create_output_file();
 
 		void write_image_data_to_file(Results_type* Ray_results);
 
@@ -53,7 +55,9 @@ private:
 
 		void log_photon_path(Results_type* s_Ray_results);
 
-		void close_image_output_files();
+		void close_image_output_file();
+
+		void open_image_output_file();
 
 		void get_geodesic_data(double J_data[], double p_theta_data[]);
 

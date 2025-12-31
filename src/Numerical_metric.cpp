@@ -29,6 +29,26 @@ double Numerical_metric::compactify_radial_coordiante(const double r) const {
     return x_uncompactified / (1 + x_uncompactified);
 }
 
+inline Delta_coeffs_type Numerical_metric::get_delta_matrix(const double* const Grid_step_array, const long long idx) const {
+
+    Delta_coeffs_type Coeff_struct{};
+
+    Coeff_struct.a_coeff = Grid_step_array[idx] * Grid_step_array[idx] / ((Grid_step_array[idx - 2] + Grid_step_array[idx - 1] + Grid_step_array[idx]) * (Grid_step_array[idx - 1] + Grid_step_array[idx]));
+
+    Coeff_struct.b_coeff = Grid_step_array[idx] * Grid_step_array[idx] / ((Grid_step_array[idx - 1] + Grid_step_array[idx] + Grid_step_array[idx + 1]) * (Grid_step_array[idx - 1] + Grid_step_array[idx]));
+
+    Coeff_struct.c_coeff = Grid_step_array[idx] * Grid_step_array[idx] / ((Grid_step_array[idx - 1] + Grid_step_array[idx] + Grid_step_array[idx + 1]) * (Grid_step_array[idx] + Grid_step_array[idx + 1]));
+
+    Coeff_struct.d_coeff = Grid_step_array[idx] * Grid_step_array[idx] / ((Grid_step_array[idx] + Grid_step_array[idx + 1] + Grid_step_array[idx + 2]) * (Grid_step_array[idx] + Grid_step_array[idx + 1]));
+
+    Coeff_struct.e_coeff = Grid_step_array[idx] * Grid_step_array[idx - 1] / ((Grid_step_array[idx - 1] + Grid_step_array[idx] + Grid_step_array[idx + 1]) * (Grid_step_array[idx - 1] + Grid_step_array[idx]));
+
+    Coeff_struct.f_coeff = Grid_step_array[idx - 1] * Grid_step_array[idx - 1] / ((Grid_step_array[idx - 1] + Grid_step_array[idx] + Grid_step_array[idx + 1]) * (Grid_step_array[idx - 1] + Grid_step_array[idx]));
+
+    return Coeff_struct;
+
+}
+
 inline void Numerical_metric::get_control_point_matrix(const double* const Control_vector, const long long r_idx, const long long theta_idx, double Control_matrix[4][4]) const {
 
     /* The reference for this implementation is one of the python example scrips in this document: https://hal.science/hal-03017566/document. */
@@ -48,37 +68,66 @@ inline void Numerical_metric::get_control_point_matrix(const double* const Contr
 
 }
 
-void Numerical_metric::get_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const {
+void Numerical_metric::get_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const {
 
-    Polynomial_basis_vector[0] = (1 - natural_parameter) * (1 - natural_parameter) * (1 - natural_parameter);
-    Polynomial_basis_vector[1] = 3 * natural_parameter * natural_parameter * natural_parameter - 6 * natural_parameter * natural_parameter + 4;
-    Polynomial_basis_vector[2] = -3 * natural_parameter * natural_parameter * natural_parameter + 3 * natural_parameter * natural_parameter + 3 * natural_parameter + 1;
-    Polynomial_basis_vector[3] = natural_parameter * natural_parameter * natural_parameter;
+    Polynomial_basis_vector[0] = -Delta_coeffs->a_coeff * natural_parameter * natural_parameter * natural_parameter
+                               + 3 * Delta_coeffs->a_coeff * natural_parameter * natural_parameter
+                               - 3 * Delta_coeffs->a_coeff * natural_parameter
+                               + Delta_coeffs->a_coeff;
+
+    Polynomial_basis_vector[1] = (Delta_coeffs->a_coeff + Delta_coeffs->b_coeff + Delta_coeffs->c_coeff) * natural_parameter * natural_parameter * natural_parameter
+                               + (-3 * Delta_coeffs->a_coeff - 3 * Delta_coeffs->b_coeff) * natural_parameter * natural_parameter
+                               + ( 3 * Delta_coeffs->a_coeff - 3 * Delta_coeffs->e_coeff) * natural_parameter
+                               + 1 - Delta_coeffs->a_coeff - Delta_coeffs->f_coeff;
+
+    Polynomial_basis_vector[2] = (-Delta_coeffs->b_coeff - Delta_coeffs->c_coeff - Delta_coeffs->d_coeff) * natural_parameter * natural_parameter * natural_parameter
+                               + 3 * Delta_coeffs->b_coeff * natural_parameter * natural_parameter
+                               + 3 * Delta_coeffs->e_coeff * natural_parameter 
+                               + Delta_coeffs->f_coeff;
+
+    Polynomial_basis_vector[3] = Delta_coeffs->d_coeff * natural_parameter * natural_parameter * natural_parameter;
 
 }
 
-void Numerical_metric::get_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const {
+void Numerical_metric::get_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const {
 
-    Polynomial_basis_vector[0] = -3 * (1 - natural_parameter) * (1 - natural_parameter);
-    Polynomial_basis_vector[1] = 9 * natural_parameter * natural_parameter - 12 * natural_parameter;
-    Polynomial_basis_vector[2] = -9 * natural_parameter * natural_parameter + 6 * natural_parameter + 3;
-    Polynomial_basis_vector[3] = 3 * natural_parameter * natural_parameter;
+    Polynomial_basis_vector[0] = -3 * Delta_coeffs->a_coeff * natural_parameter * natural_parameter
+                               + 6 * Delta_coeffs->a_coeff * natural_parameter
+                               - 3 * Delta_coeffs->a_coeff;
+
+    Polynomial_basis_vector[1] = 3 * (Delta_coeffs->a_coeff + Delta_coeffs->b_coeff + Delta_coeffs->c_coeff) * natural_parameter * natural_parameter
+                               + 2 * (-3 * Delta_coeffs->a_coeff - 3 * Delta_coeffs->b_coeff) * natural_parameter
+                               + (3 * Delta_coeffs->a_coeff - 3 * Delta_coeffs->e_coeff);
+
+    Polynomial_basis_vector[2] = 3 * (-Delta_coeffs->b_coeff - Delta_coeffs->c_coeff - Delta_coeffs->d_coeff) * natural_parameter * natural_parameter
+                                + 6 * Delta_coeffs->b_coeff * natural_parameter
+                                + 3 * Delta_coeffs->e_coeff;
+
+    Polynomial_basis_vector[3] = 3 * Delta_coeffs->d_coeff * natural_parameter * natural_parameter;
 
 }
 
-void Numerical_metric::get_second_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const {
+void Numerical_metric::get_second_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const {
 
-    Polynomial_basis_vector[0] = 6 * (1 - natural_parameter);
-    Polynomial_basis_vector[1] = 18 * natural_parameter - 12;
-    Polynomial_basis_vector[2] = -18 * natural_parameter + 6;
-    Polynomial_basis_vector[3] = 6 * natural_parameter;
+    Polynomial_basis_vector[0] = -6 * Delta_coeffs->a_coeff * natural_parameter
+                                + 6 * Delta_coeffs->a_coeff;
+
+    Polynomial_basis_vector[1] = 6 * (Delta_coeffs->a_coeff + Delta_coeffs->b_coeff + Delta_coeffs->c_coeff) * natural_parameter
+                               + 2 * (-3 * Delta_coeffs->a_coeff - 3 * Delta_coeffs->b_coeff);
+
+    Polynomial_basis_vector[2] = 6 * (-Delta_coeffs->b_coeff - Delta_coeffs->c_coeff - Delta_coeffs->d_coeff) * natural_parameter
+                               + 6 * Delta_coeffs->b_coeff;
+
+    Polynomial_basis_vector[3] = 6 * Delta_coeffs->d_coeff * natural_parameter;
 
 }
 
 double Numerical_metric::evaluate_single_spline(const double Control_point_matrix[4][4], 
-                                         const double Radial_natural_parameter, 
-                                         const double Theta_natural_parameter,
-                                         Derivative_selector_enums Derivative_selector) const {
+                                                const double Radial_natural_parameter, 
+                                                const double Theta_natural_parameter,
+                                                const Delta_coeffs_type const *Radial_coeffs,
+                                                const Delta_coeffs_type const *Theta_coeffs,
+                                                Derivative_selector_enums Derivative_selector) const {
 
     /* -------------- Compute the basis polynomials ------------ */
 
@@ -89,43 +138,43 @@ double Numerical_metric::evaluate_single_spline(const double Control_point_matri
 
     case None:
 
-        this->get_polynomial_basis_vector(Radial_natural_parameter, Radial_basis_polynomial);
-        this->get_polynomial_basis_vector(Theta_natural_parameter, Theta_basis_polynomial);
+        this->get_polynomial_basis_vector(Radial_natural_parameter, Radial_coeffs, Radial_basis_polynomial);
+        this->get_polynomial_basis_vector(Theta_natural_parameter, Theta_coeffs, Theta_basis_polynomial);
 
         break;
 
     case First_radial_derivative:
 
-        this->get_derivative_polynomial_basis_vector(Radial_natural_parameter, Radial_basis_polynomial);
-        this->get_polynomial_basis_vector(Theta_natural_parameter, Theta_basis_polynomial);
+        this->get_derivative_polynomial_basis_vector(Radial_natural_parameter, Radial_coeffs, Radial_basis_polynomial);
+        this->get_polynomial_basis_vector(Theta_natural_parameter, Theta_coeffs, Theta_basis_polynomial);
 
         break;
 
     case First_theta_derivative:
 
-        this->get_polynomial_basis_vector(Radial_natural_parameter, Radial_basis_polynomial);
-        this->get_derivative_polynomial_basis_vector(Theta_natural_parameter, Theta_basis_polynomial);
+        this->get_polynomial_basis_vector(Radial_natural_parameter, Radial_coeffs, Radial_basis_polynomial);
+        this->get_derivative_polynomial_basis_vector(Theta_natural_parameter, Theta_coeffs, Theta_basis_polynomial);
 
         break;
 
     case Second_radial_derivative:
 
-        this->get_second_derivative_polynomial_basis_vector(Radial_natural_parameter, Radial_basis_polynomial);
-        this->get_polynomial_basis_vector(Theta_natural_parameter, Theta_basis_polynomial);
+        this->get_second_derivative_polynomial_basis_vector(Radial_natural_parameter, Radial_coeffs, Radial_basis_polynomial);
+        this->get_polynomial_basis_vector(Theta_natural_parameter, Theta_coeffs, Theta_basis_polynomial);
 
         break;
 
     case Second_mixed_derivative:
 
-        this->get_derivative_polynomial_basis_vector(Radial_natural_parameter, Radial_basis_polynomial);
-        this->get_derivative_polynomial_basis_vector(Theta_natural_parameter, Theta_basis_polynomial);
+        this->get_derivative_polynomial_basis_vector(Radial_natural_parameter, Radial_coeffs, Radial_basis_polynomial);
+        this->get_derivative_polynomial_basis_vector(Theta_natural_parameter, Theta_coeffs, Theta_basis_polynomial);
 
         break;
 
     case Second_theta_derivative:
 
-        this->get_polynomial_basis_vector(Radial_natural_parameter, Radial_basis_polynomial);
-        this->get_second_derivative_polynomial_basis_vector(Theta_natural_parameter, Theta_basis_polynomial);
+        this->get_polynomial_basis_vector(Radial_natural_parameter, Radial_coeffs, Radial_basis_polynomial);
+        this->get_second_derivative_polynomial_basis_vector(Theta_natural_parameter, Theta_coeffs, Theta_basis_polynomial);
 
         break;
 
@@ -139,7 +188,7 @@ double Numerical_metric::evaluate_single_spline(const double Control_point_matri
     double Intermediate_result[4]{};
     mat_vec_multiply_4D(Control_point_matrix, Theta_basis_polynomial, Intermediate_result);
 
-    return dot_product(Radial_basis_polynomial, Intermediate_result, 4) / 36.0;
+    return dot_product(Radial_basis_polynomial, Intermediate_result, 4);
 
 }
 
@@ -147,33 +196,40 @@ Numerical_metric_potentials_type Numerical_metric::evaluate_all_splines(const do
 
     Numerical_metric_potentials_type s_Metric_potentials{};
 
+    // The +3 offset comes from the padding of the steps array at the begining
+    const Delta_coeffs_type Radial_coeffs = this->get_delta_matrix(this->Parameters.Compactified_radial_grid_steps, Radial_grid_idx - 1 + 3);
+    const Delta_coeffs_type Theta_coeffs = this->get_delta_matrix(this->Parameters.Theta_grid_steps, Theta_grid_idx - 1 + 3);
+
     /* -------------- Compute F_0 -------------- */
 
     double F_0_control_point_matrix[4][4]{};
     this->get_control_point_matrix(this->Parameters.F_0_control_vector, Radial_grid_idx - 1, Theta_grid_idx - 1, F_0_control_point_matrix);
 
-    s_Metric_potentials.F_0 = this->evaluate_single_spline(F_0_control_point_matrix, radial_natural_param, theta_narual_param, Derivative_selector);
+    s_Metric_potentials.exp_2F_0 = this->evaluate_single_spline(F_0_control_point_matrix, radial_natural_param, theta_narual_param, &Radial_coeffs, &Theta_coeffs, Derivative_selector);
 
     /* -------------- Compute F_1 -------------- */
 
     double F_1_control_point_matrix[4][4]{};
     this->get_control_point_matrix(this->Parameters.F_1_control_vector, Radial_grid_idx - 1, Theta_grid_idx - 1, F_1_control_point_matrix);
 
-    s_Metric_potentials.F_1 = this->evaluate_single_spline(F_1_control_point_matrix, radial_natural_param, theta_narual_param, Derivative_selector);
+    s_Metric_potentials.exp_2F_1 = this->evaluate_single_spline(F_1_control_point_matrix, radial_natural_param, theta_narual_param, &Radial_coeffs, &Theta_coeffs, Derivative_selector);
 
     /* -------------- Compute F_2 -------------- */
 
     double F_2_control_point_matrix[4][4]{};
     this->get_control_point_matrix(this->Parameters.F_2_control_vector, Radial_grid_idx - 1, Theta_grid_idx - 1, F_2_control_point_matrix);
 
-    s_Metric_potentials.F_2 = this->evaluate_single_spline(F_2_control_point_matrix, radial_natural_param, theta_narual_param, Derivative_selector);
+    s_Metric_potentials.exp_2F_2 = this->evaluate_single_spline(F_2_control_point_matrix, radial_natural_param, theta_narual_param, &Radial_coeffs, &Theta_coeffs, Derivative_selector);
 
     /* -------------- Compute W -------------- */
 
     double W_control_point_matrix[4][4]{};
     this->get_control_point_matrix(this->Parameters.W_control_vector, Radial_grid_idx - 1, Theta_grid_idx - 1, W_control_point_matrix);
 
-    s_Metric_potentials.W = this->evaluate_single_spline(W_control_point_matrix, radial_natural_param, theta_narual_param, Derivative_selector);
+    s_Metric_potentials.W = this->evaluate_single_spline(W_control_point_matrix, radial_natural_param, theta_narual_param, &Radial_coeffs, &Theta_coeffs, Derivative_selector);
+
+    double r_control_point_matrix[4][4]{};
+    this->get_control_point_matrix(this->Parameters.Compactified_radial_grid_control_vector, Radial_grid_idx - 1, Theta_grid_idx - 1, r_control_point_matrix);
 
     return s_Metric_potentials;
 
@@ -208,9 +264,9 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
         /* ------- This is correcting by the factor d(x_uncompactified)/d(r) ------- */
         derivative_correction_factor_1 *= s_Splnie_args.r_coord * (1 - s_Splnie_args.r_coord_compactified) / s_Splnie_args.r_coord_compactified;
 
-        Corrected_Potentials.F_0 *= derivative_correction_factor_1;
-        Corrected_Potentials.F_1 *= derivative_correction_factor_1;
-        Corrected_Potentials.F_2 *= derivative_correction_factor_1;
+        Corrected_Potentials.exp_2F_0 *= derivative_correction_factor_1;
+        Corrected_Potentials.exp_2F_1 *= derivative_correction_factor_1;
+        Corrected_Potentials.exp_2F_2 *= derivative_correction_factor_1;
         Corrected_Potentials.W   *= derivative_correction_factor_1;
 
         return Corrected_Potentials;
@@ -222,9 +278,9 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
         /* ------- This is correcting by the factor d(natural_parameter)/d(theta) ------- */
         derivative_correction_factor_1 = 1 / (this->Parameters.Theta_grid[s_Splnie_args.Theta_idx] - this->Parameters.Theta_grid[s_Splnie_args.Theta_idx - 1]);
 
-        Corrected_Potentials.F_0 *= derivative_correction_factor_1;
-        Corrected_Potentials.F_1 *= derivative_correction_factor_1;
-        Corrected_Potentials.F_2 *= derivative_correction_factor_1;
+        Corrected_Potentials.exp_2F_0 *= derivative_correction_factor_1;
+        Corrected_Potentials.exp_2F_1 *= derivative_correction_factor_1;
+        Corrected_Potentials.exp_2F_2 *= derivative_correction_factor_1;
         Corrected_Potentials.W   *= derivative_correction_factor_1;
 
         return Corrected_Potentials;
@@ -250,25 +306,25 @@ Numerical_metric_potentials_type Numerical_metric::compute_metric_components_fro
         /* ------- This is correcting by the factor d^2(dx_uncompactified)/d(r)^2 ------- */
         derivative_correction_factor_5 = -this->Parameters.Horizon_radius * this->Parameters.Horizon_radius * (1 - s_Splnie_args.r_coord_compactified) * (1 - s_Splnie_args.r_coord_compactified) * (1 - s_Splnie_args.r_coord_compactified) / s_Splnie_args.r_coord_compactified / s_Splnie_args.r_coord_compactified / s_Splnie_args.r_coord_compactified;
 
-        temp_Potentials_1.F_0 *= (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3) * (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3);
-        temp_Potentials_1.F_1 *= (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3) * (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3);
-        temp_Potentials_1.F_2 *= (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3) * (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3);
+        temp_Potentials_1.exp_2F_0 *= (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3) * (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3);
+        temp_Potentials_1.exp_2F_1 *= (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3) * (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3);
+        temp_Potentials_1.exp_2F_2 *= (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3) * (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3);
         temp_Potentials_1.W   *= (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3) * (derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_3);
 
-        temp_Potentials_2.F_0 *= derivative_correction_factor_1 * derivative_correction_factor_4 * derivative_correction_factor_3 * derivative_correction_factor_3;
-        temp_Potentials_2.F_1 *= derivative_correction_factor_1 * derivative_correction_factor_4 * derivative_correction_factor_3 * derivative_correction_factor_3;
-        temp_Potentials_2.F_2 *= derivative_correction_factor_1 * derivative_correction_factor_4 * derivative_correction_factor_3 * derivative_correction_factor_3;
+        temp_Potentials_2.exp_2F_0 *= derivative_correction_factor_1 * derivative_correction_factor_4 * derivative_correction_factor_3 * derivative_correction_factor_3;
+        temp_Potentials_2.exp_2F_1 *= derivative_correction_factor_1 * derivative_correction_factor_4 * derivative_correction_factor_3 * derivative_correction_factor_3;
+        temp_Potentials_2.exp_2F_2 *= derivative_correction_factor_1 * derivative_correction_factor_4 * derivative_correction_factor_3 * derivative_correction_factor_3;
         temp_Potentials_2.W   *= derivative_correction_factor_1 * derivative_correction_factor_4 * derivative_correction_factor_3 * derivative_correction_factor_3;
 
-        temp_Potentials_3.F_0 *= derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_5;
-        temp_Potentials_3.F_1 *= derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_5;
-        temp_Potentials_3.F_2 *= derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_5;
+        temp_Potentials_3.exp_2F_0 *= derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_5;
+        temp_Potentials_3.exp_2F_1 *= derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_5;
+        temp_Potentials_3.exp_2F_2 *= derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_5;
         temp_Potentials_3.W   *= derivative_correction_factor_1 * derivative_correction_factor_2 * derivative_correction_factor_5;
 
-        Corrected_Potentials.F_0 = temp_Potentials_1.F_0 + temp_Potentials_2.F_0 + temp_Potentials_3.F_0; 
-        Corrected_Potentials.F_1 = temp_Potentials_1.F_1 + temp_Potentials_2.F_1 + temp_Potentials_3.F_1; 
-        Corrected_Potentials.F_2 = temp_Potentials_1.F_2 + temp_Potentials_2.F_2 + temp_Potentials_3.F_2; 
-        Corrected_Potentials.W   = temp_Potentials_1.W   + temp_Potentials_2.W   + temp_Potentials_3.W;  
+        Corrected_Potentials.exp_2F_0 = temp_Potentials_1.exp_2F_0 + temp_Potentials_2.exp_2F_0 + temp_Potentials_3.exp_2F_0;
+        Corrected_Potentials.exp_2F_1 = temp_Potentials_1.exp_2F_1 + temp_Potentials_2.exp_2F_1 + temp_Potentials_3.exp_2F_1;
+        Corrected_Potentials.exp_2F_2 = temp_Potentials_1.exp_2F_2 + temp_Potentials_2.exp_2F_2 + temp_Potentials_3.exp_2F_2;
+        Corrected_Potentials.W   = temp_Potentials_1.W  + temp_Potentials_2.W  + temp_Potentials_3.W;  
 
         return Corrected_Potentials;
 
@@ -302,7 +358,7 @@ Metric_type Numerical_metric::get_global_metric(const double* const Global_State
 
 Metric_type Numerical_metric::get_metric(const double* const Local_State_Vector, long long Radial_grid_idx, long long Theta_grid_idx) const {
 
-    /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. */
+    /* -------- The metric antatz is from https://arxiv.org/pdf/1501.04319. -------- */
 
     const double& r = Local_State_Vector[e_r];
     const double& theta = Local_State_Vector[e_theta];
@@ -332,9 +388,9 @@ Metric_type Numerical_metric::get_metric(const double* const Local_State_Vector,
     /* ---- References for the sake of readability ---- */
 
     const double& W        = s_Potentials.W;
-    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
-    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
-    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
+    const double& exp_2F_0 = s_Potentials.exp_2F_0;
+    const double& exp_2F_1 = s_Potentials.exp_2F_1;
+    const double& exp_2F_2 = s_Potentials.exp_2F_2;
 
     /* ------------------------------------------------ */
 
@@ -423,14 +479,14 @@ Metric_type Numerical_metric::get_dr_metric(const double* const Local_State_Vect
     /* ---- References for the sake of readability ---- */
 
     const double& W = s_Potentials.W;
-    const double& exp_2F_0 = exp(2 * s_Potentials.F_0);
-    const double& exp_2F_1 = exp(2 * s_Potentials.F_1);
-    const double& exp_2F_2 = exp(2 * s_Potentials.F_2);
+    const double& exp_2F_0 = s_Potentials.exp_2F_0;
+    const double& exp_2F_1 = s_Potentials.exp_2F_1;
+    const double& exp_2F_2 = s_Potentials.exp_2F_2;
 
     const double& dr_W   = s_dr_Potentials.W;
-    const double& dr_F_0 = s_dr_Potentials.F_0;
-    const double& dr_F_1 = s_dr_Potentials.F_1;
-    const double& dr_F_2 = s_dr_Potentials.F_2;
+    const double& dr_exp_2F_0 = s_dr_Potentials.exp_2F_0;
+    const double& dr_exp_2F_1 = s_dr_Potentials.exp_2F_1;
+    const double& dr_exp_2F_2 = s_dr_Potentials.exp_2F_2;
 
     /* ------------------------------------------------ */
 
@@ -440,24 +496,24 @@ Metric_type Numerical_metric::get_dr_metric(const double* const Local_State_Vect
 
     case e_Anzatz_2:
 
-        s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * r * sin_theta * sin_theta * W * (r * W * dr_F_2 + W + r * dr_W);
-        s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * sin_theta * sin_theta * (2 * r * W * dr_F_2 + 2 * W + r * dr_W);
+        s_dr_Metric.Metric[e_t][e_t] = -0;
+        s_dr_Metric.Metric[e_t][e_phi] = -0;
 
         break;
 
     default:
 
-        s_dr_Metric.Metric[e_t][e_t] = -exp_2F_0 * (2 * N * dr_F_0 + dr_N) + 2 * exp_2F_2 * sin_theta * sin_theta * W * (W * dr_F_2 + dr_W);
-        s_dr_Metric.Metric[e_t][e_phi] = -exp_2F_2 * sin_theta * sin_theta * (2 * r * W * dr_F_2 + W + r * dr_W);
+        s_dr_Metric.Metric[e_t][e_t] = -dr_N * exp_2F_0 - N * dr_exp_2F_0 + dr_exp_2F_2 * W * W * sin_theta * sin_theta + 2 * exp_2F_2 * W * dr_W * sin_theta * sin_theta;
+        s_dr_Metric.Metric[e_t][e_phi] = -(dr_exp_2F_2 * W * r + exp_2F_2 * W + exp_2F_2 * r * dr_W) * sin_theta * sin_theta;
 
         break;
 
     }
 
     s_dr_Metric.Metric[e_phi][e_t] = s_dr_Metric.Metric[e_t][e_phi];
-    s_dr_Metric.Metric[e_r][e_r] = exp_2F_1 / N * (2 * dr_F_1 - dr_N / N);
-    s_dr_Metric.Metric[e_theta][e_theta] = 2 * r * exp_2F_1 * (r * dr_F_1 + 1);
-    s_dr_Metric.Metric[e_phi][e_phi] = 2 * r * exp_2F_2 * (r * dr_F_2 + 1) * sin_theta * sin_theta;
+    s_dr_Metric.Metric[e_r][e_r] = dr_exp_2F_1 / N  - dr_N / (N * N) * exp_2F_1;
+    s_dr_Metric.Metric[e_theta][e_theta] = 2 * r * exp_2F_1 + r * r * dr_exp_2F_1;
+    s_dr_Metric.Metric[e_phi][e_phi] = (2 * r * exp_2F_2 + r * r * dr_exp_2F_2) * sin_theta * sin_theta;
 
     return s_dr_Metric;
 
@@ -512,14 +568,14 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const Local_State_
     const double& theta = Local_State_Vector[e_theta];
 
     const double& W        = s_Potentials.W;
-    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
-    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
-    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
+    const double& exp_2F_0 = s_Potentials.exp_2F_0;
+    const double& exp_2F_1 = s_Potentials.exp_2F_1;
+    const double& exp_2F_2 = s_Potentials.exp_2F_2;
 
     const double& dtheta_W   = s_dtheta_Potentials.W;
-    const double& dtheta_F_0 = s_dtheta_Potentials.F_0;
-    const double& dtheta_F_1 = s_dtheta_Potentials.F_1;
-    const double& dtheta_F_2 = s_dtheta_Potentials.F_2;
+    const double& dtheta_exp_2F_0 = s_dtheta_Potentials.exp_2F_0;
+    const double& dtheta_exp_2F_1 = s_dtheta_Potentials.exp_2F_1;
+    const double& dtheta_exp_2F_2 = s_dtheta_Potentials.exp_2F_2;
 
     /* ------------------------------------------------- */
 
@@ -533,24 +589,24 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const Local_State_
 
     case e_Anzatz_2:
 
-        s_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * N * dtheta_F_0 + 2 * exp_2F_2 * r * r * W * sin_theta * (W * sin_theta * dtheta_F_2 + sin_theta * dtheta_W + W * cos_theta);
-        s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * r * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
+        s_dtheta_Metric.Metric[e_t][e_t] = 0;
+        s_dtheta_Metric.Metric[e_t][e_phi] = 0;
 
         break;
 
     default:
 
-        s_dtheta_Metric.Metric[e_t][e_t] = -2 * exp_2F_0 * N * dtheta_F_0 + 2 * exp_2F_2 * W * sin_theta * (W * sin_theta * dtheta_F_2 + sin_theta * dtheta_W + W * cos_theta);
-        s_dtheta_Metric.Metric[e_t][e_phi] = -exp_2F_2 * r * sin_theta * (2 * sin_theta * W * dtheta_F_2 + sin_theta * dtheta_W + 2 * W * cos_theta);
+        s_dtheta_Metric.Metric[e_t][e_t] = -N * dtheta_exp_2F_0 + dtheta_exp_2F_2 * W * W * sin_theta * sin_theta + 2 * exp_2F_2 * W * dtheta_W * sin_theta * sin_theta + 2 * exp_2F_2 * W * W * sin_theta * cos_theta;
+        s_dtheta_Metric.Metric[e_t][e_phi] = -dtheta_exp_2F_2 * W * r * sin_theta * sin_theta - exp_2F_2 * dtheta_W * r * sin_theta * sin_theta - 2 * exp_2F_2 * W * r * sin_theta * cos_theta;
 
         break;
 
     }
 
     s_dtheta_Metric.Metric[e_phi][e_t] = s_dtheta_Metric.Metric[e_t][e_phi];
-    s_dtheta_Metric.Metric[e_r][e_r] = 2 * exp_2F_1 / N * dtheta_F_1;
-    s_dtheta_Metric.Metric[e_theta][e_theta] = 2 * r * r * exp_2F_1 * dtheta_F_1;
-    s_dtheta_Metric.Metric[e_phi][e_phi] = 2 * r * r * exp_2F_2 * sin_theta * (sin_theta * dtheta_F_2 + cos_theta);
+    s_dtheta_Metric.Metric[e_r][e_r] = dtheta_exp_2F_1 / N;
+    s_dtheta_Metric.Metric[e_theta][e_theta] = r * r * dtheta_exp_2F_1;
+    s_dtheta_Metric.Metric[e_phi][e_phi] = r * r * dtheta_exp_2F_2 * sin_theta * sin_theta + 2 * r * r * exp_2F_2 * sin_theta * cos_theta;
 
     return s_dtheta_Metric;
 
@@ -576,10 +632,10 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const Local_State_Vec
     const double& r = Local_State_Vector[e_r];
     const double& theta = Local_State_Vector[e_theta];
 
-    const double& sin_theta = sin(theta);
-    const double& N = 1 - this->Parameters.Horizon_radius / r;
-    const double& dr_N = this->Parameters.Horizon_radius / r / r;
-    const double& d2r_N = -2 * this->Parameters.Horizon_radius / r / r / r;
+    const double sin_theta = sin(theta);
+    const double N = 1 - this->Parameters.Horizon_radius / r;
+    const double dr_N = this->Parameters.Horizon_radius / r / r;
+    const double d2r_N = -2 * this->Parameters.Horizon_radius / r / r / r;
 
     /* -------------------------------------------------------------- Evaluate the metric potentials spline -------------------------------------------------------------- */
 
@@ -605,19 +661,19 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const Local_State_Vec
     /* ---- References for the sake of readability ---- */
 
     const double& W = s_Potentials.W;
-    const double exp_2F_0 = exp(2 * s_Potentials.F_0);
-    const double exp_2F_1 = exp(2 * s_Potentials.F_1);
-    const double exp_2F_2 = exp(2 * s_Potentials.F_2);
+    const double& exp_2F_0 = s_Potentials.exp_2F_0;
+    const double& exp_2F_1 = s_Potentials.exp_2F_1;
+    const double& exp_2F_2 = s_Potentials.exp_2F_2;
 
     const double& dr_W = s_dr_Potentials.W;
-    const double& dr_F_0 = s_dr_Potentials.F_0;
-    const double& dr_F_1 = s_dr_Potentials.F_1;
-    const double& dr_F_2 = s_dr_Potentials.F_2;
+    const double& dr_exp_2F_0 = s_dr_Potentials.exp_2F_0;
+    const double& dr_exp_2F_1 = s_dr_Potentials.exp_2F_1;
+    const double& dr_exp_2F_2 = s_dr_Potentials.exp_2F_2;
     
     const double& d2r_W = s_d2r_Potentials.W;
-    const double& d2r_F_0 = s_d2r_Potentials.F_0;
-    const double& d2r_F_1 = s_d2r_Potentials.F_1;
-    const double& d2r_F_2 = s_d2r_Potentials.F_2;
+    const double& d2r_exp_2F_0 = s_d2r_Potentials.exp_2F_0;
+    const double& d2r_exp_2F_1 = s_d2r_Potentials.exp_2F_1;
+    const double& d2r_exp_2F_2 = s_d2r_Potentials.exp_2F_2;
 
     /* ------------------------------------------------ */
 
@@ -627,28 +683,25 @@ Metric_type Numerical_metric::get_d2r_metric(const double* const Local_State_Vec
 
     case e_Anzatz_2:
 
-        s_d2r_Metric.Metric[e_t][e_t] = -exp_2F_0 * (d2r_N + 4 * dr_N * dr_F_0 + 2 * N * d2r_F_0 + 4 * N * dr_F_0 * dr_F_0)
-                                      + exp_2F_2 * sin_theta * sin_theta * (2 * d2r_F_2 * r * r * W * W + 4 * dr_F_2 * dr_F_2 * r * r * W * W + 8 * dr_F_2 * r * W * W + 8 * dr_F_2 * dr_W * r * r * W + 2 * W * W + 8 * r * W * dr_W
-                                                                            + 2 * r * r * dr_W * dr_W + 2 * r * r * W * d2r_W);
-
-        s_d2r_Metric.Metric[e_t][e_phi] = -exp_2F_2 * sin_theta * sin_theta * (4 * r * dr_W + 8 * r * W * dr_F_2 + 4 * r * r * dr_W * dr_F_2 + 2 * r * r * W * d2r_F_2 + r * r * d2r_W + 4 * r * r * W * dr_F_2 * dr_F_2 + 2 * W);
+        s_d2r_Metric.Metric[e_t][e_t] = 0;
+        s_d2r_Metric.Metric[e_t][e_phi] = 0;
 
         break;
 
     default:
 
-        s_d2r_Metric.Metric[e_t][e_t] = -exp_2F_0 * (d2r_N + 4 * dr_N * dr_F_0 + 2 * N * d2r_F_0 + 4 * N * dr_F_0 * dr_F_0)
-                                      + 2 * exp_2F_2 * sin_theta * sin_theta * (W * W * d2r_F_2 + 2 * W * W * dr_F_2 * dr_F_2 + 4 * W * dr_W * dr_F_2 + dr_W * dr_W + W * d2r_W);
-        s_d2r_Metric.Metric[e_t][e_phi] = -exp_2F_2 * sin_theta * sin_theta * (2 * dr_W + 4 * W * dr_F_2 + 4 * r * dr_W * dr_F_2 + 2 * r * W * d2r_F_2 + 4 * r * W * dr_F_2 * dr_F_2 + r * d2r_W);
+        s_d2r_Metric.Metric[e_t][e_t] = -d2r_N * exp_2F_0 - 2 * dr_N * dr_exp_2F_0 - N * d2r_exp_2F_0 
+                                      + (d2r_exp_2F_2 * W * W + 4 * dr_exp_2F_2 * W * dr_W + 2 * exp_2F_2 * dr_W * dr_W + 2 * exp_2F_2 * W * d2r_W) * sin_theta * sin_theta;
+        s_d2r_Metric.Metric[e_t][e_phi] = -(d2r_exp_2F_2 * W * r + 2 * dr_exp_2F_2 * dr_W * r + 2 * dr_exp_2F_2 * W + 2 * exp_2F_2 * dr_W + exp_2F_2 * r * d2r_W) * sin_theta * sin_theta;
 
         break;
 
     }
 
     s_d2r_Metric.Metric[e_phi][e_t] = s_d2r_Metric.Metric[e_t][e_phi];
-    s_d2r_Metric.Metric[e_r][e_r] = exp_2F_1 / N * (4 * dr_F_1 * dr_F_1 + 2 * d2r_F_1 - 4 * dr_F_1 * dr_N / N - d2r_N / N + 2 * dr_N * dr_N / N / N);
-    s_d2r_Metric.Metric[e_theta][e_theta] = 2 * exp_2F_1 * (1 + 4 * r * dr_F_1 + 2 * r * r * dr_F_1 * dr_F_1 + r * r * d2r_F_1);
-    s_d2r_Metric.Metric[e_phi][e_phi] = 2 * exp_2F_2 * (1 + 4 * r * dr_F_2 + 2 * r * r * dr_F_2 * dr_F_2 + r * r * d2r_F_2) * sin_theta * sin_theta;
+    s_d2r_Metric.Metric[e_r][e_r] = d2r_exp_2F_1 / N - 2 * dr_exp_2F_1 * dr_N / (N * N) + 2 * exp_2F_1 * dr_N * dr_N / (N * N * N) - exp_2F_1 * d2r_N / (N * N);
+    s_d2r_Metric.Metric[e_theta][e_theta] = 2 * exp_2F_1 + 4 * r * dr_exp_2F_1 + r * r * d2r_exp_2F_1;
+    s_d2r_Metric.Metric[e_phi][e_phi] = (2 * exp_2F_2 + 4 * r * dr_exp_2F_2 + r * r * d2r_exp_2F_2) * sin_theta * sin_theta;
 
     return s_d2r_Metric;
 }

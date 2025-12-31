@@ -26,6 +26,7 @@ Black_Hole_w_Dark_Matter_Halo_class::Black_Hole_w_Dark_Matter_Halo_class(const M
 
     }
 
+    this->Mass = p_Metric_Parameters->Mass;
     this->Compactness = p_Metric_Parameters->Compactness;
     this->Halo_Mass = p_Metric_Parameters->Halo_Mass;
     this->Scattering_radius = p_Metric_Parameters->Scattering_radius;

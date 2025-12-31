@@ -33,6 +33,8 @@ Wormhole_class::Wormhole_class(const Metric_parameters_type* const p_Metric_Para
 
     }
 
+    this->Mass = p_Metric_Parameters->Mass;
+    this->R_Throat = this->Mass;
     this->Spin_Param = p_Metric_Parameters->Spin;
     this->Redshift_Param = p_Metric_Parameters->Redshift_Parameter;
     this->Stop_at_Throat = p_Metric_Parameters->Stop_At_Throat;

@@ -20,12 +20,13 @@ Kerr_class::Kerr_class(const Metric_parameters_type* const p_Metric_Parameters) 
 
     }
 
+    this->Mass = p_Metric_Parameters->Mass;
     this->Spin_Param = p_Metric_Parameters->Spin;
     this->Horizon_radius = 0;
 
     if (this->Spin_Param * this->Spin_Param < 1) {
 
-        this->Horizon_radius = this->Mass * (1 + sqrt(1 - this->Spin_Param * this->Spin_Param));
+        this->Horizon_radius = this->Mass * (1 + sqrt(1 - pow(this->Spin_Param / this->Mass, 2)));
 
     }
 
@@ -36,8 +37,8 @@ Kerr_class::Kerr_class(const Metric_parameters_type* const p_Metric_Parameters) 
 
 double* Kerr_class::get_ISCO() {
 
-    double Z_1 = 1 + pow(1 - this->Spin_Param * this->Spin_Param, 1. / 3) * (pow(1 + this->Spin_Param, 1. / 3) + pow(1 - this->Spin_Param, 1. / 3));
-    double Z_2 = sqrt(3 * this->Spin_Param * this->Spin_Param + Z_1 * Z_1);
+    double Z_1 = 1 + pow(1 - this->Spin_Param * this->Spin_Param / this->Mass / this->Mass, 1. / 3) * (pow(1 + this->Spin_Param / this->Mass, 1. / 3) + pow(1 - this->Spin_Param / this->Mass, 1. / 3));
+    double Z_2 = sqrt(3 * this->Spin_Param * this->Spin_Param / this->Mass / this->Mass + Z_1 * Z_1);
 
     static double r_ISCO[2]{};
 
@@ -52,8 +53,8 @@ double* Kerr_class::get_Photon_Sphere() {
 
     static double photon_orbit[2]{};
 
-    photon_orbit[Inner] = 2 * this->Mass * (1 + cos(2.0 / 3 * acos(this->Spin_Param)));
-    photon_orbit[Outer] = 2 * this->Mass * (1 + cos(2.0 / 3 * acos(-this->Spin_Param)));
+    photon_orbit[Inner] = 2 * this->Mass * (1 + cos(2.0 / 3 * acos(this->Spin_Param / this->Mass)));
+    photon_orbit[Outer] = 2 * this->Mass * (1 + cos(2.0 / 3 * acos(-this->Spin_Param / this->Mass)));
 
     return photon_orbit;
 

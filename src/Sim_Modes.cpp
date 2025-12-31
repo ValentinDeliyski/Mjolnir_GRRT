@@ -119,6 +119,14 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
             X_angle_min = atan2(p_Sim_Context->p_Init_Conditions->Observer_params.x_min, p_Sim_Context->p_Init_Conditions->Observer_params.distance);
 
         }
+        else {
+
+            p_Sim_Context->p_Init_Conditions->Observer_params.y_max = p_Sim_Context->p_Init_Conditions->Observer_params.distance * tan(Y_angle_max);
+            p_Sim_Context->p_Init_Conditions->Observer_params.y_min = p_Sim_Context->p_Init_Conditions->Observer_params.distance * tan(Y_angle_min);
+            p_Sim_Context->p_Init_Conditions->Observer_params.x_max = p_Sim_Context->p_Init_Conditions->Observer_params.distance * tan(X_angle_max);
+            p_Sim_Context->p_Init_Conditions->Observer_params.x_min = p_Sim_Context->p_Init_Conditions->Observer_params.distance * tan(X_angle_min);
+
+        }
 
         // Having a non-even resolution means that for a symmetric observation window, there will be a vertical line of pixels that coorespond 
         // to photons with zero azimuthal angular momentum. In that case the behavior of the theta and phi coordinates swap, and theta becomes unbounded.
@@ -139,7 +147,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         */
 
-        p_Sim_Context->File_manager->open_image_output_file();
+        p_Sim_Context->File_manager->create_output_file();
 
         /*
 
@@ -172,8 +180,10 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
                 Update_render(p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model, p_Ray_results, Renderer);
 
                 /* ------------------ Results logging happens here ------------------ */
-                p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
 
+                p_Sim_Context->File_manager->open_image_output_file();
+                p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
+                p_Sim_Context->File_manager->close_image_output_file();
 
                 /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), 
                    and therefore not automatically reinitialized to 0s. I have to manually do it. */
@@ -187,8 +197,6 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         std::cout << '\n' << "Image Generation for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << " Finished!" << 
                      '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time) << "\n";
-
-        p_Sim_Context->File_manager->close_image_output_files();
 
     }
 
@@ -237,6 +245,7 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
 
     */
 
+    p_Sim_Context->File_manager->create_output_file();
     p_Sim_Context->File_manager->open_image_output_file();
 
     for (int photon_idx = 0; photon_idx <= p_Sim_Context->File_manager->sim_mode_2_ray_number - 1; photon_idx += 1) {
@@ -273,9 +282,10 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
 
     }
 
+    p_Sim_Context->File_manager->close_image_output_file();
+
     std::cout << '\n';
 
-    p_Sim_Context->File_manager->close_image_output_files();
 
 }
 

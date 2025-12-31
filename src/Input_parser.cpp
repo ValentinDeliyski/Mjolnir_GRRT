@@ -1092,6 +1092,46 @@ Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML
 
     }
 
+    // -------------------- Setup the theta grid step array
+
+    Metric_params->Numerical_metric_params.Theta_grid_steps = new double[Metric_params->Numerical_metric_params.Theta_grid_size - 1 + 6];
+
+    if (Metric_params->Numerical_metric_params.Theta_grid_size < 4) { throw std::runtime_error("Mjolnir ERROR: Not enough theta grid points"); }
+
+    for (int idx = 0; idx < Metric_params->Numerical_metric_params.Theta_grid_size - 1; idx++) {
+
+        Metric_params->Numerical_metric_params.Theta_grid_steps[idx + 3] = Metric_params->Numerical_metric_params.Theta_grid[idx + 1] - Metric_params->Numerical_metric_params.Theta_grid[idx];
+
+    }
+
+    Metric_params->Numerical_metric_params.Theta_grid_steps[0] = Metric_params->Numerical_metric_params.Theta_grid_steps[3];
+    Metric_params->Numerical_metric_params.Theta_grid_steps[1] = Metric_params->Numerical_metric_params.Theta_grid_steps[3];
+    Metric_params->Numerical_metric_params.Theta_grid_steps[2] = Metric_params->Numerical_metric_params.Theta_grid_steps[3];
+
+    Metric_params->Numerical_metric_params.Theta_grid_steps[3 + Metric_params->Numerical_metric_params.Theta_grid_size - 1] = Metric_params->Numerical_metric_params.Theta_grid_steps[3 + Metric_params->Numerical_metric_params.Theta_grid_size - 2];
+    Metric_params->Numerical_metric_params.Theta_grid_steps[3 + Metric_params->Numerical_metric_params.Theta_grid_size - 0] = Metric_params->Numerical_metric_params.Theta_grid_steps[3 + Metric_params->Numerical_metric_params.Theta_grid_size - 2];
+    Metric_params->Numerical_metric_params.Theta_grid_steps[3 + Metric_params->Numerical_metric_params.Theta_grid_size + 1] = Metric_params->Numerical_metric_params.Theta_grid_steps[3 + Metric_params->Numerical_metric_params.Theta_grid_size - 2];
+
+    // -------------------- Setup the radial grid step array
+
+    Metric_params->Numerical_metric_params.Compactified_radial_grid_steps = new double[Metric_params->Numerical_metric_params.Radial_grid_size - 1 + 6];
+
+    if (Metric_params->Numerical_metric_params.Radial_grid_size < 4) { throw std::runtime_error("Mjolnir ERROR: Not enough radial grid points"); }
+
+    for (int idx = 0; idx < Metric_params->Numerical_metric_params.Radial_grid_size - 1; idx++) {
+
+        Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[idx + 3] = Metric_params->Numerical_metric_params.Compactified_radial_grid[idx + 1] - Metric_params->Numerical_metric_params.Compactified_radial_grid[idx];
+
+    }
+
+    Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[0] = Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[3];
+    Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[1] = Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[3];
+    Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[2] = Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[3];
+
+    Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[3 + Metric_params->Numerical_metric_params.Radial_grid_size - 1] = Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[3 + Metric_params->Numerical_metric_params.Radial_grid_size - 2];
+    Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[3 + Metric_params->Numerical_metric_params.Radial_grid_size - 0] = Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[3 + Metric_params->Numerical_metric_params.Radial_grid_size - 2];
+    Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[3 + Metric_params->Numerical_metric_params.Radial_grid_size + 1] = Metric_params->Numerical_metric_params.Compactified_radial_grid_steps[3 + Metric_params->Numerical_metric_params.Radial_grid_size - 2];
+
     return OK;
 
 }
@@ -1106,6 +1146,10 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
 
         Metric_params->e_Spacetime = Kerr;
 
+        temp_param_var = Metric_element->FirstChildElement("Mass");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric mass parameter!" << "\n"; return ERROR; }
+        Metric_params->Mass = std::stod(temp_param_var->GetText());
+
         temp_param_var = Metric_element->FirstChildElement("Spin_parameter");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric spin parameter!" << "\n"; return ERROR; }
         Metric_params->Spin = std::stod(temp_param_var->GetText());
@@ -1114,6 +1158,10 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
     else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Wormhole")) {
 
         Metric_params->e_Spacetime = Wormhole;
+
+        temp_param_var = Metric_element->FirstChildElement("Mass");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric mass parameter!" << "\n"; return ERROR; }
+        Metric_params->Mass = std::stod(temp_param_var->GetText());
 
         temp_param_var = Metric_element->FirstChildElement("Spin_parameter");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric spin parameter!" << "\n"; return ERROR; }
@@ -1136,6 +1184,10 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
 
         Metric_params->e_Spacetime = Janis_Newman_Winicour;
 
+        temp_param_var = Metric_element->FirstChildElement("Mass");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric mass parameter!" << "\n"; return ERROR; }
+        Metric_params->Mass = std::stod(temp_param_var->GetText());
+
         temp_param_var = Metric_element->FirstChildElement("JNW_gamma");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the Janis-Newman-Winicour metric parameter!" << "\n"; return ERROR; }
         Metric_params->JNW_Gamma_Parameter = std::stod(temp_param_var->GetText());
@@ -1144,6 +1196,10 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
     else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Einstein-Gauss-Bonnet")) {
 
         Metric_params->e_Spacetime = Einstein_Gauss_Bonnet;
+
+        temp_param_var = Metric_element->FirstChildElement("Mass");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric mass parameter!" << "\n"; return ERROR; }
+        Metric_params->Mass = std::stod(temp_param_var->GetText());
 
         temp_param_var = Metric_element->FirstChildElement("EGB_gamma");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the Einstein-Gauss-Bonnet metric parameter!" << "\n"; return ERROR; }
@@ -1154,6 +1210,10 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
 
         Metric_params->e_Spacetime = Reg_Black_Hole;
 
+        temp_param_var = Metric_element->FirstChildElement("Mass");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric mass parameter!" << "\n"; return ERROR; }
+        Metric_params->Mass = std::stod(temp_param_var->GetText());
+
         temp_param_var = Metric_element->FirstChildElement("RBH_param");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the regular black hole metric parameter!" << "\n"; return ERROR; }
         Metric_params->RBH_Parameter = std::stod(temp_param_var->GetText());
@@ -1162,6 +1222,10 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
     else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Black-Hole-w-Dark-Matter")) {
 
         Metric_params->e_Spacetime = BH_w_Dark_Matter;
+
+        temp_param_var = Metric_element->FirstChildElement("Mass");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the metric mass parameter!" << "\n"; return ERROR; }
+        Metric_params->Mass = std::stod(temp_param_var->GetText());
 
         temp_param_var = Metric_element->FirstChildElement("Halo_compactness");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the dark matter halo compactness!" << "\n"; return ERROR; }

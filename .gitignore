@@ -361,3 +361,5 @@ Utilities/Numerical_metric_runs
 
 *.csv
 *.XML
+/Utilities/Ehtim/Ehtim_Output_Data
+/Utilities/VIDA/VIDA_Output_Data

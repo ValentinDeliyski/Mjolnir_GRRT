@@ -1,6 +1,7 @@
-from numpy import array, concatenate, tile, zeros, linspace, meshgrid, einsum, reshape, concatenate, outer, digitize, dot, sqrt, float64, signedinteger
+from numpy import array, concatenate, tile, zeros, linspace, meshgrid, einsum, reshape, concatenate, outer, digitize, dot, sqrt, float64, roll, append, ones
 from numpy.typing import NDArray
 from numpy.linalg import inv
+import matplotlib.pyplot as plt
 
 class Surface_Cubic_B_spline():
     
@@ -15,8 +16,12 @@ class Surface_Cubic_B_spline():
         self.Control_point_number = (Y_patch_number + 2) * (X_patch_number + 2)
 
         """ ==== Setup the fit knot positions - these are the (x, y, z) coordinate pairs of the suraface ==== """
+        self.x_grid_steps = abs(x_grid.T[0] - roll(x_grid.T[0], 1))[1:]
         self.x_grid_points = x_grid.flatten()
+        
+        self.y_grid_steps = abs(y_grid[0] - roll(y_grid[0], 1))[1:]
         self.y_grid_points = y_grid.flatten()
+        
         self.z_grid_points = z_grid.flatten()
 
         """ Construct the knot vectors - they contain the known surface points + appended 0's for the end conditions. 
@@ -34,37 +39,63 @@ class Surface_Cubic_B_spline():
             It is a sparse matrix, so we initialize it to zero and fill in the few non -zero components. """
         Mapping_matrix = zeros((self.Control_point_number, self.Control_point_number))
 
+        self.x_grid_steps = append(self.x_grid_steps, [self.x_grid_steps[-1], self.x_grid_steps[-1], self.x_grid_steps[-1]])
+        self.x_grid_steps = append([self.x_grid_steps[0], self.x_grid_steps[0], self.x_grid_steps[0]], self.x_grid_steps)
+        
+        self.y_grid_steps = append(self.y_grid_steps, [self.y_grid_steps[-1], self.y_grid_steps[-1], self.y_grid_steps[-1]])
+        self.y_grid_steps = append([self.y_grid_steps[0], self.y_grid_steps[0], self.y_grid_steps[0]], self.y_grid_steps)
+        
         """ These two loops specify the Knot coordinate <-> Control point mappting part of the matrix. The loop runs row by row. """
         for x_idx in range(X_patch_number):
             
+            a_coeff_X, _, _, _, _, f_coeff_X = self.get_delta_coeffs(self.x_grid_steps, x_idx + 3)
+            
             for y_idx in range(Y_patch_number):
+                           
+                a_coeff_Y, _, _, _, _, f_coeff_Y = self.get_delta_coeffs(self.y_grid_steps, y_idx + 3)
                 
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 0] = 1
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 1] = 4
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 2] = 1
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 0] = 4
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 1] = 16
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 2] = 4
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 0] = 1
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 1] = 4
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 2] = 1
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 0] = a_coeff_Y * a_coeff_X 
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 1] = a_coeff_Y * (1 - f_coeff_X - a_coeff_X)
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 2] = a_coeff_Y * f_coeff_X
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 0] = (1 - a_coeff_Y - f_coeff_Y) * a_coeff_X
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 1] = (1 - a_coeff_Y - f_coeff_Y) * (1 - f_coeff_X - a_coeff_X)
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 2] = (1 - a_coeff_Y - f_coeff_Y) * f_coeff_X
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 0] = f_coeff_Y * a_coeff_X
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 1] = f_coeff_Y * (1 - a_coeff_X - f_coeff_X)
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 2] = f_coeff_Y * f_coeff_X
 
         self.specify_free_end_conditions(Mapping_matrix = Mapping_matrix)
        
         """ === Compute the control points by inverting the mapping matrix === """
         Inverse_mapping_matrix = inv(Mapping_matrix)
 
-        self.Control_vector_X = 36 * Inverse_mapping_matrix.dot(Knot_vector_X)
-        self.Control_vector_Y = 36 * Inverse_mapping_matrix.dot(Knot_vector_Y)
-        self.Control_vector_Z = 36 * Inverse_mapping_matrix.dot(Knot_vector_Z)
+        self.Control_vector_X = Inverse_mapping_matrix.dot(Knot_vector_X)
+        self.Control_vector_Y = Inverse_mapping_matrix.dot(Knot_vector_Y)
+        self.Control_vector_Z = Inverse_mapping_matrix.dot(Knot_vector_Z)
+    
+    def get_delta_coeffs(self, Grid_steps: NDArray[float64], idx: int) -> tuple[float, float, float, float, float, float]:
         
+        a_coeff = Grid_steps[idx]**2 / ((Grid_steps[idx - 2] + Grid_steps[idx - 1] + Grid_steps[idx]) * (Grid_steps[idx - 1] + Grid_steps[idx]))
+
+        b_coeff = Grid_steps[idx]**2 / ((Grid_steps[idx - 1] + Grid_steps[idx] + Grid_steps[idx + 1]) * (Grid_steps[idx - 1] + Grid_steps[idx]))
+   
+        c_coeff = Grid_steps[idx]**2 / ((Grid_steps[idx - 1] + Grid_steps[idx] + Grid_steps[idx + 1]) * (Grid_steps[idx] + Grid_steps[idx + 1]))
+        
+        d_coeff = Grid_steps[idx]**2 / ((Grid_steps[idx] + Grid_steps[idx + 1] + Grid_steps[idx + 2]) * (Grid_steps[idx] + Grid_steps[idx + 1]))
+        
+        e_coeff = Grid_steps[idx] * Grid_steps[idx - 1] / ((Grid_steps[idx - 1] + Grid_steps[idx] + Grid_steps[idx + 1]) * (Grid_steps[idx - 1] + Grid_steps[idx]))
+        
+        f_coeff =  Grid_steps[idx - 1]**2 / ((Grid_steps[idx - 1] + Grid_steps[idx] + Grid_steps[idx + 1]) * (Grid_steps[idx - 1] + Grid_steps[idx]))
+   
+        return a_coeff, b_coeff, c_coeff, d_coeff, e_coeff, f_coeff
+    
     def specify_not_a_knot_conditions(self, Mapping_matrix: NDArray[float64]) -> None:
         
         """ === Specify the boundary conditions on the [-X, -Y] corner === """    
         Mapping_matrix[self.X_patch_number * self.Y_patch_number, 0] = 1
         Mapping_matrix[self.X_patch_number * self.Y_patch_number, 1] = -1
-        Mapping_matrix[self.X_patch_number * self.Y_patch_number, self.X_patch_number + 2] = -1
-        Mapping_matrix[self.X_patch_number * self.Y_patch_number, self.X_patch_number + 2 + 1] = 1
+        Mapping_matrix[self.X_patch_number * self.Y_patch_number, self.Y_patch_number + 2] = -1
+        Mapping_matrix[self.X_patch_number * self.Y_patch_number, self.Y_patch_number + 2 + 1] = 1
      
         """ === Specify the boundary conditions on the [-X, +Y] corner === """ 
         Mapping_matrix[self.X_patch_number * self.Y_patch_number + 1, self.Y_patch_number] = -1
@@ -73,8 +104,8 @@ class Surface_Cubic_B_spline():
         Mapping_matrix[self.X_patch_number * self.Y_patch_number + 1, self.Y_patch_number + self.Y_patch_number + 2 + 1] = -1
         
         """ === Specify the boundary conditions on the [+X, -Y] corner === """ 
-        Mapping_matrix[self.X_patch_number * self.Y_patch_number + 2, (self.X_patch_number + 2) * (self.Y_patch_number + 2) - 1 - self.Y_patch_number - 3 - self.X_patch_number] = -1
-        Mapping_matrix[self.X_patch_number * self.Y_patch_number + 2, (self.X_patch_number + 2) * (self.Y_patch_number + 2) - 1 - self.Y_patch_number - 2 - self.X_patch_number] = 1
+        Mapping_matrix[self.X_patch_number * self.Y_patch_number + 2, (self.X_patch_number + 2) * (self.Y_patch_number + 2) - 1 - self.Y_patch_number - 3 - self.Y_patch_number] = -1
+        Mapping_matrix[self.X_patch_number * self.Y_patch_number + 2, (self.X_patch_number + 2) * (self.Y_patch_number + 2) - 1 - self.Y_patch_number - 2 - self.Y_patch_number] = 1
         Mapping_matrix[self.X_patch_number * self.Y_patch_number + 2, (self.X_patch_number + 2) * (self.Y_patch_number + 2) - 1 - 1 - self.Y_patch_number] = 1
         Mapping_matrix[self.X_patch_number * self.Y_patch_number + 2, (self.X_patch_number + 2) * (self.Y_patch_number + 2) - 1 - self.Y_patch_number] = -1
         
@@ -146,9 +177,9 @@ class Surface_Cubic_B_spline():
             Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 3 + self.Y_patch_number + 2 - 5] =  4
             Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 4 + self.Y_patch_number + 2 - 5] = -1
             Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 1 * (self.Y_patch_number + 2) + 0 + self.Y_patch_number + 2 - 5] = -4
-            Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 1 * (self.Y_patch_number + 2) + 1 + self.Y_patch_number + 2 - 5] = 16
-            Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 1 * (self.Y_patch_number + 2) + 2 + self.Y_patch_number + 2 - 5] = 24
-            Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 1 * (self.Y_patch_number + 2) + 3 + self.Y_patch_number + 2 - 5] = 16
+            Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 1 * (self.Y_patch_number + 2) + 1 + self.Y_patch_number + 2 - 5] =  16
+            Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 1 * (self.Y_patch_number + 2) + 2 + self.Y_patch_number + 2 - 5] = -24
+            Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 1 * (self.Y_patch_number + 2) + 3 + self.Y_patch_number + 2 - 5] =  16
             Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 1 * (self.Y_patch_number + 2) + 4 + self.Y_patch_number + 2 - 5] = -4
             Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 2 * (self.Y_patch_number + 2) + 0 + self.Y_patch_number + 2 - 5] = -1
             Mapping_matrix[self.X_patch_number * self.Y_patch_number + 4 + self.X_patch_number + 2 * self.Y_patch_number + idx, idx * (self.Y_patch_number + 2) + 2 * (self.Y_patch_number + 2) + 1 + self.Y_patch_number + 2 - 5] =  4
@@ -160,9 +191,9 @@ class Surface_Cubic_B_spline():
         
         """ === Specify the boundary condition ay -Y === """
         for idx in range(self.X_patch_number):
-            Mapping_matrix[self.Y_patch_number * self.X_patch_number + idx,(idx + 1) * (self.Y_patch_number + 2) + 0] =  1
-            Mapping_matrix[self.Y_patch_number * self.X_patch_number + idx,(idx + 1) * (self.Y_patch_number + 2) + 1] = -2
-            Mapping_matrix[self.Y_patch_number * self.X_patch_number + idx,(idx + 1) * (self.Y_patch_number + 2) + 2] =  1
+            Mapping_matrix[self.Y_patch_number * self.X_patch_number + idx, (idx + 1) * (self.Y_patch_number + 2) + 0] =  1
+            Mapping_matrix[self.Y_patch_number * self.X_patch_number + idx, (idx + 1) * (self.Y_patch_number + 2) + 1] = -2
+            Mapping_matrix[self.Y_patch_number * self.X_patch_number + idx, (idx + 1) * (self.Y_patch_number + 2) + 2] =  1
             
         """ === Specify the boundary condition ay +Y === """
         for idx in range(self.X_patch_number):
@@ -249,34 +280,39 @@ class Surface_Cubic_B_spline():
             Patch_Y_coords: list[float] = []
             Patch_Z_coords: list[float] = []
             
+            a_coeff_V, b_coeff_V, c_coeff_V, d_coeff_V, e_coeff_V, f_coeff_V = self.get_delta_coeffs(self.y_grid_steps, V_idx + 3)
+            
             for U_idx in range(0, self.X_patch_number - 1):
+                
+                
+                a_coeff_U, b_coeff_U, c_coeff_U, d_coeff_U, e_coeff_U, f_coeff_U = self.get_delta_coeffs(self.x_grid_steps, U_idx + 3)
                 
                 """ === Compute the basis polynomials vectors === """
                 
-                V1 = (1 - V)**3
-                V2 =  3 * V**3 - 6 * V**2 + 4
-                V3 = -3 * V**3 + 3 * V**2 + 3 * V + 1
-                V4 =  V**3
+                V1 = -a_coeff_V * V**3 + 3 * a_coeff_V * V**2 - 3 * a_coeff_V * V + a_coeff_V 
+                V2 = (a_coeff_V + b_coeff_V + c_coeff_V) * V**3 + (-3 * a_coeff_V - 3 * b_coeff_V) * V**2 + (3 * a_coeff_V - 3 * e_coeff_V) * V + 1 - a_coeff_V - f_coeff_V
+                V3 = (-b_coeff_V - c_coeff_V - d_coeff_V) * V**3 + 3 * b_coeff_V * V**2 + 3 * e_coeff_V * V + f_coeff_V
+                V4 = V**3 * d_coeff_V
                 
                 Basis_V_vector = array([V1, V2, V3, V4])
                 
-                U1 = (1 - U)**3    
-                U2 = 3 * U**3 - 6 * U**2 + 4
-                U3 = -3 * U**3 + 3 * U**2 + 3 * U + 1
-                U4 = U**3
+                U1 = -a_coeff_U * U**3 + 3 * a_coeff_U * U**2 - 3 * a_coeff_U * U + a_coeff_U 
+                U2 = (a_coeff_U + b_coeff_U + c_coeff_U) * U**3 + (-3 * a_coeff_U - 3 * b_coeff_U) * U**2 + (3 * a_coeff_U - 3 * e_coeff_U) * U + 1 - a_coeff_U - f_coeff_U
+                U3 = (-b_coeff_U - c_coeff_U - d_coeff_U) * U**3 + 3 * b_coeff_U * U**2 + 3 * e_coeff_U * U + f_coeff_U
+                U4 = U**3 * d_coeff_U
                 
                 Basis_U_vector = array([U1, U2, U3, U4])
                 
                 """ Evaluate the actual spline -> this uses the Knot vector and basais polynomials to compte the (x, y, z) points of the parametric surface """
 
                 Control_point_matrix = self.get_control_point_matrix(Control_vector = self.Control_vector_X, U_idx = U_idx, V_idx = V_idx)
-                Patch_X_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
+                Patch_X_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]))
                     
                 Control_point_matrix = self.get_control_point_matrix(Control_vector = self.Control_vector_Y, U_idx = U_idx, V_idx = V_idx)
-                Patch_Y_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
+                Patch_Y_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]))
 
                 Control_point_matrix = self.get_control_point_matrix(Control_vector = self.Control_vector_Z, U_idx = U_idx, V_idx = V_idx)
-                Patch_Z_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]) / 36)
+                Patch_Z_coords.append(sum([x * y for x, y in zip(Basis_V_vector, einsum("ij,jlk->ilk", Control_point_matrix, Basis_U_vector))]))
  
             for Patch_X_coords_element, Patch_Y_coords_element, Patch_Z_coords_element in zip(Patch_X_coords, Patch_Y_coords, Patch_Z_coords):
                 
@@ -301,78 +337,3 @@ class Surface_Cubic_B_spline():
                 Z_surface = array(Partial_Z_grid)
 
         return X_surface, Y_surface, Z_surface
-
-if __name__ == "__main__":  
-    
-    Y_patch_number = 25
-    X_patch_number = 25
-    
-    """ ==== Setup the fit knot positions - these are the (x, y, z) coordinate pairs of the suraface ==== """
-    x_span = linspace(0, 10, X_patch_number)
-    y_span = linspace(0, 15, Y_patch_number)
-
-    # ==== This makes a grid with the x values for each point in the surface domain, then reshapes it into a 1D array
-    x_grid = reshape(tile(x_span, (Y_patch_number,1)).T, (Y_patch_number * X_patch_number))
-
-    # ==== This makes a grid with the y values for each point in the surface domain, then reshapes it into a 1D array
-    y_grid = tile(y_span, X_patch_number)
-    
-    # ==== Placeholder for actual z values -> this will be the actual metric functions
-    z = sqrt((outer(x_span, y_span) / 1.254))
-    
-    Spline_class_instance = Surface_Cubic_B_spline(x_grid = x_grid, y_grid = y_grid, z_grid = z, X_patch_number = X_patch_number, Y_patch_number= Y_patch_number)
-
-    import matplotlib.pyplot as plt
-
-    """ === Plot the resulting parametric surface === """
-    Fig = plt.figure(figsize = (8, 8))
-    Surface_subplot = Fig.add_subplot(111, projection = '3d')
-    # Surface_subplot.scatter(x_grid, y_grid, z, color = 'black')
-    
-    x_test = 1
-    y_test = 2.5
-
-    x_bin_idx: int = int(digitize(x_test,x_span) - 1)
-    y_bin_idx: int = int(digitize(y_test,y_span) - 1)
-     
-    V = (y_test - y_span[y_bin_idx]) / (y_span[y_bin_idx + 1] - y_span[y_bin_idx])
-    
-    V1 = (1 - V)**3
-    V2 =  3 * V**3 - 6 * V**2 + 4
-    V3 = -3 * V**3 + 3 * V**2 + 3 * V + 1
-    V4 =  V**3
-                
-    Basis_V_vector = array([V1, V2, V3, V4])
-    
-    U = (x_test - x_span[x_bin_idx]) / (x_span[y_bin_idx + 1] - x_span[y_bin_idx])
-    
-    U1 = (1 - U)**3    
-    U2 = 3 * U**3 - 6 * U**2 + 4
-    U3 = -3 * U**3 + 3 * U**2 + 3 * U + 1
-    U4 = U**3
-                
-    Basis_U_vector = array([U1, U2, U3, U4])
-    
-    Control_point_matrix = Spline_class_instance.get_control_point_matrix(Spline_class_instance.Control_vector_X, y_bin_idx, x_bin_idx)
-    x_interp = dot(Basis_V_vector, dot(Control_point_matrix, Basis_U_vector)) / 36
-    
-    Control_point_matrix = Spline_class_instance.get_control_point_matrix(Spline_class_instance.Control_vector_Y, y_bin_idx, x_bin_idx)
-    y_interp = dot(Basis_V_vector, dot(Control_point_matrix, Basis_U_vector)) / 36
-    
-    Control_point_matrix = Spline_class_instance.get_control_point_matrix(Spline_class_instance.Control_vector_Z, y_bin_idx, x_bin_idx)
-    z_interp = dot(Basis_V_vector, dot(Control_point_matrix, Basis_U_vector)) / 36
-    
-    X_surface, Y_surface, Z_surface = Spline_class_instance.evaluate_spline(Patch_discretization = 5)
-
-    # Surface_subplot.plot_surface(X_surface, Y_surface, Z_surface, color = 'orange', alpha = 0.5) 
-    Surface_subplot.plot_surface(reshape(x_grid, (X_patch_number , Y_patch_number)),  # type: ignore
-                                 reshape(y_grid, (X_patch_number , Y_patch_number)), 
-                                 z, color = 'orange', alpha = 0.5) 
-    
-    Surface_subplot.scatter(x_interp, y_interp, z_interp, color = 'black')
-
-    Surface_subplot.set_xlabel('x')
-    Surface_subplot.set_ylabel('y')
-    Surface_subplot.set_zlabel('z') # type: ignore
-    Surface_subplot.set_zlim(5,-5)  # type: ignore
-    plt.show()

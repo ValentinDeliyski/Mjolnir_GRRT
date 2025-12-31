@@ -13,7 +13,7 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
     this->e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_geometry;
 
     this->current_flux_integration_step = 0;
-    this->max_flux_integration_teps = 500;
+    this->max_flux_integration_teps = 19500;
 
     memset(this->Disk_veclovity_vector, 0, 4 * sizeof(double));
     memset(this->Source_polarization_vector, 0, 4 * sizeof(double));
@@ -267,7 +267,7 @@ double* Novikov_Thorne_Model_class::Construct_coord_polarization_vector(const do
     for (int idx = e_r; idx <= e_phi; idx++) {
 
         Polarization_vector_plasma[idx] /= vector_norm(Photon_plasma_momentum + e_r, 3);
-
+        Polarization_vector_plasma[idx] *= sqrt(std::abs(Photon_plasma_momentum[e_t] / Photon_plasma_momentum[e_theta]));
     }
     
     double inv_Boost_matrix[4][4]{};

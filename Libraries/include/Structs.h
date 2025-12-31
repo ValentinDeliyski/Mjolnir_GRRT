@@ -122,7 +122,7 @@ struct Magnetic_fields_type {
     double B_field_plasma_frame[4]{};
 
     /*! @brief The magnetic field 4-vector in the coordinate frame in units of [G]. */
-    double B_field_eularian_frame[4]{};
+    double B_field_eulerian_frame[4]{};
 
     /*! @brief Unit vector that specifies the direction of the magnetic field in the plasma frame. */
     double Mag_field_geometry_vector[3]{};
@@ -319,9 +319,9 @@ struct Emission_model_parameters_type {
 
 struct Numerical_metric_potentials_type {
 
-    double F_0{};
-    double F_1{};
-    double F_2{};
+    double exp_2F_0{};
+    double exp_2F_1{};
+    double exp_2F_2{};
     double W{};
 
 };
@@ -345,13 +345,15 @@ struct Numerical_metric_params_type {
     double* W_control_vector{};
     int Control_vector_size{};
 
-    /* ============ Pointers to the coordinate grid and its control vector arrays ============ = */
+    /* ============ Pointers to the coordinate grid, its step and control vector arrays ============ = */
 
     double* Compactified_radial_grid{};
+    double* Compactified_radial_grid_steps{};
     double* Compactified_radial_grid_control_vector{};
     long long Radial_grid_size{};
 
     double* Theta_grid{};
+    double* Theta_grid_steps{};
     double* Theta_grid_control_vector{};
     long long Theta_grid_size{};
 
@@ -382,6 +384,22 @@ struct Spline_arguments_type {
 
     /*! @brief The interpolated compactified radial coordinate. */
     double r_coord_compactified{};
+
+};
+
+struct Delta_coeffs_type {
+
+    double a_coeff{};
+
+    double b_coeff{};
+
+    double c_coeff{};
+
+    double d_coeff{};
+
+    double e_coeff{};
+
+    double f_coeff{};
 
 };
 
@@ -421,6 +439,8 @@ struct Metric_parameters_type {
     Numerical_metric_params_type Numerical_metric_params{};
 
     /* ============ Generic Parameters ============ = */
+
+    double Mass{};
 
     double Spin{}; // Only affects Kerr and the Wormhole
 

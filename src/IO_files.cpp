@@ -12,6 +12,7 @@ File_manager_class::File_manager_class(Initial_conditions_type *p_Initial_Condit
     this->p_Initial_Conditions  = p_Initial_Conditions;
     this->Truncate_files        = p_Initial_Conditions->File_manager_params.Truncate_files;
     this->sim_mode_2_ray_number = 0;
+    this->Image_full_path = "";
 }
 
 void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[]) {
@@ -96,32 +97,38 @@ void File_manager_class::write_metric_metadata(std::ofstream* Output_file) {
 
     case Kerr:
 
+        *Output_file << "Mass [M]: " << this->p_Initial_Conditions->Metric_parameters.Mass << '\n';
         *Output_file << "Spin Parameter [M]: " << this->p_Initial_Conditions->Metric_parameters.Spin << '\n';
         break;
 
     case Wormhole:
 
+        *Output_file << "Mass [M]: " << this->p_Initial_Conditions->Metric_parameters.Mass << '\n';
         *Output_file << "Spin Parameter [M]: " << this->p_Initial_Conditions->Metric_parameters.Spin << "\n"
             << "Redshift Parameter [-]: " << this->p_Initial_Conditions->Metric_parameters.Redshift_Parameter << '\n';
         break;
 
     case Reg_Black_Hole:
 
+        *Output_file << "Mass [M]: " << this->p_Initial_Conditions->Metric_parameters.Mass << '\n';
         *Output_file << "Parameter [M]: " << this->p_Initial_Conditions->Metric_parameters.RBH_Parameter << '\n';
         break;
 
     case Janis_Newman_Winicour:
 
+        *Output_file << "Mass [M]: " << this->p_Initial_Conditions->Metric_parameters.Mass << '\n';
         *Output_file << "Gamma [-]: " << this->p_Initial_Conditions->Metric_parameters.JNW_Gamma_Parameter << '\n';
         break;
 
     case Einstein_Gauss_Bonnet:
 
+        *Output_file << "Mass [M]: " << this->p_Initial_Conditions->Metric_parameters.Mass << '\n';
         *Output_file << "Gamma [M^2]: " << this->p_Initial_Conditions->Metric_parameters.GB_Gamma_Parameter << '\n';
         break;
 
     case BH_w_Dark_Matter:
 
+        *Output_file << "Mass [M]: " << this->p_Initial_Conditions->Metric_parameters.Mass << '\n';
         *Output_file << "Halo Mass [M]: " << this->p_Initial_Conditions->Metric_parameters.Halo_Mass << '\n'
                      << "Halo Compactness [-]: " << this->p_Initial_Conditions->Metric_parameters.Compactness << '\n';
 
@@ -217,17 +224,17 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
 
     case Toroidal:
 
-        *Output_file << "Magnetic field geometry: Toroidal\n";
+        *Output_file << "Disk Magnetic field geometry: Toroidal\n";
         break;
 
     case Vertical:
 
-        *Output_file << "Magnetic field geometry: Vertical\n";
+        *Output_file << "Disk Magnetic field geometry: Vertical\n";
         break;
 
     case Constant:
 
-        *Output_file << "Magnetic field geometry: [" << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_r - 1] << " "
+        *Output_file << "Disk Magnetic field geometry: [" << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_r - 1] << " "
                                                      << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_theta - 1] << " "
                                                      << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_phi - 1] << "]"
                                                      << "\n";
@@ -402,17 +409,17 @@ void File_manager_class::write_hotspot_metadata(std::ofstream* Output_file) {
 
     case Toroidal:
 
-        *Output_file << "Magnetic field geometry: Toroidal\n";
+        *Output_file << "Hotspot Magnetic field geometry: Toroidal\n";
         break;
 
     case Vertical:
 
-        *Output_file << "Magnetic field geometry: Vertical\n";
+        *Output_file << "Hotspot Magnetic field geometry: Vertical\n";
         break;
 
     case Constant:
 
-        *Output_file << "Magnetic field geometry: [" << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[e_r - 1] << " "
+        *Output_file << "Hotspot Magnetic field geometry: [" << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[e_r - 1] << " "
                                                      << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[e_theta - 1] << " "
                                                      << this->p_Initial_Conditions->Hotspot_params.Mag_field_geometry[e_phi - 1] << "]"
                                                      << "\n";
@@ -639,7 +646,7 @@ void File_manager_class::write_simulation_metadata() {
     
 }
 
-void File_manager_class::open_image_output_file() {
+void File_manager_class::create_output_file() {
 
     // Create the path to the main results directory
 
@@ -720,10 +727,9 @@ void File_manager_class::open_image_output_file() {
         }
 
         Image_file_name.replace_extension(file_extention);
-        Image_full_path = dir / Image_file_name;
+        this->Image_full_path = dir / Image_file_name;
 
-
-        this->Image_Output_File.open(Image_full_path, open_type);
+        this->Image_Output_File.open(this->Image_full_path, open_type);
 
     }
 
@@ -733,6 +739,8 @@ void File_manager_class::open_image_output_file() {
         this->write_simulation_metadata();
 
     }
+
+    this->Image_Output_File.close();
 
 }
 
@@ -815,7 +823,13 @@ void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
    
 };
 
-void File_manager_class::close_image_output_files() {
+void File_manager_class::open_image_output_file() {
+
+    this->Image_Output_File.open(this->Image_full_path, std::ios::app);
+
+}
+
+void File_manager_class::close_image_output_file() {
 
     this->Image_Output_File.close();
     

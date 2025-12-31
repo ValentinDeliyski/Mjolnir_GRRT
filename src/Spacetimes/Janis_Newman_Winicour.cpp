@@ -20,6 +20,7 @@ JNW_class::JNW_class(const Metric_parameters_type* const p_Metric_Parameters) {
 
     }
 
+    this->Mass = p_Metric_Parameters->Mass;
     this->Gamma = p_Metric_Parameters->JNW_Gamma_Parameter;
     this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
     this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
@@ -39,7 +40,7 @@ double* JNW_class::get_ISCO() {
 
     static double r_ISCO[2]{};
 
-    double r_singularity = 2 / this->Gamma;
+    double r_singularity = 2 * this->Mass / this->Gamma;
 
     if (this->Gamma > 1.0 / 2) {
 
@@ -68,7 +69,7 @@ double* JNW_class::get_Photon_Sphere() {
 
     static double photon_orbit[2]{};
 
-    double r_singularity = 2 / this->Gamma;
+    double r_singularity = 2 * this->Mass / this->Gamma;
 
     if (this->Gamma > 0.5) { // Weak naked singularity
 
@@ -97,7 +98,7 @@ Metric_type JNW_class::get_local_metric(const double* const Local_State_Vector) 
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    double r_singularity = 2 / this->Gamma;
+    double r_singularity = 2 * this->Mass / this->Gamma;
 
     Metric_type s_Metric{};
 
@@ -131,7 +132,7 @@ Metric_type JNW_class::get_dr_local_metric(const double* const Local_State_Vecto
     double r2 = r * r;
     double sin_theta = sin(theta);
 
-    double r_singularity = 2 / this->Gamma;
+    double r_singularity = 2 * this->Mass / this->Gamma;
 
     Metric_type s_dr_Metric{};
 
@@ -162,7 +163,7 @@ Metric_type JNW_class::get_dtheta_local_metric(const double* const Local_State_V
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    double r_singularity = 2 / this->Gamma;
+    double r_singularity = 2 * this->Mass / this->Gamma;
 
     Metric_type s_dtheta_Metric{};
 
@@ -191,7 +192,7 @@ Metric_type JNW_class::get_d2r_local_metric(const double* const Local_State_Vect
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
 
-    double r_singularity = 2 / this->Gamma;
+    double r_singularity = 2 * this->Mass / this->Gamma;
 
     Metric_type s_d2r_Metric{};
 
@@ -225,7 +226,7 @@ void JNW_class::get_EOM(const double* const State_vector, double* const Derivati
     double cos1 = cos(State_vector[e_theta]);
     double cos2 = cos1 * cos1;
 
-    double r_singularity = 2 / this->Gamma;
+    double r_singularity = 2 * this->Mass / this->Gamma;
 
     double pow_gamma = pow(1 - r_singularity / r, this->Gamma);
     double pow_gamma_minus_1 = pow(1 - r_singularity / r, this->Gamma - 1);

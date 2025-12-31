@@ -1,4 +1,4 @@
-from numpy import array, flip, append, pi, exp, sin, sqrt, log, roots
+from numpy import array, flip, append, pi, exp, sin, sqrt, log, roots, roll
 import itertools
 
 from Support_functions.Surface_Cubic_B_spline import Surface_Cubic_B_spline
@@ -11,16 +11,12 @@ from numpy.typing import NDArray
 
 class Numerical_metric_parser_class():
 
-    def __init__(self, File_path: str, M_ADM, a_ADM, r_H) -> None:
-        
-        self.M_ADM = M_ADM
-        self.a_ADM = a_ADM
-        self.r_H = r_H
+    def __init__(self, File_path: str) -> None:
         
         """ ====================== Initialize the arrays that hold the metric functions ====================== """
         
-        GRID_R_SIZE = 120
-        GRID_THETA_SIZE = 30
+        GRID_R_SIZE = 91
+        GRID_THETA_SIZE = 51
         
         x_coord = []
         theta_coord = []
@@ -42,9 +38,9 @@ class Numerical_metric_parser_class():
 
                 x_coord.append(float(Line_contents[0]))
                 theta_coord.append(float(Line_contents[1]))
-                F_0.append(float(Line_contents[2]))
-                F_1.append(float(Line_contents[3]))
-                F_2.append(float(Line_contents[4]))
+                F_0.append(exp(2 * float(Line_contents[2])))
+                F_1.append(exp(2 * float(Line_contents[3])))
+                F_2.append(exp(2 * float(Line_contents[4])))
                 W.append(-float(Line_contents[5]))
                 
         """ The metric is calculated only for theta values in the range [0, pi / 2]. We use the reflection symmetry of the problem to get the rest of the grid. """
@@ -65,81 +61,14 @@ class Numerical_metric_parser_class():
         
         W = array(W).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
         self.W = append(W, flip(W, axis = 0)[1:], axis = 0)
-        
-        """ Convert the compactified coordinate x to the (mass normalized) unbounded radial coordinate.
-            NOTE: This is NOT in Boyer-Linguist coordinates. """
-        self.r_coord = sqrt((self.x_coord / (1 - self.x_coord))**2 + self.r_H**2) / self.M_ADM
-        
-        """ Convert the uncompactified radial coordinate to the Boyer-Linguist radial coordinate. 
-            NOTE: Fix this to work for non-kerr solutions. """
-        self.r_BL_coord = self.r_coord + self.a_ADM**2 / (1 + sqrt(1 - self.a_ADM**2))
 
-           
-    def itertools_flatten(self, iter_lst):
-        return list(itertools.chain(*iter_lst))
-
-    def get_parsed_results(self) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
+    def get_parsed_results(self) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
         
-        return self.x_coord, self.r_coord, self.r_BL_coord, self.theta_coord, self.F_0, self.F_1, self.F_2, self.W
-        
-    def get_metric_functions(self):
-                
-        """ This is how the metric function W(r) scales with the BH mass - stems from the fact that rW should be dimensionless. """
-        W = self.W
-        N = 1 - (self.r_H / self.M_ADM) / self.r_coord
-
-        g_tt     = -exp(2 * self.F_0) * N + exp(2 * self.F_2) * (W * sin(self.theta_coord))**2
-        g_tphi   = -exp(2 * self.F_2) * W * sin(self.theta_coord)**2 * self.r_coord
-        g_rr     =  exp(2 * self.F_1) / N
-        g_thth   =  exp(2 * self.F_1) * self.r_coord**2 
-        g_phiphi =  exp(2 * self.F_2) * self.r_coord**2 * sin(self.theta_coord)**2
-        
-        return g_tt, g_tphi, g_rr, g_thth, g_phiphi
-    
-    def plot_metric_functions(self, radial_coord_to_plot: str = "BL", radial_coord_cutoff: float = 3.5) -> None:
-        
-        g_tt, g_tphi, g_rr, g_thth, g_phiphi = self.get_metric_functions()
-        
-        match radial_coord_to_plot:
-            case "BL":
-                radial_coord = self.r_BL_coord
-            case _:
-                radial_coord = self.x_coord
-            
-        idx = radial_coord < radial_coord_cutoff
-        
-        _, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(ncols = 5, nrows = 1, subplot_kw = dict(projection='3d'))
-        
-        ax1.plot_surface(*(x.reshape(60, int(len(g_tt[idx].flatten()) / 60)) for x in (radial_coord[idx], self.theta_coord[idx], g_tt[idx])))
-        ax1.set_xlabel(r'r')
-        ax1.set_ylabel(r'$\theta$')
-        ax1.set_zlabel(r"$g_{tt}$")
-        
-        ax2.plot_surface(*(x.reshape(60, int(len(g_tphi[idx].flatten()) / 60)) for x in (radial_coord[idx], self.theta_coord[idx], g_tphi[idx])))
-        ax2.set_xlabel(r'r')
-        ax2.set_ylabel(r'$\theta$')
-        ax2.set_zlabel(r"$g_{t\phi}$")
-     
-        ax3.plot_surface(*(x.reshape(60, int(len(g_rr[idx].flatten()) / 60)) for x in (radial_coord[idx], self.theta_coord[idx], log(g_rr[idx]))))
-        ax3.set_xlabel(r'r')
-        ax3.set_ylabel(r'$\theta$')
-        ax3.set_zlabel(r"ln$g_{rr}$")
-        
-        ax4.plot_surface(*(x.reshape(60, int(len(g_thth[idx].flatten()) / 60)) for x in (radial_coord[idx], self.theta_coord[idx], g_thth[idx])))
-        ax4.set_xlabel(r'r')
-        ax4.set_ylabel(r'$\theta$')
-        ax4.set_zlabel(r"$g_{\theta\theta}$")
-        
-        ax5.plot_surface(*(x.reshape(60, int(len(g_phiphi[idx].flatten()) / 60)) for x in (radial_coord[idx], self.theta_coord[idx], g_phiphi[idx])))
-        ax5.set_xlabel(r'r')
-        ax5.set_ylabel(r'$\theta$')
-        ax5.set_zlabel(r"$g_{\phi\phi}$")
-
-        plt.show()
+        return self.x_coord, self.theta_coord, self.F_0, self.F_1, self.F_2, self.W
         
     def export_spline_to_XML(self, Metric_name: str, Radial_control_vectors: list[NDArray], Theta_control_vectors: list[NDArray], Metric_control_vectors: list[NDArray], Control_vector_order: list[str]):
         
-        X_knot_points, _, _, Theta_knot_points, _, _, _, _ = Numerical_metric_parser.get_parsed_results()
+        X_knot_points, Theta_knot_points, _, _, _, _ = Numerical_metric_parser.get_parsed_results()
         
         Encoding = 'UTF-8'
         XML_root_node = ET.Element("Metric_spline_coefficients", {"Metric_name": Metric_name})
@@ -190,28 +119,16 @@ class Numerical_metric_parser_class():
             
 if __name__ == "__main__":
     
-    """ =================== Some post-evolution calculated metric parameters =================== """
-    
-    """ This is a rounded value for the Black Hole mass - we take is for granted and from it, calculate what the spin parameter SHOULD be to give their reported event horizon raius. """
-    M_ADM = 0.8904892552349474
-    
-    """ Their reported event horizon radius - this is an input to the simulation, and they gave a decent amount of digits, so it should be fine.
-        NOTE: This is NOT in Boyer-Linguist coordinates. """
-    r_H = 0.01
-    
-    """ This is the (NOT mass normalized) calculated spin parameter that gives their event horizon radius (its one of the real solutions to a quintic equation).
-        Let alpha = 2M^2 - Mr_H and beta = 2M + r_h, then the quintic is 4 a^4 + (beta^2 - 4 alpha) a^2 + alpha^2 - M^2 beta^2 = 0. """
-    a_ADM = 0.7813066738190858 / M_ADM
+    Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/Zero_curvature/rh=0.1_om=0.738499261269268_h0=0.0594286954018100.dat")
+    x_coord, theta_coord, F_0, F_1, F_2, W = Numerical_metric_parser.get_parsed_results()
 
-    Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/rh=0.01_om=0.607386575548133_h0=0.0134874523851357.dat", M_ADM = M_ADM, a_ADM = a_ADM, r_H = r_H)
-    x_coord, _, r_BL_coord, theta_coord, F_0, F_1, F_2, W = Numerical_metric_parser.get_parsed_results()
+    F_0_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_0, X_patch_number = 101, Y_patch_number = 91)
+    F_1_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_1, X_patch_number = 101, Y_patch_number = 91)
+    F_2_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_2, X_patch_number = 101, Y_patch_number = 91)
+    W_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = W, X_patch_number = 101, Y_patch_number = 91)
 
-    F_0_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_0, X_patch_number = 59, Y_patch_number = 120)
-    F_1_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_1, X_patch_number = 59, Y_patch_number = 120)
-    F_2_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_2, X_patch_number = 59, Y_patch_number = 120)
-    W_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = W, X_patch_number = 59, Y_patch_number = 120)
-
-    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Galin_numerical_config_III", 
+    # exit(0)
+    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Galin_zero_curvature_config_IV", 
                                                  Theta_control_vectors  = [F_0_spline_instance.Control_vector_X, 
                                                                            F_1_spline_instance.Control_vector_X, 
                                                                            F_2_spline_instance.Control_vector_X, 
@@ -226,25 +143,48 @@ if __name__ == "__main__":
                                                                            W_spline_instance.Control_vector_Z], 
                                                  Control_vector_order   = ["F_0", "F_1", "F_2", "W"])
     
-    Theta_surface, Radial_surface, F_0_surface = F_0_spline_instance.evaluate_spline(Patch_discretization = 5)
-    Theta_surface, Radial_surface, F_1_surface = F_1_spline_instance.evaluate_spline(Patch_discretization = 5)
-    Theta_surface, Radial_surface, F_2_surface = F_2_spline_instance.evaluate_spline(Patch_discretization = 5)
-    Theta_surface, Radial_surface, W_surface = W_spline_instance.evaluate_spline(Patch_discretization = 5)
+    Theta_surface, Radial_surface, F_0_surface = F_0_spline_instance.evaluate_spline(Patch_discretization = 15)
+    Theta_surface, Radial_surface, F_1_surface = F_1_spline_instance.evaluate_spline(Patch_discretization = 15)
+    Theta_surface, Radial_surface, F_2_surface = F_2_spline_instance.evaluate_spline(Patch_discretization = 15)
+    Theta_surface, Radial_surface, W_surface = W_spline_instance.evaluate_spline(Patch_discretization = 15)
     
     _, (ax1, ax2, ax3, ax4) = plt.subplots(ncols = 4, nrows = 1, subplot_kw = dict(projection = '3d'))
     
     ax1.plot_surface(Radial_surface, Theta_surface, F_0_surface, color = 'orange') 
     ax1.plot_surface(x_coord, theta_coord, F_0, color = 'blue') 
     
+    ax1.set_xlabel('x')
+    ax1.set_ylabel('y')
+    ax1.set_zlabel('z') # type: ignore
+    # ax1.set_xlim(0,1)  # type: ignore
+    # ax1.set_ylim(0,3.14)  # type: ignore
+    
     ax2.plot_surface(Radial_surface, Theta_surface, F_1_surface, color = 'orange') 
     ax2.plot_surface(x_coord, theta_coord, F_1, color = 'blue')
+    
+    ax2.set_xlabel('x')
+    ax2.set_ylabel('y')
+    ax2.set_zlabel('z') # type: ignore
+    # ax2.set_xlim(0,1)  # type: ignore
+    # ax2.set_ylim(0,3.14)  # type: ignore
     
     ax3.plot_surface(Radial_surface, Theta_surface, F_2_surface, color = 'orange') 
     ax3.plot_surface(x_coord, theta_coord, F_2, color = 'blue')
     
+    ax3.set_xlabel('x')
+    ax3.set_ylabel('y')
+    ax3.set_zlabel('z') # type: ignore
+    # ax3.set_xlim(0,1)  # type: ignore
+    # ax3.set_ylim(0,3.14)  # type: ignore
+    
     ax4.plot_surface(Radial_surface, Theta_surface, W_surface, color = 'orange') 
     ax4.plot_surface(x_coord, theta_coord, W, color = 'blue') 
     
+    ax4.set_xlabel('x')
+    ax4.set_ylabel('y')
+    ax4.set_zlabel('z') # type: ignore
+    # ax4.set_xlim(0,1)  # type: ignore
+    # ax4.set_ylim(0,3.14)  # type: ignore
+    
     plt.show()
     
-    # Numerical_metric_parser.plot_metric_functions("x", radial_coord_cutoff = 10)

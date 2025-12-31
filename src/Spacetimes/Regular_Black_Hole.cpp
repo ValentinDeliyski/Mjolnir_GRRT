@@ -20,6 +20,8 @@ RBH_class::RBH_class(const Metric_parameters_type* const p_Metric_Parameters){
 
     }
 
+    this->Mass = p_Metric_Parameters->Mass;
+
     this->Horizon_radius = 0;
 
     if (this->Parameter > 2 * this->Mass) {

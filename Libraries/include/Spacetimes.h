@@ -50,7 +50,7 @@ class Kerr_class : public Spacetime_Base_Class {
 
 private:
 
-    double Mass = 1.0;
+    double Mass;
     double Spin_Param;
     double Horizon_radius;
     double Scattering_radius;
@@ -127,8 +127,8 @@ class Wormhole_class : public Spacetime_Base_Class {
 
 private:
 
-    double Mass = 1.0;
-    double R_Throat = this->Mass;
+    double Mass;
+    double R_Throat;
     double Spin_Param;
     double Redshift_Param;
 
@@ -176,7 +176,7 @@ class RBH_class : public Spacetime_Base_Class {
 
 private:
 
-    double Mass = 1.0;
+    double Mass;
     double Parameter;
 
     double Scattering_radius;
@@ -219,7 +219,7 @@ class JNW_class : public Spacetime_Base_Class {
 
 private:
 
-    double Mass = 1.0;
+    double Mass;
     double Gamma;
 
 
@@ -265,7 +265,7 @@ class Gauss_Bonnet_class : public Spacetime_Base_Class {
 
 private:
 
-    double Mass = 1.0;
+    double Mass;
     double Gamma;
 
     double Scattering_radius;
@@ -308,7 +308,7 @@ class Black_Hole_w_Dark_Matter_Halo_class : public Spacetime_Base_Class {
 
 private:
 
-    double Mass = 1.0;
+    double Mass;
     double Compactness;
     double Halo_Mass;
 
@@ -356,12 +356,19 @@ private:
 
     /* ------------------------------ Functions that evaluate the cubic B-spline of the metric potentials ------------------------------ */
 
-    void get_control_point_matrix(const double* const Control_vector, const long long r_idx, const long long theta_idx, double Control_matrix[4][4]) const;
-    void get_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
-    void get_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
-    void get_second_derivative_polynomial_basis_vector(const double natural_parameter, double* const Polynomial_basis_vector) const;
+    Delta_coeffs_type get_delta_matrix(const double* const Grid_step_array, const long long idx) const;
 
-    double evaluate_single_spline(const double Control_point_matrix[4][4], const double Radial_natural_parameter, const double Theta_natural_parameter, Derivative_selector_enums Derivative_selector) const;
+    void get_control_point_matrix(const double* const Control_vector, const long long r_idx, const long long theta_idx, double Control_matrix[4][4]) const;
+    void get_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const;
+    void get_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const;
+    void get_second_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const;
+
+    double evaluate_single_spline(const double Control_point_matrix[4][4], 
+                                  const double Radial_natural_parameter, 
+                                  const double Theta_natural_parameter,
+                                  const Delta_coeffs_type const* Radial_coeffs,
+                                  const Delta_coeffs_type const* Theta_coeffs,
+                                  Derivative_selector_enums Derivative_selector) const;
 
     Numerical_metric_potentials_type evaluate_all_splines(const double radial_natural_param, const double theta_natural_param, long long radial_grid_idx, long long theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
     Numerical_metric_potentials_type compute_metric_components_from_spline(Spline_arguments_type s_Splnie_args, Derivative_selector_enums Derivative_selector) const;

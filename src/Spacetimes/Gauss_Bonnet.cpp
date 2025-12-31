@@ -20,6 +20,7 @@ Gauss_Bonnet_class::Gauss_Bonnet_class(const Metric_parameters_type* const p_Met
 
     }
 
+    this->Mass = p_Metric_Parameters->Mass;
     this->Gamma = p_Metric_Parameters->GB_Gamma_Parameter;
     this->Scattering_radius = p_Metric_Parameters->Scattering_radius;
     this->Min_distance_to_singular_point = p_Metric_Parameters->Min_distance_to_singular_point;
