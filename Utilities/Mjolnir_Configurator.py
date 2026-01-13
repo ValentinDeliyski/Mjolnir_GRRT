@@ -132,6 +132,7 @@ class Metric_parameters():
                  "Halo_compactness", 
                  "Halo_mass",
                  "Metric_type", 
+                 "Numerical_metric_spline_type",
                  "Numerical_metric_spline_path",
                  "Numerical_metric_anzatz_type",
                  "Distance_to_singular_point",
@@ -362,6 +363,7 @@ class Simulation_configurator:
                                            Metric_type: dict[str, float | str] = {"Value": "Kerr", "Unit": "[-]"},
                                            Numerical_metric_spline_path: str = "",
                                            Numerical_metric_anzatz_type: dict[str, str] = {"Value": "Anzatz_1", "Unit": "[-]"},
+                                           Numerical_metric_spline_type: dict[str, str] = {"Value": "GSL_cubic", "Unit": "[-]"},
                                            Distance_to_singular_point: dict[str, float | str] = {"Value": 1e-4, "Unit": "[M]"},
                                            Scattering_radius: dict[str, float | str] = {"Value": 100, "Unit": "[M]"},):
 
@@ -369,6 +371,7 @@ class Simulation_configurator:
 
         self.metric_parameters.Mass = Mass
         self.metric_parameters.Spin = Spin
+        self.metric_parameters.Horizon_radius = Horizon_radius
         self.metric_parameters.WH_redshift = WH_redshift
         self.metric_parameters.WH_r_throat = WH_r_throat
         self.metric_parameters.WH_stop_at_throat = WH_stop_at_throat
@@ -378,6 +381,7 @@ class Simulation_configurator:
         self.metric_parameters.Halo_compactness = Halo_compactness
         self.metric_parameters.Halo_mass = Halo_mass
         self.metric_parameters.Metric_type = Metric_type
+        self.metric_parameters.Numerical_metric_spline_type = Numerical_metric_spline_type
         self.metric_parameters.Numerical_metric_spline_path = Numerical_metric_spline_path
         self.metric_parameters.Numerical_metric_anzatz_type = Numerical_metric_anzatz_type
         self.metric_parameters.Scattering_radius = Scattering_radius
@@ -606,6 +610,7 @@ class Simulation_configurator:
             
             case "Wormhole":
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Wormhole")
+                ET.SubElement(Metric_subelement, "Mass", units = "[M]").text = "{}".format(self.metric_parameters.Mass["Value"])
                 ET.SubElement(Metric_subelement, "Spin_parameter", units = "[M]").text = "{}".format(self.metric_parameters.Spin["Value"])
                 ET.SubElement(Metric_subelement, "WH_redshift", units = "[-]").text = "{}".format(self.metric_parameters.WH_redshift["Value"])
                 ET.SubElement(Metric_subelement, "WH_r_throat", units = "[M]").text = "{}".format(self.metric_parameters.WH_r_throat["Value"])
@@ -616,18 +621,22 @@ class Simulation_configurator:
 
             case "Janis-Newman-Winicour":
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Janis-Newman-Winicour")
+                ET.SubElement(Metric_subelement, "Mass", units = "[M]").text = "{}".format(self.metric_parameters.Mass["Value"])
                 ET.SubElement(Metric_subelement, "JNW_gamma", units = "[-]").text = "{}".format(self.metric_parameters.JNW_gamma["Value"])
 
             case "Einstein-Gauss-Bonnet":
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Einstein-Gauss-Bonnet")
+                ET.SubElement(Metric_subelement, "Mass", units = "[M]").text = "{}".format(self.metric_parameters.Mass["Value"])
                 ET.SubElement(Metric_subelement, "EGB_gamma", units = "[-]").text = "{}".format(self.metric_parameters.EGB_gamma["Value"])
 
             case "Regular-Black-Hole":
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Regular-Black-Hole")
+                ET.SubElement(Metric_subelement, "Mass", units = "[M]").text = "{}".format(self.metric_parameters.Mass["Value"])
                 ET.SubElement(Metric_subelement, "RBH_param", units = "[-]").text = "{}".format(self.metric_parameters.RBH_param["Value"])
 
             case "Black-Hole-w-Dark-Matter":
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Black-Hole-w-Dark-Matter")
+                ET.SubElement(Metric_subelement, "Mass", units = "[M]").text = "{}".format(self.metric_parameters.Mass["Value"])
                 ET.SubElement(Metric_subelement, "Halo_compactness", units = "[-]").text = "{}".format(self.metric_parameters.Halo_compactness["Value"])    
                 ET.SubElement(Metric_subelement, "Halo_mass", units = "[M]").text = "{}".format(self.metric_parameters.Halo_mass["Value"]) 
                 
@@ -638,9 +647,11 @@ class Simulation_configurator:
                 ET.SubElement(Metric_subelement, "ADM_ang_momentum", units = "[M]").text = "{}".format(self.metric_parameters.Spin["Value"])
                 ET.SubElement(Metric_subelement, "Numerical_metric_anzatz_type", units = "[M]").text = "{}".format(self.metric_parameters.Numerical_metric_anzatz_type["Value"])
                 ET.SubElement(Metric_subelement, "Numerical_metric_spline_path").text = "{}".format(self.metric_parameters.Numerical_metric_spline_path)
+                ET.SubElement(Metric_subelement, "Numerical_metric_spline_type").text = "{}".format(self.metric_parameters.Numerical_metric_spline_type["Value"])
                 
             case _:
                 ET.SubElement(Metric_subelement, "Metric_type", units = "[-]").text = "{}".format("Kerr")
+                ET.SubElement(Metric_subelement, "Mass", units = "[M]").text = "{}".format(self.metric_parameters.Mass["Value"])
                 ET.SubElement(Metric_subelement, "Spin_parameter", units = "[M]").text = "{}".format(self.metric_parameters.Spin["Value"])
                 
         ET.SubElement(Metric_subelement, "Scattering_radius", units = "[M]").text = "{}".format(self.metric_parameters.Scattering_radius["Value"])

@@ -202,7 +202,7 @@ class Polarization_class():
         Transported_Polarization_Vector[Coords.e_x.value] = (-alpha_coord * kappa_1 + beta_coord * kappa_2) / (alpha_coord**2 + beta_coord**2)
         Transported_Polarization_Vector[Coords.e_y.value] = ( alpha_coord * kappa_2 + beta_coord * kappa_1) / (alpha_coord**2 + beta_coord**2)
 
-        return Transported_Polarization_Vector
+        return sqrt(Projected_Disk_Thickness) * Transported_Polarization_Vector
 
 if __name__ == "__main__":
     
@@ -210,14 +210,14 @@ if __name__ == "__main__":
     plt.rcParams['text.usetex'] = True
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
-    Sim_path = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Thin_Disk_Reference_Simulation\\Einstein_Gauss_Bonnet"
+    Sim_path = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Numerical_metric_runs\\Zero_curvature\\Config_V_17_deg\\Kerr_analog\\Kerr"
 
     Sim_parser = Simulation_Parser(Sim_path)
     
     match Sim_parser.Simulation_metadata["Spacetime [-]"]:
 
         case "Kerr":
-            Spacetime_instance = Kerr(spin_param = float(Sim_parser.Simulation_metadata["Spin Parameter [M]"]))
+            Spacetime_instance = Kerr(mass = float(Sim_parser.Simulation_metadata["Mass [M]"]), spin_param = float(Sim_parser.Simulation_metadata["Spin Parameter [M]"]))
 
         case "Numerical":
             
@@ -274,8 +274,8 @@ if __name__ == "__main__":
             
             # P_photon = Spacetime_instance.__convert_global_to_local_coords__(Source_coord, P_photon)
     
-            Analytical_Polarization_Vector_x.append(Polarization_instance.get_polarization_vector(P_photon, Source_coord, [0.1, 0.2, 0.3], Image_coord)[Coords.e_x.value])
-            Analytical_Polarization_Vector_y.append(Polarization_instance.get_polarization_vector(P_photon, Source_coord, [0.1, 0.2, 0.3], Image_coord)[Coords.e_y.value])
+            Analytical_Polarization_Vector_x.append(Polarization_instance.get_polarization_vector(P_photon, Source_coord, [0.5, 0, 0.87], Image_coord)[Coords.e_x.value])
+            Analytical_Polarization_Vector_y.append(Polarization_instance.get_polarization_vector(P_photon, Source_coord, [0.5, 0, 0.87], Image_coord)[Coords.e_y.value])
 
         else:
             Analytical_Polarization_Vector_x.append(0)

@@ -165,7 +165,7 @@ int main(int argument_count, char** cmd_line_args) {
 
         switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
 
-        default:
+        case Image_generation:
             run_image_generation(&s_Sim_Context, &s_Ray_results);
             break;
 
@@ -176,6 +176,14 @@ int main(int argument_count, char** cmd_line_args) {
         case Make_geodesic_log:
             make_geodesic_log(&s_Sim_Context, &s_Ray_results);
             break;
+
+        case Debug_mode:
+            run_debug_simulation(&s_Sim_Context);
+            break;
+
+        default:
+
+            throw std::runtime_error("Unsupported simulation mode! \n");
 
         }
 

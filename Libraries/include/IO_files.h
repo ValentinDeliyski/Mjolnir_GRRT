@@ -24,10 +24,8 @@ private:
 
 	};
 
-	std::ofstream Image_Output_File;
-	std::ofstream Log_Output_File;
-
-	std::filesystem::path Image_full_path;
+	std::ofstream* Output_File;
+	std::filesystem::path Output_File_Path;
 
 	Initial_conditions_type *p_Initial_Conditions;
 
@@ -40,6 +38,8 @@ private:
 	void write_emission_models_metadata(std::ofstream* Output_file);
 	void write_integrator_metadata(std::ofstream* Output_file);
 
+	void write_simulation_metadata();
+	void write_debug_metadata();
 
 	public:
 
@@ -51,17 +51,15 @@ private:
 
 		void write_image_data_to_file(Results_type* Ray_results);
 
-		void write_simulation_metadata();
+		void write_debug_data_to_file(Debug_mode_struct* Debug_results);
 
 		void log_photon_path(Results_type* s_Ray_results);
 
-		void close_image_output_file();
+		void close_output_file();
 
-		void open_image_output_file();
+		void open_output_file();
 
 		void get_geodesic_data(double J_data[], double p_theta_data[]);
-
-		void close_log_output_file();
 
 };
 

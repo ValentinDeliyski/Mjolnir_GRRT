@@ -1,6 +1,6 @@
 from numpy.typing import NDArray
 from numpy import float64, bool_
-from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes
+from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes, argmax
 
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
@@ -177,8 +177,8 @@ class Sim_Visualizer():
         for Sim_number, Freq_str in enumerate(self.Frequency_Bins):          
             
             Obs_frequency: float = float(self.Sim_Parsers[Sim_number].Simulation_metadata["Observation Frequency [Hz]"])
-
-            I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, Celestial_theta, Celestial_phi = self.Sim_Parsers[Sim_number].get_plottable_sim_data()
+            
+            I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, _, _, Celestial_theta, Celestial_phi = self.Sim_Parsers[Sim_number].get_plottable_sim_data()
 
             # =============== PLot the Simulated Image =============== #
             
@@ -188,8 +188,8 @@ class Sim_Visualizer():
 
             # Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation "Observer Distance [M]", and conver to to micro AS 
             axes_limits: NDArray[float64] = self.Sim_Parsers[Sim_number].Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
-            axes_limits = array([float64(Limit) for Limit in axes_limits]) / Obs_effective_distance
-            axes_limits = arctan(axes_limits) * self.Units.RAD_TO_MICRO_AS
+            axes_limits = array([float64(Limit) for Limit in axes_limits])
+            # axes_limits = arctan(axes_limits) * self.Units.RAD_TO_MICRO_AS
 
             # The literature (for some reason) has the X axis going positive to negative, 
             # so I invert the X axis limits
@@ -241,15 +241,20 @@ class Sim_Visualizer():
                     Cbar_label: str = r"LP fraction [\%]"
                     
                 case "NT":
-                    Data_to_plot: NDArray[float64] = Disk_flux * Disk_redshift**4
+                    Data_to_plot: NDArray[float64] = Disk_flux * Disk_redshift**4 / 1e-5 
                     
-                    Cmap_max: float = max(abs(Data_to_plot.flatten()))
-                    Cmap_min: float = 0.0
+                    Cmap_max: float = max((Data_to_plot.flatten()))
+                    Cmap_min: float = 0
                     
-                    Cbar_label: str      = r"Intensity [$10^{-6}\dot{M}M^{-2}$]"
+                    Cbar_label: str      = r"Flux [$10^{-5}\dot{M}M^{-2}$]"
                     Fig_title: str       = r"Simulated Image"
-                    X_Slice_tile: str    = r"Intensity at $\delta_{\text{rel}} = 0$"
-                    X_Slice_y_label: str = r"Intensity $[10^{-6}\dot{M}M^{-2}]$"
+                    X_Slice_tile: str    = r"Flux at $\delta_{\text{rel}} = 0$"
+                    X_Slice_y_label: str = r"Flux $[10^{-5}\dot{M}M^{-2}]$"
+                    
+                    idx = argmax(Data_to_plot.flatten())
+                    print(min(Data_to_plot.flatten()))
+                    print(Data_to_plot.flatten()[idx])
+                    print(1 / Disk_redshift.flatten()[idx] - 1)
 
                 case "Pattern":
                     Data_to_plot = self.get_celestial_sphere_pattern(Celestial_Theta = Celestial_theta, Celestial_Phi = Celestial_phi)

@@ -1,5 +1,4 @@
-from numpy import array, flip, append, pi, exp, sin, sqrt, log, roots, roll
-import itertools
+from numpy import array, flip, append, pi, exp
 
 from Support_functions.Surface_Cubic_B_spline import Surface_Cubic_B_spline
 import matplotlib.pyplot as plt
@@ -11,12 +10,12 @@ from numpy.typing import NDArray
 
 class Numerical_metric_parser_class():
 
-    def __init__(self, File_path: str) -> None:
+    def __init__(self, File_path: str, Grid_R_size: int, Grid_Theta_size: int) -> None:
         
         """ ====================== Initialize the arrays that hold the metric functions ====================== """
         
-        GRID_R_SIZE = 91
-        GRID_THETA_SIZE = 51
+        self.GRID_R_SIZE = Grid_R_size
+        self.GRID_THETA_SIZE = Grid_Theta_size
         
         x_coord = []
         theta_coord = []
@@ -44,29 +43,29 @@ class Numerical_metric_parser_class():
                 W.append(-float(Line_contents[5]))
                 
         """ The metric is calculated only for theta values in the range [0, pi / 2]. We use the reflection symmetry of the problem to get the rest of the grid. """
-        x_coord = array(x_coord).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
+        x_coord = array(x_coord).reshape(self.GRID_THETA_SIZE, self.GRID_R_SIZE)
         self.x_coord = append(x_coord, x_coord[1:], axis = 0)
         
-        theta_coord = array(theta_coord).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
+        theta_coord = array(theta_coord).reshape(self.GRID_THETA_SIZE, self.GRID_R_SIZE)
         self.theta_coord = append(theta_coord, flip(pi - theta_coord)[1:], axis = 0)
          
-        F_0 = array(F_0).reshape(GRID_THETA_SIZE, GRID_R_SIZE)  
-        self.F_0 = append(F_0, flip(F_0, axis = 0)[1:], axis = 0)  
+        F_0 = array(F_0).reshape(self.GRID_THETA_SIZE, self.GRID_R_SIZE)  
+        self.F_0 = append(F_0, flip(F_0, axis = 0)[1:], axis = 0)
         
-        F_1 = array(F_1).reshape(GRID_THETA_SIZE, GRID_R_SIZE)  
+        F_1 = array(F_1).reshape(self.GRID_THETA_SIZE, self.GRID_R_SIZE)  
         self.F_1 = append(F_1, flip(F_1, axis = 0)[1:], axis = 0)  
         
-        F_2 = array(F_2).reshape(GRID_THETA_SIZE, GRID_R_SIZE) 
+        F_2 = array(F_2).reshape(self.GRID_THETA_SIZE, self.GRID_R_SIZE) 
         self.F_2 = append(F_2, flip(F_2, axis = 0)[1:], axis = 0)  
         
-        W = array(W).reshape(GRID_THETA_SIZE, GRID_R_SIZE)
+        W = array(W).reshape(self.GRID_THETA_SIZE, self.GRID_R_SIZE)
         self.W = append(W, flip(W, axis = 0)[1:], axis = 0)
 
     def get_parsed_results(self) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
         
         return self.x_coord, self.theta_coord, self.F_0, self.F_1, self.F_2, self.W
         
-    def export_spline_to_XML(self, Metric_name: str, Radial_control_vectors: list[NDArray], Theta_control_vectors: list[NDArray], Metric_control_vectors: list[NDArray], Control_vector_order: list[str]):
+    def export_spline_to_XML(self, Metric_name: str, Radial_control_vectors: list[NDArray], Theta_control_vectors: list[NDArray], Metric_control_vectors: list[NDArray], Raw_metric_components: list[NDArray], Control_vector_order: list[str]):
         
         X_knot_points, Theta_knot_points, _, _, _, _ = Numerical_metric_parser.get_parsed_results()
         
@@ -109,6 +108,15 @@ class Numerical_metric_parser_class():
             for Vector_component_idx, Control_vec_component in enumerate(Metric_control_vectors[Metric_component_idx]):
                 ET.SubElement(Control_vector_z_element, "Component_idx_{}".format(Vector_component_idx)).text = "{}".format(Control_vec_component)
                 
+        """ =============================== The raw metric components =============================== """
+
+        for Metric_component_idx, Raw_Metric_component in enumerate(Control_vector_order):
+            
+            Raw_Metric_component_subelement = ET.SubElement(XML_root_node, "Raw_" + Raw_Metric_component, Component_number = "{}".format(len(Raw_metric_components[Metric_component_idx])))
+            
+            for Raw_metric_component_idx, Raw_metric_component in enumerate(Raw_metric_components[Metric_component_idx]):
+                ET.SubElement(Raw_Metric_component_subelement, "Component_idx_{}".format(Raw_metric_component_idx)).text = "{}".format(Raw_metric_component)
+                
         XML_struct = xml.dom.minidom.parseString(ET.tostring(XML_root_node))
         formatted_XML_string = XML_struct.toprettyxml()
         Header, Body = formatted_XML_string.split('?>')
@@ -119,16 +127,37 @@ class Numerical_metric_parser_class():
             
 if __name__ == "__main__":
     
-    Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/Zero_curvature/rh=0.1_om=0.738499261269268_h0=0.0594286954018100.dat")
+    Numerical_metric_parser = Numerical_metric_parser_class("Numerical_metrics/Zero_curvature/rh=0.01_om=0.835271834271409_h0=0.0580074274088523.dat", 
+                                                            Grid_R_size = 120, 
+                                                            Grid_Theta_size = 30) 
+    
     x_coord, theta_coord, F_0, F_1, F_2, W = Numerical_metric_parser.get_parsed_results()
 
-    F_0_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_0, X_patch_number = 101, Y_patch_number = 91)
-    F_1_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_1, X_patch_number = 101, Y_patch_number = 91)
-    F_2_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = F_2, X_patch_number = 101, Y_patch_number = 91)
-    W_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, y_grid = x_coord, z_grid = W, X_patch_number = 101, Y_patch_number = 91)
+    F_0_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, 
+                                                 y_grid = x_coord, 
+                                                 z_grid = F_0, 
+                                                 X_patch_number = 2 * Numerical_metric_parser.GRID_THETA_SIZE - 1, 
+                                                 Y_patch_number = Numerical_metric_parser.GRID_R_SIZE)
+    
+    F_1_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, 
+                                                 y_grid = x_coord, 
+                                                 z_grid = F_1, 
+                                                 X_patch_number = 2 * Numerical_metric_parser.GRID_THETA_SIZE - 1, 
+                                                 Y_patch_number = Numerical_metric_parser.GRID_R_SIZE)
+    
+    F_2_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, 
+                                                 y_grid = x_coord, 
+                                                 z_grid = F_2, 
+                                                 X_patch_number = 2 * Numerical_metric_parser.GRID_THETA_SIZE - 1, 
+                                                 Y_patch_number = Numerical_metric_parser.GRID_R_SIZE)
+    
+    W_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, 
+                                               y_grid = x_coord, 
+                                               z_grid = W, 
+                                               X_patch_number = 2 * Numerical_metric_parser.GRID_THETA_SIZE - 1, 
+                                               Y_patch_number = Numerical_metric_parser.GRID_R_SIZE)
 
-    # exit(0)
-    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Galin_zero_curvature_config_IV", 
+    Numerical_metric_parser.export_spline_to_XML(Metric_name = "Galin_zero_curvature_config_II", 
                                                  Theta_control_vectors  = [F_0_spline_instance.Control_vector_X, 
                                                                            F_1_spline_instance.Control_vector_X, 
                                                                            F_2_spline_instance.Control_vector_X, 
@@ -141,7 +170,8 @@ if __name__ == "__main__":
                                                                            F_1_spline_instance.Control_vector_Z, 
                                                                            F_2_spline_instance.Control_vector_Z, 
                                                                            W_spline_instance.Control_vector_Z], 
-                                                 Control_vector_order   = ["F_0", "F_1", "F_2", "W"])
+                                                 Raw_metric_components = [F_0.flatten(), F_1.flatten(), F_2.flatten(), W.flatten()],
+                                                 Control_vector_order = ["F_0", "F_1", "F_2", "W"])
     
     Theta_surface, Radial_surface, F_0_surface = F_0_spline_instance.evaluate_spline(Patch_discretization = 15)
     Theta_surface, Radial_surface, F_1_surface = F_1_spline_instance.evaluate_spline(Patch_discretization = 15)

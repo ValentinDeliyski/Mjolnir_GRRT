@@ -935,6 +935,11 @@ Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML
     tinyxml2::XMLElement* F2_control_vector_element;
     tinyxml2::XMLElement* W_control_vector_element;
 
+    tinyxml2::XMLElement* Raw_F0_data_element;
+    tinyxml2::XMLElement* Raw_F1_data_element;
+    tinyxml2::XMLElement* Raw_F2_data_element;
+    tinyxml2::XMLElement* Raw_W_data_element;
+
     tinyxml2::XMLElement* Compactified_radial_grid_element;
     tinyxml2::XMLElement* Compactified_radial_grid_control_vector_element;
     tinyxml2::XMLElement* Theta_grid_element;
@@ -947,7 +952,7 @@ Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML
     F0_control_vector_element = Spline_XML->FirstChildElement("F_0")->FirstChildElement("Control_vector");
     if (F0_control_vector_element == nullptr) { std::cout << "Failed to parse the numerical F_0 potential control vector node!" << "\n"; return ERROR; }
 
-    /* Parse the length of the controll vector and allocate an array to hold it. */
+    /* Parse the length of the control vector and allocate an array to hold it. */
     int Control_vector_size = std::stoi(F0_control_vector_element->Attribute("Component_number"));
     Metric_params->Numerical_metric_params.F_0_control_vector = new double[Control_vector_size];
     Metric_params->Numerical_metric_params.Control_vector_size = Control_vector_size;
@@ -961,12 +966,29 @@ Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML
 
     }
 
-    // -------------------- The g_rr control vector
+    // -------------------- The Raw F_0 data
+
+    Raw_F0_data_element = Spline_XML->FirstChildElement("Raw_F_0");
+    if (Raw_F0_data_element == nullptr) { std::cout << "Failed to parse the raw numerical F_0 potential data!" << "\n"; return ERROR; }
+
+    int Data_length = std::stoi(Raw_F0_data_element->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.Raw_F_0_data = new double[Data_length];
+
+    for (int idx = 0; idx <= Data_length - 1; idx++) {
+
+        temp_param_var = Raw_F0_data_element->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the raw numerical F_0 potential data at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.Raw_F_0_data[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The F_1 control vector
 
     F1_control_vector_element = Spline_XML->FirstChildElement("F_1")->FirstChildElement("Control_vector");
     if (F1_control_vector_element == nullptr) { std::cout << "Failed to parse the numerical F_1 potential control vector node!" << "\n"; return ERROR; }
 
-    /* Parse the length of the controll vector and allocate an array to hold it. */
+    /* Parse the length of the control vector and allocate an array to hold it. */
     Control_vector_size = std::stoi(F1_control_vector_element->Attribute("Component_number"));
     Metric_params->Numerical_metric_params.F_1_control_vector = new double[Control_vector_size];
 
@@ -979,12 +1001,29 @@ Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML
 
     }
 
-    // -------------------- The g_thth control vector
+    // -------------------- The Raw F_1 data
+
+    Raw_F1_data_element = Spline_XML->FirstChildElement("Raw_F_1");
+    if (Raw_F1_data_element == nullptr) { std::cout << "Failed to parse the raw numerical F_1 potential data!" << "\n"; return ERROR; }
+
+    Data_length = std::stoi(Raw_F1_data_element->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.Raw_F_1_data = new double[Data_length];
+
+    for (int idx = 0; idx <= Data_length - 1; idx++) {
+
+        temp_param_var = Raw_F1_data_element->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the raw numerical F_1 potential data at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.Raw_F_1_data[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The F_2 control vector
 
     F2_control_vector_element = Spline_XML->FirstChildElement("F_2")->FirstChildElement("Control_vector");
     if (F2_control_vector_element == nullptr) { std::cout << "Failed to parse the numerical F_2 potential control vector node!" << "\n"; return ERROR; }
 
-    /* Parse the length of the controll vector and allocate an array to hold it. */
+    /* Parse the length of the control vector and allocate an array to hold it. */
     Control_vector_size = std::stoi(F2_control_vector_element->Attribute("Component_number"));
     Metric_params->Numerical_metric_params.F_2_control_vector = new double[Control_vector_size];
 
@@ -997,12 +1036,28 @@ Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML
 
     }
 
-    // -------------------- The g_phiphi control vector
+    // -------------------- The Raw F_2 data
+
+    Raw_F2_data_element = Spline_XML->FirstChildElement("Raw_F_2");
+    if (Raw_F2_data_element == nullptr) { std::cout << "Failed to parse the raw numerical F_2 potential data!" << "\n"; return ERROR; }
+
+    Data_length = std::stoi(Raw_F2_data_element->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.Raw_F_2_data = new double[Data_length];
+
+    for (int idx = 0; idx <= Data_length - 1; idx++) {
+
+        temp_param_var = Raw_F2_data_element->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the raw numerical F_2 potential data at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.Raw_F_2_data[idx] = std::stod(temp_param_var->GetText());
+
+    }
+    // -------------------- The W control vector
 
     W_control_vector_element = Spline_XML->FirstChildElement("W")->FirstChildElement("Control_vector");
     if (W_control_vector_element == nullptr) { std::cout << "Failed to parse the numerical W potential control vector node!" << "\n"; return ERROR; }
 
-    /* Parse the length of the controll vector and allocate an array to hold it. */
+    /* Parse the length of the control vector and allocate an array to hold it. */
     Control_vector_size = std::stoi(W_control_vector_element->Attribute("Component_number"));
     Metric_params->Numerical_metric_params.W_control_vector = new double[Control_vector_size];
 
@@ -1012,6 +1067,23 @@ Return_Values static parse_numerical_metric_XML(tinyxml2::XMLElement* Spline_XML
         if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the numerical W potential control vector component at idx {}! \n", idx); return ERROR; }
 
         Metric_params->Numerical_metric_params.W_control_vector[idx] = std::stod(temp_param_var->GetText());
+
+    }
+
+    // -------------------- The Raw W data
+
+    Raw_W_data_element = Spline_XML->FirstChildElement("Raw_W");
+    if (Raw_W_data_element == nullptr) { std::cout << "Failed to parse the raw numerical W potential data!" << "\n"; return ERROR; }
+
+    Data_length = std::stoi(Raw_W_data_element->Attribute("Component_number"));
+    Metric_params->Numerical_metric_params.Raw_W_data = new double[Data_length];
+
+    for (int idx = 0; idx <= Data_length - 1; idx++) {
+
+        temp_param_var = Raw_W_data_element->FirstChildElement(static_cast<const char*>(("Component_idx_" + std::to_string(idx)).c_str()));
+        if (temp_param_var == nullptr) { std::cout << std::format("Failed to parse the raw numerical W potential data at idx {}! \n", idx); return ERROR; }
+
+        Metric_params->Numerical_metric_params.Raw_W_data[idx] = std::stod(temp_param_var->GetText());
 
     }
 
@@ -1277,6 +1349,24 @@ Return_Values static parse_metric_parameters(tinyxml2::XMLElement* Metric_elemen
 
         }
         else { std::cout << "Unsuppored metric anzatz type! \n"; return ERROR; }
+
+        std::string Spline_type = Metric_element->FirstChildElement("Numerical_metric_spline_type")->GetText();
+
+        if (0 == strcmp(static_cast<const char*>(Spline_type.c_str()), "Custom_cubic")) {
+
+            Metric_params->Numerical_metric_params.e_Spline_type = Custom_cubic;
+
+        }
+        else if (0 == strcmp(static_cast<const char*>(Spline_type.c_str()), "GSL_cubic")) {
+
+            Metric_params->Numerical_metric_params.e_Spline_type = GSL_cubic;
+
+        }
+        else if (0 == strcmp(static_cast<const char*>(Spline_type.c_str()), "GSL_linear")) {
+
+            Metric_params->Numerical_metric_params.e_Spline_type = GSL_linear;
+        }
+        else { std::cout << "Unsuppored metric spline type! \n"; return ERROR; }
 
     }else if (0 == strcmp(static_cast<const char*>(Metric_type.c_str()), "Minkowski")) {
 

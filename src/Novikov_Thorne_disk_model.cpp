@@ -1,8 +1,22 @@
 #include "Novikov_Thorne_Model.h"
 
+static double NT_flux_integrand_wrapper(double r, void* params) {
+
+    /* This is a substitute for the actual state vector - only the radial coordinate is relevant - the functions that are called do not index anything else. */
+    double Local_State_Vector[3] = { 0, r, M_PI / 2 };
+
+    double Disk_Energy = static_cast<Novikov_Thorne_Model_class*>(params)->get_Disk_Energy(Local_State_Vector);
+    double Disk_Ang_Velocity = static_cast<Novikov_Thorne_Model_class*>(params)->get_Disk_Angular_Velocity(Local_State_Vector);
+    double Disk_Ang_Momentum = static_cast<Novikov_Thorne_Model_class*>(params)->get_Disk_Angular_Momentum(Local_State_Vector);
+    double Disk_dr_Ang_Momentum = static_cast<Novikov_Thorne_Model_class*>(params)->get_dr_Disk_Angular_Momentum(Local_State_Vector);
+
+    return (Disk_Energy - Disk_Ang_Velocity * Disk_Ang_Momentum) * Disk_dr_Ang_Momentum;
+
+}
+
 Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* p_Sim_Context) {
 
-    this->r_in  = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_in;
+    this->r_in = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_in;
     this->r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_out;
 
     this->flux_integral_accuracy = p_Sim_Context->p_Init_Conditions->Integrator_params.Simpson_accuracy;
@@ -12,16 +26,49 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
 
     this->e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_geometry;
 
-    this->current_flux_integration_step = 0;
-    this->max_flux_integration_teps = 19500;
+    this->Flux_integral_fucntion_struct.function = &NT_flux_integrand_wrapper;
+    this->Flux_integral_workspace = gsl_integration_cquad_workspace_alloc(20000);
 
     memset(this->Disk_veclovity_vector, 0, 4 * sizeof(double));
     memset(this->Source_polarization_vector, 0, 4 * sizeof(double));
     memcpy(this->Mag_field_geometry, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
 
+    const int Flux_integral_interpolat_size = 1500;
+
+    this->Flux_integral_spline_instance = gsl_spline_alloc(gsl_interp_cspline, Flux_integral_interpolat_size);
+    this->Flux_integral_accelerator = gsl_interp_accel_alloc();
+
+    this->Flux_integral = new double[Flux_integral_interpolat_size];
+    this->Flux_r_coords = new double[Flux_integral_interpolat_size];
+
+    for (int idx = 0; idx < Flux_integral_interpolat_size; idx++) {
+
+        this->Flux_r_coords[idx] = this->r_in + double(idx) / (Flux_integral_interpolat_size - 1) * this->r_out;
+
+        double Local_State_Vector[e_Full_state_size]{};
+        Local_State_Vector[e_r] = this->Flux_r_coords[idx];
+        Local_State_Vector[e_theta] = M_PI_2;
+
+        this->Flux_integral[idx] = this->get_Flux(Local_State_Vector);
+
+    }
+
+    gsl_spline_init(this->Flux_integral_spline_instance, this->Flux_r_coords, Flux_integral, Flux_integral_interpolat_size);
+
 }
 
-double Novikov_Thorne_Model_class::Keplerian_angular_velocity(const double* const Local_State_Vector) {
+Novikov_Thorne_Model_class::~Novikov_Thorne_Model_class(){
+
+    gsl_integration_cquad_workspace_free(this->Flux_integral_workspace);
+    gsl_spline_free(this->Flux_integral_spline_instance);
+    gsl_interp_accel_free(this->Flux_integral_accelerator);
+
+    free(this->Flux_integral);
+    free(this->Flux_r_coords);
+
+}
+
+double Novikov_Thorne_Model_class::get_Disk_Angular_Velocity(const double* const Local_State_Vector) const {
 
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_local_metric(Local_State_Vector);
 
@@ -37,14 +84,14 @@ double Novikov_Thorne_Model_class::Keplerian_angular_velocity(const double* cons
 
 }
 
-double Novikov_Thorne_Model_class::dr_Keplerian_angular_velocity(const double* const Local_State_Vector) {
+double Novikov_Thorne_Model_class::get_dr_Disk_Angular_Velocity(const double* const Local_State_Vector) const {
 
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_local_metric(Local_State_Vector);
     Metric_type s_d2r_Metric = this->p_Spacetime->get_d2r_local_metric(Local_State_Vector);
 
     double root = sqrt(s_dr_Metric.Metric[e_t][e_phi] * s_dr_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi]);
 
-    double Kepler = this->Keplerian_angular_velocity(Local_State_Vector);
+    double Kepler = this->get_Disk_Angular_Velocity(Local_State_Vector);
 
     double dr_Kepler = -Kepler / s_dr_Metric.Metric[e_phi][e_phi] * s_d2r_Metric.Metric[e_phi][e_phi] + (-s_d2r_Metric.Metric[e_t][e_phi]
                      + 1.0 / root / 2 * (2 * s_dr_Metric.Metric[e_t][e_phi] * s_d2r_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_d2r_Metric.Metric[e_phi][e_phi]
@@ -59,11 +106,11 @@ double Novikov_Thorne_Model_class::dr_Keplerian_angular_velocity(const double* c
     return dr_Kepler;
 }
 
-double* Novikov_Thorne_Model_class::get_disk_velocity_vector(const double* const Local_State_Vector) {
+double* Novikov_Thorne_Model_class::get_Disk_Velocity_Vector(const double* const Local_State_Vector) {
 
     Metric_type s_Metric_source = this->p_Spacetime->get_local_metric(Local_State_Vector);
 
-    double Angular_velocity = this->Keplerian_angular_velocity(Local_State_Vector);
+    double Angular_velocity = this->get_Disk_Angular_Velocity(Local_State_Vector);
     double u_t = 1 / sqrt(-s_Metric_source.Metric[e_t][e_t] - 2 * s_Metric_source.Metric[e_t][e_phi] * Angular_velocity - s_Metric_source.Metric[e_phi][e_phi] * Angular_velocity * Angular_velocity);
 
     if (isnan(u_t) || isinf(u_t) || isnan(Angular_velocity) || isinf(Angular_velocity)) {
@@ -81,11 +128,11 @@ double* Novikov_Thorne_Model_class::get_disk_velocity_vector(const double* const
 
 }
 
-double Novikov_Thorne_Model_class::disk_Energy(const double* const Local_State_Vector) {
+double Novikov_Thorne_Model_class::get_Disk_Energy(const double* const Local_State_Vector) const {
 
     Metric_type s_Metric_source = this->p_Spacetime->get_local_metric(Local_State_Vector);
 
-    double Kepler = this->Keplerian_angular_velocity(Local_State_Vector);
+    double Kepler = this->get_Disk_Angular_Velocity(Local_State_Vector);
 
     double root = sqrt(-s_Metric_source.Metric[e_t][e_t] - 2 * s_Metric_source.Metric[e_t][e_phi] * Kepler - s_Metric_source.Metric[e_phi][e_phi] * Kepler * Kepler);
     double Disk_Energy = -(s_Metric_source.Metric[e_t][e_t] + s_Metric_source.Metric[e_t][e_phi] * Kepler) / root;
@@ -100,11 +147,11 @@ double Novikov_Thorne_Model_class::disk_Energy(const double* const Local_State_V
 
 }
 
-double Novikov_Thorne_Model_class::disk_Angular_Momentum(const double* const Local_State_Vector) {
+double Novikov_Thorne_Model_class::get_Disk_Angular_Momentum(const double* const Local_State_Vector) const {
 
     Metric_type s_Metric_source = this->p_Spacetime->get_local_metric(Local_State_Vector);
 
-    double Kepler = this->Keplerian_angular_velocity(Local_State_Vector);
+    double Kepler = this->get_Disk_Angular_Velocity(Local_State_Vector);
 
     double root = sqrt(-s_Metric_source.Metric[e_t][e_t] - 2 * s_Metric_source.Metric[e_t][e_phi] * Kepler - s_Metric_source.Metric[e_phi][e_phi] * Kepler * Kepler);
     double Disk_angular_momentum = (s_Metric_source.Metric[e_phi][e_phi] * Kepler + s_Metric_source.Metric[e_t][e_phi]) / root;
@@ -119,117 +166,64 @@ double Novikov_Thorne_Model_class::disk_Angular_Momentum(const double* const Loc
 
 }
 
-double Novikov_Thorne_Model_class::Flux_integrand(const double* const Local_State_Vector) {
+double Novikov_Thorne_Model_class::get_dr_Disk_Angular_Momentum(const double* const Local_State_Vector) const {
 
     Metric_type s_Metric = this->p_Spacetime->get_local_metric(Local_State_Vector);
     Metric_type s_dr_Metric = this->p_Spacetime->get_dr_local_metric(Local_State_Vector);
 
-    double Kepler = this->Keplerian_angular_velocity(Local_State_Vector);
-    double dr_Kepler = this->dr_Keplerian_angular_velocity(Local_State_Vector);
+    double Disk_Ang_Velocity = this->get_Disk_Angular_Velocity(Local_State_Vector);
+    double Disk_dr_Ang_Velocity = this->get_dr_Disk_Angular_Velocity(Local_State_Vector);
+    double Disk_Ang_Momentum = this->get_Disk_Angular_Momentum(Local_State_Vector);
 
-    double root = sqrt(-s_Metric.Metric[e_t][e_t] - 2 * s_Metric.Metric[e_t][e_phi] * Kepler - s_Metric.Metric[e_phi][e_phi] * Kepler * Kepler);
-    double dr_root = (-s_dr_Metric.Metric[e_t][e_t] - 2 * (s_dr_Metric.Metric[e_t][e_phi] * Kepler + s_Metric.Metric[e_t][e_phi] * dr_Kepler)
-        - s_dr_Metric.Metric[e_phi][e_phi] * Kepler * Kepler - 2 * s_Metric.Metric[e_phi][e_phi] * Kepler * dr_Kepler);
+    double root = sqrt(-s_Metric.Metric[e_t][e_t] - 2 * s_Metric.Metric[e_t][e_phi] * Disk_Ang_Velocity - s_Metric.Metric[e_phi][e_phi] * Disk_Ang_Velocity * Disk_Ang_Velocity);
+    double dr_root = (-s_dr_Metric.Metric[e_t][e_t] - 2 * (s_dr_Metric.Metric[e_t][e_phi] * Disk_Ang_Velocity + s_Metric.Metric[e_t][e_phi] * Disk_dr_Ang_Velocity)
+                     - s_dr_Metric.Metric[e_phi][e_phi] * Disk_Ang_Velocity * Disk_Ang_Velocity - 2 * s_Metric.Metric[e_phi][e_phi] * Disk_Ang_Velocity * Disk_dr_Ang_Velocity);
 
-    double E = this->disk_Energy(Local_State_Vector);
-    double L = this->disk_Angular_Momentum(Local_State_Vector);
+    double Disk_dr_angular_momentum = (s_dr_Metric.Metric[e_phi][e_phi] * Disk_Ang_Velocity + s_Metric.Metric[e_phi][e_phi] * Disk_dr_Ang_Velocity + s_dr_Metric.Metric[e_t][e_phi]) / root - Disk_Ang_Momentum / root / root / 2 * dr_root;
 
-    double dr_L = (s_dr_Metric.Metric[e_phi][e_phi] * Kepler + s_Metric.Metric[e_phi][e_phi] * dr_Kepler + s_dr_Metric.Metric[e_t][e_phi]) / root - L / root / root / 2 * dr_root;
 
-    double Flux_integrand = (E - Kepler * L) * dr_L;
+    if (isnan(Disk_Ang_Momentum) || isinf(Disk_Ang_Momentum) || isnan(Disk_Ang_Momentum) || isinf(Disk_Ang_Momentum)) {
 
-    if (isnan(Flux_integrand) || isinf(Flux_integrand) || isnan(Flux_integrand) || isinf(Flux_integrand)) {
-
-        throw std::runtime_error(std::format("Invalid Novikov-Thorne disk flux integrand at r = {}: Integrand = {}", Local_State_Vector[e_r], Flux_integrand));
+        throw std::runtime_error(std::format("Invalid Novikov-Thorne disk angular momentum derivative at r = {}: dr_L_z = {}", Local_State_Vector[e_r], Disk_Ang_Momentum));
 
     }
 
-    return Flux_integrand;
+    return Disk_dr_angular_momentum;
 
 }
 
-double Novikov_Thorne_Model_class::solve_Flux_integral(double r_in, const double* const Local_State_Vector, double tolerance) {
+double Novikov_Thorne_Model_class::get_Interpolated_Flux(const double* const Local_State_Vector) const {
 
-    if (this->current_flux_integration_step > this->max_flux_integration_teps) {
-
-        throw std::runtime_error("Novikov-Thorne flux integral not converging!");
-
-    }
-
-    this->current_flux_integration_step += 1;
-
-    const double& lower_bound = r_in;
-    const double& upper_bound = Local_State_Vector[e_r];
-
-    double mid_point          = (lower_bound + upper_bound) / 2;
-    double left_of_mid_point  = (lower_bound + mid_point) / 2;
-    double right_of_mid_point = (mid_point + upper_bound) / 2;
-
-    double lower_bound_Local_State_Vector[4]{};
-    double mid_point_Local_State_Vector[4]{};
-    double left_of_mid_point_Local_State_Vector[4]{};
-    double right_of_mid_point_Local_State_Vector[4]{};
-
-    memcpy(lower_bound_Local_State_Vector, Local_State_Vector, 4 * sizeof(double));
-    memcpy(mid_point_Local_State_Vector, Local_State_Vector, 4 * sizeof(double));
-    memcpy(left_of_mid_point_Local_State_Vector, Local_State_Vector, 4 * sizeof(double));
-    memcpy(right_of_mid_point_Local_State_Vector, Local_State_Vector, 4 * sizeof(double));
-
-    lower_bound_Local_State_Vector[e_r] = r_in;
-    mid_point_Local_State_Vector[e_r] = mid_point;
-    left_of_mid_point_Local_State_Vector[e_r] = left_of_mid_point;
-    right_of_mid_point_Local_State_Vector[e_r] = right_of_mid_point;
-
-    double F_lower_bound = this->Flux_integrand(lower_bound_Local_State_Vector);
-    double F_mid_point   = this->Flux_integrand(mid_point_Local_State_Vector);
-    double F_upper_bound = this->Flux_integrand(Local_State_Vector);
-
-    double F_left_mid = this->Flux_integrand(left_of_mid_point_Local_State_Vector);
-    double F_right_mid = this->Flux_integrand(right_of_mid_point_Local_State_Vector);
-
-    double S_left = (mid_point - lower_bound) / 6 * (F_lower_bound + 4 * F_left_mid + F_mid_point);
-    double S_right = (upper_bound - mid_point) / 6 * (F_mid_point + 4 * F_right_mid + F_upper_bound);
-
-    double S_2 = S_left + S_right;
-    double S_1 = (upper_bound - lower_bound) / 6 * (F_lower_bound + 4 * F_mid_point + F_upper_bound);
-
-    double integral;
-
-    if (fabs(S_2 - S_1) < 15 * tolerance) {
-
-        integral = S_2 + (S_2 - S_1) / 15;
-
-
-    }
-    else {
-
-        double L_value = this->solve_Flux_integral(lower_bound, mid_point_Local_State_Vector, tolerance / 2);
-        double R_value = this->solve_Flux_integral(mid_point, Local_State_Vector, tolerance / 2);
-
-        integral = L_value + R_value;
-
-    }
-
-    return integral;
+    return gsl_spline_eval(this->Flux_integral_spline_instance, Local_State_Vector[e_r], this->Flux_integral_accelerator);
 
 }
 
-double Novikov_Thorne_Model_class::get_flux(const double* const Local_State_Vector) {
+double Novikov_Thorne_Model_class::get_Flux(double* Local_State_Vector) {
 
-    Metric_type s_Metric = this->p_Spacetime->get_local_metric(Local_State_Vector);
+    double Equatorial_metric_det = get_eq_induced_metric_det(this->p_Spacetime->get_local_metric(Local_State_Vector).Metric);
 
-    double metric_det = get_eq_induced_metric_det(s_Metric.Metric);
-    double E_disk = disk_Energy(Local_State_Vector);
-    double L_disk = disk_Angular_Momentum(Local_State_Vector);
+    double Disk_Energy = this->get_Disk_Energy(Local_State_Vector);
+    double Disk_Ang_Momentum = this->get_Disk_Angular_Momentum(Local_State_Vector);
 
-    double Kepler = Keplerian_angular_velocity(Local_State_Vector);
-    double dr_Kepler = dr_Keplerian_angular_velocity(Local_State_Vector);
+    double Disk_Ang_Velocity = this->get_Disk_Angular_Velocity(Local_State_Vector);
+    double Disk_dr_Ang_Velocity = this->get_dr_Disk_Angular_Velocity(Local_State_Vector);
 
-    double Flux_coeff = -dr_Kepler / ((E_disk - Kepler * L_disk) * (E_disk - Kepler * L_disk)) / (4 * M_PI * sqrt(-metric_det));
+    double Flux_coeff = -Disk_dr_Ang_Velocity / ((Disk_Energy - Disk_Ang_Velocity * Disk_Ang_Momentum) * (Disk_Energy - Disk_Ang_Velocity * Disk_Ang_Momentum)) / (4 * M_PI * sqrt(-Equatorial_metric_det));
 
-    double Flux_integral = solve_Flux_integral(this->r_in, Local_State_Vector, this->flux_integral_accuracy);
+    double Flux_integral{};
+    double Error_estimate{};
 
-    this->current_flux_integration_step = 0;
+    this->Flux_integral_fucntion_struct.params = static_cast<void*>(this);
+       
+    gsl_integration_cquad(&this->Flux_integral_fucntion_struct,
+                           this->r_in, 
+                           Local_State_Vector[e_r], 
+                           0,
+                           this->flux_integral_accuracy,
+                           this->Flux_integral_workspace,
+                          &Flux_integral,
+                          &Error_estimate,
+                          nullptr);
 
     return Flux_coeff * Flux_integral;
 
@@ -249,7 +243,7 @@ double* Novikov_Thorne_Model_class::Construct_coord_polarization_vector(const do
     Contravariant_coord_to_ZAMO(&s_Metric, Photon_coordinate_momentum_contravariant, Photon_ZAMO_momentum);
 
     double Disk_ZAMO_velocity[4]{};
-    Contravariant_coord_to_ZAMO(&s_Metric, this->get_disk_velocity_vector(State_at_event_local), Disk_ZAMO_velocity);
+    Contravariant_coord_to_ZAMO(&s_Metric, this->get_Disk_Velocity_Vector(State_at_event_local), Disk_ZAMO_velocity);
 
     double Boost_matrix[4][4]{};  
     get_Lorentz_boost_matrix(Boost_matrix, Disk_ZAMO_velocity, false);

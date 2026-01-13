@@ -8,6 +8,89 @@ from numpy.typing import NDArray
 
 class Simulation_Parser():
 
+    def __parse_sim_mode_0(self, file) -> None:
+
+        X_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[0])
+        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[2])
+        
+        Array_size = X_resolution * Y_resolution    
+    
+        self.X_coords: NDArray[float64] = zeros(Array_size)
+        self.Y_coords: NDArray[float64] = zeros(Array_size)
+        self.I_Intensity: NDArray[float64] = zeros(Array_size)
+        self.Q_Intensity: NDArray[float64] = zeros(Array_size)
+        self.U_Intensity: NDArray[float64] = zeros(Array_size)
+        self.V_Intensity: NDArray[float64] = zeros(Array_size)
+        
+        self.Final_t_coord: NDArray[float64] = zeros(Array_size)
+        
+        self.Disk_redshift: NDArray[float64] = zeros(Array_size)
+        self.Disk_flux: NDArray[float64] = zeros(Array_size)
+        
+        self.Source_t: NDArray[float64] = zeros(Array_size)
+        self.Source_r: NDArray[float64] = zeros(Array_size)
+        self.Source_phi: NDArray[float64] = zeros(Array_size)
+        self.Source_p_r: NDArray[float64] = zeros(Array_size)
+        self.Source_p_theta: NDArray[float64] = zeros(Array_size)
+        self.Source_p_phi: NDArray[float64] = zeros(Array_size)
+        
+        self.Polarization_vec_X: NDArray[float64] = zeros(Array_size)
+        self.Polarization_vec_Y: NDArray[float64] = zeros(Array_size)
+        
+        self.Celestial_theta: NDArray[float64] = zeros(Array_size)
+        self.Celestial_phi: NDArray[float64] = zeros(Array_size)
+        
+        Data_parser = DictReader(file, delimiter = ",")
+        index = 0
+        
+        for row in Data_parser:
+            
+            try:
+                self.X_coords[index] = float(row["Image X Coord [M]"])
+                self.Y_coords[index] = float(row["Image Y Coord [M]"])
+                if ("Novikov-Thorne" == self.Simulation_metadata["Active disk model"]):
+                    
+                    self.Disk_redshift[index] = float(row["Disk Redshift [-]"])
+                    self.Disk_flux[index] = float(row["Disk Flux [M_dot/M^2]"])
+                    self.Source_t[index] = float(row["Source t Coord [M]"])
+                    self.Source_r[index] = float(row["Source r Coord [M]"])
+                    self.Source_phi[index] = float(row["Source phi Coord [Rad]"])
+                    self.Source_p_r[index] = float(row["Radial Momentum (covariant)"])
+                    self.Source_p_theta[index] = float(row["Theta Momentum (covariant)"])
+                    self.Source_p_phi[index]  = float(row["Phi Momentum (covariant)"])
+                    self.Polarization_vec_X[index] = float(row["Polarization vector X [-]"])
+                    self.Polarization_vec_Y[index] = float(row["Polarization vector Y [-]"])
+                    
+                    self.Celestial_theta[index] = float(row["Celestial Sphere Crossing Theta [Rad]"])       
+                    self.Celestial_phi[index]  = float(row["Celestial Sphere Crossing Phi [Rad]"])
+                    
+                else:
+                    self.I_Intensity[index]  = float(row["Synchotron Intensity I [Jy/sRad]"])
+                    self.Q_Intensity[index]  = float(row["Synchotron Intensity Q [Jy/sRad]"])
+                    self.U_Intensity[index]  = float(row["Synchotron Intensity U [Jy/sRad]"])
+                    self.V_Intensity[index]  = float(row["Synchotron Intensity V [Jy/sRad]"])       
+                    
+                    # self.Final_t_coord[index] = float(row["Final t Coordinate [M]"])  
+                    
+                    self.Celestial_theta[index] = float(row["Celestial Sphere Crossing Theta [Rad]"])       
+                    self.Celestial_phi[index]  = float(row["Celestial Sphere Crossing Phi [Rad]"])
+                    
+                index += 1
+            except:
+                break
+        
+    def __parse_debug_sim_mode(self, file) -> None:
+        
+        self.NT_Flux_r_coords: list = []
+        self.NT_Flux: list = []
+        
+        Data_parser = DictReader(file, delimiter = ",")
+        
+        for row in Data_parser:
+
+            self.NT_Flux_r_coords.append(float(row["NT Flux r coord [M]"]))
+            self.NT_Flux.append(float(row["NT Flux [M_dot/M^2]"]))     
+                            
     def __init__(self, File_name: str) -> None:
 
         self.Simulation_metadata: dict = {}
@@ -32,79 +115,7 @@ class Simulation_Parser():
 
             if (int(self.Simulation_metadata["Active Simulation Mode"]) == 0):
      
-                X_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[0])
-                Y_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[2])
-                
-                Array_size = X_resolution * Y_resolution    
-            
-                self.X_coords: NDArray[float64] = zeros(Array_size)
-                self.Y_coords: NDArray[float64] = zeros(Array_size)
-                self.I_Intensity: NDArray[float64] = zeros(Array_size)
-                self.Q_Intensity: NDArray[float64] = zeros(Array_size)
-                self.U_Intensity: NDArray[float64] = zeros(Array_size)
-                self.V_Intensity: NDArray[float64] = zeros(Array_size)
-
-                self.Final_t_coord: NDArray[float64] = zeros(Array_size)
-
-                self.Disk_redshift: NDArray[float64] = zeros(Array_size)
-                self.Disk_flux: NDArray[float64] = zeros(Array_size)
-                self.Source_t: NDArray[float64] = zeros(Array_size)
-                self.Source_r: NDArray[float64] = zeros(Array_size)
-                self.Source_phi: NDArray[float64] = zeros(Array_size)
-                self.Source_p_r: NDArray[float64] = zeros(Array_size)
-                self.Source_p_theta: NDArray[float64] = zeros(Array_size)
-                self.Source_p_phi: NDArray[float64] = zeros(Array_size)
-
-                self.Polarization_vec_X: NDArray[float64] = zeros(Array_size)
-                self.Polarization_vec_Y: NDArray[float64] = zeros(Array_size)
-
-                self.Celestial_theta: NDArray[float64] = zeros(Array_size)
-                self.Celestial_phi: NDArray[float64] = zeros(Array_size)
-
-                Data_parser = DictReader(file, delimiter = ",")
-                index = 0
-                
-                for row in Data_parser:
-
-                    try:
-
-                        self.X_coords[index] = float(row["Image X Coord [M]"])
-                        self.Y_coords[index] = float(row["Image Y Coord [M]"])
-
-                        if ("Novikov-Thorne" == self.Simulation_metadata["Active disk model"]):
-                            
-                            self.Disk_redshift[index] = float(row["Disk Redshift [-]"])
-                            self.Disk_flux[index] = float(row["Disk Flux [M_dot/M^2]"])
-
-                            self.Source_t[index] = float(row["Source t Coord [M]"])
-                            self.Source_r[index] = float(row["Source r Coord [M]"])
-                            self.Source_phi[index] = float(row["Source phi Coord [Rad]"])
-                            self.Source_p_r[index] = float(row["Radial Momentum (covariant)"])
-                            self.Source_p_theta[index] = float(row["Theta Momentum (covariant)"])
-                            self.Source_p_phi[index]  = float(row["Phi Momentum (covariant)"])
-
-                            self.Polarization_vec_X[index] = float(row["Polarization vector X [-]"])
-                            self.Polarization_vec_Y[index] = float(row["Polarization vector Y [-]"])
-                            
-                            self.Celestial_theta[index] = float(row["Celestial Sphere Crossing Theta [Rad]"])       
-                            self.Celestial_phi[index]  = float(row["Celestial Sphere Crossing Phi [Rad]"])
-                            
-                        else:
-
-                            self.I_Intensity[index]  = float(row["Synchotron Intensity I [Jy/sRad]"])
-                            self.Q_Intensity[index]  = float(row["Synchotron Intensity Q [Jy/sRad]"])
-                            self.U_Intensity[index]  = float(row["Synchotron Intensity U [Jy/sRad]"])
-                            self.V_Intensity[index]  = float(row["Synchotron Intensity V [Jy/sRad]"])       
-                            
-                            # self.Final_t_coord[index] = float(row["Final t Coordinate [M]"])  
-                            
-                            self.Celestial_theta[index] = float(row["Celestial Sphere Crossing Theta [Rad]"])       
-                            self.Celestial_phi[index]  = float(row["Celestial Sphere Crossing Phi [Rad]"])
-                            
-                        index += 1
-
-                    except:
-                        break
+                self.__parse_sim_mode_0(file = file)
         
             if (int(self.Simulation_metadata["Active Simulation Mode"]) == 2):
 
@@ -156,6 +167,9 @@ class Simulation_Parser():
                     except:
                         self.Rejected_steps_log.append(int(float(row["Number of rejected steps [-]"])))   
                 
+            if (int(self.Simulation_metadata["Active Simulation Mode"]) == 3):
+                self.__parse_debug_sim_mode(file = file)  
+            
     def get_total_flux(self, obs_pos: float, unit: str = "Jy") -> float:
         
         """ The observation window limits are given in geometric length units, 
@@ -234,11 +248,11 @@ class Simulation_Parser():
         V_Intensity = self.V_Intensity.reshape(Y_resolution, X_resolution)
         V_Intensity = flip(V_Intensity, axis =  0)
 
-        Disk_flux   = self.Disk_flux.reshape(Y_resolution, X_resolution)
-        Disk_flux     = flip(Disk_flux, axis =  0)
+        Disk_flux = self.Disk_flux.reshape(Y_resolution, X_resolution)
+        Disk_flux = flip(Disk_flux, axis =  0)
 
         Disk_redshift = self.Disk_redshift.reshape(Y_resolution, X_resolution)
-        Disk_redshift   = flip(Disk_redshift, axis =  0)
+        Disk_redshift= flip(Disk_redshift, axis =  0)
         
         Celestial_theta = self.Celestial_theta.reshape(Y_resolution, X_resolution)
         Celestial_theta = flip(Celestial_theta, axis =  0)

@@ -54,15 +54,15 @@ class Surface_Cubic_B_spline():
                            
                 a_coeff_Y, _, _, _, _, f_coeff_Y = self.get_delta_coeffs(self.y_grid_steps, y_idx + 3)
                 
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 0] = a_coeff_Y * a_coeff_X 
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 1] = a_coeff_Y * (1 - f_coeff_X - a_coeff_X)
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 2] = a_coeff_Y * f_coeff_X
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 0] = (1 - a_coeff_Y - f_coeff_Y) * a_coeff_X
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 1] = (1 - a_coeff_Y - f_coeff_Y) * (1 - f_coeff_X - a_coeff_X)
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 2] = (1 - a_coeff_Y - f_coeff_Y) * f_coeff_X
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 0] = f_coeff_Y * a_coeff_X
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 1] = f_coeff_Y * (1 - a_coeff_X - f_coeff_X)
-                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 2] = f_coeff_Y * f_coeff_X
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 0] = a_coeff_X * a_coeff_Y 
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 1] = a_coeff_X * (1 - f_coeff_Y - a_coeff_Y)
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 0) * (Y_patch_number + 2) + 2] = a_coeff_X * f_coeff_Y
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 0] = (1 - a_coeff_X - f_coeff_X) * a_coeff_Y
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 1] = (1 - a_coeff_X - f_coeff_X) * (1 - f_coeff_Y - a_coeff_Y)
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 1) * (Y_patch_number + 2) + 2] = (1 - a_coeff_X - f_coeff_X) * f_coeff_Y
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 0] = f_coeff_X * a_coeff_Y
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 1] = f_coeff_X * (1 - f_coeff_Y - a_coeff_Y)
+                Mapping_matrix[y_idx + x_idx * Y_patch_number, y_idx + (x_idx + 2) * (Y_patch_number + 2) + 2] = f_coeff_X * f_coeff_Y
 
         self.specify_free_end_conditions(Mapping_matrix = Mapping_matrix)
        
@@ -85,7 +85,7 @@ class Surface_Cubic_B_spline():
         
         e_coeff = Grid_steps[idx] * Grid_steps[idx - 1] / ((Grid_steps[idx - 1] + Grid_steps[idx] + Grid_steps[idx + 1]) * (Grid_steps[idx - 1] + Grid_steps[idx]))
         
-        f_coeff =  Grid_steps[idx - 1]**2 / ((Grid_steps[idx - 1] + Grid_steps[idx] + Grid_steps[idx + 1]) * (Grid_steps[idx - 1] + Grid_steps[idx]))
+        f_coeff = Grid_steps[idx - 1]**2 / ((Grid_steps[idx - 1] + Grid_steps[idx] + Grid_steps[idx + 1]) * (Grid_steps[idx - 1] + Grid_steps[idx]))
    
         return a_coeff, b_coeff, c_coeff, d_coeff, e_coeff, f_coeff
     
@@ -283,8 +283,7 @@ class Surface_Cubic_B_spline():
             a_coeff_V, b_coeff_V, c_coeff_V, d_coeff_V, e_coeff_V, f_coeff_V = self.get_delta_coeffs(self.y_grid_steps, V_idx + 3)
             
             for U_idx in range(0, self.X_patch_number - 1):
-                
-                
+  
                 a_coeff_U, b_coeff_U, c_coeff_U, d_coeff_U, e_coeff_U, f_coeff_U = self.get_delta_coeffs(self.x_grid_steps, U_idx + 3)
                 
                 """ === Compute the basis polynomials vectors === """

@@ -11,8 +11,11 @@ File_manager_class::File_manager_class(Initial_conditions_type *p_Initial_Condit
 
     this->p_Initial_Conditions  = p_Initial_Conditions;
     this->Truncate_files        = p_Initial_Conditions->File_manager_params.Truncate_files;
+
     this->sim_mode_2_ray_number = 0;
-    this->Image_full_path = "";
+
+    this->Output_File_Path = "";
+    this->Output_File = new std::ofstream();
 }
 
 void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[]) {
@@ -557,93 +560,96 @@ void File_manager_class::write_integrator_metadata(std::ofstream* Output_file) {
 
 void File_manager_class::write_simulation_metadata() {
 
-    std::ofstream* Output_file;
-    int Output_file_number = e_order_number;
+    *this->Output_File << "============================================================ SIMULATION METADATA ============================================================" << "\n";
 
-    switch (this->p_Initial_Conditions->Simulation_mode){
-
-    case Make_geodesic_log:
-
-        Output_file = &this->Log_Output_File;
-        Output_file_number = 1;
-
-        break;
-
-    default:
-
-        Output_file = &this->Image_Output_File;
-
-        break;
-    }
-
-    *Output_file << "============================================================ SIMULATION METADATA ============================================================" << "\n";
-
-    *Output_file << "Active Simulation Mode: " << static_cast<int>(p_Initial_Conditions->Simulation_mode) << '\n';  
+    *this->Output_File << "Active Simulation Mode: " << static_cast<int>(p_Initial_Conditions->Simulation_mode) << '\n';  
     
-    this->write_metric_metadata(Output_file);
-    this->write_observer_metadata(Output_file); 
-    this->write_accretion_disk_metadata(Output_file);
-    this->write_hotspot_metadata(Output_file);
-    this->write_emission_models_metadata(Output_file);
-    this->write_integrator_metadata(Output_file);
+    this->write_metric_metadata(this->Output_File);
+    this->write_observer_metadata(this->Output_File); 
+    this->write_accretion_disk_metadata(this->Output_File);
+    this->write_hotspot_metadata(this->Output_File);
+    this->write_emission_models_metadata(this->Output_File);
+    this->write_integrator_metadata(this->Output_File);
 
-    *Output_file << "============================================================ Simulation Results ============================================================"
-                                    << "\n";
+    *this->Output_File << "============================================================ Simulation Results ============================================================"
+                       << "\n";
 
 
     if (p_Initial_Conditions->Simulation_mode != Make_geodesic_log) {
 
-        *Output_file << "Image X Coord [M],"
-                     << "Image Y Coord [M],";
+        *this->Output_File << "Image X Coord [M],"
+                           << "Image Y Coord [M],";
 
         if (e_Novikov_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model){
 
-           *Output_file << "Synchotron Intensity I [Jy/sRad],"
-                        << "Synchotron Intensity Q [Jy/sRad],"
-                        << "Synchotron Intensity U [Jy/sRad],"
-                        << "Synchotron Intensity V [Jy/sRad],"
-                        << "Final t Coordinate [M],";
+           *this->Output_File << "Synchotron Intensity I [Jy/sRad],"
+                              << "Synchotron Intensity Q [Jy/sRad],"
+                              << "Synchotron Intensity U [Jy/sRad],"
+                              << "Synchotron Intensity V [Jy/sRad],"
+                              << "Final t Coordinate [M],";
         }
         else {
 
-            *Output_file << "Disk Redshift [-],"
-                         << "Disk Flux [M_dot/M^2]," 
-                << "Polarization vector X [-],"
-                << "Polarization vector Y [-],"
-                << "Source t Coord [M],"
-                << "Source r Coord [M],"
-                << "Source phi Coord [Rad],"
-                << "Radial Momentum (covariant),"
-                << "Theta Momentum (covariant),"
-                << "Phi Momentum (covariant),";
+            *this->Output_File << "Disk Redshift [-],"
+                               << "Disk Flux [M_dot/M^2]," 
+                               << "Polarization vector X [-],"
+                               << "Polarization vector Y [-],"
+                               << "Source t Coord [M],"
+                               << "Source r Coord [M],"
+                               << "Source phi Coord [Rad],"
+                               << "Radial Momentum (covariant),"
+                               << "Theta Momentum (covariant),"
+                               << "Phi Momentum (covariant),";
         }
 
-        *Output_file << "Celestial Sphere Crossing Theta [Rad],"
-                     << "Celestial Sphere Crossing Phi [Rad],";
+        *this->Output_File << "Celestial Sphere Crossing Theta [Rad],"
+                           << "Celestial Sphere Crossing Phi [Rad],";
 
     } else {
 
-       *Output_file << "t_coord [M],"
-                    << "r_coord [M],"
-                    << "theta_coord [rad],"
-                    << "phi_coord [rad],"
-                    << "p_t [-],"
-                    << "p_r [-],"
-                    << "p_theta [rad/M],"
-                    << "p_phi [rad/M],"
-                    << "Integration Step [M],"
-                    << "Affine Parameter [M],"
-                    << "Synchotron Intensity I [Jy/sRad],"
-                    << "Synchotron Intensity Q [Jy/sRad],"
-                    << "Synchotron Intensity U [Jy/sRad],"
-                    << "Synchotron Intensity V [Jy/sRad],"
-                    << "State Error [-],"
-                    << "Number of rejected steps [-]";
+       *this->Output_File << "t_coord [M],"
+                          << "r_coord [M],"
+                          << "theta_coord [rad],"
+                          << "phi_coord [rad],"
+                          << "p_t [-],"
+                          << "p_r [-],"
+                          << "p_theta [rad/M],"
+                          << "p_phi [rad/M],"
+                          << "Integration Step [M],"
+                          << "Affine Parameter [M],"
+                          << "Synchotron Intensity I [Jy/sRad],"
+                          << "Synchotron Intensity Q [Jy/sRad],"
+                          << "Synchotron Intensity U [Jy/sRad],"
+                          << "Synchotron Intensity V [Jy/sRad],"
+                          << "State Error [-],"
+                          << "Number of rejected steps [-]";
 
     }
 
-    *Output_file << '\n';
+    *this->Output_File << '\n';
     
+}
+
+void File_manager_class::write_debug_metadata() {
+
+    *this->Output_File << "============================================================ SIMULATION METADATA ============================================================" << "\n";
+
+    *this->Output_File << "Active Simulation Mode: " << static_cast<int>(p_Initial_Conditions->Simulation_mode) << '\n';
+
+    this->write_metric_metadata(this->Output_File);
+    this->write_observer_metadata(this->Output_File);
+    this->write_accretion_disk_metadata(this->Output_File);
+    this->write_hotspot_metadata(this->Output_File);
+    this->write_emission_models_metadata(this->Output_File);
+    this->write_integrator_metadata(this->Output_File);
+
+    *this->Output_File << "============================================================ Simulation Results ============================================================"
+                       << "\n";
+
+    *this->Output_File << "NT Flux r coord [M],"
+                       << "NT Flux [M_dot/M^2]"
+                       << "\n";
+
 }
 
 void File_manager_class::create_output_file() {
@@ -675,11 +681,8 @@ void File_manager_class::create_output_file() {
     // Init the std::path variables where we will store the names of the output files for sim mode 3
     std::filesystem::path Photon_log_name;
 
-    // Init the std::path variables of the full file paths for sim modes 1 and 2
-    std::filesystem::path Image_full_path{};
-
-    // Init the std::path variables of the full file paths for sim mode 3
-    std::filesystem::path Photon_log_full_path{};
+    // Init the std::path variables where we will store the names of the output file the debug sim mode
+    std::filesystem::path Debug_file_name = "Debug_log";
 
     // Specify the output file extention
     std::filesystem::path file_extention(".txt");
@@ -709,11 +712,12 @@ void File_manager_class::create_output_file() {
         }
 
         Photon_log_name.replace_extension(file_extention);
-        Photon_log_full_path = dir / Photon_log_name;
+        this->Output_File_Path = dir / Photon_log_name;
 
-        this->Log_Output_File.open(Photon_log_full_path, open_type);
+        this->Output_File->open(this->Output_File_Path, open_type);
 
-    } else {
+    }
+    else if (this->p_Initial_Conditions->Simulation_mode == Image_generation || this->p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
 
         if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
@@ -727,26 +731,39 @@ void File_manager_class::create_output_file() {
         }
 
         Image_file_name.replace_extension(file_extention);
-        this->Image_full_path = dir / Image_file_name;
+        this->Output_File_Path = dir / Image_file_name;
 
-        this->Image_Output_File.open(this->Image_full_path, open_type);
+        this->Output_File->open(this->Output_File_Path, open_type);
+
+    }
+    else {
+
+        this->Output_File_Path = dir / Debug_file_name.replace_extension(file_extention);
+        this->Output_File->open(this->Output_File_Path, open_type);
 
     }
 
-    if (this->Truncate_files) {
+    if (this->Truncate_files && !(this->p_Initial_Conditions->Simulation_mode == Debug_mode)) {
 
-        // If we are truncating the file, we should write the metadata to it
+        // If we are truncating the file (and we are not in the debug sim mode), we should write the metadata to it.
+        // The debug mode has its own header type
         this->write_simulation_metadata();
 
     }
 
-    this->Image_Output_File.close();
+    if (this->p_Initial_Conditions->Simulation_mode == Debug_mode) {
+
+        this->write_debug_metadata();
+
+    }
+
+    this->Output_File->close();
 
 }
 
 void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
-    this->Image_Output_File << s_Ray_results->Image_Coords[e_x]
+    *this->Output_File << s_Ray_results->Image_Coords[e_x]
                             << ","
                             << s_Ray_results->Image_Coords[e_y]
                             << "," 
@@ -754,7 +771,7 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
 
     if (e_Novikov_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
-        this->Image_Output_File << s_Ray_results->Redshift_NT
+        *this->Output_File << s_Ray_results->Redshift_NT
                                 << ","
                                 << s_Ray_results->Flux_NT
                                 << ","
@@ -777,7 +794,7 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
     }
     else {
 
-        this->Image_Output_File << s_Ray_results->Intensity[I] * CGS_TO_JANSKY
+        *this->Output_File << s_Ray_results->Intensity[I] * CGS_TO_JANSKY
                                 << ","
                                 << s_Ray_results->Intensity[Q] * CGS_TO_JANSKY
                                 << ","
@@ -789,54 +806,60 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
                                 << ",";
     }
 
-    this->Image_Output_File << s_Ray_results->Celestial_sphere_crossing_coords[e_theta]
+    *this->Output_File << s_Ray_results->Celestial_sphere_crossing_coords[e_theta]
                             << ","
                             << s_Ray_results->Celestial_sphere_crossing_coords[e_phi];
 
-    this->Image_Output_File << '\n';
+    *this->Output_File << '\n';
+
+}
+
+void File_manager_class::write_debug_data_to_file(Debug_mode_struct* Debug_results) {
+
+    for (int idx = 0; idx < Debug_results->Array_length; idx++){
+
+        *this->Output_File << Debug_results->NT_Flux_r_coord_array[idx]
+                           << ","
+                           << Debug_results->NT_Flux_integral_array[idx]
+                           << '\n';
+    }
 
 }
 
 void File_manager_class::log_photon_path(Results_type* s_Ray_results) {
 
-    this->Log_Output_File << std::setprecision(15);
+    *this->Output_File << std::setprecision(15);
 
     for (int log_index = 0; log_index <= s_Ray_results->Ray_log_struct.Log_length; log_index++) {
 
         for (int state_index = 0; state_index < e_Full_state_size; state_index++) {
 
-            this->Log_Output_File << s_Ray_results->Ray_log_struct.Ray_path_log_global[state_index + log_index * e_Full_state_size] << ",";
+            *this->Output_File << s_Ray_results->Ray_log_struct.Ray_path_log_global[state_index + log_index * e_Full_state_size] << ",";
           
         }
 
         for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
 
-            this->Log_Output_File  << s_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][0 + 2 * log_index] << ",";
+            *this->Output_File  << s_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][0 + 2 * log_index] << ",";
 
         }
 
-        this->Log_Output_File << s_Ray_results->RK_integrator_debug_log.State_error_history[log_index] << ",";
-        this->Log_Output_File << s_Ray_results->RK_integrator_debug_log.N_steps_rejected[log_index];
+        *this->Output_File << s_Ray_results->RK_integrator_debug_log.State_error_history[log_index] << ",";
+        *this->Output_File << s_Ray_results->RK_integrator_debug_log.N_steps_rejected[log_index];
 
-        this->Log_Output_File << '\n';
+        *this->Output_File << '\n';
     }
    
 };
 
-void File_manager_class::open_image_output_file() {
+void File_manager_class::open_output_file() {
 
-    this->Image_Output_File.open(this->Image_full_path, std::ios::app);
+    this->Output_File->open(this->Output_File_Path, std::ios::app);
 
 }
 
-void File_manager_class::close_image_output_file() {
+void File_manager_class::close_output_file() {
 
-    this->Image_Output_File.close();
+    this->Output_File->close();
     
-}
-
-void File_manager_class::close_log_output_file() {
-
-    this->Log_Output_File.close();
-
 }

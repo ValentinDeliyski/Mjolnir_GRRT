@@ -16,4 +16,4 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
 
 void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results);
 
-
+void run_debug_simulation(const Simulation_Context_type* const p_Sim_Context);

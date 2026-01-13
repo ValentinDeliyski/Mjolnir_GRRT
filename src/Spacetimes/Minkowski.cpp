@@ -1,4 +1,6 @@
+#pragma once
 #include "Spacetimes.h"
+#include <format>
 
 Minkowski_class::Minkowski_class(const Metric_parameters_type* const p_Metric_Parameters){
 

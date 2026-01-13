@@ -328,6 +328,8 @@ struct Numerical_metric_potentials_type {
 
 struct Numerical_metric_params_type {
 
+    Spline_selection_enums e_Spline_type;
+
     /*! @brief The ADM mass. */
     double M_ADM{};
 
@@ -344,6 +346,11 @@ struct Numerical_metric_params_type {
     double* F_2_control_vector{};
     double* W_control_vector{};
     int Control_vector_size{};
+
+    double* Raw_F_0_data{};
+    double* Raw_F_1_data{};
+    double* Raw_F_2_data{};
+    double* Raw_W_data{};
 
     /* ============ Pointers to the coordinate grid, its step and control vector arrays ============ = */
 
@@ -384,6 +391,8 @@ struct Spline_arguments_type {
 
     /*! @brief The interpolated compactified radial coordinate. */
     double r_coord_compactified{};
+
+    double Theta_coord;
 
 };
 
@@ -937,5 +946,15 @@ struct Results_type {
     /*! @brief Array that holds the coordinates of the image on the observer plane.
         NOTE: These get affected by the cam_rotation_angle parameter of the observer. */
     double Image_Coords[2]{};
+
+};
+
+struct Debug_mode_struct {
+
+    int Array_length;
+
+    double* NT_Flux_integral_array;
+    double* NT_Flux_r_coord_array;
+
 
 };

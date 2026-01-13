@@ -1,4 +1,5 @@
 #include "Sim_Modes.h"
+#include "Novikov_Thorne_model.h"
 
 void static print_progress(int current, int max, bool lens_from_file) {
 
@@ -160,6 +161,8 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         std::cout << '\n' << "Generating image for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << "...\n";
 
+        p_Sim_Context->File_manager->open_output_file();
+
         for (int V_pixel_num = 0; V_pixel_num < Y_resolution; V_pixel_num++) {
 
             if (p_Sim_Context->p_Init_Conditions->Print_to_console) { print_progress(progress, Y_resolution - 1, false); }
@@ -181,9 +184,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
                 /* ------------------ Results logging happens here ------------------ */
 
-                p_Sim_Context->File_manager->open_image_output_file();
                 p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
-                p_Sim_Context->File_manager->close_image_output_file();
 
                 /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), 
                    and therefore not automatically reinitialized to 0s. I have to manually do it. */
@@ -193,12 +194,14 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         }
 
+        p_Sim_Context->File_manager->close_output_file();
+
         auto end_time = std::chrono::high_resolution_clock::now();
 
         std::cout << '\n' << "Image Generation for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << " Finished!" << 
                      '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time) << "\n";
 
-    }
+}
 
 void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
        
@@ -225,7 +228,7 @@ void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Re
 
         Renderer.Free_memory();
 
-    }
+}
 
 void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
@@ -246,7 +249,7 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
     */
 
     p_Sim_Context->File_manager->create_output_file();
-    p_Sim_Context->File_manager->open_image_output_file();
+    p_Sim_Context->File_manager->open_output_file();
 
     for (int photon_idx = 0; photon_idx <= p_Sim_Context->File_manager->sim_mode_2_ray_number - 1; photon_idx += 1) {
 
@@ -282,10 +285,9 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
 
     }
 
-    p_Sim_Context->File_manager->close_image_output_file();
+    p_Sim_Context->File_manager->close_output_file();
 
     std::cout << '\n';
-
 
 }
 
@@ -298,9 +300,30 @@ void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Resul
 
     Propagate_ray(p_Sim_Context, p_Ray_results);
 
-    p_Sim_Context->File_manager->open_image_output_file();
+    p_Sim_Context->File_manager->open_output_file();
     p_Sim_Context->File_manager->log_photon_path(p_Ray_results);
-    p_Sim_Context->File_manager->close_log_output_file();
+    p_Sim_Context->File_manager->close_output_file();
+
 }
 
+void run_debug_simulation(const Simulation_Context_type* const p_Sim_Context) {
 
+    /*
+
+    Create/Open the logging files
+
+    */
+
+    p_Sim_Context->File_manager->create_output_file();
+
+    Debug_mode_struct Debug_struct{};
+
+    Debug_struct.Array_length = 1500;
+    Debug_struct.NT_Flux_integral_array = p_Sim_Context->p_NT_model->Flux_integral;
+    Debug_struct.NT_Flux_r_coord_array = p_Sim_Context->p_NT_model->Flux_r_coords;
+
+    p_Sim_Context->File_manager->open_output_file();
+    p_Sim_Context->File_manager->write_debug_data_to_file(&Debug_struct);
+    p_Sim_Context->File_manager->close_output_file();
+
+}

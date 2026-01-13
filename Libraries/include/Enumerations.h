@@ -207,6 +207,15 @@ enum Simulation_mode_enums: std::underlying_type_t <std::byte> {
     Image_generation = 0,
     Make_geodesic_sweep = 1,
     Make_geodesic_log = 2,
+    Debug_mode = 3
+
+};
+
+enum Spline_selection_enums : std::underlying_type_t <std::byte> {
+
+    Custom_cubic = 0,
+    GSL_cubic = 1,
+    GSL_linear = 2
 
 };
 

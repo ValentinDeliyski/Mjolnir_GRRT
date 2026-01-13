@@ -5,6 +5,10 @@
 #include "General_math_functions.h"
 #include "General_GR_functions.h"
 
+#include"gsl/gsl_interp2d.h"
+#include"gsl/gsl_spline.h"
+#include"gsl/gsl_spline2d.h"
+
 #include <iostream>
 #include <format>
 
@@ -354,6 +358,14 @@ private:
     double Scattering_radius;
     double Min_distance_to_singular_point;
 
+    gsl_spline2d* Spline_instance_exp_2F_0;
+    gsl_spline2d* Spline_instance_exp_2F_1;
+    gsl_spline2d* Spline_instance_exp_2F_2;
+    gsl_spline2d* Spline_instance_W;
+
+    gsl_interp_accel* Radial_interp_accelerator;
+    gsl_interp_accel* Theta_interp_accelerator;
+
     /* ------------------------------ Functions that evaluate the cubic B-spline of the metric potentials ------------------------------ */
 
     Delta_coeffs_type get_delta_matrix(const double* const Grid_step_array, const long long idx) const;
@@ -370,7 +382,10 @@ private:
                                   const Delta_coeffs_type const* Theta_coeffs,
                                   Derivative_selector_enums Derivative_selector) const;
 
-    Numerical_metric_potentials_type evaluate_all_splines(const double radial_natural_param, const double theta_natural_param, long long radial_grid_idx, long long theta_grid_idx, Derivative_selector_enums Derivative_selector) const;
+    Numerical_metric_potentials_type evaluate_all_custom_splines(Spline_arguments_type s_Spline_args, Derivative_selector_enums Derivative_selector) const;
+    Numerical_metric_potentials_type evaluate_all_gsl_splines(Spline_arguments_type s_Spline_args, Derivative_selector_enums Derivative_selector) const;
+
+    Numerical_metric_potentials_type evaluate_all_splines(Spline_arguments_type s_Spline_args, Derivative_selector_enums Derivative_selector) const;
     Numerical_metric_potentials_type compute_metric_components_from_spline(Spline_arguments_type s_Splnie_args, Derivative_selector_enums Derivative_selector) const;
 
     double compactify_radial_coordiante(const double r) const;
@@ -385,6 +400,7 @@ private:
 public:
 
     Numerical_metric(const Metric_parameters_type* const p_Metric_Parameters);
+    ~Numerical_metric();
 
     /* --------------------------------------------- Metric and its derivatives (wrappers) --------------------------------------------- */
 

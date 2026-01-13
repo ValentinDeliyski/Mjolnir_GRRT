@@ -472,8 +472,8 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
 
     if (abs(State_at_event_global[e_r]) < r_out && abs(State_at_event_global[e_r]) > r_in && !p_Ray_results->NT_Disk_found) {
 
-        p_Ray_results->Redshift_NT = get_redshift(State_at_event_local, p_Sim_Context->p_NT_model->get_disk_velocity_vector(State_at_event_local), p_Sim_Context->p_Observer);
-        p_Ray_results->Flux_NT = p_Sim_Context->p_NT_model->get_flux(State_at_event_local);
+        p_Ray_results->Redshift_NT = get_redshift(State_at_event_local, p_Sim_Context->p_NT_model->get_Disk_Velocity_Vector(State_at_event_local), p_Sim_Context->p_Observer);
+        p_Ray_results->Flux_NT = p_Sim_Context->p_NT_model->get_Interpolated_Flux(State_at_event_local);
 
         double* Polarization_vector_coord = p_Sim_Context->p_NT_model->Construct_coord_polarization_vector(State_at_event_local);
 
