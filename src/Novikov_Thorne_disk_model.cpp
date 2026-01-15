@@ -43,7 +43,7 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
 
     for (int idx = 0; idx < Flux_integral_interpolat_size; idx++) {
 
-        this->Flux_r_coords[idx] = this->r_in + double(idx) / (Flux_integral_interpolat_size - 1) * this->r_out;
+        this->Flux_r_coords[idx] = this->r_in * (1 - double(idx) / (Flux_integral_interpolat_size - 1)) + double(idx) / (Flux_integral_interpolat_size - 1) * this->r_out;
 
         double Local_State_Vector[e_Full_state_size]{};
         Local_State_Vector[e_r] = this->Flux_r_coords[idx];

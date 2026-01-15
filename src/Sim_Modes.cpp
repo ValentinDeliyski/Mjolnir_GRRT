@@ -150,6 +150,8 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         p_Sim_Context->File_manager->create_output_file();
 
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
         /*
 
         Loop trough the viewing window

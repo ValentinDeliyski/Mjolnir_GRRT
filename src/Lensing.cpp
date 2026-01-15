@@ -507,10 +507,13 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
 
 void static Propagate_forward_emission(const Simulation_Context_type* const p_Sim_Context, 
                                        Results_type* const p_Ray_results,
-                                       int const N_theta_turning_points) {
+                                       int const N_theta_turning_points,
+                                       int const N_equatorial_crossings) {
 
     int Current_theta_turning_points = N_theta_turning_points;
-    int Current_order = compute_image_order(N_theta_turning_points, p_Sim_Context->p_Init_Conditions);
+    int Current_equatorial_crossings = N_equatorial_crossings;
+
+    int Current_order = compute_image_order(N_theta_turning_points, N_equatorial_crossings, p_Sim_Context->p_Init_Conditions);
 
     double Stokes_Vector[e_Stokes_param_num]{};
 
@@ -526,11 +529,13 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
         if (p_Ray_results->Ray_log_struct.Log_offset > 0) { 
 
             double* Previous_State_Global = &p_Ray_results->Ray_log_struct.Ray_path_log_global[(p_Ray_results->Ray_log_struct.Log_offset - 1) * e_Full_state_size];
-            Current_theta_turning_points -= Check_for_theta_turning_point(Current_State_Global, Previous_State_Global);
+            Current_theta_turning_points -= Check_for_theta_turning_point(Current_State_Global, Previous_State_Global); 
+            Current_equatorial_crossings -= Check_for_theta_turning_point(Current_State_Global, Previous_State_Global);
+
         
         };
 
-        Current_order = compute_image_order(Current_theta_turning_points, p_Sim_Context->p_Init_Conditions);
+        Current_order = compute_image_order(Current_theta_turning_points, Current_equatorial_crossings, p_Sim_Context->p_Init_Conditions);
 
         log_ray_emission(Stokes_Vector, Optical_Depth, p_Ray_results);
 
@@ -613,7 +618,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
 void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
-    int N_theta_turning_points{}, Current_order{};
+    int N_theta_turning_points{}, N_equatorial_crossings{}, Current_order{};
 
     // Calculate the image coordinates from the initial conditions
     get_image_coordinates(p_Sim_Context->p_Init_Conditions, p_Ray_results->Image_Coords);
@@ -627,10 +632,6 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
         Geodesic_Integrator.Propagate_ray();
 
         if (Geodesic_Integrator.continue_integration) {
-
-            N_theta_turning_points += Check_for_theta_turning_point(Geodesic_Integrator.get_current_State_Vector_global(), Geodesic_Integrator.get_previous_State_Vector_global());
-
-            Current_order = compute_image_order(N_theta_turning_points, p_Sim_Context->p_Init_Conditions);
 
             /* ======================================== Evaluate the thin disk models ======================================== */
 
@@ -647,6 +648,11 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
             }
 
             /* ============================================================================================================== */
+
+            N_theta_turning_points += Check_for_theta_turning_point(Geodesic_Integrator.get_current_State_Vector_global(), Geodesic_Integrator.get_previous_State_Vector_global());
+            N_equatorial_crossings += Check_for_equatorial_crossing(Geodesic_Integrator.get_current_State_Vector_global(), Geodesic_Integrator.get_previous_State_Vector_global());
+
+            Current_order = compute_image_order(N_theta_turning_points, N_equatorial_crossings, p_Sim_Context->p_Init_Conditions);
 
         }
 
@@ -666,7 +672,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     if (e_Novikov_Thorne != p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model) {
 
-        Propagate_forward_emission(p_Sim_Context, p_Ray_results, N_theta_turning_points);
+        Propagate_forward_emission(p_Sim_Context, p_Ray_results, N_theta_turning_points, N_equatorial_crossings);
 
     }
 

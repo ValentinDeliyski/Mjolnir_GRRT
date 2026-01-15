@@ -125,13 +125,15 @@ void get_Lorentz_boost_matrix(double Boost_matrix[4][4], const double* const U_s
  */
 bool Check_for_theta_turning_point(const double* const State_Vector, const double* const Old_State);
 
+bool Check_for_equatorial_crossing(const double* const State_Vector, const double* const Old_State);
+
 /*! @brief Computes the order of a ray, given its initial conditions and the current number of turning points in the theta coordinate the ray has passed.
  *
  *   \param [in] N_theta_turning_points - The number of turning points in the theta coordinate the ray has passed
  *   \param [in] p_Initial_Conditions - Pointer to the Initial Contitions struct.
- *   \return The order of the ray (capped at n = 3).
+ *   \return The order of the ray
  */
-int compute_image_order(const int N_theta_turning_points, Initial_conditions_type* const p_Initial_Conditions);
+int compute_image_order(const int N_theta_turning_points, const int N_equatorial_crossings, Initial_conditions_type* const p_Initial_Conditions);
 
 /*! @brief Computes the connection coefficients, given the metric and its radial and theta derivatives, then stores it in the 3D array "Connectrion_Coeffs"
  *

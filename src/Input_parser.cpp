@@ -1479,6 +1479,24 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     if (temp_param_var == nullptr) { std::cout << "Failed to find max image order!" << "\n"; return ERROR; }
     p_Initial_conditions->Max_order = std::stoi(temp_param_var->GetText());
 
+    temp_param_var = Root_node->FirstChildElement("Order_counting_scheme");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find order cocunting scheme!" << "\n"; return ERROR; }
+
+    std::string Order_counting_scheme = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Order_counting_scheme.c_str()), "Turning point based")) {
+
+        p_Initial_conditions->e_Order_counting_scheme = e_Turning_point_based;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Order_counting_scheme.c_str()), "Equatorial crossing based")) {
+
+        p_Initial_conditions->e_Order_counting_scheme = e_Equatorial_crossing_based;
+
+    }
+    else { std::cout << "Unsuppored image order counging scheme! \n"; return ERROR; }
+    
+
     /* ====================================== Parse the central object mass ====================================== */
 
     temp_param_var = Root_node->FirstChildElement("Central_object_mass");

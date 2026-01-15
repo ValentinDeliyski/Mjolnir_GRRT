@@ -241,3 +241,10 @@ enum Coord_conversion_enums: std::underlying_type_t <std::byte> {
     e_Full_State_Vector = 3
 
 };
+
+enum Order_counging_enums : std::underlying_type_t <std::byte> {
+
+    e_Turning_point_based = 0,
+    e_Equatorial_crossing_based = 1
+
+};

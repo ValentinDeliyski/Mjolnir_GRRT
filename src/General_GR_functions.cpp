@@ -247,7 +247,15 @@ bool Check_for_theta_turning_point(const double* const State_Vector, const doubl
 
 }
 
-int compute_image_order(const int N_theta_turning_points, Initial_conditions_type* const p_Initial_Conditions) {
+bool Check_for_equatorial_crossing(const double* const State_Vector, const double* const Old_State) {
+
+    return (State_Vector[e_theta] - M_PI_2) * (Old_State[e_theta] - M_PI_2) < 0;
+
+}
+
+int compute_image_order(const int N_theta_turning_points, const int N_equatorial_crossings, Initial_conditions_type* const p_Initial_Conditions) {
+
+    if (p_Initial_Conditions->e_Order_counting_scheme == e_Equatorial_crossing_based) { return N_equatorial_crossings; }
 
     int order = N_theta_turning_points;
 

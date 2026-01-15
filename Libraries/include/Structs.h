@@ -805,6 +805,8 @@ struct Initial_conditions_type {
     /*! @brief Struct that holds the emission model parameters. */
     Emission_model_parameters_type Emission_params{};
 
+    Order_counging_enums e_Order_counting_scheme;
+
     /*! @brief Initial condition for simulation mode 3. The image X coordiante is used to compute the initial azimuthal momentum. */
     double Sim_mode_3_X_init{};
 
