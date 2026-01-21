@@ -890,7 +890,7 @@ struct Ray_log_type {
        This exists for the sole purpose of minimizing the number of arguments in the functions that write to the photon log. */
     int Log_offset{};
 
-    /* The length of the phoyon log. */
+    /* The length of the photon log. */
     int Log_length{};
 
 };

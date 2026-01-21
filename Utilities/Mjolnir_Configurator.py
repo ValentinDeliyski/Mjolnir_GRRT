@@ -208,7 +208,8 @@ class Simulation_configurator:
                  "sim_mode_3_X_init",
                  "sim_mode_3_Y_init",
                  "min_image_order",
-                 "max_image_order")
+                 "max_image_order",
+                 "Order_counting_scheme")
 
     def __init__(self, 
                  Average_emission_pitch_angle: dict[str, int | str] = {"Value": 1, "Unit": "[-]"}, 
@@ -221,7 +222,8 @@ class Simulation_configurator:
                  sim_mode_3_X_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
                  sim_mode_3_Y_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
                  min_image_order: dict[str, int | str] = {"Value": 0, "Unit": "[-]"},
-                 max_image_order: dict[str, int | str] = {"Value": 10, "Unit": "[-]"},):
+                 max_image_order: dict[str, int | str] = {"Value": 10, "Unit": "[-]"},
+                 Order_counting_scheme: dict[str, str] = {"Value": "Turning point based", "Unit": "[-]"}):
 
         self.average_emission_pitch_angle = Average_emission_pitch_angle
         self.thermalize_emission_medium = thermalize_emission_medium
@@ -234,6 +236,7 @@ class Simulation_configurator:
         self.sim_mode_3_Y_init = sim_mode_3_Y_init
         self.min_image_order = min_image_order
         self.max_image_order = max_image_order
+        self.Order_counting_scheme = Order_counting_scheme
 
         self._configure_integrator_settings()
         self._configure_observer()
@@ -601,6 +604,7 @@ class Simulation_configurator:
         ET.SubElement(XML_root_node, "Sim_mode_3_Y_init", units = str(self.sim_mode_3_Y_init["Unit"])).text = "{}".format(self.sim_mode_3_Y_init["Value"])
         ET.SubElement(XML_root_node, "Min_image_order", units = str(self.min_image_order["Unit"])).text = "{}".format(self.min_image_order["Value"])
         ET.SubElement(XML_root_node, "Max_image_order", units = str(self.max_image_order["Unit"])).text = "{}".format(self.max_image_order["Value"])
+        ET.SubElement(XML_root_node, "Order_counting_scheme", units = str(self.Order_counting_scheme["Unit"])).text = "{}".format(self.Order_counting_scheme["Value"])
         
         # ============ Generate the metric XML section ============ #
 

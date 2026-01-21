@@ -92,14 +92,17 @@ enum Disk_model_enums : std::underlying_type_t <std::byte> {
     /* This is the model used in https://arxiv.org/pdf/2209.09931, with an added cutoff exponential. */
     e_Phenom_RIAF_2 = 1,
 
+    /* This is the model used analogous to e_Colab_test_1, but it is used with actual synchrotron functions. */
+    e_Phenom_RIAF_3 = 2,
+
     /* This is the model used in https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6/pdf */
-    e_Colab_test_1 = 2,
+    e_Colab_test_1 = 3,
 
     /* This is the model from https://articles.adsabs.harvard.edu/pdf/1974ApJ...191..499P */
-    e_Novikov_Thorne = 3,
+    e_Novikov_Thorne = 4,
 
     /* This model exists for testing purposes (see the plasma integration tests in https://www.aanda.org/articles/aa/pdf/2020/09/aa38573-20.pdf )*/
-    e_Debug_constant_density = 4
+    e_Debug_constant_density = 5
 
 };
 
@@ -136,7 +139,7 @@ enum State_enums: std::underlying_type_t <std::byte> {
     e_Dynamic_state_size = 8,
 
     e_step         = 8,
-    e_affine_param = 9,
+    e_ray_affine_param = 9,
 
     e_Full_state_size = 10,
 
@@ -181,7 +184,8 @@ enum Stokes_parameters: std::underlying_type_t <std::byte> {
     Q = 1,
     U = 2,
     V = 3,
-    e_Stokes_param_num = 4
+    e_Stokes_param_num = 4,
+    e_Stokes_affine_param = 4
 
 };
 

@@ -166,6 +166,11 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
         *Output_file << "Active disk model: Phenomenological_RIAF_2\n";
         break;
 
+    case e_Phenom_RIAF_3:
+
+        *Output_file << "Active disk model: Phenomenological_RIAF_3\n";
+        break;
+
     case e_Colab_test_1:
 
         *Output_file << "Active disk model: Colaboration_test_1\n";

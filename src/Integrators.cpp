@@ -13,7 +13,7 @@ Step_controller_class::Step_controller_class(const Integrator_parameters_type In
 
 }
 
-void Step_controller_class::update_state_errors(const double* State_Vector, const double* State_Error_Vector, Geodesic_Integrator_enums e_Active_integrator) {
+void Step_controller_class::update_state_errors(const double* State_Vector, const double* State_Error_Vector, Geodesic_Integrator_enums e_Active_integrator, int State_size) {
 
     this->sec_prev_err = this->prev_err;
     this->prev_err = this->current_err;
@@ -36,23 +36,15 @@ void Step_controller_class::update_state_errors(const double* State_Vector, cons
 
     }
 
-    double Error_scale[e_Dynamic_state_size]{};
-
-    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
-
-        Error_scale[idx] = Abs_tol + std::fabs(State_Vector[idx]) * Rel_tol;
-
-    }
-
     double Total_State_Error{};
 
-    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
+    for (int idx = 0; idx < State_size; idx++) {
 
-        Total_State_Error += (State_Error_Vector[idx] / Error_scale[idx]) * (State_Error_Vector[idx] / Error_scale[idx]);
+        Total_State_Error += std::pow(State_Error_Vector[idx] / (Abs_tol + std::fabs(State_Vector[idx]) * Rel_tol), 2);
 
     }
 
-    Total_State_Error /= (e_Dynamic_state_size - 1);
+    Total_State_Error /= (State_size - 1);
 
     this->current_err = std::sqrt(Total_State_Error) + this->Parameters.Safety_2;
 
@@ -117,16 +109,6 @@ void Step_controller_class::update_step(const double* const State_Vector, Geodes
 
     if (this->step > this->Parameters.Max_stepsize) { this->step = this->Parameters.Max_stepsize; };
 
-    //if (abs(State_Vector[e_r] * cos(State_Vector[e_theta])) < 5 && abs(State_Vector[e_r]) < 30) {
-
-    //    if (this->step > 0.001) {
-
-    //        this->step = 0.001;
-
-    //    }
-
-    //}
-
 }
 
 static int implicit_method_system_wrapper_f(const gsl_vector* gsl_trial_State_Vector, void* Params, gsl_vector* gsl_System_to_solve) {
@@ -171,7 +153,7 @@ Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Co
     this->p_Ray_log_struct->Ray_path_log_global[e_p_r] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_r];
     this->p_Ray_log_struct->Ray_path_log_global[e_p_t] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
     this->p_Ray_log_struct->Ray_path_log_global[e_step] = p_Sim_Context->p_Init_Conditions->Integrator_params.Init_stepzie;
-    this->p_Ray_log_struct->Ray_path_log_global[e_affine_param] = 0;
+    this->p_Ray_log_struct->Ray_path_log_global[e_ray_affine_param] = 0;
 
     this->p_Spacetime->Convert_global_to_local_coords(Init_Global_State, Init_Global_State, Init_Local_State, e_Full_State_Vector);
 
@@ -303,7 +285,7 @@ void Integrator_class::Run_ESDIRK54() {
 
     if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
-    this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator);
+    this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
     this->p_Step_controller->update_step(New_State_vector_main, this->e_Active_integrator);
 
     if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step) {
@@ -330,7 +312,7 @@ void Integrator_class::Run_ESDIRK54() {
 
 }
 
-bool Integrator_class::Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded) {
+Return_Values Integrator_class::Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded) {
 
     for (int idx = 0; idx < e_Full_state_size; idx++) {
 
@@ -423,7 +405,7 @@ void Integrator_class::Run_Explicit_Runge_Kutta(Geodesic_Integrator_enums e_Acti
 
     if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
-    this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator);
+    this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
     this->p_Step_controller->update_step(New_State_vector_main, this->e_Active_integrator);
 
     if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step){
@@ -470,7 +452,7 @@ void Integrator_class::Update_ray_log(const double* const New_State_vector) {
     memcpy(&this->p_Ray_log_struct->Ray_path_log_global[log_offset * e_Full_state_size], New_State_vector, e_Dynamic_state_size * sizeof(double));
 
     this->p_Ray_log_struct->Ray_path_log_global[e_step + log_offset * e_Full_state_size] = this->p_Step_controller->previous_step;
-    this->p_Ray_log_struct->Ray_path_log_global[e_affine_param + log_offset * e_Full_state_size] = this->p_Ray_log_struct->Ray_path_log_global[e_affine_param + (log_offset - 1) * e_Full_state_size] - this->p_Step_controller->previous_step;
+    this->p_Ray_log_struct->Ray_path_log_global[e_ray_affine_param + log_offset * e_Full_state_size] = this->p_Ray_log_struct->Ray_path_log_global[e_ray_affine_param + (log_offset - 1) * e_Full_state_size] - this->p_Step_controller->previous_step;
     
     this->p_Spacetime->Convert_global_to_local_coords(&this->p_Ray_log_struct->Ray_path_log_global[log_offset * e_Full_state_size],
                                                       &this->p_Ray_log_struct->Ray_path_log_global[log_offset * e_Full_state_size],
@@ -602,7 +584,7 @@ bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const
     }
 
     Global_State_at_Event[e_step] = abs(Event_interp_param * step);
-    Global_State_at_Event[e_affine_param] = Prev_State[e_affine_param] + step;
+    Global_State_at_Event[e_ray_affine_param] = Prev_State[e_ray_affine_param] + step;
 
     this->p_Spacetime->Convert_global_to_local_coords(Global_State_at_Event, Global_State_at_Event, Local_State_at_Event, e_Full_State_Vector);
 
@@ -643,7 +625,7 @@ void Integrator_class::Check_integration_complete_status() {
     /* This needs to use the internal dynamic state, because it is kept in "global coordainates" (which so far only affects the wormhole). */
     this->Normal_termination_condition = this->p_Spacetime->terminate_integration(this->Current_Dynamic_state);
 
-    this->Max_affine_param_reached      = std::abs(this->get_current_State_Vector_global()[e_affine_param]) >= this->p_Step_controller->Parameters.Max_affine_param;
+    this->Max_affine_param_reached      = std::abs(this->get_current_State_Vector_global()[e_ray_affine_param]) >= this->p_Step_controller->Parameters.Max_affine_param;
     this->Max_integration_count_reached = this->p_Ray_log_struct->Log_offset >= this->p_Step_controller->Parameters.Max_integration_count;
     this->Step_too_small                = this->p_Step_controller->step < std::numeric_limits<double>::min();
 

@@ -267,6 +267,8 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Phenom_RIAF_2")) { Disk_params->e_Disk_model = e_Phenom_RIAF_2; }
 
+    else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Phenom_RIAF_3")) { Disk_params->e_Disk_model = e_Phenom_RIAF_3; }
+
     else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Colab_test_1")) { Disk_params->e_Disk_model = e_Colab_test_1; }
 
     else if (0 == strcmp(static_cast<const char*>(Profile_type_string.c_str()), "Novikov-Thorne")) { Disk_params->e_Disk_model = e_Novikov_Thorne; }

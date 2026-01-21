@@ -19,6 +19,8 @@
 
 #include "Parallel_transport.h"
 
+#include "Emission_integrator.h"
+
 #include <iostream>
 #include <complex>
 
@@ -434,8 +436,7 @@ void static Map_Stokes_to_Polarization_Vector(const double* const Stokes_Vector,
 
 }
 
-bool static Is_inside_emission_medium(const Simulation_Context_type* const p_Sim_Context,
-                                      const double* const State_Vector_Global, 
+bool static Is_inside_emission_medium(const Simulation_Context_type* const p_Sim_Context, 
                                       const double* const State_Vector_Local) {
 
     Emission_medium_state_type s_Hotspot_state{};
@@ -521,25 +522,22 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
     // TODO: Propagate this aswell
     double Optical_Depth{};   
 
-    for (p_Ray_results->Ray_log_struct.Log_offset = p_Ray_results->Ray_log_struct.Log_length; p_Ray_results->Ray_log_struct.Log_offset >= 0; p_Ray_results->Ray_log_struct.Log_offset--) {
+    Emission_Integrator_class Radiative_transfer_integrator = Emission_Integrator_class(p_Sim_Context, p_Ray_results);
+
+    for (p_Ray_results->Ray_log_struct.Log_offset = p_Ray_results->Ray_log_struct.Log_length - 1; p_Ray_results->Ray_log_struct.Log_offset > 0; p_Ray_results->Ray_log_struct.Log_offset--) {
         
         double* Current_State_Global = &p_Ray_results->Ray_log_struct.Ray_path_log_global[p_Ray_results->Ray_log_struct.Log_offset * e_Full_state_size];
         double* Current_State_Local = &p_Ray_results->Ray_log_struct.Ray_path_log_local[p_Ray_results->Ray_log_struct.Log_offset * e_Full_state_size];
 
-        if (p_Ray_results->Ray_log_struct.Log_offset > 0) { 
-
-            double* Previous_State_Global = &p_Ray_results->Ray_log_struct.Ray_path_log_global[(p_Ray_results->Ray_log_struct.Log_offset - 1) * e_Full_state_size];
-            Current_theta_turning_points -= Check_for_theta_turning_point(Current_State_Global, Previous_State_Global); 
-            Current_equatorial_crossings -= Check_for_theta_turning_point(Current_State_Global, Previous_State_Global);
-
-        
-        };
+        double* Next_State_Global = &p_Ray_results->Ray_log_struct.Ray_path_log_global[(p_Ray_results->Ray_log_struct.Log_offset - 1) * e_Full_state_size];
+        Current_theta_turning_points -= Check_for_theta_turning_point(Current_State_Global, Next_State_Global); 
+        Current_equatorial_crossings -= Check_for_equatorial_crossing(Current_State_Global, Next_State_Global);
 
         Current_order = compute_image_order(Current_theta_turning_points, Current_equatorial_crossings, p_Sim_Context->p_Init_Conditions);
 
         log_ray_emission(Stokes_Vector, Optical_Depth, p_Ray_results);
 
-        if (Is_inside_emission_medium(p_Sim_Context, Current_State_Global, Current_State_Local)) {
+        if (Is_inside_emission_medium(p_Sim_Context, Current_State_Local)) {
 
             double Tetrad[4][4]{};
             double inv_Tetrad[4][4]{};
@@ -568,7 +566,8 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             if (Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
 
-                Propagate_Stokes_vector(p_Sim_Context->p_Init_Conditions->Integrator_params.e_Radiative_transfer_integrator, p_Sim_Context, Current_State_Global, Current_State_Local, Stokes_Vector);
+                //Propagate_Stokes_vector(p_Sim_Context->p_Init_Conditions->Integrator_params.e_Radiative_transfer_integrator, p_Sim_Context, Current_State_Global, Current_State_Local, Stokes_Vector);
+                Radiative_transfer_integrator.Propagate_Stokes_Vector(RK78_Fehlberg, Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param]);
 
             }
 
@@ -595,7 +594,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     /* =============== The final mapping of the polarization vector to Stokes parameters at the observer ===================== */
 
-    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Stokes_Vector[I] > 0) {
+    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
 
         double Observer_Tetrad[4][4]{};
         double Observer_inv_Tetrad[4][4]{};
@@ -612,7 +611,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     /* ====================================================================================================================== */
 
-    memcpy(p_Ray_results->Intensity, Stokes_Vector, 4 * sizeof(double));
+    memcpy(p_Ray_results->Intensity, Radiative_transfer_integrator.get_current_Stokes_Vector(), 4 * sizeof(double));
 
 }
 
@@ -658,7 +657,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     }
 
-    p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset;
+    p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset + 1;
     p_Ray_results->Metric_parameters      = p_Sim_Context->p_Init_Conditions->Metric_parameters;
 
     interpolate_celestial_sphere_crossing(Geodesic_Integrator.get_current_State_Vector_global(),

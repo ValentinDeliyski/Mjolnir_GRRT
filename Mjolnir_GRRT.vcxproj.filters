@@ -79,6 +79,9 @@
     <ClCompile Include="src\Spacetimes\Minkowski.cpp">
       <Filter>Source Files\Spacetimes</Filter>
     </ClCompile>
+    <ClCompile Include="src\Emission_integrator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\GLFW\glfw3native.h">
@@ -949,6 +952,9 @@
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\Parallel_transport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Emission_integrator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

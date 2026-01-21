@@ -425,7 +425,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
 
     }
 
-    /* Account for the relativistic doppler effet via the redshift. */
+    /* Account for the relativistic doppler effect via the redshift. */
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Transfer_functions->Emission_functions[stokes_idx] *= redshift * redshift;
@@ -537,7 +537,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
 
     }
 
-    /* Account for the relativistic doppler effet via the redshift */
+    /* Account for the relativistic doppler effect via the redshift */
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Transfer_functions->Emission_functions[stokes_idx] *= redshift * redshift;
@@ -568,7 +568,7 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
 
     this->get_synchrotron_transfer_fit_functions(e_Phenomenological_ensamble, p_Emission_medium_state, &Transfer_args, p_Sim_Context, p_Transfer_functions);
 
-    /* Account for the relativistic doppler effet via the redshift. */
+    /* Account for the relativistic doppler effect via the redshift. */
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Transfer_functions->Emission_functions[stokes_idx] *= Transfer_args.redshift * Transfer_args.redshift;

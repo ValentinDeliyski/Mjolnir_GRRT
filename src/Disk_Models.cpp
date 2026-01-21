@@ -46,7 +46,7 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
 
         double Cutoff_exponent_arg = (p_Profile_parameters->radial_coordinate - p_Profile_parameters->cutoff_radius) / p_Profile_parameters->cutoff_scale;
 
-        Profile *= exp(-int_power(Cutoff_exponent_arg, 2) / 2);
+        Profile *= exp(-std::pow(Cutoff_exponent_arg, 2) / 2);
 
     }
 
@@ -138,6 +138,58 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         
         break;
 
+    case e_Phenom_RIAF_3:
+
+        /* ============= This is anlagous to https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6, but I offser the radial vairable. ============= */
+
+        Density_profile_params.radial_coordinate = State_Vector[e_r];
+
+        /* ------------------------------------------------ Get the radial density profile ------------------------------------------------ */
+
+        Density_profile_params.gaussian_variable = State_Vector[e_r];
+        Density_profile_params.gaussian_mean = this->s_Disk_params.Common_RIAF_params.Density_cutoff_radius;
+        Density_profile_params.gaussian_std  = this->s_Disk_params.Common_RIAF_params.Density_cutoff_scale;
+
+        /* -------- This profile is essentially _just_ a cutoff exponent, so I don't want to add on antother one ontop of that -> set the curoff radius to zero,
+                    so the check for adding it on never passes -------- */
+
+        Density_profile_params.cutoff_radius = 0.0;
+        Density_profile_params.cutoff_scale  = 0.0;
+
+        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Gaussian);
+
+        /* ------------------------------------------------- Get the theta density profile ------------------------------------------------- */
+        
+        Density_profile_params.gaussian_variable = cos(State_Vector[e_theta]);
+        Density_profile_params.gaussian_mean = 0.0;
+        Density_profile_params.gaussian_std  = this->s_Disk_params.Common_RIAF_params.Disk_opening_angle;
+
+        /* -------- This profile is essentially _just_ a cutoff exponent, so I don't want to add on antother one ontop of that -> set the curoff radius to zero,
+                    so the check for adding it on never passes -------- */
+
+        Density_profile_params.cutoff_radius = 0.0;
+        Density_profile_params.cutoff_scale  = 0.0;
+
+        p_Emission_medium_state->Density *= this->get_disk_profile(&Density_profile_params, e_Gaussian);
+
+        /* ------------------------------------------------- Get the temperature profile ------------------------------------------------- */
+
+        Temperature_profile_params.radial_coordinate = State_Vector[e_r];
+
+        Temperature_profile_params.gaussian_variable = State_Vector[e_r];
+        Temperature_profile_params.gaussian_mean = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_radius;
+        Temperature_profile_params.gaussian_std = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_scale;
+
+        /* -------- This profile is essentially _just_ a cutoff exponent, so I don't want to add on antother one ontop of that -> set the curoff radius to zero,
+                    so the check for adding it on never passes -------- */
+
+        Temperature_profile_params.cutoff_radius = 0.0;
+        Temperature_profile_params.cutoff_scale = 0.0;
+
+        p_Emission_medium_state->Temperature = this->s_Disk_params.Electron_temperature_scale * this->get_disk_profile(&Temperature_profile_params, e_Gaussian);
+
+        break;
+
     case e_Colab_test_1:
 
         /* =============== This is the model used in https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6/pdf ============== */
@@ -190,7 +242,6 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         throw std::runtime_error(std::format("Invalid disk temperature profile: {} \n", p_Emission_medium_state->Temperature));
 
     }
-
 
 }
 

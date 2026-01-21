@@ -131,8 +131,18 @@ int main(int argument_count, char** cmd_line_args) {
         s_Sim_Context.p_Emission_Model = new Emission_models_class(&s_Sim_Context);
         s_Sim_Context.p_Emission_Model->precompute_electron_pitch_angles(s_Sim_Context.p_Init_Conditions);
 
-        // Allocate the Novikov-Thorne Model class
-        s_Sim_Context.p_NT_model = new Novikov_Thorne_Model_class(&s_Sim_Context);
+
+        if (s_Sim_Context.p_Init_Conditions->Disk_params.e_Disk_model == e_Novikov_Thorne) {
+
+            // Allocate the Novikov-Thorne Model class
+            s_Sim_Context.p_NT_model = new Novikov_Thorne_Model_class(&s_Sim_Context);
+            
+        }
+        else {
+
+            s_Sim_Context.p_NT_model = nullptr;
+
+        }
 
         // Populate the File Manager class instance
         s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions);
@@ -140,10 +150,11 @@ int main(int argument_count, char** cmd_line_args) {
         // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
         static Results_type s_Ray_results{};
 
-        s_Ray_results.Ray_log_struct.Ray_path_log_local = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size];
-        s_Ray_results.Ray_log_struct.Ray_path_log_global = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size];
-        s_Ray_results.RK_integrator_debug_log.N_steps_rejected = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
-        s_Ray_results.RK_integrator_debug_log.State_error_history = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count];
+        s_Ray_results.Ray_log_struct.Ray_path_log_local = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size] {};
+        s_Ray_results.Ray_log_struct.Ray_path_log_global = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size] {};
+
+        s_Ray_results.RK_integrator_debug_log.N_steps_rejected = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
+        s_Ray_results.RK_integrator_debug_log.State_error_history = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
 
         for (int index = I; index < e_Stokes_param_num; index++) {
 

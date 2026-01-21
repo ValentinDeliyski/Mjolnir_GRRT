@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\Disk_Models.h" />
+    <ClInclude Include="Libraries\include\Emission_integrator.h" />
     <ClInclude Include="Libraries\include\glad\glad.h" />
     <ClInclude Include="Libraries\include\GLFW\glfw3.h" />
     <ClInclude Include="Libraries\include\GLFW\glfw3native.h" />
@@ -311,6 +312,7 @@
     <ClInclude Include="Libraries\include\tinyxml2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Emission_integrator.cpp" />
     <ClCompile Include="src\Emission_Models.cpp" />
     <ClCompile Include="src\Disk_Models.cpp" />
     <ClCompile Include="src\Emission_fit_functions.cpp" />

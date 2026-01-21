@@ -201,7 +201,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
         auto end_time = std::chrono::high_resolution_clock::now();
 
         std::cout << '\n' << "Image Generation for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << " Finished!" << 
-                     '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::minutes>(end_time - start_time) << "\n";
+                     '\n' << "Simulation time: " << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time) << "\n";
 
 }
 
