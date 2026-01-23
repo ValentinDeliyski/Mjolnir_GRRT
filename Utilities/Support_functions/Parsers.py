@@ -285,8 +285,8 @@ class Simulation_Parser():
         Window_limits = self.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
         Window_limits = [float(Limit) for Limit in Window_limits]
         
-        X_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[0])
-        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolutoin"].split(" ")[2])
+        X_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[0])
+        Y_resolution: int = int(self.Simulation_metadata["Simulation Resolution"].split(" ")[2])
         
         Units = Units_class()
         

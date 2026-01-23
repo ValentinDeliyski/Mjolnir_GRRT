@@ -19,8 +19,6 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
     this->r_in = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_in;
     this->r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_out;
 
-    this->flux_integral_accuracy = p_Sim_Context->p_Init_Conditions->Integrator_params.Simpson_accuracy;
-
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
     this->e_Spacetime = p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime;
 
@@ -219,7 +217,7 @@ double Novikov_Thorne_Model_class::get_Flux(double* Local_State_Vector) {
                            this->r_in, 
                            Local_State_Vector[e_r], 
                            0,
-                           this->flux_integral_accuracy,
+                           1e-6,
                            this->Flux_integral_workspace,
                           &Flux_integral,
                           &Error_estimate,

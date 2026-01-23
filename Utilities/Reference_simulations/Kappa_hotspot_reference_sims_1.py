@@ -35,9 +35,9 @@ class Hotspot_reference_sims:
         
         self.Units = Units_class()
         self.Simulation_configurator = Simulation_configurator()
-        self.Simulation_configurator.average_emission_pitch_angle = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.average_emission_pitch_angle =  {"Value": 0, "Unit": "[-]"}
         self.Simulation_configurator.observer.Include_polarization = {"Value": 1, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Cam_rotation_angle =   {"Value": 0, "Unit": "[-]"}
         
         self.Simulation_configurator.min_image_order               = {"Value": 0, "Unit": "[-]"}
         self.Simulation_configurator.max_image_order               = {"Value": 0, "Unit": "[-]"}
@@ -61,7 +61,7 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.hotspot_model.Density_spread = {"Value": 1, "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Temperature_spread = {"Value": 1, "Unit": "[-]"}
         
-        self.Simulation_configurator.hotspot_model.Temporal_spread   = {"Value": 60000000000,      "Unit": "[GM/c^3]"}
+        self.Simulation_configurator.hotspot_model.Temporal_spread   = {"Value": 60000000000, "Unit": "[GM/c^3]"}
         self.Simulation_configurator.hotspot_model.Magnetization     = {"Value": 1,       "Unit": "[-]"}
         self.Simulation_configurator.emission_models.Kappa           = {"Value": 4,       "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Ensamble_type     = {"Value": "Kappa", "Unit": "[-]"}
@@ -72,7 +72,7 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.hotspot_model.Mag_field_geometry_theta = {"Value": 1, "Unit": "[-]"}
         self.Simulation_configurator.hotspot_model.Mag_field_geometry_phi   = {"Value": 0, "Unit": "[-]"}
         
-        self.Simulation_configurator.hotspot_model.Threshold_relative_density   = {"Value": 1e-1, "Unit": "[-]"}
+        self.Simulation_configurator.hotspot_model.Threshold_relative_density   = {"Value": 1e-4, "Unit": "[-]"}
         
         """ This value for the initial hotspot azimuth makes it appear on the anti-beaming size at t_obs = 0. This makes the light curve look nicer. """
         self.Simulation_configurator.hotspot_model.Azimuth           = {"Value": pi * 0.50,  "Unit": "[M]"} 
@@ -96,10 +96,18 @@ class Hotspot_reference_sims:
         
         """ Configure the integrator """
         
-        # self.Simulation_configurator.integrator.RK78_accuracy = {"Value": 1e-13, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 5, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.radiative_transfer_integrator_type = {"Value": "RK5", "Unit": "[-]"}
-        self.Simulation_configurator.integrator.max_stepsize = {"Value": 50, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        
+        self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.RK_abs_accuracy = {"Value": 1e-10, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.RK_rel_accuracy = {"Value": 1e-10, "Unit": "[-]"}
+            
+        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
+        
+        self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
         
         """ The simulation output file path """
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
@@ -139,5 +147,3 @@ if __name__ == "__main__":
         
     with Pool(10) as pool:
         pool.starmap(Hotspot_reference_sims_instance.run_simulation, Sim_args)
-    
-    # Hotspot_reference_sims_instance.run_simulation(Obs_times[16], 16)

@@ -76,16 +76,20 @@ class Thermal_syhnchrotron_reference_sims:
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
-    
-        self.Simulation_configurator.integrator.RK78_abs_accuracy  = {"Value": 1e-13, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK78_rel_accuracy  = {"Value": 1e-13, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
         
-        self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 10, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.radiative_transfer_integrator_type = {"Value": "RK5", "Unit": "[-]"}
-        self.Simulation_configurator.integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
-
+        self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        
+        self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.RK_abs_accuracy = {"Value": 1e-10, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.RK_rel_accuracy = {"Value": 1e-10, "Unit": "[-]"}
+            
+        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
+        
+        self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
+        
         """ The simulation output file path """
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
 

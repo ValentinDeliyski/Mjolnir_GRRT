@@ -188,8 +188,8 @@ class Sim_Visualizer():
 
             # Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation "Observer Distance [M]", and conver to to micro AS 
             axes_limits: NDArray[float64] = self.Sim_Parsers[Sim_number].Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
-            axes_limits = array([float64(Limit) for Limit in axes_limits])
-            # axes_limits = arctan(axes_limits) * self.Units.RAD_TO_MICRO_AS
+            axes_limits = arctan(array([float64(Limit) for Limit in axes_limits]) / Obs_effective_distance)
+            axes_limits = arctan(axes_limits) * self.Units.RAD_TO_MICRO_AS
 
             # The literature (for some reason) has the X axis going positive to negative, 
             # so I invert the X axis limits
@@ -241,7 +241,7 @@ class Sim_Visualizer():
                     Cbar_label: str = r"LP fraction [\%]"
                     
                 case "NT":
-                    Data_to_plot: NDArray[float64] = Disk_flux * Disk_redshift**4 / 1e-5 
+                    Data_to_plot: NDArray[float64] =  Disk_redshift
                     
                     Cmap_max: float = max((Data_to_plot.flatten()))
                     Cmap_min: float = 0

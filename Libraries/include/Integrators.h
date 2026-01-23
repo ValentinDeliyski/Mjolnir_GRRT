@@ -8,7 +8,7 @@ class Step_controller_class {
 
 public:
 
-    Step_controller_class(const Integrator_parameters_type Integrator_parameters);
+    Step_controller_class(const Step_Controller_parameters_type Controller_parameters);
 
     //! Updates the integration step, based on the previous State Error estimates, and the current State Vector.
     /*! Updates the integration step, based on the previous State Error estimates, and the current State Vector.
@@ -19,11 +19,11 @@ public:
      *   \param [in] State_Vector - Pointer to the array that holds the photon State Vector.
      *   \return Nothing
      */
-    void update_step(const double* State_Vector, Geodesic_Integrator_enums e_Active_integrator);
+    void update_step(const double* State_Vector, Integrator_enums e_Active_integrator);
 
-    void update_state_errors(const double* State_Vector, const double* State_Error_Vector, Geodesic_Integrator_enums e_Active_integrator, int State_size);
+    void update_state_errors(const double* State_Vector, const double* State_Error_Vector, Integrator_enums e_Active_integrator, int State_size);
 
-    Integrator_parameters_type Parameters;
+    Step_Controller_parameters_type Parameters;
 
     double step;
     double previous_step;
@@ -34,7 +34,7 @@ public:
 
 };
 
-class Integrator_class {
+class Geodesic_Integrator_class {
 
 private:
 
@@ -126,6 +126,9 @@ private:
 
     bool Force_scatter;
 
+    double Max_affine_param;
+    double Max_integration_count;
+
     /* ---------------------- Debug flags ---------------------- */
 
     int N_steps_rejected;
@@ -143,7 +146,7 @@ private:
     double Intermediate_RHS_log[RK78_size * e_Dynamic_state_size]{};
     double Current_Dynamic_state[e_Dynamic_state_size];
 
-    Geodesic_Integrator_enums e_Active_integrator;
+    Integrator_enums e_Active_integrator;
     Initial_conditions_type* p_Init_conditions;
 
     Ray_log_type* p_Ray_log_struct;
@@ -161,7 +164,7 @@ private:
 
     Return_Values Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded);
 
-    void Run_Explicit_Runge_Kutta(Geodesic_Integrator_enums e_Active_integrator);
+    void Run_Explicit_Runge_Kutta(Integrator_enums e_Active_integrator);
 
     void Run_ESDIRK54();
 
@@ -172,8 +175,8 @@ private:
 
 public:
 
-    Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results);
-    ~Integrator_class();
+    Geodesic_Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results);
+    ~Geodesic_Integrator_class();
 
     RHS_wrapper_struct RHS_Wrapper_params;
 

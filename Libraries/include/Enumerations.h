@@ -189,20 +189,17 @@ enum Stokes_parameters: std::underlying_type_t <std::byte> {
 
 };
 
-enum Radiative_Transfer_Integrator: std::underlying_type_t <std::byte> {
-
-    Analytic = 0,
-    Implicit_Trapezoid = 1,
-    RK5 = 2,
-
-};
-
-enum Geodesic_Integrator_enums: std::underlying_type_t <std::byte> {
+enum Integrator_enums: std::underlying_type_t <std::byte> {
 
     RK78_Fehlberg = 0,
     RK78_DP = 1,
     ESDIRK54 = 2,
-    RK54 = 3
+    RK54 = 3,  
+
+    Radiative_only_integrators = 4,
+
+    Rad_Analytic = 5,
+    Rad_Implicit_Trapezoid = 6
 
 };
 

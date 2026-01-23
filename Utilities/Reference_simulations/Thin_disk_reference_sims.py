@@ -9,6 +9,7 @@ sys.path.append(parent_directory)
 
 from Mjolnir_Configurator import Simulation_configurator
 from Support_functions.Parsers import Units_class, Simulation_Parser
+from Support_functions.Spacetimes_new import Kerr
 
 from numpy import pi, tan, sqrt, linspace
 from numpy.typing import NDArray
@@ -46,17 +47,20 @@ class Simulation:
         """ Central black hole setup"""
         self.Simulation_configurator.metric_parameters.Metric_type = {"Value": "Kerr",  "Unit": "[-]"}
         self.Simulation_configurator.object_mass                   = {"Value": 4.297e6, "Unit": "[M_sun]"}
-        self.Simulation_configurator.metric_parameters.Spin        = {"Value": 0, "Unit": "[M]"}
+        self.Simulation_configurator.metric_parameters.Mass        = {"Value": 1, "Unit": "[M]"}
+        self.Simulation_configurator.metric_parameters.Spin        = {"Value": 0.98, "Unit": "[M]"}
         self.Simulation_configurator.metric_parameters.WH_redshift = {"Value": 0, "Unit": "[M]"}
         self.Object_distance                                       = {"Value": 8.277e3, "Unit": "[Pc]"}
-        self.Simulation_configurator.min_image_order               = {"Value": 1, "Unit": "[-]"}
-        self.Simulation_configurator.max_image_order               = {"Value": 1, "Unit": "[-]"}
+        self.Simulation_configurator.min_image_order               = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.max_image_order               = {"Value": 10, "Unit": "[-]"}
         
         """ Accretion disk setup """   
         self.Simulation_configurator.disk_model.Disk_Model = {"Value": "Novikov-Thorne", "Unit": "[-]"}
         
-        self.Simulation_configurator.disk_model.r_in_NT_disk = {"Value": 6, "Unit": "[M]"} 
-        self.Simulation_configurator.disk_model.r_out_NT_disk = {"Value": 25, "Unit": "[M]"} 
+        Kerr_instance = Kerr(self.Simulation_configurator.metric_parameters.Mass["Value"], self.Simulation_configurator.metric_parameters.Spin["Value"])
+        
+        self.Simulation_configurator.disk_model.r_in_NT_disk = {"Value": Kerr_instance.get_ISCO()[0], "Unit": "[M]"} 
+        self.Simulation_configurator.disk_model.r_out_NT_disk = {"Value": 50 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"} 
          
         self.Simulation_configurator.disk_model.Mag_field_geometry_r     = {"Value": 0.1, "Unit": "[-]"}
         self.Simulation_configurator.disk_model.Mag_field_geometry_theta = {"Value": 0.2, "Unit": "[-]"}
@@ -66,31 +70,22 @@ class Simulation:
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
         
         """ Observer setup """
-        self.Simulation_configurator.observer.Distance    = {"Value": 1e4,            "Unit": "[M]"}
-        self.Simulation_configurator.observer.Inclination = {"Value": 89 * pi / 180, "Unit": "[Rad]"}
+        self.Simulation_configurator.observer.Distance    = {"Value": 1e4 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
+        self.Simulation_configurator.observer.Inclination = {"Value": 80 * pi / 180, "Unit": "[Rad]"}
         self.Simulation_configurator.observer.Azimuth     = {"Value": 0,              "Unit": "[Rad]"}
         
         self.Observer_FOV = {"Value": 150, "Unit": "[micro-arcsec]"}
         
-        self.Simulation_configurator.observer.Image_y_min = {"Value": -10, "Unit": "[M]"}
-        self.Simulation_configurator.observer.Image_y_max = {"Value":  10, "Unit": "[M]"}
-        self.Simulation_configurator.observer.Image_x_min = {"Value": -10, "Unit": "[M]"}
-        self.Simulation_configurator.observer.Image_x_max = {"Value":  10, "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_y_min = {"Value": -10 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_y_max = {"Value":  10 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_x_min = {"Value": -10 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_x_max = {"Value":  10 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
         
         self.Simulation_configurator.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
         self.Simulation_configurator.observer.Resolution_y = {"Value": 256 , "Unit": "[-]"}
         
         """ Configure the integrator """
-        self.Simulation_configurator.integrator.ESDIRK54_abs_accuracy  = {"Value": 1e-9, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.ESDIRK54_rel_accuracy  = {"Value": 1e-9, "Unit": "[-]"}
-        
-        self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-14, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK78_rel_accuracy = {"Value": 1e-14, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.max_integration_count  = {"Value": 100000000, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 5, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.default_geodesic_integrator_type  = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
-        
-        self.Simulation_configurator.integrator.max_stepsize = {"Value": 50, "Unit": "[-]"}
+
         
         """ The simulation output file path """
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"

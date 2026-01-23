@@ -28,14 +28,13 @@ void static log_ray_emission(double Stokes_Vector[e_Stokes_param_num], double Op
     
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
-        p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][0 + 2 * p_Ray_Results->Ray_log_struct.Log_offset] = Stokes_Vector[stokes_idx] ;
-        p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][1 + 2 * p_Ray_Results->Ray_log_struct.Log_offset] = Optical_depth;
+        p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][p_Ray_Results->Ray_log_struct.Log_offset] = Stokes_Vector[stokes_idx] ;
 
     }
 
 }
 
-static void Propagate_Stokes_vector(Radiative_Transfer_Integrator e_Integrator,
+static void Propagate_Stokes_vector(Integrator_enums e_Integrator,
                                     const Simulation_Context_type* p_Sim_Context,
                                     double* const State_Vector_Global,
                                     double* const State_Vector_Local, 
@@ -69,7 +68,7 @@ static void Propagate_Stokes_vector(Radiative_Transfer_Integrator e_Integrator,
 
     switch (e_Integrator) {
 
-    case Analytic:
+    case Rad_Analytic:
 
         Analytic_Radiative_Transfer(const_cast<double*>(Total_Transfer_Functions.Emission_functions),
                                     const_cast<double*>(Total_Transfer_Functions.Absorbtion_functions),
@@ -79,7 +78,7 @@ static void Propagate_Stokes_vector(Radiative_Transfer_Integrator e_Integrator,
 
         break;
 
-    case Implicit_Trapezoid:
+    case Rad_Implicit_Trapezoid:
 
         Implicit_Trapezoid_Radiative_Transfer(const_cast<double*>(Total_Transfer_Functions.Emission_functions),
                                               const_cast<double*>(Total_Transfer_Functions.Absorbtion_functions),
@@ -381,8 +380,8 @@ void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][
                                                Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]))).imag();
 
     double Polarized_Intensity_after_mapping = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
-        Stokes_Vector[U] * Stokes_Vector[U] +
-        Stokes_Vector[V] * Stokes_Vector[V]);
+                                                    Stokes_Vector[U] * Stokes_Vector[U] +
+                                                    Stokes_Vector[V] * Stokes_Vector[V]);
 
     if (!isnan(1. / Polarized_Intensity_after_mapping) && !isinf(1.0 / Polarized_Intensity_after_mapping)) {
 
@@ -567,7 +566,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
             if (Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
 
                 //Propagate_Stokes_vector(p_Sim_Context->p_Init_Conditions->Integrator_params.e_Radiative_transfer_integrator, p_Sim_Context, Current_State_Global, Current_State_Local, Stokes_Vector);
-                Radiative_transfer_integrator.Propagate_Stokes_Vector(RK78_Fehlberg, Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param]);
+                Radiative_transfer_integrator.Propagate_Stokes_Vector(Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param]);
 
             }
 
@@ -582,7 +581,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         /* ====================================== Parallel transport the polarization vector ====================================== */
 
-        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Stokes_Vector[I] > 0) {
+        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
 
             Parallel_Transport_Vector(Current_State_Global, p_Sim_Context->p_Spacetime, Contravariant, Coord_Basis_Pol_vec);
 
@@ -594,7 +593,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     /* =============== The final mapping of the polarization vector to Stokes parameters at the observer ===================== */
 
-    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
+    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Stokes_Vector[I] > 0) {
 
         double Observer_Tetrad[4][4]{};
         double Observer_inv_Tetrad[4][4]{};
@@ -622,7 +621,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
     // Calculate the image coordinates from the initial conditions
     get_image_coordinates(p_Sim_Context->p_Init_Conditions, p_Ray_results->Image_Coords);
 
-    Integrator_class Geodesic_Integrator(p_Sim_Context, p_Ray_results);
+    Geodesic_Integrator_class Geodesic_Integrator(p_Sim_Context, p_Ray_results);
 
     p_Ray_results->NT_Disk_found = false;
 

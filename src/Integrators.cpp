@@ -1,8 +1,8 @@
 #include "Integrators.h"
 
-Step_controller_class::Step_controller_class(const Integrator_parameters_type Integrator_parameters) {
+Step_controller_class::Step_controller_class(const Step_Controller_parameters_type Controller_parameters) {
 
-    this->Parameters = Integrator_parameters;
+    this->Parameters = Controller_parameters;
 
     this->step = this->Parameters.Init_stepzie;
     this->previous_step = this->Parameters.Init_stepzie;
@@ -13,19 +13,25 @@ Step_controller_class::Step_controller_class(const Integrator_parameters_type In
 
 }
 
-void Step_controller_class::update_state_errors(const double* State_Vector, const double* State_Error_Vector, Geodesic_Integrator_enums e_Active_integrator, int State_size) {
+void Step_controller_class::update_state_errors(const double* State_Vector, const double* State_Error_Vector, Integrator_enums e_Active_integrator, int State_size) {
 
     this->sec_prev_err = this->prev_err;
     this->prev_err = this->current_err;
 
     double Abs_tol{}, Rel_tol{};
 
+    if (e_Active_integrator >= Radiative_only_integrators) {
+
+        throw std::runtime_error("Wrong active integrator in Step_controller_class::update_state_errors()!");
+
+    }
+
     switch (e_Active_integrator) {
 
     default:
 
-        Abs_tol = this->Parameters.RK_78_abs_accuracy; 
-        Rel_tol = this->Parameters.RK_78_rel_accuracy;
+        Abs_tol = this->Parameters.RK_abs_accuracy; 
+        Rel_tol = this->Parameters.RK_rel_accuracy;
 
         break;
 
@@ -50,7 +56,7 @@ void Step_controller_class::update_state_errors(const double* State_Vector, cons
 
 }
 
-void Step_controller_class::update_step(const double* const State_Vector, Geodesic_Integrator_enums e_Active_integrator) {
+void Step_controller_class::update_step(const double* const State_Vector, Integrator_enums e_Active_integrator) {
 
     this->previous_step = this->step;
 
@@ -60,12 +66,12 @@ void Step_controller_class::update_step(const double* const State_Vector, Geodes
 
     default:
 
-        PID_gain_P = this->Parameters.RK78_PID_gain_P;
-        PID_gain_I = this->Parameters.RK78_PID_gain_I;
-        PID_gain_D = this->Parameters.RK78_PID_gain_D;
+        PID_gain_P = this->Parameters.RK_PID_gain_P;
+        PID_gain_I = this->Parameters.RK_PID_gain_I;
+        PID_gain_D = this->Parameters.RK_PID_gain_D;
 
-        Gustafsson_k1 = this->Parameters.RK78_Gustafsson_k1;
-        Gustafsson_k2 = this->Parameters.RK78_Gustafsson_k2;
+        Gustafsson_k1 = this->Parameters.RK_Gustafsson_k1;
+        Gustafsson_k2 = this->Parameters.RK_Gustafsson_k2;
 
         break;
 
@@ -119,7 +125,7 @@ static int implicit_method_system_wrapper_f(const gsl_vector* gsl_trial_State_Ve
 
 }
 
-Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results) {
+Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results) {
 
     this->Force_scatter = true;
 
@@ -135,9 +141,12 @@ Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Co
     this->p_Init_conditions = p_Sim_Context->p_Init_Conditions;
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
 
-    this->p_Step_controller = new Step_controller_class(this->p_Init_conditions->Integrator_params);
+    this->p_Step_controller = new Step_controller_class(this->p_Init_conditions->Integrator_params.Geodesic_Step_Controller_Params);
 
     this->p_Ray_log_struct = &p_Ray_results->Ray_log_struct;
+
+    this->Max_affine_param = this->p_Init_conditions->Integrator_params.Max_affine_param;
+    this->Max_integration_count = this->p_Init_conditions->Integrator_params.Max_integration_count;
 
     /* ------------------------------ Construct the initial state vector ------------------------------ */ 
 
@@ -152,7 +161,7 @@ Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Co
     this->p_Ray_log_struct->Ray_path_log_global[e_p_theta] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_theta];
     this->p_Ray_log_struct->Ray_path_log_global[e_p_r] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_r];
     this->p_Ray_log_struct->Ray_path_log_global[e_p_t] = p_Sim_Context->p_Init_Conditions->Init_Momentum[e_t];
-    this->p_Ray_log_struct->Ray_path_log_global[e_step] = p_Sim_Context->p_Init_Conditions->Integrator_params.Init_stepzie;
+    this->p_Ray_log_struct->Ray_path_log_global[e_step] = p_Sim_Context->p_Init_Conditions->Integrator_params.Geodesic_Step_Controller_Params.Init_stepzie;
     this->p_Ray_log_struct->Ray_path_log_global[e_ray_affine_param] = 0;
 
     this->p_Spacetime->Convert_global_to_local_coords(Init_Global_State, Init_Global_State, Init_Local_State, e_Full_State_Vector);
@@ -175,7 +184,7 @@ Integrator_class::Integrator_class(const Simulation_Context_type* const p_Sim_Co
                                &RHS_Wrapper_params };
 }
 
-Integrator_class::~Integrator_class() {
+Geodesic_Integrator_class::~Geodesic_Integrator_class() {
 
     free(this->p_Step_controller);
     gsl_multiroot_fsolver_free(this->Root_finder);
@@ -183,7 +192,7 @@ Integrator_class::~Integrator_class() {
 
 }
 
-int Integrator_class::get_implicit_method_system(const gsl_vector* gsl_trial_State_Vector, void* p_Iteration_number, gsl_vector* System_to_solve) {
+int Geodesic_Integrator_class::get_implicit_method_system(const gsl_vector* gsl_trial_State_Vector, void* p_Iteration_number, gsl_vector* System_to_solve) {
 
     int Iteration_number = *(int*)p_Iteration_number;
 
@@ -218,7 +227,7 @@ int Integrator_class::get_implicit_method_system(const gsl_vector* gsl_trial_Sta
     return GSL_SUCCESS;
 }
 
-void Integrator_class::Run_ESDIRK54() {
+void Geodesic_Integrator_class::Run_ESDIRK54() {
 
     double state_error[e_Dynamic_state_size]{};
 
@@ -312,7 +321,7 @@ void Integrator_class::Run_ESDIRK54() {
 
 }
 
-Return_Values Integrator_class::Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded) {
+Return_Values Geodesic_Integrator_class::Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded) {
 
     for (int idx = 0; idx < e_Full_state_size; idx++) {
 
@@ -332,11 +341,11 @@ Return_Values Integrator_class::Run_NaN_checker(const double* const New_State, c
 
 }
 
-void Integrator_class::Run_Explicit_Runge_Kutta(Geodesic_Integrator_enums e_Active_integrator) {
+void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta(Integrator_enums e_Active_integrator) {
 
     if (RK78_Fehlberg != e_Active_integrator && RK78_DP != e_Active_integrator && RK54 != e_Active_integrator) {
 
-        throw std::runtime_error("Wrong active integrator in Run_Explicit_Runge_Kutta()!");
+        throw std::runtime_error("Wrong active integrator in Geodesic_Geodesic_Integrator_class::Run_Explicit_Runge_Kutta()!");
 
     }
 
@@ -444,7 +453,7 @@ void Integrator_class::Run_Explicit_Runge_Kutta(Geodesic_Integrator_enums e_Acti
 
 }
 
-void Integrator_class::Update_ray_log(const double* const New_State_vector) {
+void Geodesic_Integrator_class::Update_ray_log(const double* const New_State_vector) {
 
     this->p_Ray_log_struct->Log_offset += 1;
     int& log_offset = this->p_Ray_log_struct->Log_offset;
@@ -461,14 +470,14 @@ void Integrator_class::Update_ray_log(const double* const New_State_vector) {
 
 }
 
-void Integrator_class::Update_debug_log() {
+void Geodesic_Integrator_class::Update_debug_log() {
 
     this->RK_Integrator_debug_log.N_steps_rejected[this->p_Ray_log_struct->Log_offset] = this->N_steps_rejected;
     this->RK_Integrator_debug_log.State_error_history[this->p_Ray_log_struct->Log_offset] = this->p_Step_controller->current_err;
 
 }
 
-void Integrator_class::Propagate_ray() {
+void Geodesic_Integrator_class::Propagate_ray() {
 
     switch (this->e_Active_integrator) {
 
@@ -499,7 +508,7 @@ void Integrator_class::Propagate_ray() {
 
 }
 
-bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const Global_State_at_Event, double* const Local_State_at_Event) {
+bool Geodesic_Integrator_class::Locate_event(Event_detection_enums e_Event, double* const Global_State_at_Event, double* const Local_State_at_Event) {
 
     int Event_idx{};
     double Event_target{};
@@ -532,7 +541,7 @@ bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const
 
     default:
 
-        throw std::runtime_error("Unsupported event type in Integrator_class::Locate_event()!");
+        throw std::runtime_error("Unsupported event type in Geodesic_Integrator_class::Locate_event()!");
 
     }
 
@@ -592,7 +601,7 @@ bool Integrator_class::Locate_event(Event_detection_enums e_Event, double* const
 
 }
 
-const double Integrator_class::get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const {
+const double Geodesic_Integrator_class::get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const {
 
     /* The source for this implementation is https://mezbanhabibi.ir/wp-content/uploads/2020/01/ordinary-differential-equations-vol.1.-Nonstiff-problems.pdf, equation (6.7) */
 
@@ -620,13 +629,13 @@ const double Integrator_class::get_dense_output(const double Param, const State_
 
 }
 
-void Integrator_class::Check_integration_complete_status() {
+void Geodesic_Integrator_class::Check_integration_complete_status() {
 
     /* This needs to use the internal dynamic state, because it is kept in "global coordainates" (which so far only affects the wormhole). */
     this->Normal_termination_condition = this->p_Spacetime->terminate_integration(this->Current_Dynamic_state);
 
-    this->Max_affine_param_reached      = std::abs(this->get_current_State_Vector_global()[e_ray_affine_param]) >= this->p_Step_controller->Parameters.Max_affine_param;
-    this->Max_integration_count_reached = this->p_Ray_log_struct->Log_offset >= this->p_Step_controller->Parameters.Max_integration_count;
+    this->Max_affine_param_reached      = std::abs(this->get_current_State_Vector_global()[e_ray_affine_param]) >= this->Max_affine_param;
+    this->Max_integration_count_reached = this->p_Ray_log_struct->Log_offset >= this->Max_integration_count;
     this->Step_too_small                = this->p_Step_controller->step < std::numeric_limits<double>::min();
 
     if (this->Max_affine_param_reached) { 
@@ -696,13 +705,13 @@ void Integrator_class::Check_integration_complete_status() {
 
 }
 
-const double* const Integrator_class::get_current_State_Vector_global() const {
+const double* const Geodesic_Integrator_class::get_current_State_Vector_global() const {
 
     return &this->p_Ray_log_struct->Ray_path_log_global[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
 
 }
 
-const double* const Integrator_class::get_previous_State_Vector_global() const {
+const double* const Geodesic_Integrator_class::get_previous_State_Vector_global() const {
 
     if (this->p_Ray_log_struct->Log_offset > 0) {
 
@@ -716,13 +725,13 @@ const double* const Integrator_class::get_previous_State_Vector_global() const {
     
 }
 
-const double* const Integrator_class::get_current_State_Vector_local() const {
+const double* const Geodesic_Integrator_class::get_current_State_Vector_local() const {
 
     return &this->p_Ray_log_struct->Ray_path_log_local[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
 
 }
 
-const double* const Integrator_class::get_previous_State_Vector_local() const {
+const double* const Geodesic_Integrator_class::get_previous_State_Vector_local() const {
 
     if (this->p_Ray_log_struct->Log_offset > 0) {
 

@@ -509,115 +509,109 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
 }
 
-Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_element, Integrator_parameters_type* Integrator_params) {
+Return_Values static parse_geodesic_integrator_params(tinyxml2::XMLElement* Integrator_element, Integrator_parameters_type* Integrator_params) {
 
     tinyxml2::XMLElement* temp_param_var;
 
     // -------------------- Init stepsize
     temp_param_var = Integrator_element->FirstChildElement("init_stepsize");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the initial step size!" << "\n"; return ERROR; }
-    Integrator_params->Init_stepzie = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.Init_stepzie = std::stod(temp_param_var->GetText());
 
     // -------------------- RK78 abs accuracy
-    temp_param_var = Integrator_element->FirstChildElement("RK78_abs_accuracy");
+    temp_param_var = Integrator_element->FirstChildElement("RK_abs_accuracy");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 abs accuracy parameter!" << "\n"; return ERROR; }
-    Integrator_params->RK_78_abs_accuracy = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.RK_abs_accuracy = std::stod(temp_param_var->GetText());
 
     // -------------------- RK78 rel accuracy
-    temp_param_var = Integrator_element->FirstChildElement("RK78_rel_accuracy");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 rel accuracy parameter!" << "\n"; return ERROR; }
-    Integrator_params->RK_78_rel_accuracy = std::stod(temp_param_var->GetText());
+    temp_param_var = Integrator_element->FirstChildElement("RK_rel_accuracy");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK rel accuracy parameter!" << "\n"; return ERROR; }
+    Integrator_params->Geodesic_Step_Controller_Params.RK_rel_accuracy = std::stod(temp_param_var->GetText());
 
     // -------------------- ESDIRK54 abs accuracy
     temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_abs_accuracy");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 abs accuracy parameter!" << "\n"; return ERROR; }
-    Integrator_params->ESDIRK54_abs_accuracy = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.ESDIRK54_abs_accuracy = std::stod(temp_param_var->GetText());
 
     // -------------------- ESDIRK54 rel accuracy
     temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_rel_accuracy");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 rel accuracy parameter!" << "\n"; return ERROR; }
-    Integrator_params->ESDIRK54_rel_accuracy = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.ESDIRK54_rel_accuracy = std::stod(temp_param_var->GetText());
 
     // -------------------- Step controller safety 1
     temp_param_var = Integrator_element->FirstChildElement("step_controller_safety_factor_1");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller safety parameter 1!" << "\n"; return ERROR; }
-    Integrator_params->Safety_1 = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.Safety_1 = std::stod(temp_param_var->GetText());
 
     // -------------------- Step controller safety 2
     temp_param_var = Integrator_element->FirstChildElement("step_controller_safety_factor_2");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller safety parameter 2!" << "\n"; return ERROR; }
-    Integrator_params->Safety_2 = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.Safety_2 = std::stod(temp_param_var->GetText());
 
     // -------------------- RK78 PID controller I gain
-    temp_param_var = Integrator_element->FirstChildElement("RK78_PID_controller_I_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 PID controller I gain!" << "\n"; return ERROR; }
-    Integrator_params->RK78_PID_gain_I = std::stod(temp_param_var->GetText());
+    temp_param_var = Integrator_element->FirstChildElement("RK_PID_controller_I_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK PID controller I gain!" << "\n"; return ERROR; }
+    Integrator_params->Geodesic_Step_Controller_Params.RK_PID_gain_I = std::stod(temp_param_var->GetText());
 
     // -------------------- RK78 PID controller P gain
-    temp_param_var = Integrator_element->FirstChildElement("RK78_PID_controller_P_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 PID controller P gain!" << "\n"; return ERROR; }
-    Integrator_params->RK78_PID_gain_P = std::stod(temp_param_var->GetText());
+    temp_param_var = Integrator_element->FirstChildElement("RK_PID_controller_P_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK PID controller P gain!" << "\n"; return ERROR; }
+    Integrator_params->Geodesic_Step_Controller_Params.RK_PID_gain_P = std::stod(temp_param_var->GetText());
 
     // -------------------- RK78 PID controller D gain
-    temp_param_var = Integrator_element->FirstChildElement("RK78_PID_controller_D_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 PID controller D gain!" << "\n"; return ERROR; }
-    Integrator_params->RK78_PID_gain_D = std::stod(temp_param_var->GetText());
+    temp_param_var = Integrator_element->FirstChildElement("RK_PID_controller_D_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK PID controller D gain!" << "\n"; return ERROR; }
+    Integrator_params->Geodesic_Step_Controller_Params.RK_PID_gain_D = std::stod(temp_param_var->GetText());
 
     // -------------------- RK78 Gustafsson controller k_1 gain
-    temp_param_var = Integrator_element->FirstChildElement("RK78_Gustafsson_controller_k_1");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 Gustafsson controller k_1 gain!" << "\n"; return ERROR; }
-    Integrator_params->RK78_Gustafsson_k1 = std::stod(temp_param_var->GetText());
+    temp_param_var = Integrator_element->FirstChildElement("RK_Gustafsson_controller_k_1");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK Gustafsson controller k_1 gain!" << "\n"; return ERROR; }
+    Integrator_params->Geodesic_Step_Controller_Params.RK_Gustafsson_k1 = std::stod(temp_param_var->GetText());
 
     // -------------------- RK78 Gustafsson controller k_2 gain
-    temp_param_var = Integrator_element->FirstChildElement("RK78_Gustafsson_controller_k_2");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 Gustafsson controller k_2 gain!" << "\n"; return ERROR; }
-    Integrator_params->RK78_Gustafsson_k2 = std::stod(temp_param_var->GetText());
+    temp_param_var = Integrator_element->FirstChildElement("RK_Gustafsson_controller_k_2");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK Gustafsson controller k_2 gain!" << "\n"; return ERROR; }
+    Integrator_params->Geodesic_Step_Controller_Params.RK_Gustafsson_k2 = std::stod(temp_param_var->GetText());
 
     // -------------------- ESDIRK54 PID controller I gain
     temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_PID_controller_I_gain");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 PID controller I gain!" << "\n"; return ERROR; }
-    Integrator_params->ESDIRK54_PID_gain_I = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.ESDIRK54_PID_gain_I = std::stod(temp_param_var->GetText());
 
     // -------------------- ESDIRK54 PID controller P gain
     temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_PID_controller_P_gain");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 PID controller P gain!" << "\n"; return ERROR; }
-    Integrator_params->ESDIRK54_PID_gain_P = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.ESDIRK54_PID_gain_P = std::stod(temp_param_var->GetText());
 
     // -------------------- ESDIRK54 PID controller D gain
     temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_PID_controller_D_gain");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 PID controller D gain!" << "\n"; return ERROR; }
-    Integrator_params->ESDIRK54_PID_gain_D = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.ESDIRK54_PID_gain_D = std::stod(temp_param_var->GetText());
 
     // -------------------- ESDIRK54 Gustafsson controller k_1 gain
     temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_Gustafsson_controller_k_1");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 Gustafsson controller k_1 gain!" << "\n"; return ERROR; }
-    Integrator_params->ESDIRK54_Gustafsson_k1 = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.ESDIRK54_Gustafsson_k1 = std::stod(temp_param_var->GetText());
 
     // -------------------- ESDIRK54 Gustafsson controller k_2 gain
     temp_param_var = Integrator_element->FirstChildElement("ESDIRK54_Gustafsson_controller_k_2");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the ESDIRK54 Gustafsson controller k_2 gain!" << "\n"; return ERROR; }
-    Integrator_params->ESDIRK54_Gustafsson_k2 = std::stod(temp_param_var->GetText());
-
+    Integrator_params->Geodesic_Step_Controller_Params.ESDIRK54_Gustafsson_k2 = std::stod(temp_param_var->GetText());
 
     // -------------------- Max relative step increase
     temp_param_var = Integrator_element->FirstChildElement("Max_rel_step_increase");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the max relative step increase!" << "\n"; return ERROR; }
-    Integrator_params->Max_rel_step_increase = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.Max_rel_step_increase = std::stod(temp_param_var->GetText());
 
     // -------------------- Min relative step increase
     temp_param_var = Integrator_element->FirstChildElement("Min_rel_step_increase");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the min relative step increase!" << "\n"; return ERROR; }
-    Integrator_params->Min_rel_step_increase = std::stod(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.Min_rel_step_increase = std::stod(temp_param_var->GetText());
 
     // -------------------- Max integration count 
     temp_param_var = Integrator_element->FirstChildElement("max_integration_count");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the maximum integration count!" << "\n"; return ERROR; }
     Integrator_params->Max_integration_count = std::stoi(temp_param_var->GetText());
-
-    // -------------------- The adaptive Simpson integral solver accuracy parameter
-    temp_param_var = Integrator_element->FirstChildElement("simpson_method_accuracy");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the simpson method accuracy parameter!" << "\n"; return ERROR; }
-    Integrator_params->Simpson_accuracy = std::stod(temp_param_var->GetText());
 
     // -------------------- Max affine parameter value
     temp_param_var = Integrator_element->FirstChildElement("max_affine_parameter");
@@ -627,7 +621,7 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     // -------------------- Use adaptive step flag
     temp_param_var = Integrator_element->FirstChildElement("use_adaptive_step");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the use adaptive step flag!" << "\n"; return ERROR; }
-    Integrator_params->Use_adaptive_step = std::stoi(temp_param_var->GetText());
+    Integrator_params->Geodesic_Step_Controller_Params.Use_adaptive_step = std::stoi(temp_param_var->GetText());
 
     // -------------------- The step controller type
     temp_param_var = Integrator_element->FirstChildElement("Step_controller_type");
@@ -636,12 +630,12 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
 
     if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "Gustafsson")) {
 
-        Integrator_params->Controller_type = Gustafsson;
+        Integrator_params->Geodesic_Step_Controller_Params.Controller_type = Gustafsson;
 
     }
     else if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "PID")) {
 
-        Integrator_params->Controller_type = PID;
+        Integrator_params->Geodesic_Step_Controller_Params.Controller_type = PID;
 
     }
     else {
@@ -655,41 +649,12 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
     // -------------------- Max stepsize
     temp_param_var = Integrator_element->FirstChildElement("max_stepsize");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the max step size!" << "\n"; return ERROR; }
-    Integrator_params->Max_stepsize = std::stod(temp_param_var->GetText());
-
-    // -------------------- Radiative transfer integrator
-    temp_param_var = Integrator_element->FirstChildElement("radiative_transfer_integrator_type");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the radiative transfer integrator type!" << "\n"; return ERROR; }
-    std::string Radiative_transfer_integrator_type = temp_param_var->GetText();
-
-    if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "Analytic")) {
-
-        Integrator_params->e_Radiative_transfer_integrator = Analytic;
-
-    }
-    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "Implicit Trapezoid")) {
-
-        Integrator_params->e_Radiative_transfer_integrator = Implicit_Trapezoid;
-
-    }
-    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "RK5")) {
-
-        Integrator_params->e_Radiative_transfer_integrator = RK5;
-    
-    }
-    else {
-
-        std::cout << "Unsupported radiative transfer integrator type!" << "\n";
-
-        return ERROR;
-
-    }
+    Integrator_params->Geodesic_Step_Controller_Params.Max_stepsize = std::stod(temp_param_var->GetText());
 
     // -------------------- Default gegodesic integrator
-    temp_param_var = Integrator_element->FirstChildElement("default_geodesic_integrator_type");
+    temp_param_var = Integrator_element->FirstChildElement("Integrator_type");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the geodesic integrator type!" << "\n"; return ERROR; }
     std::string Default_geodesic_integrator_type = temp_param_var->GetText();
-
 
     if (0 == strcmp(static_cast<const char*>(Default_geodesic_integrator_type.c_str()), "RK78_Fehlberg")) {
 
@@ -718,6 +683,145 @@ Return_Values static parse_integrator_params(tinyxml2::XMLElement* Integrator_el
         return ERROR;
 
     }
+
+    return OK;
+
+}
+
+Return_Values static parse_rad_transfer_integrator_params(tinyxml2::XMLElement* Integrator_element, Integrator_parameters_type* Integrator_params) {
+
+    tinyxml2::XMLElement* temp_param_var;
+
+    // -------------------- Init stepsize
+    temp_param_var = Integrator_element->FirstChildElement("init_stepsize");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the initial step size!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.Init_stepzie = std::stod(temp_param_var->GetText());
+
+    // -------------------- RK78 abs accuracy
+    temp_param_var = Integrator_element->FirstChildElement("RK_abs_accuracy");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 abs accuracy parameter!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_abs_accuracy = std::stod(temp_param_var->GetText());
+
+    // -------------------- RK78 rel accuracy
+    temp_param_var = Integrator_element->FirstChildElement("RK_rel_accuracy");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 rel accuracy parameter!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_rel_accuracy = std::stod(temp_param_var->GetText());
+
+    // -------------------- Step controller safety 1
+    temp_param_var = Integrator_element->FirstChildElement("step_controller_safety_factor_1");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller safety parameter 1!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.Safety_1 = std::stod(temp_param_var->GetText());
+
+    // -------------------- Step controller safety 2
+    temp_param_var = Integrator_element->FirstChildElement("step_controller_safety_factor_2");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller safety parameter 2!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.Safety_2 = std::stod(temp_param_var->GetText());
+
+    // -------------------- RK78 PID controller I gain
+    temp_param_var = Integrator_element->FirstChildElement("RK_PID_controller_I_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK PID controller I gain!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_PID_gain_I = std::stod(temp_param_var->GetText());
+
+    // -------------------- RK78 PID controller P gain
+    temp_param_var = Integrator_element->FirstChildElement("RK_PID_controller_P_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK PID controller P gain!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_PID_gain_P = std::stod(temp_param_var->GetText());
+
+    // -------------------- RK78 PID controller D gain
+    temp_param_var = Integrator_element->FirstChildElement("RK_PID_controller_D_gain");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK PID controller D gain!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_PID_gain_D = std::stod(temp_param_var->GetText());
+
+    // -------------------- RK78 Gustafsson controller k_1 gain
+    temp_param_var = Integrator_element->FirstChildElement("RK_Gustafsson_controller_k_1");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK Gustafsson controller k_1 gain!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_Gustafsson_k1 = std::stod(temp_param_var->GetText());
+
+    // -------------------- RK78 Gustafsson controller k_2 gain
+    temp_param_var = Integrator_element->FirstChildElement("RK_Gustafsson_controller_k_2");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK Gustafsson controller k_2 gain!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_Gustafsson_k2 = std::stod(temp_param_var->GetText());
+
+    // -------------------- Max relative step increase
+    temp_param_var = Integrator_element->FirstChildElement("Max_rel_step_increase");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the max relative step increase!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.Max_rel_step_increase = std::stod(temp_param_var->GetText());
+
+    // -------------------- Min relative step increase
+    temp_param_var = Integrator_element->FirstChildElement("Min_rel_step_increase");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the min relative step increase!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.Min_rel_step_increase = std::stod(temp_param_var->GetText());
+
+    // -------------------- Use adaptive step flag
+    temp_param_var = Integrator_element->FirstChildElement("use_adaptive_step");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the use adaptive step flag!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.Use_adaptive_step = std::stoi(temp_param_var->GetText());
+
+    // -------------------- The step controller type
+    temp_param_var = Integrator_element->FirstChildElement("Step_controller_type");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller type!" << "\n"; return ERROR; }
+    std::string Step_controller_type = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "Gustafsson")) {
+
+        Integrator_params->Rad_Transfer_Step_Controller_Params.Controller_type = Gustafsson;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "PID")) {
+
+        Integrator_params->Rad_Transfer_Step_Controller_Params.Controller_type = PID;
+
+    }
+    else {
+
+        std::cout << "Unsupported step controller type!" << "\n";
+
+        return ERROR;
+
+    }
+
+    // -------------------- Radiative transfer integrator
+    temp_param_var = Integrator_element->FirstChildElement("Integrator_type");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the radiative transfer integrator type!" << "\n"; return ERROR; }
+    std::string Radiative_transfer_integrator_type = temp_param_var->GetText();
+
+    if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "Analytic")) {
+
+        Integrator_params->e_Radiative_transfer_integrator = Rad_Analytic;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "Implicit Trapezoid")) {
+
+        Integrator_params->e_Radiative_transfer_integrator = Rad_Implicit_Trapezoid;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "RK54")) {
+
+        Integrator_params->e_Radiative_transfer_integrator = RK54;
+    
+    }
+    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "RK78_Fehlberg")) {
+
+        Integrator_params->e_Radiative_transfer_integrator = RK78_Fehlberg;
+
+    }
+    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "RK78_DP")) {
+
+        Integrator_params->e_Radiative_transfer_integrator = RK78_DP;
+
+    }
+    else {
+
+        std::cout << "Unsupported radiative transfer integrator type!" << "\n";
+
+        return ERROR;
+
+    }
+
+    // -------------------- Max stepsize
+    temp_param_var = Integrator_element->FirstChildElement("max_stepsize");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the max step size!" << "\n"; return ERROR; }
+    Integrator_params->Rad_Transfer_Step_Controller_Params.Max_stepsize = std::stod(temp_param_var->GetText());
 
     return OK;
 
@@ -1517,11 +1621,17 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     if (temp_param_var == nullptr) { std::cout << "Failed to find the Metric node!" << "\n"; return ERROR; }
     if (OK != parse_metric_parameters(temp_param_var, &p_Initial_conditions->Metric_parameters)) { return ERROR; };
 
-    /* ====================================== Parse the integrator parameters ====================================== */
+    /* ====================================== Parse the geodesic integrator parameters ====================================== */
 
-    temp_param_var = Root_node->FirstChildElement("Integrator");
+    temp_param_var = Root_node->FirstChildElement("Geodesic_Integrator");
     if (temp_param_var == nullptr) { std::cout << "Failed to find the integrator node!" << "\n"; return ERROR; }
-    if (OK != parse_integrator_params(temp_param_var, &p_Initial_conditions->Integrator_params)) { return ERROR; };
+    if (OK != parse_geodesic_integrator_params(temp_param_var, &p_Initial_conditions->Integrator_params)) { return ERROR; };
+
+    /* ====================================== Parse the rad transfer integrator parameters ====================================== */
+
+    temp_param_var = Root_node->FirstChildElement("Rad_Transfer_Integrator");
+    if (temp_param_var == nullptr) { std::cout << "Failed to find the integrator node!" << "\n"; return ERROR; }
+    if (OK != parse_rad_transfer_integrator_params(temp_param_var, &p_Initial_conditions->Integrator_params)) { return ERROR; };
 
     /* ====================================== Parse the accretion disk parameters ====================================== */
 

@@ -13,36 +13,54 @@ from numpy import pi, sqrt
 parent_directory = os.path.abspath('...')
 sys.path.append(parent_directory)
 
-class Integrator():
+class Geodesic_Integrator():
 
     __slots__ = ("init_stepsize",
-                 "RK78_abs_accuracy", 
-                 "RK78_rel_accuracy", 
+                 "RK_abs_accuracy", 
+                 "RK_rel_accuracy", 
                  "ESDIRK54_abs_accuracy", 
                  "ESDIRK54_rel_accuracy", 
                  "Step_controller_type",
                  "step_controller_safety_factor_1",
                  "step_controller_safety_factor_2",
-                 "RK78_PID_controller_I_gain",
-                 "RK78_PID_controller_P_gain",
-                 "RK78_PID_controller_D_gain",
+                 "RK_PID_controller_I_gain",
+                 "RK_PID_controller_P_gain",
+                 "RK_PID_controller_D_gain",
                  "ESDIRK54_PID_controller_I_gain",
                  "ESDIRK54_PID_controller_P_gain",
                  "ESDIRK54_PID_controller_D_gain",
                  "Max_rel_step_increase",
                  "Min_rel_step_increase",
-                 "RK78_Gustafsson_controller_k_1", 
-                 "RK78_Gustafsson_controller_k_2", 
+                 "RK_Gustafsson_controller_k_1", 
+                 "RK_Gustafsson_controller_k_2", 
                  "ESDIRK54_Gustafsson_controller_k_1", 
                  "ESDIRK54_Gustafsson_controller_k_2", 
                  "max_integration_count",
-                 "simpson_method_accuracy",
                  "max_affine_parameter",
                  "use_adaptive_step",
                  "max_stepsize",
-                 "radiative_transfer_integrator_type",
-                 "default_geodesic_integrator_type",
-                 "Step_stability_check_threshold")
+                 "Integrator_type")
+    
+class Rad_Transfer_Integrator():
+
+    __slots__ = ("init_stepsize", 
+                 "RK_abs_accuracy", 
+                 "RK_rel_accuracy", 
+                 "Step_controller_type",
+                 "step_controller_safety_factor_1",
+                 "step_controller_safety_factor_2",
+                 
+                 "RK_PID_controller_I_gain",
+                 "RK_PID_controller_P_gain",
+                 "RK_PID_controller_D_gain",
+                 "RK_Gustafsson_controller_k_1", 
+                 "RK_Gustafsson_controller_k_2", 
+                 
+                 "Max_rel_step_increase",
+                 "Min_rel_step_increase",
+                 "use_adaptive_step",
+                 "Integrator_type",
+                 "max_stepsize")
 
 class Disk_model():
 
@@ -191,7 +209,8 @@ class File_manager():
 class Simulation_configurator:
 
     __slots__ = ("simulation_name", 
-                 "integrator", 
+                 "geodesic_integrator", 
+                 "rad_transfer_integrator", 
                  "metric_parameters", 
                  "disk_model", 
                  "hotspot_model", 
@@ -238,7 +257,8 @@ class Simulation_configurator:
         self.max_image_order = max_image_order
         self.Order_counting_scheme = Order_counting_scheme
 
-        self._configure_integrator_settings()
+        self._configure_geodesic_integrator_settings()
+        self._configure_rad_transfer_integrator_settings()
         self._configure_observer()
         self._configure_disk_model()
         self._configure_hotspot_model()
@@ -246,9 +266,9 @@ class Simulation_configurator:
         self._configure_metric_parameters()
         self._configure_emission_models()
 
-    def _configure_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
-                                             RK78_abs_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
-                                             RK78_rel_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
+    def _configure_geodesic_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
+                                             RK_abs_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
+                                             RK_rel_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
                                              ESDIRK54_abs_accuracy: dict[str, float | str] = {"Value": 1e-8, "Unit": "[-]"},
                                              ESDIRK54_rel_accuracy: dict[str, float | str] = {"Value": 1e-8, "Unit": "[-]"},
                                              Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
@@ -256,58 +276,88 @@ class Simulation_configurator:
                                              Safety_factor_2: dict[str, float | str] = {"Value": 1e-35, "Unit": "[-]"},
                                              Max_rel_step_increase: dict[str, float | str] = {"Value": 2, "Unit": "[-]"},
                                              Min_rel_step_increase: dict[str, float | str] = {"Value": 0.01, "Unit": "[-]"},
-                                             RK78_Step_controller_I_gain: dict[str, float | str] = {"Value": 0.58 / 7, "Unit": "[-]"},
-                                             RK78_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 7, "Unit": "[-]"},
-                                             RK78_Step_controller_D_gain: dict[str, float | str] = {"Value": 0.1 / 7, "Unit": "[-]"},
-                                             RK78_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.367 / 8, "Unit": "[-]"},
-                                             RK78_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 8, "Unit": "[-]"},
+                                             RK_Step_controller_I_gain: dict[str, float | str] = {"Value": 0.58 / 7, "Unit": "[-]"},
+                                             RK_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 7, "Unit": "[-]"},
+                                             RK_Step_controller_D_gain: dict[str, float | str] = {"Value": 0.1 / 7, "Unit": "[-]"},
+                                             RK_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.367 / 8, "Unit": "[-]"},
+                                             RK_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 8, "Unit": "[-]"},
                                              ESDIRK54_Step_controller_I_gain: dict[str, float | str] = {"Value": 0.58 / 5, "Unit": "[-]"},
                                              ESDIRK54_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 5, "Unit": "[-]"},
                                              ESDIRK54_Step_controller_D_gain: dict[str, float | str] = {"Value": 0.1 / 5, "Unit": "[-]"},
                                              ESDIRK54_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.367 / 5, "Unit": "[-]"},
                                              ESDIRK54_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 5, "Unit": "[-]"},
                                              Max_integration_count: dict[str, float | str] = {"Value": 1e7, "Unit": "[-]"},
-                                             simpson_method_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"},
                                              max_affine_parameter: dict[str, float | str] = {"Value": 1e6, "Unit": "[M]"},
                                              use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},
-                                             max_stepsize: dict[str, int | str] = {"Value": 5, "Unit": "[M]"},
-                                             radiative_transfer_integrator_type: dict[str, str] = {"Value": "Implicit Trapezoid", "Unit": "[-]"},
-                                             default_geodesic_integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"},   
-                                             Step_stability_check_threshold: dict[str, float | str] = {"Value": 0.01, "Unit": "[M]"}):
+                                             max_stepsize: dict[str, int | str] = {"Value": 100, "Unit": "[M]"},
+                                             Integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"}):
 
-        self.integrator = Integrator()
+        self.geodesic_integrator = Geodesic_Integrator()
 
-        self.integrator.init_stepsize = Init_stepsize
-        self.integrator.init_stepsize = Init_stepsize
-        self.integrator.RK78_abs_accuracy = RK78_abs_accuracy
-        self.integrator.RK78_rel_accuracy = RK78_rel_accuracy
-        self.integrator.ESDIRK54_abs_accuracy = ESDIRK54_abs_accuracy
-        self.integrator.ESDIRK54_rel_accuracy = ESDIRK54_rel_accuracy
-        self.integrator.Step_controller_type = Step_controller_type
-        self.integrator.step_controller_safety_factor_1 = Safety_factor_1
-        self.integrator.step_controller_safety_factor_2 = Safety_factor_2
-        self.integrator.Max_rel_step_increase = Max_rel_step_increase
-        self.integrator.Min_rel_step_increase = Min_rel_step_increase
-        self.integrator.RK78_PID_controller_I_gain = RK78_Step_controller_I_gain
-        self.integrator.RK78_PID_controller_P_gain = RK78_Step_controller_P_gain
-        self.integrator.RK78_PID_controller_D_gain = RK78_Step_controller_D_gain
-        self.integrator.RK78_Gustafsson_controller_k_1 = RK78_Gustafsson_controller_k_1
-        self.integrator.RK78_Gustafsson_controller_k_2 = RK78_Gustafsson_controller_k_2
+        self.geodesic_integrator.init_stepsize = Init_stepsize
+        self.geodesic_integrator.RK_abs_accuracy = RK_abs_accuracy
+        self.geodesic_integrator.RK_rel_accuracy = RK_rel_accuracy
+        self.geodesic_integrator.ESDIRK54_abs_accuracy = ESDIRK54_abs_accuracy
+        self.geodesic_integrator.ESDIRK54_rel_accuracy = ESDIRK54_rel_accuracy
+        self.geodesic_integrator.Step_controller_type = Step_controller_type
+        self.geodesic_integrator.step_controller_safety_factor_1 = Safety_factor_1
+        self.geodesic_integrator.step_controller_safety_factor_2 = Safety_factor_2
+        self.geodesic_integrator.Max_rel_step_increase = Max_rel_step_increase
+        self.geodesic_integrator.Min_rel_step_increase = Min_rel_step_increase
+        self.geodesic_integrator.RK_PID_controller_I_gain = RK_Step_controller_I_gain
+        self.geodesic_integrator.RK_PID_controller_P_gain = RK_Step_controller_P_gain
+        self.geodesic_integrator.RK_PID_controller_D_gain = RK_Step_controller_D_gain
+        self.geodesic_integrator.RK_Gustafsson_controller_k_1 = RK_Gustafsson_controller_k_1
+        self.geodesic_integrator.RK_Gustafsson_controller_k_2 = RK_Gustafsson_controller_k_2
         
-        self.integrator.ESDIRK54_PID_controller_I_gain = ESDIRK54_Step_controller_I_gain
-        self.integrator.ESDIRK54_PID_controller_P_gain = ESDIRK54_Step_controller_P_gain
-        self.integrator.ESDIRK54_PID_controller_D_gain = ESDIRK54_Step_controller_D_gain
-        self.integrator.ESDIRK54_Gustafsson_controller_k_1 = ESDIRK54_Gustafsson_controller_k_1
-        self.integrator.ESDIRK54_Gustafsson_controller_k_2 = ESDIRK54_Gustafsson_controller_k_2
+        self.geodesic_integrator.ESDIRK54_PID_controller_I_gain = ESDIRK54_Step_controller_I_gain
+        self.geodesic_integrator.ESDIRK54_PID_controller_P_gain = ESDIRK54_Step_controller_P_gain
+        self.geodesic_integrator.ESDIRK54_PID_controller_D_gain = ESDIRK54_Step_controller_D_gain
+        self.geodesic_integrator.ESDIRK54_Gustafsson_controller_k_1 = ESDIRK54_Gustafsson_controller_k_1
+        self.geodesic_integrator.ESDIRK54_Gustafsson_controller_k_2 = ESDIRK54_Gustafsson_controller_k_2
         
-        self.integrator.max_integration_count  = Max_integration_count
-        self.integrator.simpson_method_accuracy = simpson_method_accuracy
-        self.integrator.max_affine_parameter = max_affine_parameter
-        self.integrator.use_adaptive_step = use_adaptive_step
-        self.integrator.max_stepsize = max_stepsize
-        self.integrator.radiative_transfer_integrator_type = radiative_transfer_integrator_type
-        self.integrator.default_geodesic_integrator_type = default_geodesic_integrator_type
-        self.integrator.Step_stability_check_threshold = Step_stability_check_threshold
+        self.geodesic_integrator.max_integration_count  = Max_integration_count
+        self.geodesic_integrator.max_affine_parameter = max_affine_parameter
+        self.geodesic_integrator.use_adaptive_step = use_adaptive_step
+        self.geodesic_integrator.max_stepsize = max_stepsize
+        self.geodesic_integrator.Integrator_type = Integrator_type
+        
+    def _configure_rad_transfer_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
+                                                    RK_abs_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
+                                                    RK_rel_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
+                                                    Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
+                                                    Safety_factor_1: dict[str, float | str] = {"Value": 0.9, "Unit": "[-]"},
+                                                    Safety_factor_2: dict[str, float | str] = {"Value": 1e-35, "Unit": "[-]"},
+                                                    Max_rel_step_increase: dict[str, float | str] = {"Value": 10, "Unit": "[-]"},
+                                                    Min_rel_step_increase: dict[str, float | str] = {"Value": 0.01, "Unit": "[-]"},
+                                                    RK_Step_controller_I_gain: dict[str, float | str] = {"Value": 0.58 / 7, "Unit": "[-]"},
+                                                    RK_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 7, "Unit": "[-]"},
+                                                    RK_Step_controller_D_gain: dict[str, float | str] = {"Value": 0.1 / 7, "Unit": "[-]"},
+                                                    RK_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.367 / 8, "Unit": "[-]"},
+                                                    RK_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 8, "Unit": "[-]"},
+                                                    Integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"},
+                                                    use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},
+                                                    max_stepsize: dict[str, int | str] = {"Value": 100, "Unit": "[M]"}):
+
+        self.rad_transfer_integrator = Rad_Transfer_Integrator()
+
+        self.rad_transfer_integrator.init_stepsize = Init_stepsize
+        self.rad_transfer_integrator.RK_abs_accuracy = RK_abs_accuracy
+        self.rad_transfer_integrator.RK_rel_accuracy = RK_rel_accuracy
+        self.rad_transfer_integrator.Step_controller_type = Step_controller_type
+        self.rad_transfer_integrator.step_controller_safety_factor_1 = Safety_factor_1
+        self.rad_transfer_integrator.step_controller_safety_factor_2 = Safety_factor_2
+        self.rad_transfer_integrator.Max_rel_step_increase = Max_rel_step_increase
+        self.rad_transfer_integrator.Min_rel_step_increase = Min_rel_step_increase
+        self.rad_transfer_integrator.RK_PID_controller_I_gain = RK_Step_controller_I_gain
+        self.rad_transfer_integrator.RK_PID_controller_P_gain = RK_Step_controller_P_gain
+        self.rad_transfer_integrator.RK_PID_controller_D_gain = RK_Step_controller_D_gain
+        self.rad_transfer_integrator.RK_Gustafsson_controller_k_1 = RK_Gustafsson_controller_k_1
+        self.rad_transfer_integrator.RK_Gustafsson_controller_k_2 = RK_Gustafsson_controller_k_2
+        self.rad_transfer_integrator.max_stepsize = max_stepsize
+
+        self.rad_transfer_integrator.use_adaptive_step = use_adaptive_step
+        self.rad_transfer_integrator.Integrator_type = Integrator_type
 
     def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},
                                   Distance: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
@@ -847,11 +897,18 @@ class Simulation_configurator:
                     ET.SubElement(Emission_subelement, Emission_attrib_name, units = str(Emission_attrib["Unit"])).text = "{}".format(Emission_attrib["Value"])
 
 
-        # ============ Generate the integrator XML section ============ #
+        # ============ Generate the geodesic integrator XML section ============ #
 
-        Integrator_subelement = ET.SubElement(XML_root_node, "Integrator")
-        for Integrator_attrib_name in self.integrator.__slots__:
-            Integrator_attrib: dict[str, str | int | float] = getattr(self.integrator, Integrator_attrib_name)
+        Integrator_subelement = ET.SubElement(XML_root_node, "Geodesic_Integrator")
+        for Integrator_attrib_name in self.geodesic_integrator.__slots__:
+            Integrator_attrib: dict[str, str | int | float] = getattr(self.geodesic_integrator, Integrator_attrib_name)
+            ET.SubElement(Integrator_subelement, Integrator_attrib_name, units = str(Integrator_attrib["Unit"])).text = "{}".format(Integrator_attrib["Value"])
+            
+        # ============ Generate the radiative transfer integrator XML section ============ #
+
+        Integrator_subelement = ET.SubElement(XML_root_node, "Rad_Transfer_Integrator")
+        for Integrator_attrib_name in self.rad_transfer_integrator.__slots__:
+            Integrator_attrib: dict[str, str | int | float] = getattr(self.rad_transfer_integrator, Integrator_attrib_name)
             ET.SubElement(Integrator_subelement, Integrator_attrib_name, units = str(Integrator_attrib["Unit"])).text = "{}".format(Integrator_attrib["Value"])
 
         # ============ Generate the file paths XML section ============ #
@@ -873,92 +930,3 @@ class Simulation_configurator:
         with open(Path_to_input_dir + "\\" + Input_file_name, 'w') as xfile:
             xfile.write(Header + 'encoding=\"{}\"?>\n'.format(Encoding) + Body)
             xfile.close()
-
-
-if __name__ == "__main__":
-
-    Units_class_instance = Units_class()
-
-    Sim_config = Simulation_configurator()
-    
-    Sim_config.metric_parameters.Numerical_metric_spline_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/Galin_numerical_config_II.XML"
-
-    Sim_config.simulation_mode = {"Value": 0, "Unit": "[-]"}
-
-    Sim_config.object_mass = {"Value": 6.2e9, "Unit": "[M_sun]"}
-
-    # ================================================== Metric ================================================== #
-
-    Sim_config.metric_parameters.Metric_type    = {"Value": "Kerr", "Unit": "[-]"}
-    Sim_config.metric_parameters.Mass           = {"Value": 0.881990876889021, "Unit": "[M]"}
-    Sim_config.metric_parameters.Horizon_radius = {"Value": 0.01, "Unit": "[G/c^2]"}
-    Sim_config.metric_parameters.Spin           = {"Value": 0, "Unit": "[M]"}
-    Sim_config.metric_parameters.Numerical_metric_anzatz_type = {"Value": "Anzatz_1", "Unit": "[M]"} 
-    
-    Sim_config.metric_parameters.Scattering_radius = {"Value": 400, "Unit": "[M]"} 
-    
-    # ================================================== Observer ================================================== #
-
-    Sim_config.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
-    Sim_config.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
-    
-    Sim_config.observer.Distance    = {"Value": 200, "Unit": "[M]"}
-    Sim_config.observer.Inclination = {"Value": 90 * pi / 180, "Unit": "[Rad]"}
-    Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
-    Sim_config.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[Hz]"}
-
-    # ================================================== Disk ================================================== #
-    
-    Sim_config.disk_model.Ensamble_type = {"Value": "Thermal",   "Unit": "[-]"}
-    Sim_config.disk_model.Disk_Model    = {"Value": "Phenom_RIAF_1", "Unit": "[-]"}
-    Sim_config.disk_model.Mag_field_geometry = {"Value": "Constant", "Unit": "[-]"}
-    
-    Sim_config.disk_model.Density_scale_factor = {"Value": 500000, "Unit": "[g/cm^3]"}
-    Sim_config.disk_model.Temperature_scale_factor = {"Value": 4.1e+10, "Unit": "[K]"}
-            
-    Sim_config.disk_model.Density_cutoff_radius = {"Value": 5, "Unit": "[M]"}
-    Sim_config.disk_model.Temperature_cutoff_radius = {"Value": 5, "Unit": "[M]"}
-
-    Sim_config.disk_model.Density_power_law_scale     = {"Value": 5, "Unit": "[M]"}
-    Sim_config.disk_model.Temperature_power_law_scale = {"Value": 5, "Unit": "[M]"}
-
-    Sim_config.disk_model.Opening_angle = {"Value": 0.4, "Unit": "[tan(angle)]"}
-    
-    Sim_config.disk_model.Density_power_law_power     = {"Value": 2.0, "Unit": "[-]"}
-    Sim_config.disk_model.Temperature_power_law_power = {"Value": 1.0, "Unit": "[-]"}
-    
-    Sim_config.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
-    
-    Sim_config.observer.Image_y_min = {"Value": -10, "Unit": "[M]"}
-    Sim_config.observer.Image_y_max = {"Value":  10, "Unit": "[M]"}
-    Sim_config.observer.Image_x_min = {"Value": -10, "Unit": "[M]"}
-    Sim_config.observer.Image_x_max = {"Value":  10, "Unit": "[M]"}
-        
-    Sim_config.integrator.RK78_abs_accuracy      = {"Value": 1e-10, "Unit": "[-]"}
-    Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
-    Sim_config.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
-    Sim_config.integrator.max_integration_count = {"Value": 1000000, "Unit": "[-]"}
-    Sim_config.integrator.max_affine_parameter = {"Value": 1000000, "Unit": "[-]"}
-    Sim_config.metric_parameters.Distance_to_singular_point = {"Value": 1e-2, "Unit": "[M]"}
-    
-    Sim_config.integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
-    # ================================================== Hotspot ================================================== #
-
-    Sim_config.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g / cm^3]"}
-    
-    """ The simulation name and input file path """
-    Sim_config.simulation_name = {"Value": "Reference_Simulation_2", "Unit": "[-]"}
-
-    """ The simulation output file path """
-    Sim_config.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
-    Sim_config.simulation_name = {"Value": "Old_wormhole_sanity_check", "Unit": "[-]"}
-
-    Sim_config.generate_simulation_input(Path_to_input_dir = "Reference_simulations\\Old_wormhole_sanity_check",
-                                         Input_file_name = "Old_wormhole_sanity_check.XML")
-
-    import subprocess
-
-    filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Old_wormhole_sanity_check\\Old_wormhole_sanity_check.xml"
-    args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
-    
-    subprocess.call(args, shell = True)

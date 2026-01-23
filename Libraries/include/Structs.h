@@ -11,7 +11,7 @@ class Emission_models_class;
 class Novikov_Thorne_Model_class;
 class Observer_class;
 class File_manager_class;
-class Integrator_class;
+class Geodesic_Integrator_class;
 
 struct Hotspot_profile_parameters_type {
 
@@ -599,36 +599,36 @@ struct Metric_type {
 
 };
 
-struct Integrator_parameters_type {
+struct Step_Controller_parameters_type {
 
-    /*! @brief The integral gain for the PID controller for the RK78 integrator. */
-    double RK78_PID_gain_I{};
+    /*! @brief The integral gain of the PID controller for the explicit Runge-Kutta integrator. */
+    double RK_PID_gain_I{};
 
-    /*! @brief The proportional gain for the PID controller for the RK78 integrator. */
-    double RK78_PID_gain_P{};
+    /*! @brief The proportional gain of the PID controller for the explicit Runge-Kutta integrator. */
+    double RK_PID_gain_P{};
 
-    /*! @brief The derivative gain for the PID controller for the RK78 integrator. */
-    double RK78_PID_gain_D{};
+    /*! @brief The derivative gain of the PID controller for the explicit Runge-Kutta integrator. */
+    double RK_PID_gain_D{};
 
-    /*! @brief The k1 gain for the Gustafsson controller for the RK78 integrator. */
-    double RK78_Gustafsson_k1{};
+    /*! @brief The k1 gain of the Gustafsson controller for the explicit Runge-Kutta integrator. */
+    double RK_Gustafsson_k1{};
 
-    /*! @brief The k2 gain for the Gustafsson controller for the RK78 integrator. */
-    double RK78_Gustafsson_k2{};
+    /*! @brief The k2 gain of the Gustafsson controller for the explicit Runge-Kutta integrator. */
+    double RK_Gustafsson_k2{};
 
-    /*! @brief The integral gain for the PID controller for the ESDIRK54 integrator. */
+    /*! @brief The integral gain of the PID controller for the ESDIRK54 integrator. */
     double ESDIRK54_PID_gain_I{};
 
-    /*! @brief The proportional gain for the PID controller for the ESDIRK54 integrator. */
+    /*! @brief The proportional gain of the PID controller for the ESDIRK54 integrator. */
     double ESDIRK54_PID_gain_P{};
 
-    /*! @brief The derivative gain for the PID controller for the ESDIRK54 integrator. */
+    /*! @brief The derivative gain of the PID controller for the ESDIRK54 integrator. */
     double ESDIRK54_PID_gain_D{};
 
-    /*! @brief The k1 gain for the Gustafsson controller for the ESDIRK54 integrator. */
+    /*! @brief The k1 gain of the Gustafsson controller for the ESDIRK54 integrator. */
     double ESDIRK54_Gustafsson_k1{};
 
-    /*! @brief The k2 gain for the Gustafsson controller for the ESDIRK54 integrator. */
+    /*! @brief The k2 gain of the Gustafsson controller for the ESDIRK54 integrator. */
     double ESDIRK54_Gustafsson_k2{};
 
     /*! @brief The maximum allowed relative step increase. */
@@ -640,17 +640,8 @@ struct Integrator_parameters_type {
     /*! @brief The initial stepsize. */
     double Init_stepzie{};
 
-    /*! @brief The adaptive RK7(8) / RK8(7) absolute error threshold parameter. */
-    double RK_78_abs_accuracy{};
-
-    /*! @brief The adaptive RK7(8) / RK8(7) relative error threshold parameter. */
-    double RK_78_rel_accuracy{};
-
-    /*! @brief The adaptive ESDIRK5(4) absolute error threshold parameter. */
-    double ESDIRK54_abs_accuracy{};
-
-    /*! @brief The adaptive ESDIRK5(4) relative error threshold parameter. */
-    double ESDIRK54_rel_accuracy{};
+    /*! @brief The Maximum allowed stepsize, when using the adaptive integrator. Also the constant value for the fixed step. */
+    double Max_stepsize{};
 
     /*! @brief A multiplicative factor forr the integration step in the range (0, 1] that makes the integrator more stable. */
     double Safety_1{};
@@ -658,41 +649,56 @@ struct Integrator_parameters_type {
     /*! @brief A additive factor <<1 that ensures no "division by 0" problems occur when calculating the new stepsizes. */
     double Safety_2{};
 
-    /*! @brief The error theshold parameter for the Simpson integral solving method. Currently this is only used in the Novikov-Thorne flux integral. */
-    double Simpson_accuracy{};
-
-    /*! @brief The maximum allowed (accepted) integration steps. */
-    int Max_integration_count{};
+    /*! @brief Enum that decides weather to use an adaptive step (with the selected step controller), or a fixed one, determined by the initial step. */
+    bool Use_adaptive_step{};
 
     /*! @brief Enum that decides which step controller to use. */
     Step_controller_type_enums Controller_type{};
 
-    /*! @brief Enum that decides weather to use an adaptive step (with the selected step controller), or a fixed one, determined by the initial step. */
-    bool Use_adaptive_step{};
+    /*! @brief The adaptive explicit Kunge-Kutta integrator absolute error threshold parameter. */
+    double RK_abs_accuracy{};
 
-    /*! @brief The Maximum allowed stepsize, when using the adaptive integrator. Also the constant value for the fixed step. */
-    double Max_stepsize{};
+    /*! @brief The adaptive explicit Kunge-Kutta integrator relative error threshold parameter. */
+    double RK_rel_accuracy{};
+
+    /*! @brief The adaptive ESDIRK5(4) absolute error threshold parameter. */
+    double ESDIRK54_abs_accuracy{};
+
+    /*! @brief The adaptive ESDIRK5(4) relative error threshold parameter. */
+    double ESDIRK54_rel_accuracy{};
+
+};
+
+struct Integrator_parameters_type {
+
+    Step_Controller_parameters_type Geodesic_Step_Controller_Params;
+
+    Step_Controller_parameters_type Rad_Transfer_Step_Controller_Params;
 
     /*! @brief The Maximum allowed affine parameter value, before terminating the integration.
-       NOTE: This is taken by absolute value. */
+        NOTE: This is taken by absolute value. */
     double Max_affine_param{};
 
+    /*! @brief The maximum allowed (accepted) integration steps. */
+    int Max_integration_count{};
+
     /*! @brief Enum that selects which radiative transfer integrator to use. */
-    Radiative_Transfer_Integrator e_Radiative_transfer_integrator{};
+    Integrator_enums e_Radiative_transfer_integrator{};
 
     /*! @brief Enum that selects which geodesic integrator to use by default. When that one fails to integrate a given geodesic, we switch to ESDIRK54. */
-    Geodesic_Integrator_enums e_Default_geodesic_integrator{};
+    Integrator_enums e_Default_geodesic_integrator{};
 
 };
 
 struct RHS_wrapper_struct {
 
     /*! @brief Pointer to the inegrator class instance. This exists so I can call member functions from the RHS wrapper in the run_ESDIRK54 function.  */
-    Integrator_class* Integrator{};
+    Geodesic_Integrator_class* Integrator{};
 
     /*! @brief Pointer to the current iteration number. This is the gsl way of passing parameters to functions.  */
     void* p_Iteration_number{};
 
+   
 };
 
 struct Observer_parameters_type {
@@ -878,7 +884,7 @@ struct Simulation_Context_type {
 struct Ray_log_type {
 
     /* Pointer to the arrays that hold the intensity and optical depth along the photon trajectory. */
-    double* Ray_emission_log[4]{};
+    double* Ray_emission_log[e_Stokes_param_num + 1]{};
 
     /* Pointer to the array that holds the entire photon trajectory in local coordinates. */
     double* Ray_path_log_local{};

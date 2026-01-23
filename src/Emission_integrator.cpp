@@ -1,29 +1,27 @@
 #include "Emission_integrator.h"
 #include "Emission_Models.h"
 
-
 bool static Is_inside_emission_medium(const Simulation_Context_type* const p_Sim_Context,
-                                        const double* const State_Vector_Local) {
+                                      const double* const State_Vector_Local) {
 
     Emission_medium_state_type s_Hotspot_state{};
     Emission_medium_state_type s_Disk_state{};
 
     Return_Values Hotspot_velocity_OK = p_Sim_Context->p_Emission_Model->get_plasma_velocity(p_Sim_Context->p_Init_Conditions->Hotspot_params.Position,
-        p_Sim_Context,
-        p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type,
-        p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction,
-        s_Hotspot_state.Plasma_Velocity);
+                                                                                             p_Sim_Context,
+                                                                                             p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type,
+                                                                                             p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction,
+                                                                                             s_Hotspot_state.Plasma_Velocity);
     bool In_hotspot = false;
 
     if (OK == Hotspot_velocity_OK) {
 
-        In_hotspot = p_Sim_Context->p_Emission_Model->p_Hotspot_Model->is_inside_hotspot(State_Vector_Local,
-            &s_Hotspot_state);
+        In_hotspot = p_Sim_Context->p_Emission_Model->p_Hotspot_Model->is_inside_hotspot(State_Vector_Local, &s_Hotspot_state);
     }
 
     const bool In_disk = p_Sim_Context->p_Emission_Model->p_Disk_Model->is_inside_disk(State_Vector_Local,
-        p_Sim_Context->p_Emission_Model->p_Disk_Model->s_Disk_params.e_Disk_model,
-        &s_Disk_state);
+                                                                                       p_Sim_Context->p_Emission_Model->p_Disk_Model->s_Disk_params.e_Disk_model,
+                                                                                       &s_Disk_state);
 
     return In_hotspot || In_disk;
 
@@ -31,25 +29,19 @@ bool static Is_inside_emission_medium(const Simulation_Context_type* const p_Sim
 
 Emission_Integrator_class::Emission_Integrator_class(const Simulation_Context_type* p_Sim_Context, Results_type* const p_Ray_results) {
 
-    this->Step_too_small = false;
-    this->e_Active_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Default_geodesic_integrator;
+    this->e_Active_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Radiative_transfer_integrator;
 
-    this->p_Step_controller = new Step_controller_class(p_Sim_Context->p_Init_Conditions->Integrator_params);
+    this->p_Step_controller = new Step_controller_class(p_Sim_Context->p_Init_Conditions->Integrator_params.Rad_Transfer_Step_Controller_Params);
 
     this->p_Sim_Context = p_Sim_Context;
-
     this->p_Emission_Model = p_Sim_Context->p_Emission_Model;
-
-    memset(this-> Current_Stokes_Vector, 0, sizeof(double) * e_Stokes_param_num);
-
-    /* ------------------------------ Construct the initial Stokes vector and init the log array ------------------------------ */
-
-    this->Current_Affine_Param = p_Ray_results->Ray_log_struct.Ray_path_log_local[e_ray_affine_param + (p_Ray_results->Ray_log_struct.Log_length - 1) * e_Full_state_size];
     
     this->Ray_log_length = p_Ray_results->Ray_log_struct.Log_length;
+    this->Emission_log = p_Ray_results->Ray_log_struct.Ray_emission_log;
 
-    /* ---------------------------------------------------- Init the flags ---------------------------------------------------- */
+    /* ----------------------------------------------- Init the flags / counters ---------------------------------------------- */
 
+    this->Current_log_idx = 0;
     this->N_steps_rejected = 0;
     this->NaN_checker_count = 0;
     this->continue_integration = true;
@@ -105,7 +97,7 @@ Emission_Integrator_class::~Emission_Integrator_class() {
 
 }
 
-void Emission_Integrator_class::Propagate_Stokes_Vector(Geodesic_Integrator_enums e_Active_integrator, const double Start_Affine_Param, const double End_Affine_Param) {
+void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affine_Param, const double End_Affine_Param) {
 
     if (RK78_Fehlberg != e_Active_integrator && RK78_DP != e_Active_integrator && RK54 != e_Active_integrator) {
 
@@ -121,7 +113,7 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(Geodesic_Integrator_enum
     auto Embedded_solution_coeff = this->RK78_DP_Coeff_sol_embeded;
     auto Affine_param_coeff = this->RK78_DP_Coeff_affine_param;
 
-    if (RK78_Fehlberg == e_Active_integrator) {
+    if (RK78_Fehlberg == this->e_Active_integrator) {
 
         Stage_coeff = this->RK78_Fhelberg_Coeff_deriv;
         Main_solution_coeff = this->RK78_Fhelberg_Coeff_sol_main;
@@ -129,7 +121,7 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(Geodesic_Integrator_enum
         Affine_param_coeff = this->RK78_Fhelberg_Coeff_affine_param;
 
     }
-    else if (RK54 == e_Active_integrator) {
+    else if (RK54 == this->e_Active_integrator) {
 
         Stage_coeff = this->RK54_Coeff_deriv;
         Main_solution_coeff = this->RK54_Coeff_sol_main;
@@ -192,15 +184,18 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(Geodesic_Integrator_enum
 
                 Transfer_functions_type Temp_Transfer_functions{};
 
-                this->p_Emission_Model->get_radiative_transfer_functions(this->get_ray_State_Vector(Temp_affine_param),
-                                                                         this->p_Sim_Context,
-                                                                         static_cast<Emission_medium_enums>(emission_medium),
-                                                                         &Temp_Transfer_functions);
+                if (Is_inside_emission_medium(p_Sim_Context, this->get_ray_State_Vector(Temp_affine_param))) {
 
-                add_vectors(Temp_Transfer_functions.Absorbtion_functions, Total_Transfer_Functions.Absorbtion_functions, e_Stokes_param_num, Total_Transfer_Functions.Absorbtion_functions);
-                add_vectors(Temp_Transfer_functions.Emission_functions, Total_Transfer_Functions.Emission_functions, e_Stokes_param_num, Total_Transfer_Functions.Emission_functions);
-                add_vectors(Temp_Transfer_functions.Faradey_functions, Total_Transfer_Functions.Faradey_functions, e_Stokes_param_num, Total_Transfer_Functions.Faradey_functions);
+                    this->p_Emission_Model->get_radiative_transfer_functions(this->get_ray_State_Vector(Temp_affine_param),
+                                                                             this->p_Sim_Context,
+                                                                             static_cast<Emission_medium_enums>(emission_medium),
+                                                                             &Temp_Transfer_functions);
 
+                    add_vectors(Temp_Transfer_functions.Absorbtion_functions, Total_Transfer_Functions.Absorbtion_functions, e_Stokes_param_num, Total_Transfer_Functions.Absorbtion_functions);
+                    add_vectors(Temp_Transfer_functions.Emission_functions, Total_Transfer_Functions.Emission_functions, e_Stokes_param_num, Total_Transfer_Functions.Emission_functions);
+                    add_vectors(Temp_Transfer_functions.Faradey_functions, Total_Transfer_Functions.Faradey_functions, e_Stokes_param_num, Total_Transfer_Functions.Faradey_functions);
+
+                }
             }
 
             Radiative_transfer_RHS(Total_Transfer_Functions.Emission_functions,
@@ -229,7 +224,7 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(Geodesic_Integrator_enum
 
         }
 
-        //if (ERROR == this->Run_NaN_checker(New_Stokes_vector_main, New_Stokes_vector_embeded)) { return; }
+        if (ERROR == this->Run_NaN_checker(New_Stokes_vector_main, New_Stokes_vector_embeded)) { continue; }
 
         this->p_Step_controller->update_state_errors(New_Stokes_vector_main, state_error, this->e_Active_integrator, e_Stokes_param_num);
 
@@ -249,7 +244,7 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(Geodesic_Integrator_enum
 
             memcpy(this->Current_Stokes_Vector, New_Stokes_vector_main, e_Stokes_param_num * sizeof(double));
             this->Current_Affine_Param += Geometric_controller_step;
-            //this->Update_emission_log(New_Stokes_vector_main);
+            this->Update_emission_log(New_Stokes_vector_main);
             //this->Update_debug_log();
 
             this->N_steps_rejected = 0;
@@ -260,6 +255,26 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(Geodesic_Integrator_enum
         this->p_Step_controller->update_step(New_Stokes_vector_main, this->e_Active_integrator);
 
     }
+
+}
+
+Return_Values Emission_Integrator_class::Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded) {
+
+    for (int idx = 0; idx < e_Stokes_param_num; idx++) {
+
+        if (isnan(New_State[idx]) || isnan(New_State_Embeded[idx]) || isinf(New_State[idx]) || isinf(New_State_Embeded[idx])) {
+
+            this->continue_integration = false;
+            this->p_Step_controller->step /= 10.0;
+            this->NaN_checker_count++;
+
+            return ERROR;
+
+        }
+
+    }
+
+    return OK;
 
 }
 
@@ -290,6 +305,20 @@ void Emission_Integrator_class::Radiative_transfer_RHS(const double* const Emiss
         RHS[idx] = Emission_Functions[idx] - M_dot_Stokes[idx];
     
     }
+
+}
+
+void Emission_Integrator_class::Update_emission_log(const double* const New_Stokes_Vector) {
+
+    this->Current_log_idx += 1;
+
+    for (int idx = 0; idx < e_Stokes_param_num; idx++) {
+
+        this->Emission_log[idx][this->Current_log_idx] = New_Stokes_Vector[idx];
+
+    }
+
+    this->Emission_log[e_Stokes_affine_param][this->Current_log_idx] = this->Current_Affine_Param;
 
 }
 

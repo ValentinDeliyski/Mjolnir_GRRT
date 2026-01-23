@@ -11,7 +11,7 @@ if __name__ == "__main__":
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
     EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Galin_Numerical_config_III_4_230\\Numerical"
+    Sim_path            = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/Wormhole_sim_paper/M87_Wormhole_a_0.9_redshift_2_obsf_230/Wormhole"
     Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
     Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
@@ -19,11 +19,11 @@ if __name__ == "__main__":
                                 Array              = EHT_Array,
                                 Font_size          = 32, 
                                 Label_Pad          = 8, 
-                                Common_file_name   = "Numerical",
+                                Common_file_name   = "Wormhole",
                                 Respect_folder_structure = False)
 
     Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
-                                       Save_Figures          = True, 
+                                       Save_Figures          = False, 
                                        Radiation_Component   = "Stokes I",
                                        Custom_fig_title      = fig_title,
                                        Obs_effective_distance = Visualizer.Units.M87_DISTANCE_GEOMETRICAL,

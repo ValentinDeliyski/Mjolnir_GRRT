@@ -80,11 +80,18 @@ class Hotspot_reference_sims:
         self.Simulation_configurator.observer.Resolution_y = {"Value": 512, "Unit": "[-]"}
         
         """ Configure the integrator """
-        self.Simulation_configurator.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK78_accuracy        = {"Value": 1e-13, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         
-        self.Simulation_configurator.integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.RK_abs_accuracy = {"Value": 1e-10, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.RK_rel_accuracy = {"Value": 1e-10, "Unit": "[-]"}
+            
+        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
         
+        self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
         """ The simulation name and input file path """
         
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"

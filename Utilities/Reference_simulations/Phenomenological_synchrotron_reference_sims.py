@@ -81,12 +81,18 @@ class Phenomenological_syhnchrotron_reference_sims:
     
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
         
-        self.Simulation_configurator.integrator.Max_rel_step_increase  = {"Value": 2, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-16, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.RK78_abs_accuracy = {"Value": 1e-16, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.max_stepsize  = {"Value": 1, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
-        self.Simulation_configurator.integrator.radiative_transfer_integrator_type = {"Value": "RK5", "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        
+        self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.RK_abs_accuracy = {"Value": 1e-10, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.RK_rel_accuracy = {"Value": 1e-10, "Unit": "[-]"}
+            
+        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
+        
+        self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
 
     def get_total_flux(self, sim_path: str) -> float:
         
@@ -221,7 +227,8 @@ class Phenomenological_syhnchrotron_reference_sims:
     def Run_and_eval_test_sim_5(self) -> None:
         
         """ The disk here is really thin and this is a hack-y (and slow...) way of making sure the itnegrator does not jump over it """
-        self.Simulation_configurator.integrator.max_stepsize = {"Value": 0.15, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 0.15, "Unit": "[-]"}
+        self.Simulation_configurator.rad_transfer_integrator.max_stepsize = {"Value": 0.15, "Unit": "[-]"}
         
         """ Central black hole setup """
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.0, "Unit": "[M]"}
