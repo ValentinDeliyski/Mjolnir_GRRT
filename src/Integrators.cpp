@@ -13,50 +13,7 @@ Step_controller_class::Step_controller_class(const Step_Controller_parameters_ty
 
 }
 
-void Step_controller_class::update_state_errors(const double* State_Vector, const double* State_Error_Vector, Integrator_enums e_Active_integrator, int State_size) {
-
-    this->sec_prev_err = this->prev_err;
-    this->prev_err = this->current_err;
-
-    double Abs_tol{}, Rel_tol{};
-
-    if (e_Active_integrator >= Radiative_only_integrators) {
-
-        throw std::runtime_error("Wrong active integrator in Step_controller_class::update_state_errors()!");
-
-    }
-
-    switch (e_Active_integrator) {
-
-    default:
-
-        Abs_tol = this->Parameters.RK_abs_accuracy; 
-        Rel_tol = this->Parameters.RK_rel_accuracy;
-
-        break;
-
-    case ESDIRK54:
-
-        Abs_tol = this->Parameters.ESDIRK54_abs_accuracy;
-        Rel_tol = this->Parameters.ESDIRK54_rel_accuracy;
-
-    }
-
-    double Total_State_Error{};
-
-    for (int idx = 0; idx < State_size; idx++) {
-
-        Total_State_Error += std::pow(State_Error_Vector[idx] / (Abs_tol + std::fabs(State_Vector[idx]) * Rel_tol), 2);
-
-    }
-
-    Total_State_Error /= (State_size - 1);
-
-    this->current_err = std::sqrt(Total_State_Error) + this->Parameters.Safety_2;
-
-}
-
-void Step_controller_class::update_step(const double* const State_Vector, Integrator_enums e_Active_integrator) {
+void Step_controller_class::update_step(Integrator_enums e_Active_integrator) {
 
     this->previous_step = this->step;
 
@@ -295,7 +252,7 @@ void Geodesic_Integrator_class::Run_ESDIRK54() {
     if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
     this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
-    this->p_Step_controller->update_step(New_State_vector_main, this->e_Active_integrator);
+    this->p_Step_controller->update_step(this->e_Active_integrator);
 
     if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step) {
 
@@ -415,7 +372,7 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta(Integrator_enums e_Acti
     if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
     this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
-    this->p_Step_controller->update_step(New_State_vector_main, this->e_Active_integrator);
+    this->p_Step_controller->update_step(this->e_Active_integrator);
 
     if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step){
 
@@ -505,6 +462,7 @@ void Geodesic_Integrator_class::Propagate_ray() {
         break;
 
     }
+
 
 }
 

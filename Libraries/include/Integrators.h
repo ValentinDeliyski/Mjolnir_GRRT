@@ -2,37 +2,8 @@
 #include "Enumerations.h"
 #include "Spacetimes.h"
 #include "Structs.h"
+#include "Step_Controller.h"
 #include "gsl\gsl_multiroots.h"
-
-class Step_controller_class {
-
-public:
-
-    Step_controller_class(const Step_Controller_parameters_type Controller_parameters);
-
-    //! Updates the integration step, based on the previous State Error estimates, and the current State Vector.
-    /*! Updates the integration step, based on the previous State Error estimates, and the current State Vector.
-     *   Currently the following step controllers are implemented. The reference is https://arxiv.org/pdf/1806.08693:
-     *      1) PID controller
-     *      2) Gustafsson controller
-     *
-     *   \param [in] State_Vector - Pointer to the array that holds the photon State Vector.
-     *   \return Nothing
-     */
-    void update_step(const double* State_Vector, Integrator_enums e_Active_integrator);
-
-    void update_state_errors(const double* State_Vector, const double* State_Error_Vector, Integrator_enums e_Active_integrator, int State_size);
-
-    Step_Controller_parameters_type Parameters;
-
-    double step;
-    double previous_step;
-
-    double current_err;
-    double prev_err;
-    double sec_prev_err;
-
-};
 
 class Geodesic_Integrator_class {
 

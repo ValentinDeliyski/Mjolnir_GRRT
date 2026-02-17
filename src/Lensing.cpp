@@ -350,91 +350,6 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
 }
 
-void static Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[4][4],
-                                              const std::complex<double>* Coord_Basis_Pol_vec,
-                                              double* const Stokes_Vector) {
-
-    std::complex<double> Stokes_Basis_Pol_vec[4]{};
-    
-    for (int stokes_idx = 0; stokes_idx < 4; stokes_idx++) {
-    
-        for (int coord_idx = 0; coord_idx < 4 ; coord_idx++) {
-    
-            Stokes_Basis_Pol_vec[stokes_idx] += inv_Stokes_Tetrad[stokes_idx][coord_idx] * Coord_Basis_Pol_vec[coord_idx];
-
-        }
-
-    }
-
-    double Polarized_Intensity = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
-                                      Stokes_Vector[U] * Stokes_Vector[U] +
-                                      Stokes_Vector[V] * Stokes_Vector[V]);
-
-    Stokes_Vector[Q] = (Polarized_Intensity * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[1]) -
-                                               Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[2]))).real();
-    
-    Stokes_Vector[U] = (Polarized_Intensity * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]) +
-                                               Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[1]))).real();
-    
-    Stokes_Vector[V] = (Polarized_Intensity * (std::conj(Stokes_Basis_Pol_vec[1]) * Stokes_Basis_Pol_vec[2] -
-                                               Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]))).imag();
-
-    double Polarized_Intensity_after_mapping = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
-                                                    Stokes_Vector[U] * Stokes_Vector[U] +
-                                                    Stokes_Vector[V] * Stokes_Vector[V]);
-
-    if (!isnan(1. / Polarized_Intensity_after_mapping) && !isinf(1.0 / Polarized_Intensity_after_mapping)) {
-
-        for (int idx = 1; idx < 4; idx++) {
-
-            Stokes_Vector[idx] *= Polarized_Intensity / Polarized_Intensity_after_mapping;
-
-        }
-
-    }
-
-}
-
-void static Map_Stokes_to_Polarization_Vector(const double* const Stokes_Vector,
-                                              const double Stokes_Tetrad[4][4],
-                                              std::complex<double>* const Coord_Basis_Pol_vec) {
-
-    memset(Coord_Basis_Pol_vec, 0, 4 * sizeof(std::complex<double>));
-
-    std::complex<double> Stokes_Basis_Pol_vec[4];
-
-    double Polarized_Intensity = sqrt(Stokes_Vector[Q] * Stokes_Vector[Q] +
-                                      Stokes_Vector[U] * Stokes_Vector[U] +
-                                      Stokes_Vector[V] * Stokes_Vector[V]);
-
-    Stokes_Basis_Pol_vec[1] = M_SQRT1_2;
-
-    if (!isinf(Stokes_Vector[Q] / Polarized_Intensity) && !isnan(Stokes_Vector[Q] / Polarized_Intensity)) {
-
-        Stokes_Basis_Pol_vec[1] = sqrt((1 + Stokes_Vector[Q] / Polarized_Intensity) / 2);
-
-    }
-
-    Stokes_Basis_Pol_vec[2] = 1.;
-
-    if (!isinf(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity)) && !isnan(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity))) {
-
-        Stokes_Basis_Pol_vec[2] = (Stokes_Vector[U] - complex_i * Stokes_Vector[V]) / (2.0 * Stokes_Basis_Pol_vec[1] * Polarized_Intensity);
-
-    }
-
-    for (int coord_idx = 0; coord_idx < 4; coord_idx++) {
-
-        for (int stokes_idx = 0; stokes_idx < 4; stokes_idx++) {
-
-            Coord_Basis_Pol_vec[coord_idx] += Stokes_Tetrad[stokes_idx][coord_idx] * Stokes_Basis_Pol_vec[stokes_idx];
-
-        }
-
-    }
-
-}
-
 bool static Is_inside_emission_medium(const Simulation_Context_type* const p_Sim_Context, 
                                       const double* const State_Vector_Local) {
 
@@ -472,7 +387,7 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
 
     if (abs(State_at_event_global[e_r]) < r_out && abs(State_at_event_global[e_r]) > r_in && !p_Ray_results->NT_Disk_found) {
 
-        p_Ray_results->Redshift_NT = get_redshift(State_at_event_local, p_Sim_Context->p_NT_model->get_Disk_Velocity_Vector(State_at_event_local), p_Sim_Context->p_Observer);
+        p_Ray_results->Redshift_NT = get_redshift(State_at_event_local, p_Sim_Context->p_NT_model->get_Disk_Velocity_Vector(State_at_event_local), p_Sim_Context);
         p_Ray_results->Flux_NT = p_Sim_Context->p_NT_model->get_Interpolated_Flux(State_at_event_local);
 
         double* Polarization_vector_coord = p_Sim_Context->p_NT_model->Construct_coord_polarization_vector(State_at_event_local);
@@ -555,7 +470,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
                 default:
 
-                    Map_Polarization_Vector_to_Stokes(std::as_const(inv_Tetrad), std::as_const(Coord_Basis_Pol_vec), Stokes_Vector);
+                    Radiative_transfer_integrator.Map_Polarization_Vector_to_Stokes(inv_Tetrad);
                     break;
 
                 }
@@ -565,14 +480,13 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             if (Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
 
-                //Propagate_Stokes_vector(p_Sim_Context->p_Init_Conditions->Integrator_params.e_Radiative_transfer_integrator, p_Sim_Context, Current_State_Global, Current_State_Local, Stokes_Vector);
                 Radiative_transfer_integrator.Propagate_Stokes_Vector(Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param]);
 
             }
 
             if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
-                Map_Stokes_to_Polarization_Vector(std::as_const(Stokes_Vector), std::as_const(Tetrad), Coord_Basis_Pol_vec);
+                Radiative_transfer_integrator.Map_Stokes_to_Polarization_Vector(Tetrad);
 
             }
         }
@@ -583,8 +497,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
 
-            Parallel_Transport_Vector(Current_State_Global, p_Sim_Context->p_Spacetime, Contravariant, Coord_Basis_Pol_vec);
-
+            Radiative_transfer_integrator.Propagate_Polarization_Vector(Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param], Contravariant);
         }
 
         /* ======================================================================================================================== */
@@ -593,7 +506,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     /* =============== The final mapping of the polarization vector to Stokes parameters at the observer ===================== */
 
-    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Stokes_Vector[I] > 0) {
+    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
 
         double Observer_Tetrad[4][4]{};
         double Observer_inv_Tetrad[4][4]{};
@@ -604,7 +517,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         }
 
-        Map_Polarization_Vector_to_Stokes(std::as_const(Observer_inv_Tetrad), Coord_Basis_Pol_vec, Stokes_Vector);
+        Radiative_transfer_integrator.Map_Polarization_Vector_to_Stokes(Observer_inv_Tetrad);
 
     }
 

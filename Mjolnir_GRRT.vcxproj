@@ -299,6 +299,7 @@
     <ClInclude Include="Libraries\include\Parallel_transport.h" />
     <ClInclude Include="Libraries\include\Radiative_Transfer.h" />
     <ClInclude Include="Libraries\include\Spacetimes.h" />
+    <ClInclude Include="Libraries\include\Step_Controller.h" />
     <ClInclude Include="Libraries\include\Structs.h" />
     <ClInclude Include="Libraries\include\Constants.h" />
     <ClInclude Include="Libraries\include\Emission_Models.h" />

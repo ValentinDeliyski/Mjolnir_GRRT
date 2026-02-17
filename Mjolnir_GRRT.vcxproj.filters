@@ -957,6 +957,9 @@
     <ClInclude Include="Libraries\include\Emission_integrator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\include\Step_Controller.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Libraries\shaders\default.vert">

@@ -103,10 +103,10 @@ void get_image_coordinates(Initial_conditions_type* p_Initial_Conditions, double
  *
  *   \param [in] State_Vector - Pointer to the ray state vector, containing covarian momentum components.
  *   \param [in] U_source - Pointer to the contravariant 4-velocity of the emmiting element.
- *   \param [in] Observer - Pointer to the obsever class instance
+ *   \param [in] p_Sim_Context - Pointer to the simulation context struct
  *   \return The redshift of the ray, as measured by the observer.
  */
-double get_redshift(const double* const State_Vector, const double* const U_source, Observer_class* const Observer);
+double get_redshift(const double* const State_Vector, const double* const U_source, const Simulation_Context_type* const p_Sim_Context);
 
 /*! @brief Computes a Lorentz boost matrix, given a contravariant 4-velocity (in an observers basis) U_cource, then stores it in Boost_matrix.
  *

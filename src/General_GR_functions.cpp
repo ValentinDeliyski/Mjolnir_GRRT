@@ -189,10 +189,10 @@ void get_image_coordinates(Initial_conditions_type* p_Initial_Conditions, double
 
 }
 
-double get_redshift(const double* const State_Vector, const double* const U_source, Observer_class* const Observer) {
+double get_redshift(const double* const State_Vector, const double* const U_source, const Simulation_Context_type* const p_Sim_Context) {
 
     // Offsetting the State_Vector pointer in this function call, so dot_product indexes the ray momentum, and not the position
-    return dot_product(Observer->get_obs_velocity(), State_Vector + e_p_t, 4) / dot_product(U_source, State_Vector + e_p_t, 4);
+    return dot_product(p_Sim_Context->p_Observer->get_obs_velocity(), p_Sim_Context->p_Init_Conditions->Init_Momentum, 4) / dot_product(U_source, State_Vector + e_p_t, 4);
 
 }
 

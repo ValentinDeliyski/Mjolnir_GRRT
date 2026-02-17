@@ -13,6 +13,7 @@ Real Nyström_Deriv_coeffs[Nyström_size][Nyström_size] = { {   0.,      0.,      
                                                           {2. / 25, 12. / 25,   2. / 15,  8. / 75, 0., 0.} };
 
 Real Nyström_Coeff_sol[Nyström_size] = { 23. / 192 , 0., 125. / 192, 0., -27. / 64, 125. / 192 };
+Real Nyström_Coeff_param[Nyström_size] = { 0 , 1. / 3, 2. / 5, 1., 2./3, 4. / 5 };
 
 const int RK54_size = 7;
 const int RK78_size	= 13;

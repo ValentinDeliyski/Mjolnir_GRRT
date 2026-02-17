@@ -147,42 +147,39 @@ void Emission_models_class::get_magnetic_field(const double* const Local_State_V
                                                Emission_medium_state_type* const Emission_medium_state)  {
 
     /*
-    
+
     The reference for this implementation is https://arxiv.org/pdf/2404.13824v1, expressions (1.54). The desired megnetic field geometry is specified for an
-    Eulerian observer, with covarian 4-velocity n_mu = (-Lapse, 0, 0, 0). Writing the dual Maxwell tensor in terms of the magnetic 4-vector measured by a comoving with 
+    Eualrian observer, with covarian 4-velocity n_mu = (-Lapse, 0, 0, 0). Writing the dual Maxwell tensor in terms of the magnetic 4-vector measured by a comoving with
     the plasma observer, and his 4-velocity (1.20), one can express the Eularian magnetic field by projecting the *F^mu^nu onto n_mu. Inverting this expression, one obtains
     the magnetic 4-vector measured by the comoving observer in terms of the one measured by the Eularian observer.
-    
+
     */
 
-    /* I specify the magnetic field geometry as a vector in an orthonormal reference frame (what people standardly call the ZAMO observer). The Eulerian observer IS a ZAMO, but 
-       for convenience we want to work with coordinate 4-vectors, measured by such an observer (rather than in his orthonormal tetrad), so after normalizing this vector
-       I convert back to a coordinate representation. */
-    double Mag_field_eularian_orthonormal[4]{};
+    Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_t] = 0.0;
 
     switch (Emission_medium_state->Magnetic_fields.e_Mag_field_geometry) {
 
     case Constant:
 
-        Mag_field_eularian_orthonormal[e_r]      = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_r - 1];
-        Mag_field_eularian_orthonormal[e_theta]  = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_theta - 1];
-        Mag_field_eularian_orthonormal[e_phi]    = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_phi - 1];
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_r] = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_r - 1];
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_theta] = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_theta - 1];
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_phi] = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_phi - 1];
 
         break;
 
     case Vertical:
 
-        Mag_field_eularian_orthonormal[e_r]     =  cos(Local_State_Vector[e_theta]);
-        Mag_field_eularian_orthonormal[e_theta] = -sin(Local_State_Vector[e_theta]);
-        Mag_field_eularian_orthonormal[e_phi] = 0;
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_r] = cos(Local_State_Vector[e_theta]);
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_theta] = -sin(Local_State_Vector[e_theta]);
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_phi] = 0;
 
         break;
 
     case Toroidal:
 
-        Mag_field_eularian_orthonormal[e_r]     = 0;
-        Mag_field_eularian_orthonormal[e_theta] = 0;
-        Mag_field_eularian_orthonormal[e_phi]   = 1;
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_r] = 0;
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_theta] = 0;
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[e_phi] = 1;
 
         break;
 
@@ -201,7 +198,7 @@ void Emission_models_class::get_magnetic_field(const double* const Local_State_V
 
         for (int right_idx = 1; right_idx < 4; right_idx++) {
 
-            Mag_field_eularian_norm += Mag_field_eularian_orthonormal[left_idx] * Mag_field_eularian_orthonormal[right_idx];
+            Mag_field_eularian_norm += p_Metric->Metric[left_idx][right_idx] * Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[left_idx] * Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[right_idx];
 
         }
 
@@ -209,11 +206,9 @@ void Emission_models_class::get_magnetic_field(const double* const Local_State_V
 
     for (int idx = 1; idx < 4; idx++) {
 
-        Mag_field_eularian_orthonormal[idx] /= sqrt(Mag_field_eularian_norm);
+        Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[idx] /= sqrt(Mag_field_eularian_norm);
 
     }
-
-    ZAMO_to_Contravariant_coord(p_Metric, Mag_field_eularian_orthonormal, Emission_medium_state->Magnetic_fields.B_field_eulerian_frame);
 
     /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
 
@@ -232,7 +227,22 @@ void Emission_models_class::get_magnetic_field(const double* const Local_State_V
     for (int index = 1; index < 4; index++) {
 
         Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] = (Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[index] + p_Metric->Lapse_function * Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Lorentz_factor;
-       
+
+    }
+    /* The two indecies start from 1, because the t component of the magnetic field, measured by the Eularian observer is zero. */
+    for (int left_idx = 1; left_idx < 4; left_idx++) {
+
+        for (int right_idx = 1; right_idx < 4; right_idx++) {
+
+            Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] += p_Metric->Metric[left_idx][right_idx] * Emission_medium_state->Plasma_Velocity[left_idx] * Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[right_idx] / p_Metric->Lapse_function;
+        }
+
+    }
+
+    for (int index = 1; index < 4; index++) {
+
+        Emission_medium_state->Magnetic_fields.B_field_plasma_frame[index] = (Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[index] + p_Metric->Lapse_function * Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Lorentz_factor;
+
     }
 
     switch (Emission_medium_state->Magnetic_fields.e_Mag_field_magnitude_profile) {
@@ -314,7 +324,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
     /* === Zero out the transfer functions just in case === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-    double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
+    double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context);
 
     /* Check weather redshift is numerically OK to use in the transfer functions. */
     if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) { return; }
@@ -445,7 +455,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     /* === Zero out the transfer functions just in case === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-    const double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
+    const double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context);
 
     if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) { return; }
 
@@ -559,7 +569,7 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
 
     Phenomenological_transfer_f_arguments_type Transfer_args{};
 
-    Transfer_args.redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context->p_Observer);
+    Transfer_args.redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context);
 
     if (isinf(Transfer_args.redshift) || isnan(Transfer_args.redshift) || isinf(1.0 / Transfer_args.redshift)) { return; }
 

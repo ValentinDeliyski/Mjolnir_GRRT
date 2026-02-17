@@ -111,14 +111,17 @@ private:
 
     /* ---------------------------- Pointers to the geodesic spline instance ----------------------------- */
 
-    gsl_spline* p_Ray_spline_instance[e_Dynamic_state_size];
+    // The +2 is because I need a spline of the geodesic in both local and global coordinates (so far only the radial coordinate and momentum differs)
+    gsl_spline* p_Ray_spline_instance[e_Dynamic_state_size + 2];
     gsl_interp_accel* p_Spline_accelerator;
 
     /* ------------- These are convenient storage for dynamical states and their derivatives ------------- */
 
-    double Intermediate_RHS_log[RK78_size * e_Stokes_param_num]{};
+    double Rad_Transfer_RHS_log[RK78_size * e_Stokes_param_num]{};
+    std::complex<double> Parallel_Transport_RHS_log[RK78_size * e_Stokes_param_num]{};
 
     double Current_Stokes_Vector[e_Stokes_param_num]{};
+
     double Current_State_Vector[e_Dynamic_state_size]{};
     double Current_Affine_Param{};
 
@@ -133,19 +136,50 @@ private:
 
     /* --------------------------------- Internal functions --------------------------------- */
 
-    Return_Values Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded);
+    template<typename Vec_type>
+    Return_Values Run_NaN_checker(const Vec_type* const New_State, const Vec_type* const New_State_Embeded) {
 
+        for (int idx = 0; idx < e_Stokes_param_num; idx++) {
+
+            if (isnan(std::abs(New_State[idx])) || 
+                isnan(std::abs(New_State_Embeded[idx])) || 
+                isinf(std::abs(New_State[idx])) || 
+                isinf(std::abs(New_State_Embeded[idx]))) {
+
+                this->continue_integration = false;
+                this->p_Step_controller->step /= 10.0;
+                this->NaN_checker_count++;
+
+                return ERROR;
+
+            }
+
+        }
+
+        return OK;
+
+    }
    
     void Update_emission_log(const double* const New_Stokes_Vector);
     //void Update_debug_log();
 
-    const double* const get_ray_State_Vector(const double Affine_param);
+    const double* const get_ray_Local_State_Vector(const double Affine_param);
 
-    void Radiative_transfer_RHS(const double* const Emission_Functions,
-                                const double* const Absorbtion_Functions,
-                                const double* const Faradey_Functions,
-                                const double* const Stokes_Vector,
-                                double* const RHS);
+    const double* const get_ray_Global_State_Vector(const double Affine_param);
+
+    void get_Radiative_transfer_RHS(const double* const Emission_Functions,
+                                    const double* const Absorbtion_Functions,
+                                    const double* const Faradey_Functions,
+                                    const double* const Stokes_Vector,
+                                    double* const RHS);
+
+    void get_Parallel_Transport_RHS(const double* const Global_State_Vector,
+                                    std::complex<double>* Vector_to_transport,
+                                    Tensor_type_enums e_Vec_type,
+                                    std::complex<double>* const RHS);
+
+
+
 
 public:
 
@@ -154,7 +188,14 @@ public:
     Emission_Integrator_class(const Simulation_Context_type* p_Sim_Context, Results_type* const p_Ray_results);
     ~Emission_Integrator_class();
 
+    std::complex<double> Current_Pol_Vector[e_Stokes_param_num]{};
     void Propagate_Stokes_Vector(const double Start_Affine_Param, const double End_Affine_Param);
+
+    void Propagate_Polarization_Vector(const double Start_Affine_Param, const double End_Affine_Param, const Tensor_type_enums Vec_type);
+
+    void Map_Stokes_to_Polarization_Vector(const double Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num]);
+
+    void Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num]);
 
     const double* const get_current_Stokes_Vector() const;
 
