@@ -124,7 +124,7 @@ void Normalize_complex_vector(std::complex<double>* const Vector, const double M
 
     double Vector_norm = get_complex_4vec_norm(Vector, Metric, Vector_type);
 
-    if (isinf(1.0 / Vector_norm) || isnan(1.0 / Vector_norm)) { std::cout << "Invalid vector norm! \n"; exit(ERROR); }
+    if (isinf(1.0 / Vector_norm) or isnan(1.0 / Vector_norm)) { std::cout << "Invalid vector norm! \n"; exit(ERROR); }
 
     for (int idx = 0; idx < 4; idx++) {
 
@@ -462,7 +462,7 @@ void get_initial_conditions_from_image_coords(Initial_conditions_type* p_Initial
 
         for (int idx_2 = e_t; idx_2 <= e_phi; idx_2++) {
 
-            if (e_r == idx_1 || e_r == idx_2) { continue; }
+            if (e_r == idx_1 or e_r == idx_2) { continue; }
 
             effective_rad_potential += inv_metric[idx_1][idx_2] * p_Initial_Conditions->Init_Momentum[idx_1] * p_Initial_Conditions->Init_Momentum[idx_2];
 

@@ -153,6 +153,36 @@
     <ClInclude Include="Libraries\include\Integrators.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Libraries\include\Parallel_transport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Emission_integrator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\Step_Controller.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_blas.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_blas_types.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_block.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_block_char.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_double.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_float.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_long_double.h">
+      <Filter>Header Files\gsl</Filter>
+    </ClInclude>
     <ClInclude Include="Libraries\include\gsl\gsl_block_double.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
@@ -930,36 +960,6 @@
     <ClInclude Include="Libraries\include\gsl\gsl_wavelet2d.h">
       <Filter>Header Files\gsl</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_blas.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_blas_types.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block_char.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_double.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_float.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\gsl\gsl_block_complex_long_double.h">
-      <Filter>Header Files\gsl</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Parallel_transport.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Emission_integrator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Step_Controller.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Libraries\shaders\default.vert">
@@ -994,19 +994,11 @@
     <Filter Include="Source Files\Spacetimes">
       <UniqueIdentifier>{6126e746-89c3-430b-b0fd-5bc6a134a42b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\gsl">
-      <UniqueIdentifier>{9b6ce5df-5b5b-4aaf-b1e3-91e3c560472d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Math Library\Parsers">
       <UniqueIdentifier>{d32fa269-3b63-4359-938c-7fbdc99303a7}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="Libraries\lib\gsl.dll">
-      <Filter>Resource Files</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="Libraries\lib\gslcblas.dll">
-      <Filter>Resource Files</Filter>
-    </CopyFileToFolders>
+    <Filter Include="Header Files\gsl">
+      <UniqueIdentifier>{35fc031c-cddb-425c-80ca-50f1db30c582}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

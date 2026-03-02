@@ -171,7 +171,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
         memcpy(Plasma_velocity_contravariant, s_Hotspot_state.Plasma_Velocity, 4 * sizeof(double));
 
     }
-    else if (!In_hotspot && In_disk) {
+    else if (!In_hotspot and In_disk) {
 
         /* We are outside the hotspot - we assume the dominant magnetic field here is due to the background accretion disk. */
 
@@ -237,7 +237,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
     /* --- Perform checks on these coefficients, because for very low plasma densities they blow up --- */
 
-    if (isnan(N_coeff) || isinf(1.0 / N_coeff) || isnan(C_coeff)) { return ERROR; }
+    if (isnan(N_coeff) or isinf(1.0 / N_coeff) or isnan(C_coeff)) { return ERROR; }
 
     /* --- Raise / Lower indicies on the three main 4-vectors - this is needed for computing the final tetrad vector --- */
 
@@ -336,8 +336,8 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
                 }
             }
 
-            if (isnan(inv_Tetrad[left_idx][right_idx]) || isinf(inv_Tetrad[left_idx][right_idx]) ||
-                isnan(Tetrad[left_idx][right_idx]) || isinf(Tetrad[left_idx][right_idx])) {
+            if (isnan(inv_Tetrad[left_idx][right_idx]) or isinf(inv_Tetrad[left_idx][right_idx]) or
+                isnan(Tetrad[left_idx][right_idx]) or isinf(Tetrad[left_idx][right_idx])) {
 
                 return ERROR;
 
@@ -373,7 +373,7 @@ bool static Is_inside_emission_medium(const Simulation_Context_type* const p_Sim
                                                                                        p_Sim_Context->p_Emission_Model->p_Disk_Model->s_Disk_params.e_Disk_model,
                                                                                        &s_Disk_state);
 
-    return In_hotspot || In_disk;
+    return In_hotspot or In_disk;
 
 }
 
@@ -385,7 +385,7 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
     double& r_in = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_in;
     double& r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_out;
 
-    if (abs(State_at_event_global[e_r]) < r_out && abs(State_at_event_global[e_r]) > r_in && !p_Ray_results->NT_Disk_found) {
+    if (abs(State_at_event_global[e_r]) < r_out and abs(State_at_event_global[e_r]) > r_in and !p_Ray_results->NT_Disk_found) {
 
         p_Ray_results->Redshift_NT = get_redshift(State_at_event_local, p_Sim_Context->p_NT_model->get_Disk_Velocity_Vector(State_at_event_local), p_Sim_Context);
         p_Ray_results->Flux_NT = p_Sim_Context->p_NT_model->get_Interpolated_Flux(State_at_event_local);
@@ -478,7 +478,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             /* ====================================== Propagate the radiative transfer equations ====================================== */
 
-            if (Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
+            if (Current_order >= p_Sim_Context->p_Init_Conditions->Min_order and Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
 
                 Radiative_transfer_integrator.Propagate_Stokes_Vector(Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param]);
 
@@ -495,7 +495,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         /* ====================================== Parallel transport the polarization vector ====================================== */
 
-        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
+        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
 
             Radiative_transfer_integrator.Propagate_Polarization_Vector(Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param], Contravariant);
         }
@@ -506,7 +506,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     /* =============== The final mapping of the polarization vector to Stokes parameters at the observer ===================== */
 
-    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization && Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
+    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
 
         double Observer_Tetrad[4][4]{};
         double Observer_inv_Tetrad[4][4]{};
@@ -549,9 +549,9 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
             double State_at_event_global[e_Full_state_size]{};
             double State_at_event_local[e_Full_state_size]{};
 
-            if (e_Novikov_Thorne == p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model && 
-                Current_order >= p_Sim_Context->p_Init_Conditions->Min_order && 
-                Current_order <= p_Sim_Context->p_Init_Conditions->Max_order &&
+            if (e_Novikov_Thorne == p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model and 
+                Current_order >= p_Sim_Context->p_Init_Conditions->Min_order and 
+                Current_order <= p_Sim_Context->p_Init_Conditions->Max_order and
                 Geodesic_Integrator.Locate_event(Equatorial_crossing, State_at_event_global, State_at_event_local)) {
 
                 Evaluate_Equatorial_Disk(p_Sim_Context, p_Ray_results, State_at_event_global, State_at_event_local);

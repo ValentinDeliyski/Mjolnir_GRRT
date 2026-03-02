@@ -18,7 +18,7 @@ void Emission_models_class::get_thermal_synchrotron_emission_fit_functions(const
 
     /* Check weather the fit function p_Transfer_args are numerically OK to use in the expressions - they have problems at velry low densities where the emission/absorbtion is negligable.
        In such cases I directly return. */
-    if (isnan(p_Transfer_arags->X) || isinf(p_Transfer_arags->X) || isinf(1.0 / p_Transfer_arags->cbrt_X)) { return; }
+    if (isnan(p_Transfer_arags->X) or isinf(p_Transfer_arags->X) or isinf(1.0 / p_Transfer_arags->cbrt_X)) { return; }
 
     /* This silly magic number pops up as a coefficient in the fit functions. */
     constexpr double TWO_TO_11_OVER_12 = 1.887749;
@@ -56,7 +56,7 @@ void Emission_models_class::get_thermal_synchrotron_absorbtion_fit_functions(con
     const double f_cyclo      = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
 
     /* Check weather the exponent argument is numerically OK to use in the fit functions. */
-    if (isnan(exp_argument) || isinf(exp_argument)) { return; }
+    if (isnan(exp_argument) or isinf(exp_argument)) { return; }
     
     for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
 
@@ -81,7 +81,7 @@ void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const 
     double const K1_Bessel = std::cyl_bessel_k(1.0, 1.0 / p_Transfer_args->T_electron_dim);
     double const K2_Bessel = std::cyl_bessel_k(2.0, 1.0 / p_Transfer_args->T_electron_dim);
 
-    if (isnan(p_Transfer_args->X) || isinf(p_Transfer_args->X) || isinf(1.0 / p_Transfer_args->X) || isinf(1e10 / K2_Bessel)) { return; }
+    if (isnan(p_Transfer_args->X) or isinf(p_Transfer_args->X) or isinf(1.0 / p_Transfer_args->X) or isinf(1e10 / K2_Bessel)) { return; }
 
     double const common_exp_term = exp(-1.699 / p_Transfer_args->sqrt_X);
 
@@ -113,7 +113,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
 
     /* Check weather the fit function p_Transfer_args are numerically OK to use in the expressions - they have problems at velry low densities where the emission/absorbtion is negligable. 
        In such cases I directly return. */
-    if (isnan(p_Transfer_args->sqrt_X) || isinf(p_Transfer_args->sqrt_X) || isnan(p_Transfer_args->X) || isinf(p_Transfer_args->X) || isnan(1. / p_Transfer_args->X_to_7_over_20) || isinf(1. / p_Transfer_args->X_to_7_over_20) || isinf(1. / p_Transfer_args->T_electron_dim) || isinf(1. / p_Transfer_args->sin_emission_angle)) {
+    if (isnan(p_Transfer_args->sqrt_X) or isinf(p_Transfer_args->sqrt_X) or isnan(p_Transfer_args->X) or isinf(p_Transfer_args->X) or isnan(1. / p_Transfer_args->X_to_7_over_20) or isinf(1. / p_Transfer_args->X_to_7_over_20) or isinf(1. / p_Transfer_args->T_electron_dim) or isinf(1. / p_Transfer_args->sin_emission_angle)) {
 
         return;
 
@@ -170,7 +170,7 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
 
     /* Check weather the fit function p_Transfer_args are numerically OK to use in the expressions - they have problems at velry low densities where the emission/absorbtion is negligable.
        In such cases I directly return. */
-    if (isnan(p_Transfer_args->sqrt_X) || isinf(p_Transfer_args->sqrt_X) || isnan(p_Transfer_args->X) || isinf(p_Transfer_args->X) || isnan(1. / p_Transfer_args->X_to_7_over_20) || isinf(1. / p_Transfer_args->X_to_7_over_20) || isinf(1. / p_Transfer_args->T_electron_dim) || isinf(1. / p_Transfer_args->sin_emission_angle)) {
+    if (isnan(p_Transfer_args->sqrt_X) or isinf(p_Transfer_args->sqrt_X) or isnan(p_Transfer_args->X) or isinf(p_Transfer_args->X) or isnan(1. / p_Transfer_args->X_to_7_over_20) or isinf(1. / p_Transfer_args->X_to_7_over_20) or isinf(1. / p_Transfer_args->T_electron_dim) or isinf(1. / p_Transfer_args->sin_emission_angle)) {
 
         return;
 
@@ -254,7 +254,7 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
 
     /* Check weather the fit function p_Transfer_args are numerically OK to use in the expressions - they have problems at velry low densities where the emission/absorbtion is negligable.
        In such cases I directly return. */
-    if (isnan(p_Transfer_args->sqrt_X) || isinf(p_Transfer_args->sqrt_X) || isnan(p_Transfer_args->X) || isinf(p_Transfer_args->X) || isnan(1. / p_Transfer_args->X_to_7_over_20) || isinf(1. / p_Transfer_args->X_to_7_over_20) || isinf(1. / p_Transfer_args->T_electron_dim) || isinf(1. / p_Transfer_args->sin_emission_angle)) {
+    if (isnan(p_Transfer_args->sqrt_X) or isinf(p_Transfer_args->sqrt_X) or isnan(p_Transfer_args->X) or isinf(p_Transfer_args->X) or isnan(1. / p_Transfer_args->X_to_7_over_20) or isinf(1. / p_Transfer_args->X_to_7_over_20) or isinf(1. / p_Transfer_args->T_electron_dim) or isinf(1. / p_Transfer_args->sin_emission_angle)) {
 
         return;
 
@@ -269,7 +269,7 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
     const double K0_Bessel = std::cyl_bessel_k(0.0, 1.0 / p_Transfer_args->T_electron_dim);
     const double K2_Bessel = std::cyl_bessel_k(2.0, 1.0 / p_Transfer_args->T_electron_dim);
 
-    if (isinf(K0_Bessel / K2_Bessel) || isnan(K0_Bessel / K2_Bessel)) { return; }
+    if (isinf(K0_Bessel / K2_Bessel) or isnan(K0_Bessel / K2_Bessel)) { return; }
 
     const double& sin_emission_angle = p_Transfer_args->sin_emission_angle;
     const double& cos_emission_angle = p_Transfer_args->cos_emission_angle;

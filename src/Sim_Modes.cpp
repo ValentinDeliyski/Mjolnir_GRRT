@@ -5,15 +5,17 @@ void static print_progress(int current, int max, bool lens_from_file) {
 
     int current_digits = 1;
 
-    if (current != 0) {
+    if (current - 1 > 9 && current - 1 < 100) { current_digits = 2; }
+    else if (current - 1 > 99 && current - 1 < 1000) { current_digits = 3; }
+    else if (current - 1 > 999 && current - 1 < 10000) { current_digits = 4; }
 
-        current_digits = int(floor(log10(current) + 1));
+    int max_digits = 1;
 
-    }
+    if (max - 1 > 9 && max - 1 < 100) { max_digits = 2; }
+    else if (max - 1 > 99 && max - 1 < 1000) { max_digits = 3; }
+    else if (max - 1 > 999 && max - 1 < 10000) { max_digits = 4; }
 
-    int max_digits = int(floor(log10(max) + 1));
-
-    if (current == 0) {
+    if (current == 1) {
 
         if (lens_from_file) {
 
@@ -26,21 +28,14 @@ void static print_progress(int current, int max, bool lens_from_file) {
 
         }
 
-        for (int i = 0; i <= max_digits + current_digits; i += 1) {
+    }
+    else {
 
-            std::cout << "0";
-
-        }
+        for (int i = 0; i < max_digits + current_digits + 1; i += 1) { std::cout << "\b"; }
 
     }
 
-    for (int i = 0; i <= max_digits + current_digits + 1; i += 1) {
-
-        std::cout << "\b";
-
-    }
-
-    std::cout << current + 1 << "/" << max + 1 << " ";
+    std::cout << current << "/" << max;
 
 }
 
@@ -49,7 +44,7 @@ void static Rendering_function(std::stop_token stop_token, Rendering_engine* Ren
     Renderer->OpenGL_init(p_Init_conditions);
     glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);
 
-    while (!glfwWindowShouldClose(Renderer->window) and !stop_token.stop_requested()) {
+    while (!glfwWindowShouldClose(Renderer->window) or !stop_token.stop_requested()) {
 
         Renderer->renormalize_colormap();
 
@@ -159,7 +154,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
         */
 
         auto start_time = std::chrono::high_resolution_clock::now();
-        int progress = 0;
+        int progress = 1;
 
         std::cout << '\n' << "Generating image for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << "...\n";
 
@@ -167,7 +162,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         for (int V_pixel_num = 0; V_pixel_num < Y_resolution; V_pixel_num++) {
 
-            if (p_Sim_Context->p_Init_Conditions->Print_to_console) { print_progress(progress, Y_resolution - 1, false); }
+            if (p_Sim_Context->p_Init_Conditions->Print_to_console) { print_progress(progress, Y_resolution, false); }
 
             progress += 1;
 

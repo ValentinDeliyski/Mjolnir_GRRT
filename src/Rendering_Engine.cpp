@@ -13,8 +13,8 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     this->ray_number_x = p_Init_Conditions->Observer_params.resolution_x;
     this->ray_number_y = p_Init_Conditions->Observer_params.resolution_y;
 
-    this->Intensity_buffer = (float*)calloc(this->ray_number_x * this->ray_number_y, sizeof(float));
-    this->texture_buffer   = (float*)calloc(this->ray_number_x * this->ray_number_y * 3, sizeof(float));
+    this->Intensity_buffer = (float*)calloc(static_cast<size_t>(this->ray_number_x) * static_cast<size_t>(this->ray_number_y), sizeof(float));
+    this->texture_buffer   = (float*)calloc(static_cast<size_t>(this->ray_number_x) * static_cast<size_t>(this->ray_number_y) * 3, sizeof(float));
 
     // Calculate the aspect ratio of the rendering window
 
@@ -23,7 +23,7 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     float X_angle_max = float(p_Init_Conditions->Observer_params.x_angle_max);
     float X_angle_min = float(p_Init_Conditions->Observer_params.x_angle_min);
 
-    float aspect_ratio = (X_angle_max - X_angle_min) / (Y_angle_max - Y_angle_min);
+    float aspect_ratio = (Y_angle_max - Y_angle_min) / (X_angle_max - X_angle_min);
     
     if (!p_Init_Conditions->Observer_params.Use_angular_coords) {
 
@@ -32,24 +32,24 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
         X_angle_max = float(atan2(p_Init_Conditions->Observer_params.x_max, p_Init_Conditions->Observer_params.distance));
         X_angle_min = float(atan2(p_Init_Conditions->Observer_params.x_min, p_Init_Conditions->Observer_params.distance));
 
-        aspect_ratio = (X_angle_max - X_angle_min) / (Y_angle_max - Y_angle_min);
+        aspect_ratio = (Y_angle_max - Y_angle_min) / (X_angle_max - X_angle_min);
 
     }
     
     // Initialize GLFW
     glfwInit();   
 
-    // Tell GLFW what version of OpenGL I am using -> OpenGL 3.3
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    // Tell GLFW what version of OpenGL I am using -> OpenGL 4.6
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 
     // Tell GLFW we are using the CORE profile -> we only have the modern functions
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(1024, int(1024. / aspect_ratio), "Mjolnir GRRT", NULL, NULL);
+    this->window = glfwCreateWindow(1024, int(aspect_ratio * 1024), "Mjolnir GRRT", NULL, NULL);
 
     // Introduce the window into the current context
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(this->window);
 
     // Turn off vsync
     glfwSwapInterval(0);
@@ -58,7 +58,7 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     gladLoadGL();
 
     // Specify the viewport of OpenGL in the Window -> x = [0, aspect_ratio * 1024], y = [0, 1024]
-    glViewport(0, 0, 1024, int(1024. / aspect_ratio));
+    glViewport(0, 0, 1024, int(aspect_ratio * 1024));
 
     // The simulation image is interpreted as a texture
     GLuint texture = init_texture();
@@ -87,17 +87,17 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
 
     shaderProgram.Activate();
 
-    // Generates a float (with an int ID), that scales the output image
+    // Returns an integer handle for the variable "scale" inside the shader program.
     GLuint Scale_factor_handle = glGetUniformLocation(shaderProgram.ID, "scale");
 
-    // Generates an int (with an int ID), that tells the shader *insert what it tells it here*
+    // Returns an integer handle for the variable "u_Texture" inside the shader program.
     GLuint Texture_uniform_handle = glGetUniformLocation(shaderProgram.ID, "u_Texture");
 
     /* Sets the value of the texture uniform to the index of the binded texture (0 in this case). 
        This tells openGL which texture to sample. */
     glUniform1i(Texture_uniform_handle, 0);
 
-    // Activates the scaler with a value of 1.5f
+    // Set the value of the the scaler to 1.5f
     glUniform1f(Scale_factor_handle, 1.5f);
 
 }
@@ -118,20 +118,9 @@ void Rendering_engine::update_rendering_window() {
 
 }
 
-void Rendering_engine::update_max_intensity(float Intensity) {
-
-    if (Intensity > Max_Intensity) {
-
-        this->Max_Intensity = Intensity;
-        this->renormalize_colormap_flag = true;
-
-    }
-
-}
-
 void Rendering_engine::set_pixel_color(float Intensity, int texture_indexer) {
 
-    float x = Intensity / Max_Intensity;
+    float x = Intensity / this->Max_Intensity;
 
     // Red Channel
 
@@ -165,34 +154,19 @@ void Rendering_engine::renormalize_colormap() {
 
     // TODO: think about simplifying this
 
-    float current_max{};
+    float Current_max{};
 
     for (int index = 0; index <= this->texture_indexer; index += 3) {
 
-        this->renormalize_colormap_flag = false;
+        if (this->Intensity_buffer[int(index / 3)] > Current_max) {
 
-        if (this->Intensity_buffer[int(index / 3)] > current_max) {
-
-            current_max = this->Intensity_buffer[int(index / 3)];
-
-            this->renormalize_colormap_flag = false;
+            Current_max = this->Intensity_buffer[int(index / 3)];
 
         }
 
     }
 
-    this->Max_Intensity = current_max;
-
-    if (this->renormalize_colormap_flag) {
-
-        int lower_index = 0;
-    
-    }
-    else {
-
-        int lower_index = this->texture_indexer - this->ray_number_x * 3 >= 0 ? this->texture_indexer - this->ray_number_x * 3 : 0;
-
-    }
+    this->Max_Intensity = Current_max;
 
     for (int index = 0; index <= this->texture_indexer - 1; index += 3) {
 
@@ -225,7 +199,7 @@ void Rendering_engine::Vertex_Buffer::Bind() const { glBindBuffer(GL_ARRAY_BUFFE
 
 void Rendering_engine::Vertex_Buffer::Unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
-void Rendering_engine::Vertex_Buffer::Delete() const { glDeleteBuffers(1, &Vertex_buffer_ID); }
+void Rendering_engine::Vertex_Buffer::Delete() const { glDeleteBuffers(1, &this->Vertex_buffer_ID); }
 
 /******************************************
 |                                         |
@@ -235,7 +209,7 @@ void Rendering_engine::Vertex_Buffer::Delete() const { glDeleteBuffers(1, &Verte
 
 Rendering_engine::Vertex_array::Vertex_array()
 {
-    glGenVertexArrays(1, &ID);
+    glGenVertexArrays(1, &this->ID);
 }
 
 void Rendering_engine::Vertex_array::Linkattrib(GLuint index, GLuint numComponents, GLsizei stride, const void* offset) {
@@ -250,7 +224,7 @@ void Rendering_engine::Vertex_array::Linkattrib(GLuint index, GLuint numComponen
 
 void Rendering_engine::Vertex_array::Bind() {
 
-    glBindVertexArray(ID);
+    glBindVertexArray(this->ID);
 
 }
 
@@ -263,7 +237,7 @@ void Rendering_engine::Vertex_array::Unbind() {
 void Rendering_engine::Vertex_array::Delete() {
 
 
-    glDeleteVertexArrays(1, &ID);
+    glDeleteVertexArrays(1, &this->ID);
 
 }
 
@@ -363,12 +337,12 @@ Rendering_engine::Shader::Shader(const char* vertexFile, const char* fragmentFil
     glCompileShader(fragmentShader);
 
     // Create Shader Program Object and get its reference
-    ID = glCreateProgram();
+    this->ID = glCreateProgram();
     // Attach the Vertex and Fragment Shaders to the Shader Program
-    glAttachShader(ID, vertexShader);
-    glAttachShader(ID, fragmentShader);
+    glAttachShader(this->ID, vertexShader);
+    glAttachShader(this->ID, fragmentShader);
     // Wrap-up/Link all the shaders together into the Shader Program
-    glLinkProgram(ID);
+    glLinkProgram(this->ID);
 
     // Delete the now useless Vertex and Fragment Shader objects
     glDeleteShader(vertexShader);
@@ -378,13 +352,13 @@ Rendering_engine::Shader::Shader(const char* vertexFile, const char* fragmentFil
 
 void Rendering_engine::Shader::Activate() {
 
-    glUseProgram(ID);
+    glUseProgram(this->ID);
 
 }
 
 void Rendering_engine::Shader::Delete() {
 
-    glDeleteProgram(ID);
+    glDeleteProgram(this->ID);
 
 }
 

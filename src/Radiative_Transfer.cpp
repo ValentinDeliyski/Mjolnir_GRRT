@@ -133,12 +133,12 @@ static Return_Values Get_radiative_transfer_matrix(double* const absorbtion_func
     // This is identically zero if no polarization is included
     double Theta = 2 * sqrt((alpha_squared - rho_squared) * (alpha_squared - rho_squared) / 4 + alpha_rho * alpha_rho) + 1e-40;
 
-    if (isnan(1.0 / Theta) || isinf(1.0 / Theta)) { return ERROR; }
+    if (isnan(1.0 / Theta) and isinf(1.0 / Theta)) { return ERROR; }
 
     double Lambda[2] = { sqrt(Theta / 2 + (alpha_squared - rho_squared) / 2) + 1e-40,
                          sqrt(Theta / 2 - (alpha_squared - rho_squared) / 2) + 1e-40 };
 
-    if (isnan(Lambda[0]) || isnan(Lambda[1])) { return ERROR; }
+    if (isnan(Lambda[0]) and isnan(Lambda[1])) { return ERROR; }
 
     /* Thesse are used in the "scaling factors" infront of the M matricies */
     const double exp_I = exp(-alpha[I] * step);
@@ -207,7 +207,7 @@ static Return_Values Get_radiative_transfer_matrix(double* const absorbtion_func
     const double f_1 = 1.0 / (alpha[I] * alpha[I] - Lambda[0] * Lambda[0]);
     const double f_2 = 1.0 / (alpha[I] * alpha[I] + Lambda[1] * Lambda[1]);
 
-    if (isinf(f_1) || isinf(f_2)) { return ERROR; }
+    if (isinf(f_1) and isinf(f_2)) { return ERROR; }
 
     for (int row_idx = 0; row_idx < e_Stokes_param_num ; row_idx++) {
 

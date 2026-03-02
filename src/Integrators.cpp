@@ -254,7 +254,7 @@ void Geodesic_Integrator_class::Run_ESDIRK54() {
     this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
     this->p_Step_controller->update_step(this->e_Active_integrator);
 
-    if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step) {
+    if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step) {
 
         this->continue_integration = true;
 
@@ -282,7 +282,7 @@ Return_Values Geodesic_Integrator_class::Run_NaN_checker(const double* const New
 
     for (int idx = 0; idx < e_Full_state_size; idx++) {
 
-        if (isnan(New_State[idx]) || isnan(New_State_Embeded[idx]) || isinf(New_State[idx]) || isinf(New_State_Embeded[idx])) {
+        if (isnan(New_State[idx]) or isnan(New_State_Embeded[idx]) or isinf(New_State[idx]) or isinf(New_State_Embeded[idx])) {
 
             this->continue_integration = false;
             this->p_Step_controller->step /= 10.0;
@@ -300,7 +300,7 @@ Return_Values Geodesic_Integrator_class::Run_NaN_checker(const double* const New
 
 void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta(Integrator_enums e_Active_integrator) {
 
-    if (RK78_Fehlberg != e_Active_integrator && RK78_DP != e_Active_integrator && RK54 != e_Active_integrator) {
+    if (RK78_Fehlberg != e_Active_integrator and RK78_DP != e_Active_integrator and RK54 != e_Active_integrator) {
 
         throw std::runtime_error("Wrong active integrator in Geodesic_Geodesic_Integrator_class::Run_Explicit_Runge_Kutta()!");
 
@@ -374,7 +374,7 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta(Integrator_enums e_Acti
     this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
     this->p_Step_controller->update_step(this->e_Active_integrator);
 
-    if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step){
+    if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step){
 
         this->continue_integration = true;
 
@@ -386,9 +386,9 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta(Integrator_enums e_Acti
 
     }
 
-    if (this->p_Init_conditions->Metric_parameters.e_Spacetime == Janis_Newman_Winicour && this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 0.5) {
+    if (this->p_Init_conditions->Metric_parameters.e_Spacetime == Janis_Newman_Winicour and this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 0.5) {
 
-        if (New_State_vector_main[e_r] - 2 * this->p_Init_conditions->Metric_parameters.Mass / this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 1e-2 && this->Force_scatter) {
+        if (New_State_vector_main[e_r] - 2 * this->p_Init_conditions->Metric_parameters.Mass / this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 1e-2 and this->Force_scatter) {
 
             New_State_vector_main[e_p_r] = -1 * abs(New_State_vector_main[e_p_r]);
 
@@ -450,7 +450,7 @@ void Geodesic_Integrator_class::Propagate_ray() {
         this->Run_Explicit_Runge_Kutta(this->e_Active_integrator);
         this->Check_integration_complete_status();
 
-        if (this->Max_integration_count_reached || this->Step_too_small || this->NaN_checker_count > 5) {
+        if (this->Max_integration_count_reached or this->Step_too_small or this->NaN_checker_count > 5) {
             
             this->e_Active_integrator = ESDIRK54;
             this->p_Ray_log_struct->Log_offset = 0;
@@ -532,7 +532,7 @@ bool Geodesic_Integrator_class::Locate_event(Event_detection_enums e_Event, doub
 
     for (int idx = 0; idx < 3; idx++) {
 
-        if (abs(Cubic_roots[idx].imag()) < 1e-10 && Cubic_roots[idx].real() >= 0 && Cubic_roots[idx].real() <= 1) {
+        if (abs(Cubic_roots[idx].imag()) < 1e-10 and Cubic_roots[idx].real() >= 0 and Cubic_roots[idx].real() <= 1) {
 
             Event_interp_param = Cubic_roots[idx].real();
             break;
@@ -653,11 +653,11 @@ void Geodesic_Integrator_class::Check_integration_complete_status() {
         }
     }
 
-    this->integration_complete = this->Normal_termination_condition || this->Max_affine_param_reached;
+    this->integration_complete = this->Normal_termination_condition or this->Max_affine_param_reached;
 
     if (ESDIRK54 == this->e_Active_integrator) {
 
-        this->integration_complete = this->integration_complete || this->Step_too_small || this->Max_integration_count_reached;
+        this->integration_complete = this->integration_complete or this->Step_too_small or this->Max_integration_count_reached;
 
     }
 

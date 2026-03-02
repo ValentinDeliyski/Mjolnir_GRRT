@@ -2,19 +2,19 @@
 
 JNW_class::JNW_class(const Metric_parameters_type* const p_Metric_Parameters) {
 
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+    if (isnan(p_Metric_Parameters->Scattering_radius) or isinf(p_Metric_Parameters->Scattering_radius) or p_Metric_Parameters->Scattering_radius < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
 
     }
 
-    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) or isinf(p_Metric_Parameters->Min_distance_to_singular_point) or p_Metric_Parameters->Min_distance_to_singular_point < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the distance to the singular point: {}", p_Metric_Parameters->Min_distance_to_singular_point));
 
     }
 
-    if (isnan(p_Metric_Parameters->JNW_Gamma_Parameter) || isinf(p_Metric_Parameters->JNW_Gamma_Parameter) || p_Metric_Parameters->JNW_Gamma_Parameter < 0) {
+    if (isnan(p_Metric_Parameters->JNW_Gamma_Parameter) or isinf(p_Metric_Parameters->JNW_Gamma_Parameter) or p_Metric_Parameters->JNW_Gamma_Parameter < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the gamma parameter: {}", p_Metric_Parameters->JNW_Gamma_Parameter));
 
@@ -48,7 +48,7 @@ double* JNW_class::get_ISCO() {
         r_ISCO[Outer] = r_ISCO[Inner];
 
 
-    }else if (this->Gamma > 1.0 / sqrt(5) && this->Gamma < 1.0 / 2) {
+    }else if (this->Gamma > 1.0 / sqrt(5) and this->Gamma < 1.0 / 2) {
 
             r_ISCO[Inner] = 1.0 / this->Gamma * (3.0 * this->Gamma + 1.0 - sqrt(5 * this->Gamma * this->Gamma - 1));
             r_ISCO[Outer] = 1.0 / this->Gamma * (3.0 * this->Gamma + 1.0 + sqrt(5 * this->Gamma * this->Gamma - 1));
@@ -260,11 +260,11 @@ bool JNW_class::terminate_integration(const double* const State_vector) {
 
     }
 
-    const bool scatter = State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0.0;
+    const bool scatter = State_vector[e_r] > this->Scattering_radius and State_vector[e_p_r] < 0.0;
 
-    if (scatter || hit_horizon) { this->Scattered_off_singulariy = false; }
+    if (scatter or hit_horizon) { this->Scattered_off_singulariy = false; }
 
-    return scatter || hit_horizon;
+    return scatter or hit_horizon;
 };
 
 

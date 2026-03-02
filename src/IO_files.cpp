@@ -182,7 +182,7 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
         break;
     }
 
-    if (e_Phenom_RIAF_1 == this->p_Initial_Conditions->Disk_params.e_Disk_model ||
+    if (e_Phenom_RIAF_1 == this->p_Initial_Conditions->Disk_params.e_Disk_model or
         e_Phenom_RIAF_2 == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
         *Output_file << "--------------------------- Model Parameters\n"
@@ -463,7 +463,7 @@ void File_manager_class::write_emission_models_metadata(std::ofstream* Output_fi
 
     *Output_file << "------------------------------------------------------- Emission models metadata -------------------------------------------------------" << "\n";
 
-    if ((e_Phenomenological_ensamble == this->p_Initial_Conditions->Disk_params.Ensamble_type) ||
+    if ((e_Phenomenological_ensamble == this->p_Initial_Conditions->Disk_params.Ensamble_type) or
         (e_Phenomenological_ensamble == this->p_Initial_Conditions->Hotspot_params.Ensamble_type)) {
 
         *Output_file << "--------------------------- Phenomenological ensamble parameters " << "\n";
@@ -483,7 +483,7 @@ void File_manager_class::write_emission_models_metadata(std::ofstream* Output_fi
 
     }
 
-    if ((e_Kappa_ensamble == this->p_Initial_Conditions->Disk_params.Ensamble_type) ||
+    if ((e_Kappa_ensamble == this->p_Initial_Conditions->Disk_params.Ensamble_type) or
         (e_Kappa_ensamble == this->p_Initial_Conditions->Hotspot_params.Ensamble_type)) {
 
         *Output_file << "--------------------------- Kappa ensamble parameters " << "\n";
@@ -491,7 +491,7 @@ void File_manager_class::write_emission_models_metadata(std::ofstream* Output_fi
         *Output_file << "Kappa value [-]: " << this->p_Initial_Conditions->Emission_params.Kappa << "\n";
     }
 
-    if ((e_Debug_constant_functions == this->p_Initial_Conditions->Disk_params.Ensamble_type) ||
+    if ((e_Debug_constant_functions == this->p_Initial_Conditions->Disk_params.Ensamble_type) or
         (e_Debug_constant_functions == this->p_Initial_Conditions->Hotspot_params.Ensamble_type)) {
 
         *Output_file << "--------------------------- Debug ensamble parameters " << "\n";
@@ -722,7 +722,7 @@ void File_manager_class::create_output_file() {
         this->Output_File->open(this->Output_File_Path, open_type);
 
     }
-    else if (this->p_Initial_Conditions->Simulation_mode == Image_generation || this->p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
+    else if (this->p_Initial_Conditions->Simulation_mode == Image_generation or this->p_Initial_Conditions->Simulation_mode == Make_geodesic_sweep) {
 
         if (0 == strcmp(static_cast<const char*>(this->p_Initial_Conditions->File_manager_params.Common_file_names.c_str()), "")) {
 
@@ -748,7 +748,7 @@ void File_manager_class::create_output_file() {
 
     }
 
-    if (this->Truncate_files && !(this->p_Initial_Conditions->Simulation_mode == Debug_mode)) {
+    if (this->Truncate_files and !(this->p_Initial_Conditions->Simulation_mode == Debug_mode)) {
 
         // If we are truncating the file (and we are not in the debug sim mode), we should write the metadata to it.
         // The debug mode has its own header type

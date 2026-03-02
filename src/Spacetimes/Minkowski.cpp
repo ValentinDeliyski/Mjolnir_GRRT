@@ -4,7 +4,7 @@
 
 Minkowski_class::Minkowski_class(const Metric_parameters_type* const p_Metric_Parameters){
 
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+    if (isnan(p_Metric_Parameters->Scattering_radius) or isinf(p_Metric_Parameters->Scattering_radius) or p_Metric_Parameters->Scattering_radius < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
 
@@ -134,7 +134,7 @@ void Minkowski_class::get_EOM(const double* const State_vector, double* const De
 
 bool Minkowski_class::terminate_integration(const double* const State_vector) {
 
-    return State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0;
+    return State_vector[e_r] > this->Scattering_radius and State_vector[e_p_r] < 0;
 
 };
 

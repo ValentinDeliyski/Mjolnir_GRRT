@@ -20,6 +20,7 @@
             bool renormalize_colormap_flag = false;
 
             int texture_indexer{};
+
             int ray_number_x{};
             int ray_number_y{};
             
@@ -46,8 +47,6 @@
             void set_pixel_color(float intensity, int pixel_count);
 
             void renormalize_colormap();
-
-            void update_max_intensity(float Intensity);
 
             /***************************************
             |									   |

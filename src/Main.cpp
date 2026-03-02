@@ -85,7 +85,7 @@ int main(int argument_count, char** cmd_line_args) {
         std::string Input_file_path{};
         bool print_to_console{};
 
-        if (argument_count == 5 && 0 == strcmp(cmd_line_args[1], "-in") && 0 == strcmp(cmd_line_args[3], "-print_to_console")) {
+        if (argument_count == 5 and 0 == strcmp(cmd_line_args[1], "-in") and 0 == strcmp(cmd_line_args[3], "-print_to_console")) {
 
             Input_file_path = cmd_line_args[2];
             print_to_console = std::stoi(cmd_line_args[4]);

@@ -2,13 +2,13 @@
 
 Numerical_metric::Numerical_metric(const Metric_parameters_type* const p_Metric_Parameters) {
 
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+    if (isnan(p_Metric_Parameters->Scattering_radius) or isinf(p_Metric_Parameters->Scattering_radius) or p_Metric_Parameters->Scattering_radius < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
 
     }
 
-    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point)) {
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) or isinf(p_Metric_Parameters->Min_distance_to_singular_point)) {
 
         throw std::runtime_error(std::format("Invalid value for the distance to the throat: {}", p_Metric_Parameters->Min_distance_to_singular_point));
 
@@ -143,7 +143,7 @@ inline void Numerical_metric::get_control_point_matrix(const double* const Contr
 
 }
 
-void Numerical_metric::get_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const {
+void Numerical_metric::get_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type* const Delta_coeffs, double* const Polynomial_basis_vector) const {
 
     Polynomial_basis_vector[0] = -Delta_coeffs->a_coeff * natural_parameter * natural_parameter * natural_parameter
                                + 3 * Delta_coeffs->a_coeff * natural_parameter * natural_parameter
@@ -164,7 +164,7 @@ void Numerical_metric::get_polynomial_basis_vector(const double natural_paramete
 
 }
 
-void Numerical_metric::get_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const {
+void Numerical_metric::get_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type* const Delta_coeffs, double* const Polynomial_basis_vector) const {
 
     Polynomial_basis_vector[0] = -3 * Delta_coeffs->a_coeff * natural_parameter * natural_parameter
                                + 6 * Delta_coeffs->a_coeff * natural_parameter
@@ -182,7 +182,7 @@ void Numerical_metric::get_derivative_polynomial_basis_vector(const double natur
 
 }
 
-void Numerical_metric::get_second_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const {
+void Numerical_metric::get_second_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type* const Delta_coeffs, double* const Polynomial_basis_vector) const {
 
     Polynomial_basis_vector[0] = -6 * Delta_coeffs->a_coeff * natural_parameter
                                 + 6 * Delta_coeffs->a_coeff;
@@ -200,8 +200,8 @@ void Numerical_metric::get_second_derivative_polynomial_basis_vector(const doubl
 double Numerical_metric::evaluate_single_spline(const double Control_point_matrix[4][4], 
                                                 const double Radial_natural_parameter, 
                                                 const double Theta_natural_parameter,
-                                                const Delta_coeffs_type const *Radial_coeffs,
-                                                const Delta_coeffs_type const *Theta_coeffs,
+                                                const Delta_coeffs_type* const Radial_coeffs,
+                                                const Delta_coeffs_type* const Theta_coeffs,
                                                 Derivative_selector_enums Derivative_selector) const {
 
     /* -------------- Compute the basis polynomials ------------ */
@@ -977,11 +977,11 @@ void Numerical_metric::get_EOM(const double* const State_Vector, double* const D
 
 bool Numerical_metric::terminate_integration(const double* const State_vector) {
 
-    const bool scatter = State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0;
+    const bool scatter = State_vector[e_r] > this->Scattering_radius and State_vector[e_p_r] < 0;
 
     const bool hit_horizon = State_vector[e_r] - this->Parameters.Horizon_radius < this->Min_distance_to_singular_point;
 
-    return scatter || hit_horizon;
+    return scatter or hit_horizon;
 };
 
 void Numerical_metric::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {

@@ -2,25 +2,25 @@
 
 Black_Hole_w_Dark_Matter_Halo_class::Black_Hole_w_Dark_Matter_Halo_class(const Metric_parameters_type* const p_Metric_Parameters) {
 
-    if (isnan(p_Metric_Parameters->Compactness) || isinf(p_Metric_Parameters->Compactness) || p_Metric_Parameters->Compactness < 0) {
+    if (isnan(p_Metric_Parameters->Compactness) or isinf(p_Metric_Parameters->Compactness) or p_Metric_Parameters->Compactness < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the compactness: {}", p_Metric_Parameters->Compactness));
 
     }
 
-    if (isnan(p_Metric_Parameters->Halo_Mass) || isinf(p_Metric_Parameters->Halo_Mass) || p_Metric_Parameters->Halo_Mass < 0) {
+    if (isnan(p_Metric_Parameters->Halo_Mass) or isinf(p_Metric_Parameters->Halo_Mass) or p_Metric_Parameters->Halo_Mass < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the halo mass: {}", p_Metric_Parameters->Halo_Mass));
 
     }
 
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+    if (isnan(p_Metric_Parameters->Scattering_radius) or isinf(p_Metric_Parameters->Scattering_radius) or p_Metric_Parameters->Scattering_radius < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
 
     }
 
-    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) or isinf(p_Metric_Parameters->Min_distance_to_singular_point) or p_Metric_Parameters->Min_distance_to_singular_point < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the distance to the singular point: {}", p_Metric_Parameters->Min_distance_to_singular_point));
 
@@ -254,10 +254,10 @@ void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(const double* const Global_Sta
 
 bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(const double* const State_vector) {
 
-    bool scatter     = State_vector[e_r] > this->Scattering_radius && State_vector[e_p_r] < 0;
+    bool scatter     = State_vector[e_r] > this->Scattering_radius and State_vector[e_p_r] < 0;
     bool hit_horizon = State_vector[e_r] - 2 * this->Mass < this->Min_distance_to_singular_point;
 
-    return scatter || hit_horizon;
+    return scatter or hit_horizon;
 
 };
 

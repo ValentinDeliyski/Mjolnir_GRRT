@@ -371,15 +371,15 @@ private:
     Delta_coeffs_type get_delta_matrix(const double* const Grid_step_array, const long long idx) const;
 
     void get_control_point_matrix(const double* const Control_vector, const long long r_idx, const long long theta_idx, double Control_matrix[4][4]) const;
-    void get_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const;
-    void get_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const;
-    void get_second_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type const* Delta_coeffs, double* const Polynomial_basis_vector) const;
+    void get_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type* const Delta_coeffs, double* const Polynomial_basis_vector) const;
+    void get_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type* const Delta_coeffs, double* const Polynomial_basis_vector) const;
+    void get_second_derivative_polynomial_basis_vector(const double natural_parameter, const Delta_coeffs_type* const Delta_coeffs, double* const Polynomial_basis_vector) const;
 
     double evaluate_single_spline(const double Control_point_matrix[4][4], 
                                   const double Radial_natural_parameter, 
                                   const double Theta_natural_parameter,
-                                  const Delta_coeffs_type const* Radial_coeffs,
-                                  const Delta_coeffs_type const* Theta_coeffs,
+                                  const Delta_coeffs_type* const Radial_coeffs,
+                                  const Delta_coeffs_type* const Theta_coeffs,
                                   Derivative_selector_enums Derivative_selector) const;
 
     Numerical_metric_potentials_type evaluate_all_custom_splines(Spline_arguments_type s_Spline_args, Derivative_selector_enums Derivative_selector) const;

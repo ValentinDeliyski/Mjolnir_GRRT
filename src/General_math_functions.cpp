@@ -76,13 +76,13 @@ double get_max_relative_error(const double* const Error_state, const double* con
 
 	double max_rel_error = fabs(Error_state[e_t] / Current_state[e_t]);
 
-	if (isinf(max_rel_error) || isnan(max_rel_error)) { max_rel_error = 0.0; }
+	if (isinf(max_rel_error) or isnan(max_rel_error)) { max_rel_error = 0.0; }
 
 	for (int index = e_r; index < e_Dynamic_state_size; index += 1) {
 
 		double temp_error = fabs(Error_state[index] / (Current_state[index]));
 
-		if (temp_error > max_rel_error && !isinf(temp_error)) {
+		if (temp_error > max_rel_error and !isinf(temp_error)) {
 
 			max_rel_error = temp_error;
 

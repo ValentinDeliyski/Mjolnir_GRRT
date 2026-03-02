@@ -89,7 +89,7 @@ Emission_Integrator_class::~Emission_Integrator_class() {
 
 void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affine_Param, const double End_Affine_Param) {
 
-    if (RK78_Fehlberg != e_Active_integrator && RK78_DP != e_Active_integrator && RK54 != e_Active_integrator) {
+    if (RK78_Fehlberg != e_Active_integrator and RK78_DP != e_Active_integrator and RK54 != e_Active_integrator) {
 
         throw std::runtime_error("Wrong active integrator in Emission_Integrator_class::Run_Explicit_Runge_Kutta()!");
 
@@ -216,7 +216,7 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affin
 
         this->p_Step_controller->update_state_errors(New_Stokes_vector_main, state_error, this->e_Active_integrator, e_Stokes_param_num);
 
-        if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step) {
+        if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step) {
 
             this->continue_integration = true;
 
@@ -474,7 +474,7 @@ void static Parallel_Transport_Vector(const double* const State_Vector_Global,
 
 void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start_Affine_Param, const double End_Affine_Param, const Tensor_type_enums e_Vec_type) {
 
-    if (RK78_Fehlberg != e_Active_integrator && RK78_DP != e_Active_integrator && RK54 != e_Active_integrator) {
+    if (RK78_Fehlberg != e_Active_integrator and RK78_DP != e_Active_integrator and RK54 != e_Active_integrator) {
 
         throw std::runtime_error("Wrong active integrator in Emission_Integrator_class::Propagate_Polarization_Vector()!");
 
@@ -578,7 +578,7 @@ void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start
 
         this->p_Step_controller->update_state_errors(New_Pol_Vector_main, state_error, this->e_Active_integrator, e_Stokes_param_num);
 
-        if (this->p_Step_controller->current_err < 1.0 || !this->p_Step_controller->Parameters.Use_adaptive_step) {
+        if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step) {
 
             this->continue_integration = true;
 
@@ -616,7 +616,7 @@ void Emission_Integrator_class::Map_Stokes_to_Polarization_Vector(const double S
 
     Stokes_Basis_Pol_vec[1] = M_SQRT1_2;
 
-    if (!isinf(this->Current_Stokes_Vector[Q] / Polarized_Intensity) && !isnan(this->Current_Stokes_Vector[Q] / Polarized_Intensity)) {
+    if (!isinf(this->Current_Stokes_Vector[Q] / Polarized_Intensity) and !isnan(this->Current_Stokes_Vector[Q] / Polarized_Intensity)) {
 
         Stokes_Basis_Pol_vec[1] = sqrt((1 + this->Current_Stokes_Vector[Q] / Polarized_Intensity) / 2);
 
@@ -624,7 +624,7 @@ void Emission_Integrator_class::Map_Stokes_to_Polarization_Vector(const double S
 
     Stokes_Basis_Pol_vec[2] = 1.;
 
-    if (!isinf(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity)) && !isnan(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity))) {
+    if (!isinf(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity)) and !isnan(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity))) {
 
         Stokes_Basis_Pol_vec[2] = (this->Current_Stokes_Vector[U] - complex_i * this->Current_Stokes_Vector[V]) / (2.0 * Stokes_Basis_Pol_vec[1] * Polarized_Intensity);
 
@@ -669,7 +669,7 @@ void Emission_Integrator_class::Map_Polarization_Vector_to_Stokes(const double i
 
     double Polarized_Intensity_after_mapping = vector_norm(this->Current_Stokes_Vector + 1, 3);
 
-    if (!isnan(1. / Polarized_Intensity_after_mapping) && !isinf(1.0 / Polarized_Intensity_after_mapping)) {
+    if (!isnan(1. / Polarized_Intensity_after_mapping) and !isinf(1.0 / Polarized_Intensity_after_mapping)) {
 
         for (int idx = 1; idx < 4; idx++) {
 

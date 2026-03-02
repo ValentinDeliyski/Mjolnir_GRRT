@@ -231,13 +231,13 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
     }
 
-    if (isnan(p_Emission_medium_state->Density) || isinf(p_Emission_medium_state->Density) || p_Emission_medium_state->Density < 0) {
+    if (isnan(p_Emission_medium_state->Density) or isinf(p_Emission_medium_state->Density) or p_Emission_medium_state->Density < 0) {
 
         throw std::runtime_error(std::format("Invalid disk density profile: {} \n", p_Emission_medium_state->Density));
 
     }
 
-    if (isnan(p_Emission_medium_state->Temperature) || isinf(p_Emission_medium_state->Temperature) || p_Emission_medium_state->Temperature < 0) {
+    if (isnan(p_Emission_medium_state->Temperature) or isinf(p_Emission_medium_state->Temperature) or p_Emission_medium_state->Temperature < 0) {
 
         throw std::runtime_error(std::format("Invalid disk temperature profile: {} \n", p_Emission_medium_state->Temperature));
 

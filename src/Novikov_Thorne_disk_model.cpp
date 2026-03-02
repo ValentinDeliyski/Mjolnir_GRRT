@@ -72,7 +72,7 @@ double Novikov_Thorne_Model_class::get_Disk_Angular_Velocity(const double* const
 
     double Angular_velocity = (-s_dr_Metric.Metric[e_t][e_phi] + sqrt(s_dr_Metric.Metric[e_t][e_phi] * s_dr_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi])) / s_dr_Metric.Metric[e_phi][e_phi];
 
-    if (isnan(Angular_velocity) || isinf(Angular_velocity) || isnan(Angular_velocity) || isinf(Angular_velocity)) {
+    if (isnan(Angular_velocity) or isinf(Angular_velocity) or isnan(Angular_velocity) or isinf(Angular_velocity)) {
 
         throw std::runtime_error(std::format("Invalid Novikov-Thorne angular velocity at: r = {}: Omega = {}", Local_State_Vector[e_r], Angular_velocity));
 
@@ -95,7 +95,7 @@ double Novikov_Thorne_Model_class::get_dr_Disk_Angular_Velocity(const double* co
                      + 1.0 / root / 2 * (2 * s_dr_Metric.Metric[e_t][e_phi] * s_d2r_Metric.Metric[e_t][e_phi] - s_dr_Metric.Metric[e_t][e_t] * s_d2r_Metric.Metric[e_phi][e_phi]
                      - s_d2r_Metric.Metric[e_t][e_t] * s_dr_Metric.Metric[e_phi][e_phi])) / s_dr_Metric.Metric[e_phi][e_phi];
 
-    if (isnan(dr_Kepler) || isinf(dr_Kepler) || isnan(dr_Kepler) || isinf(dr_Kepler)) {
+    if (isnan(dr_Kepler) or isinf(dr_Kepler) or isnan(dr_Kepler) or isinf(dr_Kepler)) {
 
         throw std::runtime_error(std::format("Invalid Novikov-Thorne angular velocity derivative at: r = {}: dr_Omega = {}", Local_State_Vector[e_r], dr_Kepler));
 
@@ -111,7 +111,7 @@ double* Novikov_Thorne_Model_class::get_Disk_Velocity_Vector(const double* const
     double Angular_velocity = this->get_Disk_Angular_Velocity(Local_State_Vector);
     double u_t = 1 / sqrt(-s_Metric_source.Metric[e_t][e_t] - 2 * s_Metric_source.Metric[e_t][e_phi] * Angular_velocity - s_Metric_source.Metric[e_phi][e_phi] * Angular_velocity * Angular_velocity);
 
-    if (isnan(u_t) || isinf(u_t) || isnan(Angular_velocity) || isinf(Angular_velocity)) {
+    if (isnan(u_t) or isinf(u_t) or isnan(Angular_velocity) or isinf(Angular_velocity)) {
 
         throw std::runtime_error(std::format("Invalid Novikov-Thorne disk 4-velocity at r = {}: u_t = {}, Angular velocity = {}", Local_State_Vector[e_r], u_t, Angular_velocity));
 
@@ -135,7 +135,7 @@ double Novikov_Thorne_Model_class::get_Disk_Energy(const double* const Local_Sta
     double root = sqrt(-s_Metric_source.Metric[e_t][e_t] - 2 * s_Metric_source.Metric[e_t][e_phi] * Kepler - s_Metric_source.Metric[e_phi][e_phi] * Kepler * Kepler);
     double Disk_Energy = -(s_Metric_source.Metric[e_t][e_t] + s_Metric_source.Metric[e_t][e_phi] * Kepler) / root;
 
-    if (isnan(Disk_Energy) || isinf(Disk_Energy) || isnan(Disk_Energy) || isinf(Disk_Energy)) {
+    if (isnan(Disk_Energy) or isinf(Disk_Energy) or isnan(Disk_Energy) or isinf(Disk_Energy)) {
 
         throw std::runtime_error(std::format("Invalid Novikov-Thorne disk energy at r = {}: E = {}", Local_State_Vector[e_r], Disk_Energy));
 
@@ -154,7 +154,7 @@ double Novikov_Thorne_Model_class::get_Disk_Angular_Momentum(const double* const
     double root = sqrt(-s_Metric_source.Metric[e_t][e_t] - 2 * s_Metric_source.Metric[e_t][e_phi] * Kepler - s_Metric_source.Metric[e_phi][e_phi] * Kepler * Kepler);
     double Disk_angular_momentum = (s_Metric_source.Metric[e_phi][e_phi] * Kepler + s_Metric_source.Metric[e_t][e_phi]) / root;
 
-    if (isnan(Disk_angular_momentum) || isinf(Disk_angular_momentum) || isnan(Disk_angular_momentum) || isinf(Disk_angular_momentum)) {
+    if (isnan(Disk_angular_momentum) or isinf(Disk_angular_momentum) or isnan(Disk_angular_momentum) or isinf(Disk_angular_momentum)) {
 
         throw std::runtime_error(std::format("Invalid Novikov-Thorne disk angular momentum at r = {}: L_z = {}", Local_State_Vector[e_r], Disk_angular_momentum));
 
@@ -180,7 +180,7 @@ double Novikov_Thorne_Model_class::get_dr_Disk_Angular_Momentum(const double* co
     double Disk_dr_angular_momentum = (s_dr_Metric.Metric[e_phi][e_phi] * Disk_Ang_Velocity + s_Metric.Metric[e_phi][e_phi] * Disk_dr_Ang_Velocity + s_dr_Metric.Metric[e_t][e_phi]) / root - Disk_Ang_Momentum / root / root / 2 * dr_root;
 
 
-    if (isnan(Disk_Ang_Momentum) || isinf(Disk_Ang_Momentum) || isnan(Disk_Ang_Momentum) || isinf(Disk_Ang_Momentum)) {
+    if (isnan(Disk_Ang_Momentum) or isinf(Disk_Ang_Momentum) or isnan(Disk_Ang_Momentum) or isinf(Disk_Ang_Momentum)) {
 
         throw std::runtime_error(std::format("Invalid Novikov-Thorne disk angular momentum derivative at r = {}: dr_L_z = {}", Local_State_Vector[e_r], Disk_Ang_Momentum));
 

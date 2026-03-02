@@ -3,31 +3,31 @@
 Wormhole_class::Wormhole_class(const Metric_parameters_type* const p_Metric_Parameters){
 
 
-    if (isnan(p_Metric_Parameters->Spin) || isinf(p_Metric_Parameters->Spin)) {
+    if (isnan(p_Metric_Parameters->Spin) or isinf(p_Metric_Parameters->Spin)) {
 
         throw std::runtime_error(std::format("Invalid value for the spin parameter: {}", p_Metric_Parameters->Spin));
 
     }
 
-    if (true != p_Metric_Parameters->Stop_At_Throat && false != p_Metric_Parameters->Stop_At_Throat) {
+    if (true != p_Metric_Parameters->Stop_At_Throat and false != p_Metric_Parameters->Stop_At_Throat) {
 
         throw std::runtime_error(std::format("Invalid value for the \"Stop at throat\" flag: {}", p_Metric_Parameters->Stop_At_Throat));
 
     }
 
-    if (isnan(p_Metric_Parameters->Redshift_Parameter) || isinf(p_Metric_Parameters->Redshift_Parameter) || p_Metric_Parameters->Redshift_Parameter < 0) {
+    if (isnan(p_Metric_Parameters->Redshift_Parameter) or isinf(p_Metric_Parameters->Redshift_Parameter) or p_Metric_Parameters->Redshift_Parameter < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the redshift parameter: {}", p_Metric_Parameters->Redshift_Parameter));
 
     }
 
-    if (isnan(p_Metric_Parameters->Scattering_radius) || isinf(p_Metric_Parameters->Scattering_radius) || p_Metric_Parameters->Scattering_radius < 0) {
+    if (isnan(p_Metric_Parameters->Scattering_radius) or isinf(p_Metric_Parameters->Scattering_radius) or p_Metric_Parameters->Scattering_radius < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the scattering radius: {}", p_Metric_Parameters->Scattering_radius));
 
     }
 
-    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) || isinf(p_Metric_Parameters->Min_distance_to_singular_point) || p_Metric_Parameters->Min_distance_to_singular_point < 0) {
+    if (isnan(p_Metric_Parameters->Min_distance_to_singular_point) or isinf(p_Metric_Parameters->Min_distance_to_singular_point) or p_Metric_Parameters->Min_distance_to_singular_point < 0) {
 
         throw std::runtime_error(std::format("Invalid value for the distance to the throat: {}", p_Metric_Parameters->Min_distance_to_singular_point));
 
@@ -349,17 +349,17 @@ bool Wormhole_class::terminate_integration(const double* const State_vector) {
 
     const double Scatter_radius_global_coords = sqrt(this->Scattering_radius * this->Scattering_radius - this->R_Throat * this->R_Throat);
 
-    const bool scatter            = State_vector[e_r] > Scatter_radius_global_coords && State_vector[e_p_r] < 0;
+    const bool scatter            = State_vector[e_r] > Scatter_radius_global_coords and State_vector[e_p_r] < 0;
     const bool scatter_other_side = State_vector[e_r] < -Scatter_radius_global_coords;
     const bool stop_at_throat     = State_vector[e_r] < this->Min_distance_to_throat;
 
     if (this->Stop_at_Throat) {
 
-        return scatter || stop_at_throat;
+        return scatter or stop_at_throat;
     }
     else {
 
-        return scatter || scatter_other_side;
+        return scatter or scatter_other_side;
 
     }
 }
@@ -369,12 +369,6 @@ void Wormhole_class::Convert_global_to_local_coords(const double* const State_Ve
     switch (Entry_to_convert) {
 
     case e_Full_State_Vector:
-
-        if (State_Vector_Global[e_r] < 0) {
-
-            int test{};
-
-        }
 
         memcpy(Local_Vec_to_Convert, Global_Vec_to_Convert, e_Full_state_size * sizeof(double));
         Local_Vec_to_Convert[e_r] = sqrt(Global_Vec_to_Convert[e_r] * Global_Vec_to_Convert[e_r] + this->R_Throat * this->R_Throat);

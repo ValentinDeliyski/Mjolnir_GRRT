@@ -85,12 +85,6 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     Profile_prameters.Gaussian_variable = Distance_to_hotspot_center;
 
-    if (Distance_to_hotspot_center < 3.) {
-
-        int test{};
-
-    }
-
     Profile_prameters.Gaussian_spread   = this->s_Hotspot_params.Profile_params.Density_gaussian_spread;
     Profile_prameters.Gaussian_mean     = 0.0;
 
@@ -115,7 +109,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     p_Emission_medium_state->Density = this->s_Hotspot_params.Electron_density_scale * Spatial_profile * Temporal_profile;
     
-    if (isnan(p_Emission_medium_state->Density) || isinf(p_Emission_medium_state->Density) || p_Emission_medium_state->Density < 0) {
+    if (isnan(p_Emission_medium_state->Density) or isinf(p_Emission_medium_state->Density) or p_Emission_medium_state->Density < 0) {
 
         throw std::runtime_error(std::format("Invalid hotspot density profile: {} \n", p_Emission_medium_state->Density));
 
@@ -142,7 +136,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     p_Emission_medium_state->Temperature = this->s_Hotspot_params.Electron_temperature_scale * Spatial_profile * Temporal_profile;
 
-    if (isnan(p_Emission_medium_state->Temperature) || isinf(p_Emission_medium_state->Temperature) || p_Emission_medium_state->Temperature < 0) {
+    if (isnan(p_Emission_medium_state->Temperature) or isinf(p_Emission_medium_state->Temperature) or p_Emission_medium_state->Temperature < 0) {
 
         throw std::runtime_error(std::format("Invalid hotspot temperature profile: {} \n", p_Emission_medium_state->Temperature));
 

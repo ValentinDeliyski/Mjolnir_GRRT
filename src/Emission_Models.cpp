@@ -118,9 +118,9 @@ Return_Values Emission_models_class::get_plasma_velocity(const double* const Loc
     Plasma_Velocity[e_theta] = 0.0;
     Plasma_Velocity[e_phi]   = Plasma_Velocity[e_t] * Omega;
 
-    if (isnan(Plasma_Velocity[e_t]) ||
-        isinf(Plasma_Velocity[e_t]) ||
-        isnan(Plasma_Velocity[e_phi]) ||
+    if (isnan(Plasma_Velocity[e_t]) or
+        isinf(Plasma_Velocity[e_t]) or
+        isnan(Plasma_Velocity[e_phi]) or
         isinf(Plasma_Velocity[e_phi])) {
 
         std::cout << "Invalid disk 4-velocity in local coordinates: "
@@ -296,7 +296,7 @@ double Emission_models_class::get_electron_pitch_angle(const double* const B_fie
     double Wave_vec_dot_B_field = dot_product(Local_State_Vector + e_p_t, B_field_coord_frame, 4);
     double cos_angle = 1.0; 
 
-    if (!isinf(1.0 / Wave_vec_dot_Plasma_vec) && !isinf(1.0 / B_field_norm_squared)) {
+    if (!isinf(1.0 / Wave_vec_dot_Plasma_vec) and !isinf(1.0 / B_field_norm_squared)) {
 
         cos_angle = (Wave_vec_dot_B_field + B_field_dot_Plasma_vel * Wave_vec_dot_B_field) / (fabs(Wave_vec_dot_Plasma_vec) * sqrt(B_field_norm_squared + B_field_dot_Plasma_vel * B_field_dot_Plasma_vel));
 
@@ -327,7 +327,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
     double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context);
 
     /* Check weather redshift is numerically OK to use in the transfer functions. */
-    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) { return; }
+    if (isinf(redshift) or isnan(redshift) or isinf(1.0 / redshift)) { return; }
 
     /* The dimensionless electron temperature. */
     double const T_electron_dim = BOLTZMANN_CONST_CGS * p_Emission_medium_state->Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
@@ -340,7 +340,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
     double const f_s_no_sin = 2. / 9 * f_cyclo * T_electron_dim * T_electron_dim;
 
     /* Check weather the rescaled critical frequency f_s is numerically OK to use in the transfer functions. */
-    if (isinf(f_s_no_sin) || isnan(f_s_no_sin) || isinf(1.0 / f_s_no_sin)) { return; }
+    if (isinf(f_s_no_sin) or isnan(f_s_no_sin) or isinf(1.0 / f_s_no_sin)) { return; }
 
     Thermal_transfer_f_arguments_type Transfer_args_uncorrected{};
 
@@ -457,7 +457,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
 
     const double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context);
 
-    if (isinf(redshift) || isnan(redshift) || isinf(1.0 / redshift)) { return; }
+    if (isinf(redshift) or isnan(redshift) or isinf(1.0 / redshift)) { return; }
 
     /* Dimensionless Electron Temperature */
     double T_electron_dim = BOLTZMANN_CONST_CGS * p_Emission_medium_state->Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
@@ -468,7 +468,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     /* The "averaged" critical frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
     double f_k_no_sin = f_cyclo * (this->s_Emission_params.Kappa * T_electron_dim) * (this->s_Emission_params.Kappa * T_electron_dim);
 
-    if (isinf(f_k_no_sin) || isnan(f_k_no_sin) || isinf(1.0 / f_k_no_sin)) { return; }
+    if (isinf(f_k_no_sin) or isnan(f_k_no_sin) or isinf(1.0 / f_k_no_sin)) { return; }
 
     /* Observation frequency */
     double& obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
@@ -571,7 +571,7 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
 
     Transfer_args.redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context);
 
-    if (isinf(Transfer_args.redshift) || isnan(Transfer_args.redshift) || isinf(1.0 / Transfer_args.redshift)) { return; }
+    if (isinf(Transfer_args.redshift) or isnan(Transfer_args.redshift) or isinf(1.0 / Transfer_args.redshift)) { return; }
 
     Transfer_args.frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency / Transfer_args.redshift;
     Transfer_args.f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
@@ -635,7 +635,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
         /* This function call populates the density and temperature values for the disk - this is why they are not populated along with the magnetic field parameters. */
         Is_inside_disk = this->p_Disk_Model->is_inside_disk(Local_State_Vector, this->p_Disk_Model->s_Disk_params.e_Disk_model, &Emission_medium_state);
 
-        if (this->Thermalize_emission_medium && (Is_inside_disk || Is_inside_hotspot)) {
+        if (this->Thermalize_emission_medium and (Is_inside_disk or Is_inside_hotspot)) {
 
             Emission_medium_state.Density     += Hotspot_state.Density;
             Emission_medium_state.Temperature += Hotspot_state.Temperature;
@@ -694,7 +694,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     case Hotspot:
 
-        if (!Is_inside_hotspot || this->Thermalize_emission_medium) { return; };
+        if (!Is_inside_hotspot or this->Thermalize_emission_medium) { return; };
 
         Emission_medium_state.Density = Hotspot_state.Density;
         Emission_medium_state.Temperature = Hotspot_state.Temperature;
