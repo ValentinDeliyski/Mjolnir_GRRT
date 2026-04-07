@@ -94,6 +94,14 @@ Numerical_metric::~Numerical_metric() {
     gsl_interp_accel_free(this->Radial_interp_accelerator);
     gsl_interp_accel_free(this->Theta_interp_accelerator);
 
+    delete this->Parameters.Raw_F_0_data;
+    delete this->Parameters.Raw_F_1_data;
+    delete this->Parameters.Raw_F_2_data;
+    delete this->Parameters.Raw_W_data;
+
+    delete this->Parameters.Compactified_radial_grid;
+    delete this->Parameters.Theta_grid;
+
 }
 
 double Numerical_metric::compactify_radial_coordiante(const double r) const {

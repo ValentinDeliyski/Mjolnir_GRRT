@@ -19,9 +19,6 @@
     <ClCompile Include="src\Spacetimes\Observer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Radiative_Transfer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Sim_Modes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -73,7 +70,7 @@
     <ClCompile Include="src\Numerical_metric.cpp">
       <Filter>Source Files\Spacetimes</Filter>
     </ClCompile>
-    <ClCompile Include="src\Integrators.cpp">
+    <ClCompile Include="src\Geodesic_Integrator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Spacetimes\Minkowski.cpp">
@@ -120,9 +117,6 @@
     <ClInclude Include="Libraries\include\Lensing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Libraries\include\Radiative_Transfer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Libraries\include\Rendering_Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -151,9 +145,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\Integrators.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\include\Parallel_transport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Libraries\include\Emission_integrator.h">

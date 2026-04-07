@@ -44,7 +44,7 @@ void static Rendering_function(std::stop_token stop_token, Rendering_engine* Ren
     Renderer->OpenGL_init(p_Init_conditions);
     glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);
 
-    while (!glfwWindowShouldClose(Renderer->window) or !stop_token.stop_requested()) {
+    while (!glfwWindowShouldClose(Renderer->window) and !stop_token.stop_requested()) {
 
         Renderer->renormalize_colormap();
 
@@ -297,6 +297,7 @@ void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Resul
 
     Propagate_ray(p_Sim_Context, p_Ray_results);
 
+    p_Sim_Context->File_manager->create_output_file();
     p_Sim_Context->File_manager->open_output_file();
     p_Sim_Context->File_manager->log_photon_path(p_Ray_results);
     p_Sim_Context->File_manager->close_output_file();

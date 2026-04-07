@@ -98,8 +98,8 @@ void get_cubic_polynomial_roots(const double a_coeff, const double b_coeff, cons
 	const std::complex<double> q_coeff = (2 * pow(b_coeff, 3) - 9 * a_coeff * b_coeff * c_coeff + 27 * pow(a_coeff, 2) * d_coeff) / (27 * pow(a_coeff, 3));
 
 	roots[0] = 2. * sqrt(-p_coeff / 3.) * cos(1. / 3 * acos(3. * q_coeff / (2. * p_coeff) * sqrt(-3. / p_coeff))) - b_coeff / (3. * a_coeff);
-	roots[1] = 2. * sqrt(-p_coeff / 3.) * cos(1. / 3 * acos(3. * q_coeff / (2. * p_coeff) * sqrt(-3. / p_coeff)) - 2. * M_PI / .3) - b_coeff / (3. * a_coeff);
-	roots[2] = 2. * sqrt(-p_coeff / 3.) * cos(1. / 3 * acos(3. * q_coeff / (2. * p_coeff) * sqrt(-3. / p_coeff)) - 4. * M_PI / .3) - b_coeff / (3. * a_coeff);
+	roots[1] = 2. * sqrt(-p_coeff / 3.) * cos(1. / 3 * acos(3. * q_coeff / (2. * p_coeff) * sqrt(-3. / p_coeff)) - 2. * std::numbers::pi / .3) - b_coeff / (3. * a_coeff);
+	roots[2] = 2. * sqrt(-p_coeff / 3.) * cos(1. / 3 * acos(3. * q_coeff / (2. * p_coeff) * sqrt(-3. / p_coeff)) - 4. * std::numbers::pi / .3) - b_coeff / (3. * a_coeff);
 
 }
 
@@ -205,15 +205,5 @@ void add_vectors(const double* const Vec_1, const double* const Vec_2, const int
 		Result[idx] = Vec_1[idx] + Vec_2[idx];
 
 	}
-
-}
-
-double int_power(const double base, const int exponent) {
-
-	double result = 1.0;
-
-	for (int counter = exponent; counter > 0; counter--) { result *= base; }
-
-	return result;
 
 }

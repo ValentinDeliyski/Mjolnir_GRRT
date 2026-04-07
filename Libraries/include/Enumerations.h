@@ -61,7 +61,7 @@ enum Emission_medium_enums: std::underlying_type_t <std::byte> {
 
     Disk = 0,
     Hotspot = 1,
-    Jet = 2
+    e_Emission_medium_number = 2
 
 };
 
@@ -81,6 +81,7 @@ enum Profile_enums: std::underlying_type_t <std::byte> {
     e_Gaussian              = 1,
     e_Hybrid_power_gaussian = 2,
     e_Spherical             = 3,
+    e_Numerical             = 4,
 
 };
 
@@ -102,7 +103,10 @@ enum Disk_model_enums : std::underlying_type_t <std::byte> {
     e_Novikov_Thorne = 4,
 
     /* This model exists for testing purposes (see the plasma integration tests in https://www.aanda.org/articles/aa/pdf/2020/09/aa38573-20.pdf )*/
-    e_Debug_constant_density = 5
+    e_Debug_constant_density = 5,
+
+    /* TODO */
+    e_Numerical_Polytrope = 6
 
 };
 
@@ -185,7 +189,6 @@ enum Stokes_parameters: std::underlying_type_t <std::byte> {
     U = 2,
     V = 3,
     e_Stokes_param_num = 4,
-    e_Stokes_affine_param = 4
 
 };
 

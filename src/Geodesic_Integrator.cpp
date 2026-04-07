@@ -143,7 +143,7 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
 
 Geodesic_Integrator_class::~Geodesic_Integrator_class() {
 
-    free(this->p_Step_controller);
+    delete this->p_Step_controller;
     gsl_multiroot_fsolver_free(this->Root_finder);
     gsl_vector_free(this->gsl_trial_State_Vector);
 
@@ -506,7 +506,7 @@ bool Geodesic_Integrator_class::Locate_event(Event_detection_enums e_Event, doub
     /* ========== Construct the polynomial coefficients - ax^3 + bx^2 + cx + d ========== */
 
     /* Not every method is a first-same-as-last method, so the current RHS needs to be evaluated, rather than read off from Intermediate_RHS_log.
-       To save on computing it _again_ on each get_dense_output() call, I overwride the last entries in Intermediate_RHS_log. */
+       I overwride the last entries in Intermediate_RHS_log. */
     int RK_size = RK78_size;
 
     if (RK54 == e_Active_integrator) { RK_size = RK54_size; }
@@ -542,7 +542,7 @@ bool Geodesic_Integrator_class::Locate_event(Event_detection_enums e_Event, doub
     }
 
     /* This check will pass only if no real roots lie in the interval [0, 1], which should never happen, but sometimes does for some reason. */
-    if (Event_interp_param < 0) { return false; }
+    if (Event_interp_param < 0 or Event_interp_param > 1) { return false; }
 
     for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
 
@@ -551,7 +551,7 @@ bool Geodesic_Integrator_class::Locate_event(Event_detection_enums e_Event, doub
     }
 
     Global_State_at_Event[e_step] = abs(Event_interp_param * step);
-    Global_State_at_Event[e_ray_affine_param] = Prev_State[e_ray_affine_param] + step;
+    Global_State_at_Event[e_ray_affine_param] = Prev_State[e_ray_affine_param] + Event_interp_param * step;
 
     this->p_Spacetime->Convert_global_to_local_coords(Global_State_at_Event, Global_State_at_Event, Local_State_at_Event, e_Full_State_Vector);
 

@@ -7,6 +7,7 @@
 #include "Enumerations.h"
 #include <format>
 #include <cmath>
+#include <numbers>
 #include <complex>
 
  /*! @defgroup General_Math_Support_Functions General Math Support Functions
@@ -63,17 +64,6 @@ double get_max_element(const double* const Vector, const int Element_number);
  */
 double get_max_relative_error(const double* const Error_state, const double* const Current_state);
 
-/*! @brief Interpolates the coordinates and three-momentum of the ray, at which it crosses the equator.
- *
- *  @param [in] State_Vector - Pointer to the current state vector.
- *  @param [in] Old_State_Vector - Pointer to the previous state vector.
- *  @param [out] Crossing_State - Pointer to interpolated state vector at the equator crossing point.
- *  @return A boolian flag for weather the equator has been crossed or not.
- */
-bool interpolate_equatorial_crossing(const double* const State_Vector,
-									 const double* const Old_State_Vector,  
-									 double* const Crossing_State);
-
 void interpolate_celestial_sphere_crossing(const double* const Current_State_Vector_Spherical,
 										   const double* const Old_State_Vector_Spherical,
 										   const double Celestial_Sphere_Raius,
@@ -127,16 +117,6 @@ void convert_cartesian_to_spherical(const double* const Cartesian_Coords, double
  *  @return Nothing.
  */
 void add_vectors(const double* const vec_1, const double* const vec_2, const int size, double* const Result);
-
-/*! @brief Raises a base to an integer power.
- *	Raaises the "base" variable to the integer power "exponent". 
- *  NOTE: The "exponent" variable is assumed positive.
- *
- *  @param [in] base - The number being exponentiated.
- *  @param [in] exponent - The power to which "base" is being raised.
- *  @return Result - base^exponent.
- */
-double int_power(const double base, const int exponent);
 
 void get_cubic_polynomial_roots(const double a_coeff, const double b_coeff, const double c_coeff, const double d_coeff, std::complex<double>* const roots);
 

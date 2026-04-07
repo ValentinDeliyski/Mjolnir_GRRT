@@ -138,6 +138,8 @@ class Simulation_Parser():
                 self.V_Intensity_log: list[float] = []
                 self.State_error_log: list[float] = []
                 self.Rejected_steps_log: list[int] = []
+                self.Polarization_log_x: list[float] = []
+                self.Polarization_log_y: list[float] = []
                 
                 Data_parser = DictReader(file, delimiter = ",")
                 
@@ -160,7 +162,9 @@ class Simulation_Parser():
                     self.Q_Intensity_log.append(float(row["Synchotron Intensity Q [Jy/sRad]"]))
                     self.U_Intensity_log.append(float(row["Synchotron Intensity U [Jy/sRad]"]))
                     self.V_Intensity_log.append(float(row["Synchotron Intensity V [Jy/sRad]"]))
-                    self.State_error_log.append(float(row["State Error [-]"]))
+                    self.State_error_log.append(float(row["Geodesic State Error [-]"]))
+                    self.Polarization_log_x.append(float(row["ZAMO Polarization vector x [-]"]))
+                    self.Polarization_log_y.append(float(row["ZAMO Polarization vector y [-]"]))
                     
                     try:
                         self.Rejected_steps_log.append(int(row["Number of rejected steps [-]"]))    
@@ -268,14 +272,15 @@ class Simulation_Parser():
 
         return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, Pol_vec_x, Pol_vec_y, Celestial_theta, Celestial_phi
     
-    def get_photon_log(self) -> tuple[tuple, tuple, tuple, list, list, tuple]:
+    def get_photon_log(self) -> tuple[tuple, tuple, tuple, list, list, tuple, tuple]:
         
         Position_tuple = self.t_coord, self.r_coord, self.theta_coord, self.phi_coord
         Momentum_tuple = self.p_t, self.p_r, self.p_theta, self.p_phi
         Emission_tuple = self.I_Intensity_log, self.Q_Intensity_log, self.U_Intensity_log, self.V_Intensity_log
         Debug_tuple = self.State_error_log, self.Rejected_steps_log
+        Polarization_tuple = self.Polarization_log_x, self.Polarization_log_y
         
-        return Position_tuple, Momentum_tuple, Emission_tuple, self.integration_step, self.affine_param, Debug_tuple
+        return Position_tuple, Momentum_tuple, Emission_tuple, self.integration_step, self.affine_param, Debug_tuple, Polarization_tuple
         
     def export_ehtim_data(self, Spacetime: str, data: NDArray, path: str) -> None:
 

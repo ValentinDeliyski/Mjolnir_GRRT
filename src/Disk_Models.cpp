@@ -2,22 +2,119 @@
 
 Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
 
-    if (NULL != p_Sim_Context) {
+    if (nullptr != p_Sim_Context) {
 
         this->s_Disk_params = p_Sim_Context->p_Init_Conditions->Disk_params;
 
     }
     else { throw std::runtime_error("Could not load the disk parameter struct! \n"); }
 
+    if (this->s_Disk_params.e_Disk_model == Disk_model_enums::e_Numerical_Polytrope) {
+
+        if (this->s_Disk_params.Numerical_disk_params.e_Spline_type == Spline_selection_enums::Custom_cubic) {
+
+            throw std::runtime_error("Custom interpolants are not supported for numerical disks. Use GSL splines. \n"); 
+    
+        }
+
+        if (this->s_Disk_params.Numerical_disk_params.e_Spline_type == Spline_selection_enums::GSL_linear) {
+
+            this->Spline_instance_density = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+            this->Spline_instance_mag_field_r = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+            this->Spline_instance_mag_field_theta = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+            this->Spline_instance_mag_field_phi = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+
+        }
+        else {
+
+            this->Spline_instance_density = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+            this->Spline_instance_mag_field_r = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+            this->Spline_instance_mag_field_theta = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+            this->Spline_instance_mag_field_phi = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+
+        }
+
+        this->Radial_interp_accelerator = gsl_interp_accel_alloc();
+        this->Theta_interp_accelerator = gsl_interp_accel_alloc();
+
+        gsl_spline2d_init(this->Spline_instance_density,
+                          this->s_Disk_params.Numerical_disk_params.Radial_grid,
+                          this->s_Disk_params.Numerical_disk_params.Theta_grid,
+                          this->s_Disk_params.Numerical_disk_params.Raw_density_data,
+                          this->s_Disk_params.Numerical_disk_params.Radial_grid_size,
+                          this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+
+        gsl_spline2d_init(this->Spline_instance_mag_field_r,
+                          this->s_Disk_params.Numerical_disk_params.Radial_grid,
+                          this->s_Disk_params.Numerical_disk_params.Theta_grid,
+                          this->s_Disk_params.Numerical_disk_params.Raw_B_field_r_data,
+                          this->s_Disk_params.Numerical_disk_params.Radial_grid_size,
+                          this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+
+    
+        gsl_spline2d_init(this->Spline_instance_mag_field_theta,
+                          this->s_Disk_params.Numerical_disk_params.Radial_grid,
+                          this->s_Disk_params.Numerical_disk_params.Theta_grid,
+                          this->s_Disk_params.Numerical_disk_params.Raw_B_field_theta_data,
+                          this->s_Disk_params.Numerical_disk_params.Radial_grid_size,
+                          this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+
+    
+        gsl_spline2d_init(this->Spline_instance_mag_field_phi,
+                          this->s_Disk_params.Numerical_disk_params.Radial_grid,
+                          this->s_Disk_params.Numerical_disk_params.Theta_grid,
+                          this->s_Disk_params.Numerical_disk_params.Raw_B_field_phi_data,
+                          this->s_Disk_params.Numerical_disk_params.Radial_grid_size,
+                          this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+
+    }
+
+}
+
+Disk_model_type::~Disk_model_type() {
+
+    if (this->s_Disk_params.e_Disk_model == Disk_model_enums::e_Numerical_Polytrope) {
+
+        gsl_spline2d_free(this->Spline_instance_density);
+        gsl_spline2d_free(this->Spline_instance_mag_field_r);
+        gsl_spline2d_free(this->Spline_instance_mag_field_theta);
+        gsl_spline2d_free(this->Spline_instance_mag_field_phi);
+
+        gsl_interp_accel_free(this->Radial_interp_accelerator);
+        gsl_interp_accel_free(this->Theta_interp_accelerator);
+
+        delete this->s_Disk_params.Numerical_disk_params.Raw_density_data;
+        delete this->s_Disk_params.Numerical_disk_params.Raw_B_field_r_data;
+        delete this->s_Disk_params.Numerical_disk_params.Raw_B_field_theta_data;
+        delete this->s_Disk_params.Numerical_disk_params.Raw_B_field_phi_data;
+
+        delete this->s_Disk_params.Numerical_disk_params.Radial_grid;
+        delete this->s_Disk_params.Numerical_disk_params.Theta_grid;
+
+    }
 }
 
 double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* const p_Profile_parameters,
-                                         Profile_enums e_Profile_type) const{
+                                         Profile_enums e_Profile_type) const {
 
     double Profile{};
     double Exponent_arg{};
+    int Err_code{};
 
     switch (e_Profile_type) {
+
+    case e_Numerical:
+
+         Err_code = gsl_spline2d_eval_e(this->Spline_instance_density, 
+                                        p_Profile_parameters->radial_coordinate, 
+                                        p_Profile_parameters->theta_coordinate, 
+                                        this->Radial_interp_accelerator, 
+                                        this->Theta_interp_accelerator,
+                                        &Profile);
+
+        if (GSL_EDOM == Err_code) { Profile = 0.0; }
+
+        break;
 
     case e_Power_law:
 
@@ -42,7 +139,7 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
 
     }
 
-    if (p_Profile_parameters->radial_coordinate < p_Profile_parameters->cutoff_radius) {
+    if (p_Profile_parameters->radial_coordinate < p_Profile_parameters->cutoff_radius and e_Profile_type != e_Numerical) {
 
         double Cutoff_exponent_arg = (p_Profile_parameters->radial_coordinate - p_Profile_parameters->cutoff_radius) / p_Profile_parameters->cutoff_scale;
 

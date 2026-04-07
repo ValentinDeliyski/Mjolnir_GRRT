@@ -194,13 +194,9 @@ void Emission_models_class::get_magnetic_field(const double* const Local_State_V
 
     double Mag_field_eularian_norm{};
 
-    for (int left_idx = 1; left_idx < 4; left_idx++) {
+    for (int idx = 1; idx < 4; idx++) {
 
-        for (int right_idx = 1; right_idx < 4; right_idx++) {
-
-            Mag_field_eularian_norm += p_Metric->Metric[left_idx][right_idx] * Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[left_idx] * Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[right_idx];
-
-        }
+        Mag_field_eularian_norm += Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[idx] * Emission_medium_state->Magnetic_fields.B_field_eulerian_frame[idx];
 
     }
 

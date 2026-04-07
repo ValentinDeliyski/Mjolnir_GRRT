@@ -2,7 +2,7 @@ from Support_functions.Parsers import Units_class, Simulation_Parser
 from Mjolnir_Configurator import Simulation_configurator
 import matplotlib.pyplot as plt
 
-from numpy import pi, dot, float64, cosh, sinh, exp, array, flip, cos, sin, ones
+from numpy import pi, dot, float64, cosh, sinh, exp, array, flip, cos, sin, ones, arctan
 from numpy.linalg import norm
 from numpy.typing import NDArray
 
@@ -12,56 +12,65 @@ def Configure_and_make_Mjolnir_photon_log():
     
     Sim_config = Simulation_configurator()
 
-    Sim_config.simulation_mode = {"Value": 3, "Unit": "[-]"}
-    Sim_config.object_mass = {"Value": 6.2e9, "Unit": "[M_sun]"}
+    Sim_config.simulation_mode = {"Value": 2, "Unit": "[-]"}
+    
+    """ Magic number equal to 1 / the conversion factor from geometric to CGS stepsizes. """
+    Sim_config.object_mass = {"Value": 1 / 147706.32775277024, "Unit": "[M_sun]"}
 
     # ================================================== Metric ================================================== #
 
-    Sim_config.metric_parameters.Metric_type    = {"Value": "Kerr", "Unit": "[-]"}
-    Sim_config.metric_parameters.Spin           = {"Value": 0, "Unit": "[M]"}
+    Sim_config.metric_parameters.Metric_type = {"Value": "Kerr", "Unit": "[-]"}
+    Sim_config.metric_parameters.Spin        = {"Value": 0.999, "Unit": "[M]"}
     
     # ================================================== Observer ================================================== #
 
     Sim_config.observer.Distance    = {"Value": 1e4, "Unit": "[M]"}
-    Sim_config.observer.Inclination = {"Value": 20 * pi / 180, "Unit": "[Rad]"}
+    Sim_config.observer.Inclination = {"Value": 80 * pi / 180, "Unit": "[Rad]"}
     Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
-    Sim_config.observer.Include_polarization = {"Value": 1, "Unit": "[-]"}
+    Sim_config.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
+    Sim_config.metric_parameters.Scattering_radius = {"Value": 1000, "Unit": "[-]"}
 
     # ================================================== Disk ================================================== #
     
-    Sim_config.disk_model.Ensamble_type = {"Value": "Debug_constant_functions", "Unit": "[-]"}
-    Sim_config.disk_model.Disk_Model    = {"Value": "Debug_constant_density", "Unit": "[-]"}
+    Sim_config.disk_model.Disk_Model = {"Value": "Novikov-Thorne", "Unit": "[-]"}   
+    Sim_config.disk_model.r_in_NT_disk = {"Value": 1.2, "Unit": "[M]"} 
+    Sim_config.disk_model.r_out_NT_disk = {"Value": 500, "Unit": "[M]"} 
+    
+    Sim_config.min_image_order = {"Value": 1, "Unit": "[M]"} 
+    Sim_config.sim_mode_3_X_init = {"Value": 0.01, "Unit": "[M]"} 
+    Sim_config.sim_mode_3_Y_init = {"Value": -8, "Unit": "[M]"} 
+        
+    # Sim_config.disk_model.Ensamble_type = {"Value": "Debug_constant_functions", "Unit": "[-]"}
+    # Sim_config.disk_model.Disk_Model    = {"Value": "Debug_constant_density", "Unit": "[-]"}
     
     # ================================================== Emission models ================================================== #
     
-    Sim_config.emission_models.Debug_j_I_value = {"Value": 2, "Unit": "[-]"}
-    Sim_config.emission_models.Debug_j_Q_value = {"Value": 1, "Unit": "[-]"}
-    Sim_config.emission_models.Debug_j_U_value = {"Value": 0, "Unit": "[-]"}
-    Sim_config.emission_models.Debug_j_V_value = {"Value": 0, "Unit": "[-]"}
+    Sim_config.emission_models.Debug_j_I_value = {"Value": 0, "Unit": "[-]"}
+    Sim_config.emission_models.Debug_j_Q_value = {"Value": 0.1, "Unit": "[-]"}
+    Sim_config.emission_models.Debug_j_U_value = {"Value": 0.1, "Unit": "[-]"}
+    Sim_config.emission_models.Debug_j_V_value = {"Value": 0.1, "Unit": "[-]"}
     
-    Sim_config.emission_models.Debug_alpha_I_value = {"Value": 1, "Unit": "[-]"}
-    Sim_config.emission_models.Debug_alpha_Q_value = {"Value": 1.2, "Unit": "[-]"}
+    Sim_config.emission_models.Debug_alpha_I_value = {"Value": 0, "Unit": "[-]"}
+    Sim_config.emission_models.Debug_alpha_Q_value = {"Value": 0, "Unit": "[-]"}
     Sim_config.emission_models.Debug_alpha_U_value = {"Value": 0, "Unit": "[-]"}
     Sim_config.emission_models.Debug_alpha_V_value = {"Value": 0, "Unit": "[-]"}
     
     Sim_config.emission_models.Debug_rho_I_value = {"Value": 0, "Unit": "[-]"}
-    Sim_config.emission_models.Debug_rho_Q_value = {"Value": 0, "Unit": "[-]"}
+    Sim_config.emission_models.Debug_rho_Q_value = {"Value": 10, "Unit": "[-]"}
     Sim_config.emission_models.Debug_rho_U_value = {"Value": 0, "Unit": "[-]"}
-    Sim_config.emission_models.Debug_rho_V_value = {"Value": 0, "Unit": "[-]"}
-    Sim_config.hotspot_model.Mag_field_geometry       = {"Value": "Constant", "Unit": "[-]"}
-    Sim_config.hotspot_model.Mag_field_geometry_r     = {"Value": 0, "Unit": "[-]"}
-    Sim_config.hotspot_model.Mag_field_geometry_theta = {"Value": 0, "Unit": "[-]"}
-    Sim_config.hotspot_model.Mag_field_geometry_phi   = {"Value": 1, "Unit": "[-]"}
+    Sim_config.emission_models.Debug_rho_V_value = {"Value": -4, "Unit": "[-]"}
+    
+    Sim_config.disk_model.Mag_field_geometry_r     = {"Value": 0, "Unit": "[-]"}
+    Sim_config.disk_model.Mag_field_geometry_theta = {"Value": 1, "Unit": "[-]"}
+    Sim_config.disk_model.Mag_field_geometry_phi   = {"Value": 1, "Unit": "[-]"}
         
     # ================================================== Integrator ================================================== #
     
-    Sim_config.integrator.RK78_abs_accuracy    = {"Value": 1e-11, "Unit": "[-]"}
-    Sim_config.integrator.RK78_rel_accuracy    = {"Value": 1e-11, "Unit": "[-]"}
-    Sim_config.integrator.Step_controller_type = {"Value": "PID", "Unit": "[-]"}
-    Sim_config.integrator.max_affine_parameter = {"Value": 3, "Unit": "[M]"}
-    Sim_config.integrator.use_adaptive_step    = {"Value": 0, "Unit": "[-]"}
-    Sim_config.integrator.init_stepsize        = {"Value": 0.003, "Unit": "[-]"}
-    Sim_config.integrator.radiative_transfer_integrator_type        = {"Value": "RK5", "Unit": "[-]"}
+    Sim_config.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-14, "Unit": "[-]"}
+    Sim_config.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-14, "Unit": "[-]"}
+    Sim_config.geodesic_integrator.max_affine_parameter = {"Value": 5e4, "Unit": "[M]"}
+    Sim_config.geodesic_integrator.use_adaptive_step    = {"Value": 1, "Unit": "[-]"}
+    Sim_config.geodesic_integrator.max_stepsize  = {"Value": 100, "Unit": "[-]"}
      
     # ================================================== Hotspot ================================================== #
 
@@ -162,14 +171,14 @@ if __name__ == "__main__":
     
     Sim_parser = Simulation_Parser(parent_directory + "Reference_simulations\\Integration_tests\\Kerr_photon_log")
     
-    Position_tuple, Momentum_tuple, Emission_tuple, Integration_step, Affine_param, Debug_tuple = Sim_parser.get_photon_log()
+    Position_tuple, Momentum_tuple, Emission_tuple, Integration_step, Affine_param, Debug_tuple, Polarization_tuple = Sim_parser.get_photon_log()
     
-    Affine_param = flip(abs(array(Affine_param)))
+    Affine_param = (array(Affine_param))
     
     # ===================================================================== Coordinate plotting =====================================================================
     
     t_coord, r_coord, theta_coord, phi_coord = Position_tuple
-    Position_figure, (t_subplot, r_subplot, theta_subplot, phi_subplot) = plt.subplots(1, 4, gridspec_kw = {'width_ratios': [1, 1, 1, 1]}, constrained_layout = True)
+    _, (t_subplot, r_subplot, theta_subplot, phi_subplot) = plt.subplots(1, 4, gridspec_kw = {'width_ratios': [1, 1, 1, 1]}, constrained_layout = True)
         
     t_subplot.plot(Affine_param, t_coord)
     t_subplot.set_xlabel(r"Affine Parameter [M]")
@@ -190,7 +199,7 @@ if __name__ == "__main__":
     # ===================================================================== Momentum plotting =====================================================================
    
     p_t, p_r, p_theta, p_phi = Momentum_tuple
-    Momentum_figure, (p_t_subplot, p_r_subplot, p_theta_subplot, p_phi_subplot) = plt.subplots(1, 4, gridspec_kw = {'width_ratios': [1, 1, 1, 1]}, constrained_layout = True)
+    _, (p_t_subplot, p_r_subplot, p_theta_subplot, p_phi_subplot) = plt.subplots(1, 4, gridspec_kw = {'width_ratios': [1, 1, 1, 1]}, constrained_layout = True)
         
     p_t_subplot.plot(Affine_param, p_t)
     p_t_subplot.set_xlabel(r"Affine Parameter [M]")
@@ -208,10 +217,18 @@ if __name__ == "__main__":
     p_phi_subplot.set_xlabel(r"Affine Parameter [M]")
     p_phi_subplot.set_ylabel(r"$p_\phi$ [rad/M]")
     
+    # ==================================================================  Polarization plotting ===================================================================
+    
+    Pol_x, Pol_y = Polarization_tuple
+    _, (EVPA_subplot) = plt.subplots(1, 1, gridspec_kw = {'width_ratios': [1]}, constrained_layout = True)
+    
+    EVPA_subplot.plot(Affine_param, arctan(-array(Pol_x) / array(Pol_y)))
+    
     # ===================================================================== Emission plotting =====================================================================
    
     I, Q, U, V = Emission_tuple
-    Momentum_figure, (I_subplot, Q_subplot, U_subplot, V_subplot) = plt.subplots(1, 4, gridspec_kw = {'width_ratios': [1, 1, 1, 1]}, constrained_layout = True)
+    I, Q, U, V = flip(I), flip(Q), flip(U), flip(V)
+    _, (I_subplot, Q_subplot, U_subplot, V_subplot) = plt.subplots(1, 4, gridspec_kw = {'width_ratios': [1, 1, 1, 1]}, constrained_layout = True)
         
     I_subplot.plot(Affine_param, I, "r")
     I_subplot.set_xlabel(r"Affine Parameter [M]")
@@ -231,10 +248,9 @@ if __name__ == "__main__":
     
     # ===================================================================== Emission vs analytic emission plotting =====================================================================
    
-    I_analytic, Q_analytic, U_analytic, V_analytic = Compute_analytic_radiative_transfer(Affine_parameter_log = Affine_param, Emission_functions = [2, 1, 0, 0], Absorbtions_functions = [1, 1.2, 0, 0], Faradey_functions = [0, 0, 0, 0])
+    I_analytic, Q_analytic, U_analytic, V_analytic = Compute_analytic_radiative_transfer(Affine_parameter_log = Affine_param, Emission_functions = [0, 0.1, 0.1, 0.1], Absorbtions_functions = [0, 0, 0, 0], Faradey_functions = [0, 10, 0, -4])
     
-    I, Q, U, V = Emission_tuple
-    Momentum_figure, Subplots = plt.subplots(2, 4, gridspec_kw = {'width_ratios': [1, 1, 1, 1]}, constrained_layout = True)
+    _, Subplots = plt.subplots(2, 4, gridspec_kw = {'width_ratios': [1, 1, 1, 1]}, constrained_layout = True)
     
     Subplots[0][0].plot(Affine_param, I, "r")
     Subplots[0][0].plot(Affine_param, I_analytic)
@@ -261,7 +277,7 @@ if __name__ == "__main__":
     
     Subplots[1][2].plot(Affine_param, U - U_analytic)
     Subplots[1][2].set_xlabel(r"Affine Parameter [M]")
-    Subplots[1][2].set_ylabel(r"Stokes Q Delta [Jy/sRad]")
+    Subplots[1][2].set_ylabel(r"Stokes U Delta [Jy/sRad]")
     
     Subplots[0][3].plot(Affine_param, V, "r")
     Subplots[0][3].plot(Affine_param, V_analytic)
@@ -270,7 +286,7 @@ if __name__ == "__main__":
     
     Subplots[1][3].plot(Affine_param, V - V_analytic)
     Subplots[1][3].set_xlabel(r"Affine Parameter [M]")
-    Subplots[1][3].set_ylabel(r"Stokes Q Delta [Jy/sRad]")
+    Subplots[1][3].set_ylabel(r"Stokes V Delta [Jy/sRad]")
     
  
     plt.show()

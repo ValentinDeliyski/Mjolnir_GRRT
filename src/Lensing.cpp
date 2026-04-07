@@ -12,12 +12,9 @@
 #include "General_math_functions.h"
 
 #include "Rendering_Engine.h"
-#include "Radiative_Transfer.h"
 
 #include "Lensing.h"
 #include "Integrators.h"
-
-#include "Parallel_transport.h"
 
 #include "Emission_integrator.h"
 
@@ -29,69 +26,6 @@ void static log_ray_emission(double Stokes_Vector[e_Stokes_param_num], double Op
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][p_Ray_Results->Ray_log_struct.Log_offset] = Stokes_Vector[stokes_idx] ;
-
-    }
-
-}
-
-static void Propagate_Stokes_vector(Integrator_enums e_Integrator,
-                                    const Simulation_Context_type* p_Sim_Context,
-                                    double* const State_Vector_Global,
-                                    double* const State_Vector_Local, 
-                                    double* const Stokes_Vector) {
-
-    Transfer_functions_type Total_Transfer_Functions{};
-
-    /* Loop trough each emission medium (Disk, Hotspot, Jet and so on) and sum their respective transfer functions */
-    for (int emission_medium = Disk; emission_medium <= Hotspot; emission_medium++) {
-
-        Transfer_functions_type Temp_Transfer_functions{};
-
-        p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(State_Vector_Local,
-                                                                          p_Sim_Context,
-                                                                          static_cast<Emission_medium_enums>(emission_medium),
-                                                                          &Temp_Transfer_functions);
-
-        add_vectors(Temp_Transfer_functions.Emission_functions, Total_Transfer_Functions.Emission_functions, e_Stokes_param_num, Total_Transfer_Functions.Emission_functions);
-        add_vectors(Temp_Transfer_functions.Faradey_functions, Total_Transfer_Functions.Faradey_functions, e_Stokes_param_num, Total_Transfer_Functions.Faradey_functions);
-        add_vectors(Temp_Transfer_functions.Absorbtion_functions, Total_Transfer_Functions.Absorbtion_functions, e_Stokes_param_num, Total_Transfer_Functions.Absorbtion_functions);
-
-    }
-
-    if ((vector_norm(Total_Transfer_Functions.Emission_functions, 4) +
-         vector_norm(Total_Transfer_Functions.Faradey_functions, 4) +
-         vector_norm(Total_Transfer_Functions.Absorbtion_functions, 4)) < std::numeric_limits<double>::min()) {
-
-        return;
-
-    }
-
-    switch (e_Integrator) {
-
-    case Rad_Analytic:
-
-        Analytic_Radiative_Transfer(const_cast<double*>(Total_Transfer_Functions.Emission_functions),
-                                    const_cast<double*>(Total_Transfer_Functions.Absorbtion_functions),
-                                    const_cast<double*>(Total_Transfer_Functions.Faradey_functions),
-                                    State_Vector_Local[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass,
-                                    Stokes_Vector);
-
-        break;
-
-    case Rad_Implicit_Trapezoid:
-
-        Implicit_Trapezoid_Radiative_Transfer(const_cast<double*>(Total_Transfer_Functions.Emission_functions),
-                                              const_cast<double*>(Total_Transfer_Functions.Absorbtion_functions),
-                                              const_cast<double*>(Total_Transfer_Functions.Faradey_functions),
-                                              State_Vector_Local[e_step] * MASS_TO_CM * p_Sim_Context->p_Init_Conditions->central_object_mass,
-                                              Stokes_Vector);
-        break;
-
-    default:
-
-        RK5_radiative_transfer(State_Vector_Global, p_Sim_Context, Stokes_Vector);
-
-        break;
 
     }
 
@@ -145,7 +79,16 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
     const bool In_disk = p_Sim_Context->p_Emission_Model->p_Disk_Model->is_inside_disk(State_Vector_Local,
                                                                                        p_Sim_Context->p_Emission_Model->p_Disk_Model->s_Disk_params.e_Disk_model,
                                                                                        &s_Disk_state);
-    if (In_hotspot) {
+
+    if (Overwride) {
+
+        double Local_north_vector[4] = { 0, 0, -1, 0 };
+
+        memcpy(Spacelike_vector_contravariant, Local_north_vector, 4 * sizeof(double));
+        memcpy(Plasma_velocity_contravariant, p_Sim_Context->p_Observer->get_obs_velocity(), 4 * sizeof(double));
+
+    }
+    else if (In_hotspot) {
 
         /* We are inside the hotspot - we assume the dominant magnetic field here is whatever the local field of the spot is -
            a.e. inisde the hotspot, the disk magnetic field is "screened" by the spot. */
@@ -184,7 +127,6 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
         s_Disk_state.Magnetic_fields.e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_geometry;
         s_Disk_state.Magnetic_fields.e_Mag_field_magnitude_profile = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_magnitude_profile;
-        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_Vector_Local, &s_Metric, &s_Disk_state);
 
         Plasma_velocity_OK = p_Sim_Context->p_Emission_Model->get_plasma_velocity(State_Vector_Local,
                                                                                   p_Sim_Context,
@@ -194,16 +136,10 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
         if (OK != Plasma_velocity_OK) { return ERROR; }
 
+        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_Vector_Local, &s_Metric, &s_Disk_state);
+
         memcpy(Spacelike_vector_contravariant, s_Disk_state.Magnetic_fields.B_field_plasma_frame, 4 * sizeof(double));
         memcpy(Plasma_velocity_contravariant, s_Disk_state.Plasma_Velocity, 4 * sizeof(double));
-
-    }
-    else if (Overwride) {
-
-        double Local_north_vector[4] = { 0, 0, -1, 0 };
-
-        memcpy(Spacelike_vector_contravariant, Local_north_vector, 4 * sizeof(double));
-        memcpy(Plasma_velocity_contravariant, p_Sim_Context->p_Observer->get_obs_velocity(), 4 * sizeof(double));
 
     }
     else { return NOT_IN_EMISSION_MEDIUM; }
@@ -379,41 +315,54 @@ bool static Is_inside_emission_medium(const Simulation_Context_type* const p_Sim
 
 void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_Context,
                                      Results_type* const p_Ray_results,
-                                     double* const State_at_event_global,
-                                     double* const State_at_event_local) {
+                                     const double* const State_at_event_global,
+                                     const double* const State_at_event_local) {
 
     double& r_in = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_in;
     double& r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_out;
 
     if (abs(State_at_event_global[e_r]) < r_out and abs(State_at_event_global[e_r]) > r_in and !p_Ray_results->NT_Disk_found) {
 
+        // Set a bunch of counters that keep track where on the photon trajectory the log from the Novikov-Thorne disk is supposed to start
+        // This variable gets used in the Emission_Integrator_class a bit down to init the spline of the geodesic
+        p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset + 1;
+        // This variable gets used in the file logging to offset the log from the emission integrator, so it lines up with the geodesic one
+        p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge = p_Ray_results->Ray_log_struct.Log_offset;
+
         p_Ray_results->Redshift_NT = get_redshift(State_at_event_local, p_Sim_Context->p_NT_model->get_Disk_Velocity_Vector(State_at_event_local), p_Sim_Context);
         p_Ray_results->Flux_NT = p_Sim_Context->p_NT_model->get_Interpolated_Flux(State_at_event_local);
 
         double* Polarization_vector_coord = p_Sim_Context->p_NT_model->Construct_coord_polarization_vector(State_at_event_local);
-
         p_Sim_Context->p_Spacetime->Convert_local_to_global_coords(State_at_event_global, Polarization_vector_coord, Polarization_vector_coord, e_Contravariant_vector);
-        Parallel_Transport_Vector(State_at_event_global, p_Sim_Context->p_Spacetime, Contravariant, Polarization_vector_coord);
 
-        /* ====================== Parallel transport the polarization vector back to the observer ====================== */
+        Emission_Integrator_class Radiative_transfer_integrator(p_Sim_Context, p_Ray_results);
+        Radiative_transfer_integrator.set_Polarization_Vector(Polarization_vector_coord);
 
-        for (int log_idx = p_Ray_results->Ray_log_struct.Log_offset - 1; log_idx > 0; log_idx--) {
+        /* = Parallel transport the polarization vector from the disk to the first point on the geodesic above (or below depending on the geodesic) the disk = */
+        double* Logged_State = &(p_Ray_results->Ray_log_struct.Ray_path_log_global[(p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge - 1) * e_Full_state_size]);
+        Radiative_transfer_integrator.Propagate_Polarization_Vector(State_at_event_global[e_ray_affine_param], Logged_State[e_ray_affine_param], Contravariant);
 
-            double* Logged_State = &(p_Ray_results->Ray_log_struct.Ray_path_log_global[log_idx * e_Full_state_size]);
-            Parallel_Transport_Vector(Logged_State, p_Sim_Context->p_Spacetime, Contravariant, Polarization_vector_coord);
+        /* ========================================= Parallel transport the polarization vector back to the observer ========================================= */
+        for (int log_idx = p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge - 1; log_idx > 0; log_idx--) {
+
+            double* Current_State = &(p_Ray_results->Ray_log_struct.Ray_path_log_global[log_idx * e_Full_state_size]);
+            double* Next_State = &(p_Ray_results->Ray_log_struct.Ray_path_log_global[(log_idx - 1) * e_Full_state_size]);
+
+            Radiative_transfer_integrator.Propagate_Polarization_Vector(Current_State[e_ray_affine_param], Next_State[e_ray_affine_param], Contravariant);
 
         }
 
-        double Polarization_vector_ZAMO[4]{};
-        Contravariant_coord_to_ZAMO(&p_Sim_Context->p_Init_Conditions->Init_metric, Polarization_vector_coord, Polarization_vector_ZAMO);
+        /* ============================================ Project the polarization vector on the observer's screen ============================================ */
+        std::complex<double> Polarization_vector_ZAMO[4]{};
+        Contravariant_coord_to_ZAMO(&p_Sim_Context->p_Init_Conditions->Init_metric, Radiative_transfer_integrator.get_current_Polarization_Vector(), Polarization_vector_ZAMO);
 
-        p_Ray_results->Projected_polarization_vector[e_x] = Polarization_vector_ZAMO[e_phi]; 
-        p_Ray_results->Projected_polarization_vector[e_y] = Polarization_vector_ZAMO[e_theta];
+        p_Ray_results->Projected_polarization_vector[e_x] = Polarization_vector_ZAMO[e_phi].real(); 
+        p_Ray_results->Projected_polarization_vector[e_y] = Polarization_vector_ZAMO[e_theta].real();
 
-        /* ============================================================================================================= */
-
+        // This flag exists so we know not to try and evaluate the disk again for this geodesic
         p_Ray_results->NT_Disk_found = true;
 
+        // Copy the photon state vector on the disk to the results struct
         memcpy(p_Ray_results->Thin_Disk_State_Vector, State_at_event_global, e_Dynamic_state_size * sizeof(double));
 
     }
@@ -430,13 +379,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     int Current_order = compute_image_order(N_theta_turning_points, N_equatorial_crossings, p_Sim_Context->p_Init_Conditions);
 
-    double Stokes_Vector[e_Stokes_param_num]{};
-
-    std::complex<double> Coord_Basis_Pol_vec[4]{};
-    // TODO: Propagate this aswell
-    double Optical_Depth{};   
-
-    Emission_Integrator_class Radiative_transfer_integrator = Emission_Integrator_class(p_Sim_Context, p_Ray_results);
+    Emission_Integrator_class Radiative_transfer_integrator(p_Sim_Context, p_Ray_results);
 
     for (p_Ray_results->Ray_log_struct.Log_offset = p_Ray_results->Ray_log_struct.Log_length - 1; p_Ray_results->Ray_log_struct.Log_offset > 0; p_Ray_results->Ray_log_struct.Log_offset--) {
         
@@ -448,8 +391,6 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
         Current_equatorial_crossings -= Check_for_equatorial_crossing(Current_State_Global, Next_State_Global);
 
         Current_order = compute_image_order(Current_theta_turning_points, Current_equatorial_crossings, p_Sim_Context->p_Init_Conditions);
-
-        log_ray_emission(Stokes_Vector, Optical_Depth, p_Ray_results);
 
         if (Is_inside_emission_medium(p_Sim_Context, Current_State_Local)) {
 
@@ -484,6 +425,8 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             }
 
+            /* ======================================================================================================================== */
+
             if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
                 Radiative_transfer_integrator.Map_Stokes_to_Polarization_Vector(Tetrad);
@@ -491,11 +434,9 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
             }
         }
 
-        /* ======================================================================================================================== */
-
         /* ====================================== Parallel transport the polarization vector ====================================== */
 
-        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
+        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector(), e_Stokes_param_num) > 0) {
 
             Radiative_transfer_integrator.Propagate_Polarization_Vector(Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param], Contravariant);
         }

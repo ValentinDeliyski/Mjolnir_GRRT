@@ -1,5 +1,34 @@
 #pragma once
 
+#include "Enumerations.h"
+#include <string>
+
+struct Numerical_disk_params_type {
+
+	double Polytrope_coeff;
+	double Polytrope_index;
+
+	long long int Radial_grid_size;
+	long long int Theta_grid_size;
+
+	double* Radial_grid;
+	double* Theta_grid;
+
+	double* Raw_density_data;
+	double* Raw_B_field_r_data;
+	double* Raw_B_field_theta_data;
+	double* Raw_B_field_phi_data;
+
+	/* @brief String with the full path to the disk density XML. */
+	std::string Density_file_path;
+
+	/* @brief String with the full path to the disk magnetic field XML. */
+	std::string Mag_field_file_path;
+
+	Spline_selection_enums e_Spline_type;
+
+};
+
 struct Common_RIAF_params_type {
 
 	double Disk_opening_angle;

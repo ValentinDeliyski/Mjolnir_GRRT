@@ -9,6 +9,10 @@ class Geodesic_Integrator_class {
 
 private:
 
+    static constexpr int RK54_size = 7;
+    static constexpr int RK78_size = 13;
+    static constexpr int ESDIRK54_size = 7;
+
     /* ====================================================== The adaptive DP RK5(4) Butcher table ====================================================== */
 
     const double RK54_Coeff_deriv[RK78_size][RK78_size - 1] =

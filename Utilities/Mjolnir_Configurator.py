@@ -43,24 +43,7 @@ class Geodesic_Integrator():
     
 class Rad_Transfer_Integrator():
 
-    __slots__ = ("init_stepsize", 
-                 "RK_abs_accuracy", 
-                 "RK_rel_accuracy", 
-                 "Step_controller_type",
-                 "step_controller_safety_factor_1",
-                 "step_controller_safety_factor_2",
-                 
-                 "RK_PID_controller_I_gain",
-                 "RK_PID_controller_P_gain",
-                 "RK_PID_controller_D_gain",
-                 "RK_Gustafsson_controller_k_1", 
-                 "RK_Gustafsson_controller_k_2", 
-                 
-                 "Max_rel_step_increase",
-                 "Min_rel_step_increase",
-                 "use_adaptive_step",
-                 "Integrator_type",
-                 "max_stepsize")
+    __slots__ = ("Integrator_type",)
 
 class Disk_model():
 
@@ -322,41 +305,10 @@ class Simulation_configurator:
         self.geodesic_integrator.max_stepsize = max_stepsize
         self.geodesic_integrator.Integrator_type = Integrator_type
         
-    def _configure_rad_transfer_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
-                                                    RK_abs_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
-                                                    RK_rel_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
-                                                    Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
-                                                    Safety_factor_1: dict[str, float | str] = {"Value": 0.9, "Unit": "[-]"},
-                                                    Safety_factor_2: dict[str, float | str] = {"Value": 1e-35, "Unit": "[-]"},
-                                                    Max_rel_step_increase: dict[str, float | str] = {"Value": 10, "Unit": "[-]"},
-                                                    Min_rel_step_increase: dict[str, float | str] = {"Value": 0.01, "Unit": "[-]"},
-                                                    RK_Step_controller_I_gain: dict[str, float | str] = {"Value": 0.58 / 7, "Unit": "[-]"},
-                                                    RK_Step_controller_P_gain: dict[str, float | str] = {"Value": 0.21 / 7, "Unit": "[-]"},
-                                                    RK_Step_controller_D_gain: dict[str, float | str] = {"Value": 0.1 / 7, "Unit": "[-]"},
-                                                    RK_Gustafsson_controller_k_1: dict[str, float | str] = {"Value": 0.367 / 8, "Unit": "[-]"},
-                                                    RK_Gustafsson_controller_k_2: dict[str, float | str] = {"Value": 0.268 / 8, "Unit": "[-]"},
-                                                    Integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"},
-                                                    use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},
-                                                    max_stepsize: dict[str, int | str] = {"Value": 100, "Unit": "[M]"}):
+    def _configure_rad_transfer_integrator_settings(self,
+                                                    Integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"}):
 
         self.rad_transfer_integrator = Rad_Transfer_Integrator()
-
-        self.rad_transfer_integrator.init_stepsize = Init_stepsize
-        self.rad_transfer_integrator.RK_abs_accuracy = RK_abs_accuracy
-        self.rad_transfer_integrator.RK_rel_accuracy = RK_rel_accuracy
-        self.rad_transfer_integrator.Step_controller_type = Step_controller_type
-        self.rad_transfer_integrator.step_controller_safety_factor_1 = Safety_factor_1
-        self.rad_transfer_integrator.step_controller_safety_factor_2 = Safety_factor_2
-        self.rad_transfer_integrator.Max_rel_step_increase = Max_rel_step_increase
-        self.rad_transfer_integrator.Min_rel_step_increase = Min_rel_step_increase
-        self.rad_transfer_integrator.RK_PID_controller_I_gain = RK_Step_controller_I_gain
-        self.rad_transfer_integrator.RK_PID_controller_P_gain = RK_Step_controller_P_gain
-        self.rad_transfer_integrator.RK_PID_controller_D_gain = RK_Step_controller_D_gain
-        self.rad_transfer_integrator.RK_Gustafsson_controller_k_1 = RK_Gustafsson_controller_k_1
-        self.rad_transfer_integrator.RK_Gustafsson_controller_k_2 = RK_Gustafsson_controller_k_2
-        self.rad_transfer_integrator.max_stepsize = max_stepsize
-
-        self.rad_transfer_integrator.use_adaptive_step = use_adaptive_step
         self.rad_transfer_integrator.Integrator_type = Integrator_type
 
     def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},

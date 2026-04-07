@@ -692,110 +692,12 @@ Return_Values static parse_rad_transfer_integrator_params(tinyxml2::XMLElement* 
 
     tinyxml2::XMLElement* temp_param_var;
 
-    // -------------------- Init stepsize
-    temp_param_var = Integrator_element->FirstChildElement("init_stepsize");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the initial step size!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.Init_stepzie = std::stod(temp_param_var->GetText());
-
-    // -------------------- RK78 abs accuracy
-    temp_param_var = Integrator_element->FirstChildElement("RK_abs_accuracy");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 abs accuracy parameter!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_abs_accuracy = std::stod(temp_param_var->GetText());
-
-    // -------------------- RK78 rel accuracy
-    temp_param_var = Integrator_element->FirstChildElement("RK_rel_accuracy");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK78 rel accuracy parameter!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_rel_accuracy = std::stod(temp_param_var->GetText());
-
-    // -------------------- Step controller safety 1
-    temp_param_var = Integrator_element->FirstChildElement("step_controller_safety_factor_1");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller safety parameter 1!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.Safety_1 = std::stod(temp_param_var->GetText());
-
-    // -------------------- Step controller safety 2
-    temp_param_var = Integrator_element->FirstChildElement("step_controller_safety_factor_2");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller safety parameter 2!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.Safety_2 = std::stod(temp_param_var->GetText());
-
-    // -------------------- RK78 PID controller I gain
-    temp_param_var = Integrator_element->FirstChildElement("RK_PID_controller_I_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK PID controller I gain!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_PID_gain_I = std::stod(temp_param_var->GetText());
-
-    // -------------------- RK78 PID controller P gain
-    temp_param_var = Integrator_element->FirstChildElement("RK_PID_controller_P_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK PID controller P gain!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_PID_gain_P = std::stod(temp_param_var->GetText());
-
-    // -------------------- RK78 PID controller D gain
-    temp_param_var = Integrator_element->FirstChildElement("RK_PID_controller_D_gain");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK PID controller D gain!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_PID_gain_D = std::stod(temp_param_var->GetText());
-
-    // -------------------- RK78 Gustafsson controller k_1 gain
-    temp_param_var = Integrator_element->FirstChildElement("RK_Gustafsson_controller_k_1");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK Gustafsson controller k_1 gain!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_Gustafsson_k1 = std::stod(temp_param_var->GetText());
-
-    // -------------------- RK78 Gustafsson controller k_2 gain
-    temp_param_var = Integrator_element->FirstChildElement("RK_Gustafsson_controller_k_2");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the RK Gustafsson controller k_2 gain!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.RK_Gustafsson_k2 = std::stod(temp_param_var->GetText());
-
-    // -------------------- Max relative step increase
-    temp_param_var = Integrator_element->FirstChildElement("Max_rel_step_increase");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the max relative step increase!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.Max_rel_step_increase = std::stod(temp_param_var->GetText());
-
-    // -------------------- Min relative step increase
-    temp_param_var = Integrator_element->FirstChildElement("Min_rel_step_increase");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the min relative step increase!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.Min_rel_step_increase = std::stod(temp_param_var->GetText());
-
-    // -------------------- Use adaptive step flag
-    temp_param_var = Integrator_element->FirstChildElement("use_adaptive_step");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the use adaptive step flag!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.Use_adaptive_step = std::stoi(temp_param_var->GetText());
-
-    // -------------------- The step controller type
-    temp_param_var = Integrator_element->FirstChildElement("Step_controller_type");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the step controller type!" << "\n"; return ERROR; }
-    std::string Step_controller_type = temp_param_var->GetText();
-
-    if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "Gustafsson")) {
-
-        Integrator_params->Rad_Transfer_Step_Controller_Params.Controller_type = Gustafsson;
-
-    }
-    else if (0 == strcmp(static_cast<const char*>(Step_controller_type.c_str()), "PID")) {
-
-        Integrator_params->Rad_Transfer_Step_Controller_Params.Controller_type = PID;
-
-    }
-    else {
-
-        std::cout << "Unsupported step controller type!" << "\n";
-
-        return ERROR;
-
-    }
-
     // -------------------- Radiative transfer integrator
     temp_param_var = Integrator_element->FirstChildElement("Integrator_type");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the radiative transfer integrator type!" << "\n"; return ERROR; }
     std::string Radiative_transfer_integrator_type = temp_param_var->GetText();
 
-    if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "Analytic")) {
-
-        Integrator_params->e_Radiative_transfer_integrator = Rad_Analytic;
-
-    }
-    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "Implicit Trapezoid")) {
-
-        Integrator_params->e_Radiative_transfer_integrator = Rad_Implicit_Trapezoid;
-
-    }
-    else if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "RK54")) {
+    if (0 == strcmp(static_cast<const char*>(Radiative_transfer_integrator_type.c_str()), "RK54")) {
 
         Integrator_params->e_Radiative_transfer_integrator = RK54;
     
@@ -817,11 +719,6 @@ Return_Values static parse_rad_transfer_integrator_params(tinyxml2::XMLElement* 
         return ERROR;
 
     }
-
-    // -------------------- Max stepsize
-    temp_param_var = Integrator_element->FirstChildElement("max_stepsize");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the max step size!" << "\n"; return ERROR; }
-    Integrator_params->Rad_Transfer_Step_Controller_Params.Max_stepsize = std::stod(temp_param_var->GetText());
 
     return OK;
 

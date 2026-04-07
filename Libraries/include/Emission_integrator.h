@@ -15,6 +15,9 @@ class Emission_Integrator_class {
 
 private:
 
+    static constexpr int RK54_size = 7;
+    static constexpr int RK78_size = 13;
+
     /* ====================================================== The adaptive DP RK5(4) Butcher table ====================================================== */
 
     const double RK54_Coeff_deriv[RK78_size][RK78_size - 1] =
@@ -86,26 +89,22 @@ private:
     const double RK78_DP_Coeff_sol_embeded[RK78_size] = { 14005451. / 335480064, 0, 0, 0, 0,  -59238493. / 1068277825, 181606767. / 758867731,  561292985. / 797845732, -1041891430. / 1371343529, 760417239. / 1151165299, 118820643. / 751138087, -528747749. / 2220607170, 1. / 4 };
     const double RK78_DP_Coeff_affine_param[RK78_size] = { 0.0, 1. / 18, 1. / 12, 1. / 8, 5. / 16, 3. / 8, 59. / 400, 93. / 200, 5490023248. / 9719169821, 13. / 20, 1201146811. / 1299019798, 1.0, 1.0 };
 
+    Integrator_enums e_Active_integrator;
+
     /* ---------------------- Counters ---------------------- */
 
-    int N_steps_rejected;
-    int NaN_checker_count;
-    int Current_log_idx;
-
-    /* -------- The small offset is here because I have a check below that ensures the ray doesnt overshoot the end affine parameter. As a result it only reaches it when it hits the
-                precision limit on the double's holding Current_affine_param and End_Affine_Param. This wastes compute time to integrate over infinitesimal intervals -------- */
-    double End_affine_param_offset = 1e-3;
-
-    /* ------------- Flags ------------- */
-
-    bool continue_integration;
+    int Current_emission_log_idx;
+    int Current_polarization_log_idx;
 
     /* --------------- This holds the emission along the ray for the geodesic log sim mode --------------- */
-    double** Emission_log;
+    // The + 1 is because I also log the affine parameter, which CAN be different from the one in the geodesic log because of the adaptive step
+    double* Emission_log[e_Stokes_param_num + 1];
+
+    double* Polarization_log[3];
 
      /* ---------- These hold the affine parameter and steps that the geodesic integrator took ----------- */
+    // Only used to setup the gsl spline. They get delete[] called on them at the end of the init function
     double* Affine_param_log;
-    double* Geodesic_step_log;
 
     int Ray_log_length;
 
@@ -117,51 +116,22 @@ private:
 
     /* ------------- These are convenient storage for dynamical states and their derivatives ------------- */
 
-    double Rad_Transfer_RHS_log[RK78_size * e_Stokes_param_num]{};
     std::complex<double> Parallel_Transport_RHS_log[RK78_size * e_Stokes_param_num]{};
+    double Rad_Transfer_RHS_log[RK78_size * e_Stokes_param_num]{};
 
+    std::complex<double> Current_Pol_Vector[e_Stokes_param_num]{};
     double Current_Stokes_Vector[e_Stokes_param_num]{};
-
     double Current_State_Vector[e_Dynamic_state_size]{};
     double Current_Affine_Param{};
-
-    Integrator_enums e_Active_integrator;
 
     /* --------------- Pointers to a bunch of functions that the radiative transfer needs ---------------- */
 
     const Simulation_Context_type* p_Sim_Context;
 
-    Emission_models_class* p_Emission_Model;
-    Step_controller_class* p_Step_controller;
-
     /* --------------------------------- Internal functions --------------------------------- */
 
-    template<typename Vec_type>
-    Return_Values Run_NaN_checker(const Vec_type* const New_State, const Vec_type* const New_State_Embeded) {
-
-        for (int idx = 0; idx < e_Stokes_param_num; idx++) {
-
-            if (isnan(std::abs(New_State[idx])) || 
-                isnan(std::abs(New_State_Embeded[idx])) || 
-                isinf(std::abs(New_State[idx])) || 
-                isinf(std::abs(New_State_Embeded[idx]))) {
-
-                this->continue_integration = false;
-                this->p_Step_controller->step /= 10.0;
-                this->NaN_checker_count++;
-
-                return ERROR;
-
-            }
-
-        }
-
-        return OK;
-
-    }
-   
     void Update_emission_log(const double* const New_Stokes_Vector);
-    //void Update_debug_log();
+    void Update_polarization_log(const std::complex<double>*  const New_Polarization_Vector, const double New_affine_param);
 
     const double* const get_ray_Local_State_Vector(const double Affine_param);
 
@@ -178,17 +148,24 @@ private:
                                     Tensor_type_enums e_Vec_type,
                                     std::complex<double>* const RHS);
 
-
-
-
 public:
-
-
 
     Emission_Integrator_class(const Simulation_Context_type* p_Sim_Context, Results_type* const p_Ray_results);
     ~Emission_Integrator_class();
 
-    std::complex<double> Current_Pol_Vector[e_Stokes_param_num]{};
+    template<typename Vec_type>
+    void set_Polarization_Vector(const Vec_type* const Polarization_Vector) {
+
+        for (int idx = 0; idx < e_Stokes_param_num; idx++) {
+
+            this->Current_Pol_Vector[idx] = Polarization_Vector[idx];
+
+        }
+
+    };
+
+    const std::complex<double>* const get_current_Polarization_Vector() const;
+
     void Propagate_Stokes_Vector(const double Start_Affine_Param, const double End_Affine_Param);
 
     void Propagate_Polarization_Vector(const double Start_Affine_Param, const double End_Affine_Param, const Tensor_type_enums Vec_type);

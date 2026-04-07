@@ -39,6 +39,10 @@ struct Disk_profile_parameters_type {
     /*! @brief The power law variable ~ (power_law_scale / radial_coordinate)^power */
     double radial_coordinate{};
 
+    /* */
+
+    double theta_coordinate{};
+
     /*! @brief The power law scale ~ (power_law_scale / radial_coordinate)^power */
     double power_law_scale{};
 
@@ -113,6 +117,8 @@ struct Disk_model_parameters_type {
     Colab_test_1_params_type Colab_test_1_params{};
 
     Novikov_Thorne_params_type Novikov_Thorne_params{};
+
+    Numerical_disk_params_type Numerical_disk_params{};
 
 };
 
@@ -673,8 +679,6 @@ struct Integrator_parameters_type {
 
     Step_Controller_parameters_type Geodesic_Step_Controller_Params;
 
-    Step_Controller_parameters_type Rad_Transfer_Step_Controller_Params;
-
     /*! @brief The Maximum allowed affine parameter value, before terminating the integration.
         NOTE: This is taken by absolute value. */
     double Max_affine_param{};
@@ -883,21 +887,25 @@ struct Simulation_Context_type {
 
 struct Ray_log_type {
 
-    /* Pointer to the arrays that hold the intensity and optical depth along the photon trajectory. */
-    double* Ray_emission_log[e_Stokes_param_num + 1]{};
+    /* Pointer to the arrays that hold the Stokes vector along the photon trajectory. */
+    double* Ray_emission_log[e_Stokes_param_num];
+
+    double* Ray_polarization_log[2];
 
     /* Pointer to the array that holds the entire photon trajectory in local coordinates. */
-    double* Ray_path_log_local{};
+    double* Ray_path_log_local;
 
     /* Pointer to the array that holds the entire photon trajectory in global coordinates. */
-    double* Ray_path_log_global{};
+    double* Ray_path_log_global;
+
+    int Log_offet_at_disk_edge;
 
     /* Int that specifies where in the log to write.
        This exists for the sole purpose of minimizing the number of arguments in the functions that write to the photon log. */
-    int Log_offset{};
+    int Log_offset;
 
     /* The length of the photon log. */
-    int Log_length{};
+    int Log_length;
 
 };
 
