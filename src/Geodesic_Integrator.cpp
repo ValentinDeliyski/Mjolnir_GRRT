@@ -74,11 +74,11 @@ void Step_controller_class::update_step(Integrator_enums e_Active_integrator) {
 
 }
 
-static int implicit_method_system_wrapper_f(const gsl_vector* gsl_trial_State_Vector, void* Params, gsl_vector* gsl_System_to_solve) {
+static int implicit_method_system_wrapper_f(const gsl_vector* State_Vector, void* Params, gsl_vector* gsl_System_to_solve) {
 
     RHS_wrapper_struct* RHS_wrapper_params = (RHS_wrapper_struct*)Params;
 
-    return RHS_wrapper_params->Integrator->get_implicit_method_system(gsl_trial_State_Vector, RHS_wrapper_params->p_Iteration_number, gsl_System_to_solve);
+    return RHS_wrapper_params->Integrator->get_implicit_method_system(State_Vector, RHS_wrapper_params->p_Iteration_number, gsl_System_to_solve);
 
 }
 
@@ -149,27 +149,27 @@ Geodesic_Integrator_class::~Geodesic_Integrator_class() {
 
 }
 
-int Geodesic_Integrator_class::get_implicit_method_system(const gsl_vector* gsl_trial_State_Vector, void* p_Iteration_number, gsl_vector* System_to_solve) {
+int Geodesic_Integrator_class::get_implicit_method_system(const gsl_vector* gsl_State_Vector, void* p_Iteration_number, gsl_vector* System_to_solve) {
 
     int Iteration_number = *(int*)p_Iteration_number;
 
     /* ------------ Convert the gsl_vector to a normal double* so I can pass it to the EOM functions ------------  */
-    double trial_State_Vector[e_Dynamic_state_size]{};
+    double State_Vector[e_Dynamic_state_size]{};
 
     for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
 
-        trial_State_Vector[idx] = gsl_vector_get(gsl_trial_State_Vector, idx);
+        State_Vector[idx] = gsl_vector_get(gsl_State_Vector, idx);
 
     }
 
     /* ----- Updates the Intermediate_RHS_log with the value at the current intermediate state estimate, which I call a "trial" state ----- */
-    this->p_Spacetime->get_EOM(trial_State_Vector, &this->Intermediate_RHS_log[Iteration_number * e_Dynamic_state_size]);
+    this->p_Spacetime->get_EOM(State_Vector, &this->Intermediate_RHS_log[Iteration_number * e_Dynamic_state_size]);
 
     double Func_to_minimize[e_Dynamic_state_size]{};
 
     for (int state_idx = 0; state_idx < e_Dynamic_state_size; state_idx++) {
 
-        Func_to_minimize[state_idx] = trial_State_Vector[state_idx] - this->Current_Dynamic_state[state_idx];
+        Func_to_minimize[state_idx] = State_Vector[state_idx] - this->Current_Dynamic_state[state_idx];
 
         for (int derivative_idx = 0; derivative_idx <= Iteration_number; derivative_idx++) {
 
@@ -298,9 +298,9 @@ Return_Values Geodesic_Integrator_class::Run_NaN_checker(const double* const New
 
 }
 
-void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta(Integrator_enums e_Active_integrator) {
+void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta() {
 
-    if (RK78_Fehlberg != e_Active_integrator and RK78_DP != e_Active_integrator and RK54 != e_Active_integrator) {
+    if (RK78_Fehlberg != this->e_Active_integrator and RK78_DP != this->e_Active_integrator and RK54 != this->e_Active_integrator) {
 
         throw std::runtime_error("Wrong active integrator in Geodesic_Geodesic_Integrator_class::Run_Explicit_Runge_Kutta()!");
 
@@ -313,20 +313,20 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta(Integrator_enums e_Acti
     auto Main_solution_coeff = this->RK78_DP_Coeff_sol_main;
     auto Embedded_solution_coeff = this->RK78_DP_Coeff_sol_embeded;
 
-    if (RK78_Fehlberg == e_Active_integrator) {
+    if (RK78_Fehlberg == this->e_Active_integrator) {
 
         Stage_coeff = this->RK78_Fhelberg_Coeff_deriv;
         Main_solution_coeff = this->RK78_Fhelberg_Coeff_sol_main;
         Embedded_solution_coeff = this->RK78_Fhelberg_Coeff_sol_embeded;
 
     }
-    else if (RK54 == e_Active_integrator) {
+    else if (RK54 == this->e_Active_integrator) {
 
         Stage_coeff = this->RK54_Coeff_deriv;
         Main_solution_coeff = this->RK54_Coeff_sol_main;
         Embedded_solution_coeff = this->RK54_Coeff_test_embeded;
 
-        RK_size = RK54_size;
+        RK_size = this->RK54_size;
 
     }
 
@@ -447,10 +447,10 @@ void Geodesic_Integrator_class::Propagate_ray() {
 
     default:
 
-        this->Run_Explicit_Runge_Kutta(this->e_Active_integrator);
+        this->Run_Explicit_Runge_Kutta();
         this->Check_integration_complete_status();
 
-        if (this->Max_integration_count_reached or this->Step_too_small or this->NaN_checker_count > 5) {
+        if (this->Step_too_small or this->NaN_checker_count > 5) {
             
             this->e_Active_integrator = ESDIRK54;
             this->p_Ray_log_struct->Log_offset = 0;
@@ -462,7 +462,6 @@ void Geodesic_Integrator_class::Propagate_ray() {
         break;
 
     }
-
 
 }
 
@@ -593,7 +592,7 @@ void Geodesic_Integrator_class::Check_integration_complete_status() {
     this->Normal_termination_condition = this->p_Spacetime->terminate_integration(this->Current_Dynamic_state);
 
     this->Max_affine_param_reached      = std::abs(this->get_current_State_Vector_global()[e_ray_affine_param]) >= this->Max_affine_param;
-    this->Max_integration_count_reached = this->p_Ray_log_struct->Log_offset >= this->Max_integration_count;
+    this->Max_integration_count_reached = this->p_Ray_log_struct->Log_offset >= this->Max_integration_count - 1;
     this->Step_too_small                = this->p_Step_controller->step < std::numeric_limits<double>::min();
 
     if (this->Max_affine_param_reached) { 
@@ -632,6 +631,11 @@ void Geodesic_Integrator_class::Check_integration_complete_status() {
             break;
 
         }
+
+        this->integration_complete = true;
+
+        return;
+
     }
 
     if (this->Step_too_small) {

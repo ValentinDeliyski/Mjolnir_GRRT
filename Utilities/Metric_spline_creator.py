@@ -23,6 +23,7 @@ class Numerical_metric_parser_class():
         F_1 = []
         F_2 = []
         W = []
+        Scalar_field = []
 
         with open(File_path, "r") as file:
             
@@ -41,6 +42,7 @@ class Numerical_metric_parser_class():
                 F_1.append(exp(2 * float(Line_contents[3])))
                 F_2.append(exp(2 * float(Line_contents[4])))
                 W.append(-float(Line_contents[5]))
+                Scalar_field.append(float(Line_contents[6]))
                 
         """ The metric is calculated only for theta values in the range [0, pi / 2]. We use the reflection symmetry of the problem to get the rest of the grid. """
         x_coord = array(x_coord).reshape(self.GRID_THETA_SIZE, self.GRID_R_SIZE)
@@ -60,14 +62,17 @@ class Numerical_metric_parser_class():
         
         W = array(W).reshape(self.GRID_THETA_SIZE, self.GRID_R_SIZE)
         self.W = append(W, flip(W, axis = 0)[1:], axis = 0)
-
-    def get_parsed_results(self) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
         
-        return self.x_coord, self.theta_coord, self.F_0, self.F_1, self.F_2, self.W
+        Scalar_field = array(Scalar_field).reshape(self.GRID_THETA_SIZE, self.GRID_R_SIZE)
+        self.Scalar_field = append(Scalar_field, flip(Scalar_field, axis = 0)[1:], axis = 0)
+        
+    def get_parsed_results(self) -> tuple[NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, NDArray]:
+        
+        return self.x_coord, self.theta_coord, self.F_0, self.F_1, self.F_2, self.W, self.Scalar_field
         
     def export_spline_to_XML(self, Metric_name: str, Radial_control_vectors: list[NDArray], Theta_control_vectors: list[NDArray], Metric_control_vectors: list[NDArray], Raw_metric_components: list[NDArray], Control_vector_order: list[str]):
         
-        X_knot_points, Theta_knot_points, _, _, _, _ = Numerical_metric_parser.get_parsed_results()
+        X_knot_points, Theta_knot_points, _, _, _, _, _ = Numerical_metric_parser.get_parsed_results()
         
         Encoding = 'UTF-8'
         XML_root_node = ET.Element("Metric_spline_coefficients", {"Metric_name": Metric_name})
@@ -131,7 +136,7 @@ if __name__ == "__main__":
                                                             Grid_R_size = 120, 
                                                             Grid_Theta_size = 30) 
     
-    x_coord, theta_coord, F_0, F_1, F_2, W = Numerical_metric_parser.get_parsed_results()
+    x_coord, theta_coord, F_0, F_1, F_2, W, Scalar_field = Numerical_metric_parser.get_parsed_results()
 
     F_0_spline_instance = Surface_Cubic_B_spline(x_grid = theta_coord, 
                                                  y_grid = x_coord, 

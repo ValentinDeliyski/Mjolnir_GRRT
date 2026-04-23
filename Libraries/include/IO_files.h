@@ -43,7 +43,7 @@ private:
 
 	public:
 
-		int sim_mode_2_ray_number;
+		int sim_mode_1_ray_number;
 
 		File_manager_class(Initial_conditions_type* p_Initial_Conditions);
 

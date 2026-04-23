@@ -8,7 +8,7 @@ parent_directory = os.path.abspath('...')
 sys.path.append(parent_directory)
 
 from Support_functions.Parsers import Simulation_Parser
-from numpy import array, sqrt, flip, arctan, nan, float64, arctan2, argsort, pi, argmin, unique
+from numpy import array, sqrt, flip, arctan, nan, float64, arctan2, argsort, pi, argmin, unique, argmax, arccos, append
 from numpy.typing import NDArray
         
 from enum import Enum
@@ -115,13 +115,39 @@ class Polarization_visuzlier():
         
         Kerr_subplot = Main_Figure.add_subplot(142)
         Kerr_subplot.set_aspect(1)
-        Kerr_subplot.set_title(r"Kerr analog", fontsize = self.fontsize)
+        Kerr_subplot.set_title(r"Kerr Analog", fontsize = self.fontsize)
         Kerr_subplot.set_xlabel(r"$x\,[M_{\text{ADM}}]$", fontsize = self.fontsize)
         
-        Subplot_list = [Numerical_subplot, Kerr_subplot]
-        
-        """ ================================================================================================================================== """
+        Subplot_list = [Numerical_subplot, Kerr_subplot] 
 
+        """ ============================================================================================================================================================================================================ """
+           
+        Pol_intensity_plot = Main_Figure.add_subplot(143)
+        
+        Numerical_intensity = self.Polarized_Intensity_data[self.Metric_enums.Numerical.value][self.Slice_idx]
+        Kerr_intensity = self.Polarized_Intensity_data[self.Metric_enums.Kerr.value][self.Slice_idx]
+        
+        Pol_intensity_plot.plot(self.X_coords_data[self.Metric_enums.Numerical.value][self.Slice_idx], Numerical_intensity, color = "m")
+        Pol_intensity_plot.plot(self.X_coords_data[self.Metric_enums.Kerr.value][self.Slice_idx], Kerr_intensity, color = "C0")
+        
+        Intensity_max = max(max(Numerical_intensity.flatten()), max(Kerr_intensity.flatten()))
+        Intensity_min = min(min(Numerical_intensity.flatten()), min(Kerr_intensity.flatten()))
+        
+        Pol_intensity_plot.set_aspect((max(self.X_coords_data[self.Metric_enums.Numerical.value][self.Slice_idx].flatten()) - min(self.X_coords_data[self.Metric_enums.Numerical.value][self.Slice_idx].flatten())) / (1.1 * (Intensity_max - Intensity_min)))
+        Pol_intensity_plot.set_title(r"Intensity at $y = 0$ [-]", fontsize = self.fontsize)
+        Pol_intensity_plot.set_xlabel(r"$x\,[M_{\text{ADM}}]$", fontsize = self.fontsize)
+        Pol_intensity_plot.set_ylim(0, 1.1 * Intensity_max)
+        Pol_intensity_plot.set_xlim(self.Axes_limits_data[0][0], self.Axes_limits_data[0][1])
+    
+        Pol_intensity_plot.minorticks_on()
+        Pol_intensity_plot.tick_params(axis = "both", direction = "out")
+        Pol_intensity_plot.tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
+        Pol_intensity_plot.tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
+               
+        Pol_intensity_plot.legend([self.Numerical_title, "Kerr Analog"], loc = "upper left", fontsize = self.fontsize - 4)
+        
+        """ ============================================================================================================================================================================================================ """
+        
         Colorbar_norm = colors.Normalize(vmin = float(min(self.Polarized_Intensity_data.flatten())), vmax = float(max(self.Polarized_Intensity_data.flatten())))
         Colormap = colormaps[self.Colormap]
         Colormap.set_bad(self.Colormap_bad_color)
@@ -178,33 +204,7 @@ class Polarization_visuzlier():
         colorbar.ax.tick_params(labelsize = self.fontsize)
         
         """ ============================================================================================================================================================================================================ """
-    
-        Pol_intensity_plot = Main_Figure.add_subplot(143)
-        
-        Numerical_intensity = self.Polarized_Intensity_data[self.Metric_enums.Numerical.value][self.Slice_idx]
-        Kerr_intensity = self.Polarized_Intensity_data[self.Metric_enums.Kerr.value][self.Slice_idx]
-        
-        Pol_intensity_plot.plot(self.X_coords_data[self.Metric_enums.Numerical.value][self.Slice_idx], Numerical_intensity, color = "m")
-        Pol_intensity_plot.plot(self.X_coords_data[self.Metric_enums.Kerr.value][self.Slice_idx], Kerr_intensity, color = "C0")
-        
-        Intensity_max = max(max(Numerical_intensity.flatten()), max(Kerr_intensity.flatten()))
-        Intensity_min = min(min(Numerical_intensity.flatten()), min(Kerr_intensity.flatten()))
-        
-        Pol_intensity_plot.set_aspect((max(self.X_coords_data[self.Metric_enums.Numerical.value][self.Slice_idx].flatten()) - min(self.X_coords_data[self.Metric_enums.Numerical.value][self.Slice_idx].flatten())) / (1.1 * (Intensity_max - Intensity_min)))
-        Pol_intensity_plot.set_title(r"Intensity at $y = 0$ [-]", fontsize = self.fontsize)
-        Pol_intensity_plot.set_xlabel(r"$x\,[M_{\text{ADM}}]$", fontsize = self.fontsize)
-        Pol_intensity_plot.set_ylim(0, 1.1 * Intensity_max)
-        Pol_intensity_plot.set_xlim(self.Axes_limits_data[0][0], self.Axes_limits_data[0][1])
-    
-        Pol_intensity_plot.minorticks_on()
-        Pol_intensity_plot.tick_params(axis = "both", direction = "out")
-        Pol_intensity_plot.tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
-        Pol_intensity_plot.tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
-               
-        Pol_intensity_plot.legend(["Kerr analog", self.Numerical_title, ], loc = "upper right", fontsize = self.fontsize - 8)
-        
-        """ ============================================================================================================================================================================================================ """
-        
+
         EVPA_plot = Main_Figure.add_subplot(144)
   
         (Left_Numerical_Pol_x_slice, Right_Numerical_Pol_x_slice, 
@@ -300,7 +300,7 @@ class Polarization_visuzlier():
         
         return Left_slice, Right_slice, Left_X_coord, Right_X_coord
 
-    def get_image_at_fixed_source_radius_numerical_only(self, r_source: float, tolerance: float, length_step: float, Scale_factor: float, axis_limits: list[float]) -> None:
+    def get_image_at_fixed_source_radius_numerical_only(self, r_source: float, tolerance: float, num_points: int, Scale_factor: float, axis_limits: list[float]) -> None:
          
         """ ====================================== Kerr image extraction ====================================== """
     
@@ -321,15 +321,24 @@ class Polarization_visuzlier():
         Pol_x = Pol_x[Sorting_idx]
         Pol_y = Pol_y[Sorting_idx]
 
-        Current_reference_azimuth = Image_azimuth[0]
-        Final_idx_list = []
+        Current_length = 0
+        Total_length = 0
+        Final_idx_list = [0]
 
-        for idx, Azimuth in enumerate(Image_azimuth):
+        for idx, _ in enumerate(Image_azimuth):
             
-            if sqrt(X_coords[idx]**2 + Y_coords[idx]**2) * abs(Azimuth - Current_reference_azimuth) > length_step:
-                Current_reference_azimuth = Azimuth
+            if idx > 0:
+                Total_length = Total_length + sqrt(X_coords[idx]**2 + Y_coords[idx]**2) * abs(Image_azimuth[idx] - Image_azimuth[idx - 1])
+            
+        for idx, _ in enumerate(Image_azimuth):
+            
+            if idx > 0:
+                Current_length = Current_length + sqrt(X_coords[idx]**2 + Y_coords[idx]**2) * abs(Image_azimuth[idx] - Image_azimuth[idx - 1])
+            
+            if Current_length >= Total_length / num_points:
+                Current_length = 0
                 Final_idx_list.append(idx)
-               
+                
         Pol_x = Pol_x[Final_idx_list]
         Pol_y = Pol_y[Final_idx_list]
         X_coords = X_coords[Final_idx_list] / self.Solution_mass
@@ -368,8 +377,8 @@ class Polarization_visuzlier():
         Subplot.set_xlim(axis_limits[0], axis_limits[1])
         Subplot.set_ylim(axis_limits[2], axis_limits[3])       
 
-    def get_image_at_fixed_source_radius(self, r_source: float, tolerance: float, length_step: float, Scale_factor: float, axis_limits: list[float], Tick_visualization: bool, Curve_visualization: bool, Subplots: list) -> None:
-         
+    def __get_image_at_fixed_kerr_coords(self, r_source: float, tolerance: float, num_points: int, Curve_visualization: bool):
+
         """ ====================================== Kerr image extraction ====================================== """
     
         Kerr_X_coords = self.Kerr_sim_parser.X_coords[abs(self.Kerr_sim_parser.Source_r - r_source) < tolerance]
@@ -383,8 +392,8 @@ class Polarization_visuzlier():
         Image_azimuth = arctan2(Kerr_Y_coords, Kerr_X_coords)
         
         Image_azimuth[Image_azimuth < 0] = Image_azimuth[Image_azimuth < 0] + 2 * pi
-
         Sorting_idx = argsort(Image_azimuth)
+        
         Image_azimuth = Image_azimuth[Sorting_idx]
         Kerr_X_coords = Kerr_X_coords[Sorting_idx]
         Kerr_Y_coords = Kerr_Y_coords[Sorting_idx]
@@ -392,15 +401,22 @@ class Polarization_visuzlier():
         Kerr_Pol_x = Kerr_Pol_x[Sorting_idx]
         Kerr_Pol_y = Kerr_Pol_y[Sorting_idx]
 
-        Current_reference_azimuth = Image_azimuth[0]
-        Current_reference_r = sqrt(Kerr_X_coords[0]**2 + Kerr_Y_coords[0]**2)
-        Final_idx_list = []
+        Total_length = 0
+        Current_length = 0
+        Final_idx_list = [0]
 
-        for idx, Azimuth in enumerate(Image_azimuth):
+        for idx, _ in enumerate(Image_azimuth):
             
-            if Current_reference_r * abs(Azimuth - Current_reference_azimuth) > length_step:
-                Current_reference_azimuth = Azimuth
-                Current_reference_r = sqrt(Kerr_X_coords[idx]**2 + Kerr_Y_coords[idx]**2)
+            if idx > 0:
+                Total_length = Total_length + sqrt(Kerr_X_coords[idx]**2 + Kerr_Y_coords[idx]**2) * abs(Image_azimuth[idx] - Image_azimuth[idx - 1])
+            
+        for idx, _ in enumerate(Image_azimuth):
+            
+            if idx > 0:
+                Current_length = Current_length + sqrt(Kerr_X_coords[idx]**2 + Kerr_Y_coords[idx]**2) * abs(Image_azimuth[idx] - Image_azimuth[idx - 1])
+            
+            if Current_length >= Total_length / num_points or Curve_visualization:
+                Current_length = 0
                 Final_idx_list.append(idx)
                
         Kerr_Pol_x = Kerr_Pol_x[Final_idx_list]
@@ -415,8 +431,6 @@ class Polarization_visuzlier():
     
         Nominal_X_grid = self.Numerical_sim_parser.X_coords[0:self.X_resolution]
         Nominal_Y_grid = self.Numerical_sim_parser.Y_coords[::self.Y_resolution]
-        
-        Numerical_redshift = self.Numerical_sim_parser.Disk_redshift[abs(self.Kerr_sim_parser.Source_r - r_source) < tolerance]
 
         Numerical_X_coords = []
         Numerical_Y_coords = []
@@ -443,6 +457,101 @@ class Polarization_visuzlier():
         Numerical_redshift = array(Numerical_redshift)
         Numerical_Pol_x = array(Numerical_Pol_x)
         Numerical_Pol_y = array(Numerical_Pol_y)
+        
+        return Image_azimuth, Kerr_Pol_x, Kerr_Pol_y, Kerr_redshift, Kerr_X_coords, Kerr_Y_coords, Numerical_Pol_x, Numerical_Pol_y, Numerical_redshift, Numerical_X_coords, Numerical_Y_coords
+
+    def __get_image_at_fixed_numerical_coords(self, r_source: float, tolerance: float, num_points: int, Curve_visualization: bool):
+
+        """ ====================================== Numerical image extraction ====================================== """
+    
+        Numerical_X_coords = self.Numerical_sim_parser.X_coords[abs(self.Numerical_sim_parser.Source_r - r_source) < tolerance]
+        Numerical_Y_coords = self.Numerical_sim_parser.Y_coords[abs(self.Numerical_sim_parser.Source_r - r_source) < tolerance]
+
+        Numerical_Pol_x = self.Numerical_sim_parser.Polarization_vec_X[abs(self.Numerical_sim_parser.Source_r - r_source) < tolerance]
+        Numerical_Pol_y = self.Numerical_sim_parser.Polarization_vec_Y[abs(self.Numerical_sim_parser.Source_r - r_source) < tolerance]
+        
+        Numerical_redshift = self.Numerical_sim_parser.Disk_redshift[abs(self.Numerical_sim_parser.Source_r - r_source) < tolerance]
+
+        Image_azimuth = arctan2(Numerical_Y_coords, Numerical_X_coords)
+        
+        Image_azimuth[Image_azimuth < 0] = Image_azimuth[Image_azimuth < 0] + 2 * pi
+
+        Sorting_idx = argsort(Image_azimuth)
+        Image_azimuth = Image_azimuth[Sorting_idx]
+        Numerical_X_coords = Numerical_X_coords[Sorting_idx]
+        Numerical_Y_coords = Numerical_Y_coords[Sorting_idx]
+        Numerical_redshift = Numerical_redshift[Sorting_idx]
+        Numerical_Pol_x = Numerical_Pol_x[Sorting_idx]
+        Numerical_Pol_y = Numerical_Pol_y[Sorting_idx]
+
+        Final_idx_list = []
+        Total_length = 0
+        Current_length = 0
+
+        for idx, _ in enumerate(Image_azimuth):
+            
+            if idx > 0:
+                Total_length = Total_length + sqrt(Numerical_X_coords[idx]**2 + Numerical_Y_coords[idx]**2) * abs(Image_azimuth[idx] - Image_azimuth[idx - 1])
+        
+        for idx, _ in enumerate(Image_azimuth):
+            
+            if idx > 0:
+                Current_length = Current_length + sqrt(Numerical_X_coords[idx]**2 + Numerical_Y_coords[idx]**2) * abs(Image_azimuth[idx] - Image_azimuth[idx - 1])
+            
+            if Current_length > Total_length / num_points or Curve_visualization:
+                Current_length = 0
+                Final_idx_list.append(idx)
+               
+        Numerical_Pol_x = Numerical_Pol_x[Final_idx_list]
+        Numerical_Pol_y = Numerical_Pol_y[Final_idx_list]
+        Numerical_redshift = Numerical_redshift[Final_idx_list]
+        Image_azimuth = Image_azimuth[Final_idx_list]
+                
+        """ ============================================ Kerr image extraction ============================================ """
+    
+        Numerical_X_coords = Numerical_X_coords[Final_idx_list]
+        Numerical_Y_coords = Numerical_Y_coords[Final_idx_list]
+    
+        Nominal_X_grid = self.Kerr_sim_parser.X_coords[0:self.X_resolution]
+        Nominal_Y_grid = self.Kerr_sim_parser.Y_coords[::self.Y_resolution]
+        
+        Kerr_X_coords = []
+        Kerr_Y_coords = []
+        Kerr_Pol_x = []
+        Kerr_Pol_y = []
+        Kerr_redshift = []
+        
+        for X_target, Y_target in zip(Numerical_X_coords, Numerical_Y_coords):
+        
+            X_idx = argmin(abs(Nominal_X_grid - X_target))
+            Y_idx = argmin(abs(Nominal_Y_grid - Y_target))
+
+            Kerr_X_coords.append(self.Kerr_sim_parser.X_coords[X_idx + self.Y_resolution * Y_idx])
+            Kerr_Y_coords.append(self.Kerr_sim_parser.Y_coords[X_idx + self.Y_resolution * Y_idx])
+            Kerr_Pol_x.append(self.Kerr_sim_parser.Polarization_vec_X[X_idx + self.Y_resolution * Y_idx])
+            Kerr_Pol_y.append(self.Kerr_sim_parser.Polarization_vec_Y[X_idx + self.Y_resolution * Y_idx])
+            Kerr_redshift.append(self.Kerr_sim_parser.Disk_redshift[X_idx + self.Y_resolution * Y_idx])
+
+        Kerr_X_coords = array(Kerr_X_coords) / self.Solution_mass
+        Kerr_Y_coords = array(Kerr_Y_coords) / self.Solution_mass
+        Numerical_X_coords = array(Numerical_X_coords) / self.Solution_mass
+        Numerical_Y_coords = array(Numerical_Y_coords) / self.Solution_mass
+        
+        Kerr_redshift = array(Kerr_redshift)
+        Kerr_Pol_x = array(Kerr_Pol_x)
+        Kerr_Pol_y = array(Kerr_Pol_y)
+        
+        return Image_azimuth, Kerr_Pol_x, Kerr_Pol_y, Kerr_redshift, Kerr_X_coords, Kerr_Y_coords, Numerical_Pol_x, Numerical_Pol_y, Numerical_redshift, Numerical_X_coords, Numerical_Y_coords
+
+    def get_image_at_fixed_source_radius(self, r_source: float, tolerance: float, num_points: int, Scale_factor: float, axis_limits: list[float], Tick_visualization: bool, Curve_visualization: bool, Subplots: list, Source_coords: str = "Kerr", Plot_disk: bool = True) -> None:
+         
+        if Source_coords == "Kerr":
+            Image_azimuth, Kerr_Pol_x, Kerr_Pol_y, Kerr_redshift, Kerr_X_coords, Kerr_Y_coords, Numerical_Pol_x, Numerical_Pol_y, Numerical_redshift, Numerical_X_coords, Numerical_Y_coords = self.__get_image_at_fixed_kerr_coords(r_source, tolerance, num_points, Curve_visualization)
+        else:
+            Image_azimuth, Kerr_Pol_x, Kerr_Pol_y, Kerr_redshift, Kerr_X_coords, Kerr_Y_coords, Numerical_Pol_x, Numerical_Pol_y, Numerical_redshift, Numerical_X_coords, Numerical_Y_coords = self.__get_image_at_fixed_numerical_coords(r_source, tolerance, num_points, Curve_visualization)
+
+        Image_azimuth = Image_azimuth - Image_azimuth[0]
+        Image_azimuth = append(Image_azimuth, Image_azimuth + 2 * pi)
 
         if Tick_visualization:
 
@@ -450,272 +559,397 @@ class Polarization_visuzlier():
 
             Colormap = colormaps[self.Colormap]
             Colormap.set_bad(self.Colormap_bad_color)
-            
-            Kerr_Intensity = self.Polarized_Intensity_data[self.Metric_enums.Kerr.value]
-            Kerr_Intensity[Kerr_Intensity == 0] = nan
-            
-            Kerr_axes_limits = self.Kerr_sim_parser.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
-            Kerr_axes_limits = array([float(Limit) / self.Solution_mass for Limit in Kerr_axes_limits])
-            
-            Subplots[1].imshow(Kerr_Intensity, extent = tuple(Kerr_axes_limits), cmap = Colormap, interpolation = "nearest", vmin = 0)
-      
-            Final_tick_scale = Scale_factor / sqrt(Numerical_Pol_x**2 + Numerical_Pol_y**2 + 1e-10)
-            Subplots[1].quiver(Kerr_X_coords - Final_tick_scale * Kerr_Pol_x / 2,
-                                Kerr_Y_coords - Final_tick_scale * Kerr_Pol_y / 2,
-                                Final_tick_scale * Kerr_Pol_x,
-                                Final_tick_scale * Kerr_Pol_y,
-                                headwidth = 0,
-                                headlength = 0,
-                                headaxislength = 0,
-                                angles = 'xy', 
-                                scale_units = 'xy',
-                                scale = 1,
-                                color = "grey",
-                                width = 0.005)
-            
-            Subplots[1].set_xlim(axis_limits[0], axis_limits[1])
-            Subplots[1].set_ylim(axis_limits[2], axis_limits[3])
-            
+                
+            if Subplots[1] != None:
+
+                Kerr_Intensity = self.Polarized_Intensity_data[self.Metric_enums.Kerr.value]
+                Kerr_Intensity[Kerr_Intensity == 0] = nan
+                
+                Kerr_axes_limits = self.Kerr_sim_parser.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
+                Kerr_axes_limits = array([float(Limit) / self.Solution_mass for Limit in Kerr_axes_limits])
+                
+                if Plot_disk:
+                    Subplots[1].imshow(Kerr_Intensity, extent = tuple(Kerr_axes_limits), cmap = Colormap, interpolation = "nearest", vmin = 0)
+        
+                Final_tick_scale = Scale_factor / sqrt(Kerr_Pol_x**2 + Kerr_Pol_y**2 + 1e-10)
+                Subplots[1].quiver(Kerr_X_coords - Final_tick_scale * Kerr_Pol_x / 2,
+                                    Kerr_Y_coords - Final_tick_scale * Kerr_Pol_y / 2,
+                                    Final_tick_scale * Kerr_Pol_x,
+                                    Final_tick_scale * Kerr_Pol_y,
+                                    headwidth = 0,
+                                    headlength = 0,
+                                    headaxislength = 0,
+                                    angles = 'xy', 
+                                    scale_units = 'xy',
+                                    scale = 1,
+                                    color = "grey",
+                                    width = 0.005)
+                
+                Subplots[1].set_xlim(axis_limits[0], axis_limits[1])
+                Subplots[1].set_ylim(axis_limits[2], axis_limits[3])
+                
             """ ==================================================== Numerical Plotting ==================================================== """
    
-            Numerical_Intensity = self.Polarized_Intensity_data[self.Metric_enums.Numerical.value]
-            Numerical_Intensity[Numerical_Intensity == 0] = nan
-            
-            Numerical_axes_limits = self.Numerical_sim_parser.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
-            Numerical_axes_limits = array([float(Limit) / self.Solution_mass for Limit in Numerical_axes_limits])
-            
-            Subplots[0].imshow(Numerical_Intensity, extent = tuple(Numerical_axes_limits), cmap = Colormap, interpolation = "nearest", vmin = 0)
-            
-            Final_tick_scale = 2 * Scale_factor / sqrt(Numerical_Pol_x**2 + Numerical_Pol_y**2 + 1e-10)
-            Subplots[0].quiver(Numerical_X_coords - Final_tick_scale * Numerical_Pol_x / 2,
-                               Numerical_Y_coords - Final_tick_scale * Numerical_Pol_y / 2,
-                               Final_tick_scale * Numerical_Pol_x,
-                               Final_tick_scale * Numerical_Pol_y,
-                               headwidth = 0,
-                               headlength = 0,
-                               headaxislength = 0,
-                               angles = 'xy', 
-                               scale_units = 'xy',
-                               scale = 1,
-                               color = "grey",
-                               width = 0.005)
-            
-            Subplots[0].set_xlim(axis_limits[0], axis_limits[1])
-            Subplots[0].set_ylim(axis_limits[2], axis_limits[3])
+            if Subplots[0] != None:
+    
+                Numerical_Intensity = self.Polarized_Intensity_data[self.Metric_enums.Numerical.value]
+                Numerical_Intensity[Numerical_Intensity == 0] = nan
+                
+                Numerical_axes_limits = self.Numerical_sim_parser.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
+                Numerical_axes_limits = array([float(Limit) / self.Solution_mass for Limit in Numerical_axes_limits])
+                
+                if Plot_disk:
+                    Subplots[0].imshow(Numerical_Intensity, extent = tuple(Numerical_axes_limits), cmap = Colormap, interpolation = "nearest", vmin = 0)
+                
+                Final_tick_scale = Scale_factor / sqrt(Numerical_Pol_x**2 + Numerical_Pol_y**2 + 1e-10)
+                Subplots[0].quiver(Numerical_X_coords - Final_tick_scale * Numerical_Pol_x / 2,
+                                    Numerical_Y_coords - Final_tick_scale * Numerical_Pol_y / 2,
+                                    Final_tick_scale * Numerical_Pol_x,
+                                    Final_tick_scale * Numerical_Pol_y,
+                                    headwidth = 0,
+                                    headlength = 0,
+                                    headaxislength = 0,
+                                    angles = 'xy', 
+                                    scale_units = 'xy',
+                                    scale = 1,
+                                    color = "grey",
+                                    width = 0.005)
+                
+                Subplots[0].set_xlim(axis_limits[0], axis_limits[1])
+                Subplots[0].set_ylim(axis_limits[2], axis_limits[3])
         
         if Curve_visualization:
             
-            import matplotlib.pyplot as pyplot
-                             
+            if Subplots[1] != None:
+    
+                Kerr_X_coords = append(Kerr_X_coords, Kerr_X_coords[0])
+                Kerr_Y_coords = append(Kerr_Y_coords, Kerr_Y_coords[0])
+    
+                Subplots[1].plot(Kerr_X_coords, Kerr_Y_coords, "r--")
+                Subplots[1].set_ylabel(r"y [$M_\text{ADM}$]", fontsize = self.fontsize)
+                Subplots[1].set_xlabel(r"x [$M_\text{ADM}$]", fontsize = self.fontsize)
+                Subplots[1].set_title(r'Kerr Analog', usetex=True, fontsize = self.fontsize)
+                
+                Subplots[1].minorticks_on()
+                Subplots[1].tick_params(axis = "both", direction = "out")
+                Subplots[1].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
+                Subplots[1].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
+                
+                Subplots[1].xaxis.set_major_locator(MaxNLocator(nbins = 5))
+                Subplots[1].yaxis.set_major_locator(MaxNLocator(nbins = 5))
+
+            if Subplots[0] != None:
+
+                Numerical_X_coords = append(Numerical_X_coords, Numerical_X_coords[0])
+                Numerical_Y_coords = append(Numerical_Y_coords, Numerical_Y_coords[0])
+
+                Subplots[0].plot(Numerical_X_coords, Numerical_Y_coords, "r--")
+                Subplots[0].set_ylabel(r"y [$M_\text{ADM}$]", fontsize = self.fontsize)
+                Subplots[0].set_xlabel(r"x [$M_\text{ADM}$]", fontsize = self.fontsize)
+                Subplots[0].set_title(self.Numerical_title, fontsize = self.fontsize)
+                
+                Subplots[0].minorticks_on()
+                Subplots[0].tick_params(axis = "both", direction = "out")
+                Subplots[0].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
+                Subplots[0].tick_params(which = 'major', length = 8, labelsize = self.fontsize)
+                # Subplots[0].set_xticks(xy_ticks)
+                # Subplots[0].set_xticklabels(xy_tick_labels)
+                # Subplots[0].set_yticks(xy_ticks)
+                # Subplots[0].set_yticklabels(xy_tick_labels)
+                
+                Subplots[0].xaxis.set_major_locator(MaxNLocator(nbins = 5))
+                Subplots[0].yaxis.set_major_locator(MaxNLocator(nbins = 5))
+            
+            """" ================================================================================================================================================== """
+            
             x_ticks = [0, pi / 2, pi, 3 * pi / 2, 2 * pi]
             x_tick_labels = ["0", r"$\frac{\pi}{2}$", r"$\pi$", r"$\frac{3\pi}{2}$", r"$2\pi$"]
             
-            Subplots[1].plot(Kerr_X_coords, Kerr_Y_coords, "r--")
-            Subplots[1].set_ylabel(r"y [$M_\text{ADM}$]", fontsize = self.fontsize)
-            Subplots[1].set_xlabel(r"x [$M_\text{ADM}$]", fontsize = self.fontsize)
-            Subplots[1].set_title(r"Kerr analog", fontsize = self.fontsize)
-            
-            Subplots[1].minorticks_on()
-            Subplots[1].tick_params(axis = "both", direction = "out")
-            Subplots[1].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
-            Subplots[1].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
-            
-            Subplots[0].plot(Numerical_X_coords, Numerical_Y_coords, "r--")
-            Subplots[0].set_ylabel(r"y [$M_\text{ADM}$]", fontsize = self.fontsize)
-            Subplots[0].set_xlabel(r"x [$M_\text{ADM}$]", fontsize = self.fontsize)
-            Subplots[0].set_title(self.Numerical_title, fontsize = self.fontsize)
-            
-            Subplots[0].minorticks_on()
-            Subplots[0].tick_params(axis = "both", direction = "out")
-            Subplots[0].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
-            Subplots[0].tick_params(which = 'major', length = 8, labelsize = self.fontsize)
-            
-            
-            Subplots[0].xaxis.set_major_locator(MaxNLocator(nbins = 4))
-            Subplots[0].yaxis.set_major_locator(MaxNLocator(nbins = 4))
-            
-            Subplots[1].xaxis.set_major_locator(MaxNLocator(nbins = 4))
-            Subplots[1].yaxis.set_major_locator(MaxNLocator(nbins = 4))
-            
-            """" ================================================================================================================================================== """
-            
-            Subplots[2].plot(Image_azimuth - Image_azimuth[0], Numerical_redshift**4 * (Numerical_Pol_x**2 + Numerical_Pol_y**2), "m")
-            Subplots[2].plot(Image_azimuth - Image_azimuth[0], Kerr_redshift**4 * (Kerr_Pol_x**2 + Kerr_Pol_y**2), "C0")
-            
-            Intensity_max = max(max(Kerr_redshift**4 * (Kerr_Pol_x**2 + Kerr_Pol_y**2)), max(Numerical_redshift**4 * (Numerical_Pol_x**2 + Numerical_Pol_y**2)))
-            
-            Fig_padding = 0.1 * Intensity_max
-            
-            Subplots[2].set_ylim(-Fig_padding, Intensity_max + Fig_padding)
-            Subplots[2].set_aspect(0.91 * 2 * pi  / (Intensity_max + 2 * Fig_padding))
-            
-            Subplots[2].minorticks_on()
-            Subplots[2].tick_params(axis = "both", direction = "out")
-            Subplots[2].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
-            Subplots[2].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
+            if Subplots[2] != None:
+                
+                Numerical_Intensity = Numerical_redshift**4 * (Numerical_Pol_x**2 + Numerical_Pol_y**2)
+                Numerical_Intensity = append(Numerical_Intensity, Numerical_Intensity)
+                
+                Kerr_Intensity = Kerr_redshift**4 * (Kerr_Pol_x**2 + Kerr_Pol_y**2)
+                Kerr_Intensity = append(Kerr_Intensity, Kerr_Intensity)
+                
+                Subplots[2].plot(Image_azimuth, Numerical_Intensity, "m")
+                Subplots[2].plot(Image_azimuth, Kerr_Intensity, "C0")
+                
+                Intensity_max = max(max(Kerr_Intensity), max(Numerical_Intensity))
+                
+                Fig_padding = 0.1 * Intensity_max
+                
+                Subplots[2].set_ylim(-Fig_padding, Intensity_max + 3 * Fig_padding)
+                Subplots[2].set_aspect(0.91 * 2 * pi  / ((Intensity_max + 4 * Fig_padding)))
+                Subplots[2].yaxis.get_offset_text().set_fontsize(self.fontsize - 8)
+                
+                Subplots[2].minorticks_on()
+                Subplots[2].tick_params(axis = "both", direction = "out")
+                Subplots[2].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
+                Subplots[2].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
 
-            Subplots[2].set_xlim(0, 2 * pi)
-            Subplots[2].set_title(r"Intensity [-]", fontsize = self.fontsize)
-            Subplots[2].set_xlabel(r"Image azimuth [rad]", fontsize = self.fontsize)
-            Subplots[2].legend([self.Numerical_title, "Kerr analog"], fontsize = self.fontsize - 8)
-            Subplots[2].set_xticks(x_ticks)
-            Subplots[2].set_xticklabels(x_tick_labels)
-            
-            Subplots[2].ticklabel_format(style = 'sci', axis = 'y', scilimits=(0, 0))
-            Subplots[2].yaxis.set_major_locator(MaxNLocator(nbins = 6))
-             
+                Subplots[2].set_xlim(0, 2 * pi)
+                Subplots[2].set_title(r"Intensity [-]", fontsize = self.fontsize)
+                Subplots[2].set_xlabel(r"Image azimuth [rad]", fontsize = self.fontsize)
+                Subplots[2].legend([self.Numerical_title, "Kerr Analog"], fontsize = self.fontsize - 10, loc = 'upper center', ncols = 2)
+                
+                Subplots[2].set_xticks(x_ticks)
+                Subplots[2].set_xticklabels(x_tick_labels)
+                
+                Subplots[2].ticklabel_format(style = 'sci', axis = 'y', scilimits=(0, 0))
+                Subplots[2].yaxis.set_major_locator(MaxNLocator(nbins = 6))
+                
             """" ================================================================================================================================================== """
             
-            Subplots[3].plot(Image_azimuth - Image_azimuth[0], arctan(-Numerical_Pol_x / Numerical_Pol_y), "m")
-            Subplots[3].plot(Image_azimuth - Image_azimuth[0], arctan(-Kerr_Pol_x / Kerr_Pol_y), "C0")
-            EVPA_max = max(max(arctan(-Kerr_Pol_x / Kerr_Pol_y)), max(arctan(-Numerical_Pol_x / Numerical_Pol_y)))
-            EVPA_min = min(min(arctan(-Kerr_Pol_x / Kerr_Pol_y)), min(arctan(-Numerical_Pol_x / Numerical_Pol_y)))
-            
-            Fig_padding = 0.1 * abs(EVPA_max - EVPA_min)
-            
-            Subplots[3].set_ylim(EVPA_min - Fig_padding, EVPA_max + Fig_padding)
-            Subplots[3].set_aspect(0.91 * 2 * pi  / (EVPA_max - EVPA_min + 2 * Fig_padding))
+            if Subplots[2] != None:
+                    
+                EVPA_Kerr = arctan(-Kerr_Pol_x / Kerr_Pol_y)
+                EVPA_Kerr = append(EVPA_Kerr, EVPA_Kerr)
+                
+                EVPA_Numerical = arctan(-Numerical_Pol_x / Numerical_Pol_y)
+                EVPA_Numerical = append(EVPA_Numerical, EVPA_Numerical)
+                
+                EVPA_Kerr_idx_split = self.split_EVPA(EVPA = EVPA_Kerr)
+                EVPA_Numerical_idx_split = self.split_EVPA(EVPA = EVPA_Numerical)
+                
+                for idx in range(len(EVPA_Kerr_idx_split) - 1):
+                    Subplots[3].plot(Image_azimuth[EVPA_Kerr_idx_split[idx] : EVPA_Kerr_idx_split[idx + 1]] - Image_azimuth[0], EVPA_Kerr[EVPA_Kerr_idx_split[idx] : EVPA_Kerr_idx_split[idx + 1]], "C0")       
+                    Subplots[3].plot(Image_azimuth[EVPA_Kerr_idx_split[idx + 1] - 1 : EVPA_Kerr_idx_split[idx + 1] + 1] - Image_azimuth[0], EVPA_Kerr[EVPA_Kerr_idx_split[idx + 1] - 1 : EVPA_Kerr_idx_split[idx + 1] + 1], "C0--")               
+                    
+                for idx in range(len(EVPA_Numerical_idx_split) - 1):        
+                    Subplots[3].plot(Image_azimuth[EVPA_Numerical_idx_split[idx] : EVPA_Numerical_idx_split[idx + 1]] - Image_azimuth[0], EVPA_Numerical[EVPA_Numerical_idx_split[idx] : EVPA_Numerical_idx_split[idx + 1]], "m")
+                    Subplots[3].plot(Image_azimuth[EVPA_Numerical_idx_split[idx + 1] - 1 : EVPA_Numerical_idx_split[idx + 1] + 1] - Image_azimuth[0], EVPA_Numerical[EVPA_Numerical_idx_split[idx + 1] - 1 : EVPA_Numerical_idx_split[idx + 1] + 1], "m--")
+                    
+                EVPA_max = max(max(EVPA_Kerr), max(EVPA_Numerical))
+                EVPA_min = min(min(EVPA_Kerr), min(EVPA_Numerical))
+                
+                Fig_padding = 0.1 * abs(EVPA_max - EVPA_min)
+                
+                Subplots[3].set_ylim(EVPA_min - Fig_padding, EVPA_max + Fig_padding)
+                Subplots[3].set_aspect(0.91 * 2 * pi  / (EVPA_max - EVPA_min + 2 * Fig_padding))
 
-            Subplots[3].minorticks_on()
-            Subplots[3].tick_params(axis = "both", direction = "out")
-            Subplots[3].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
-            Subplots[3].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
+                Subplots[3].minorticks_on()
+                Subplots[3].tick_params(axis = "both", direction = "out")
+                Subplots[3].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
+                Subplots[3].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
 
-            Subplots[3].set_xlim(0, 2 * pi)
-            Subplots[3].set_title(r"EVPA [rad]", fontsize = self.fontsize)
-            Subplots[3].set_xlabel(r"Image azimuth [rad]", fontsize = self.fontsize)
-            Subplots[3].set_xticks(x_ticks)
-            Subplots[3].set_xticklabels(x_tick_labels)
+                Subplots[3].set_xlim(0, 2 * pi)
+                Subplots[3].set_title(r"EVPA [rad]", fontsize = self.fontsize)
+                Subplots[3].set_xlabel(r"Image azimuth [rad]", fontsize = self.fontsize)
+                Subplots[3].set_xticks(x_ticks)
+                Subplots[3].set_xticklabels(x_tick_labels)
+                
+                y_ticks = [-pi / 2, -pi / 4, 0, pi / 4, pi / 2]
+                y_tick_labels = [r"$-\frac{\pi}{2}$", r"$-\frac{\pi}{4}$", "0", r"$\frac{\pi}{4}$", r"$\frac{\pi}{2}$"]
+                
+                Subplots[3].set_yticks(y_ticks)
+                Subplots[3].set_yticklabels(y_tick_labels)
             
-            y_ticks = [-pi / 2, -pi / 4, 0, pi / 4, pi / 2]
-            y_tick_labels = [r"$-\frac{\pi}{2}$", r"$-\frac{\pi}{4}$", "0", r"$\frac{\pi}{4}$", r"$\frac{\pi}{2}$"]
-            
-            Subplots[3].set_yticks(y_ticks)
-            Subplots[3].set_yticklabels(y_tick_labels)
+            """" ================================================================================================================================================== """
+
+            if Subplots[4] != None:   
+                                        
+                Numerical_Intensity = Numerical_redshift**4 * (Numerical_Pol_x**2 + Numerical_Pol_y**2)
+                Numerical_Intensity = append(Numerical_Intensity, Numerical_Intensity)
+                
+                Kerr_Intensity = Kerr_redshift**4 * (Kerr_Pol_x**2 + Kerr_Pol_y**2)
+                Kerr_Intensity = append(Kerr_Intensity, Kerr_Intensity)
+                
+                Subplots[4].plot(Image_azimuth, Numerical_Intensity - Kerr_Intensity)
+                Delta_I_max = max(Numerical_Intensity - Kerr_Intensity)
+                Delta_I_min = min(Numerical_Intensity - Kerr_Intensity)
+                
+                Fig_padding = 0.1 * abs(Delta_I_max - Delta_I_min)
+                
+                Subplots[4].set_ylim(Delta_I_min - Fig_padding, Delta_I_max + Fig_padding)
+                Subplots[4].set_aspect(0.91 * 2 * pi  / (Delta_I_max - Delta_I_min + 2 * Fig_padding))
+                Subplots[4].yaxis.get_offset_text().set_fontsize(self.fontsize - 8)
+                
+                Subplots[4].minorticks_on()
+                Subplots[4].tick_params(axis = "both", direction = "out")
+                Subplots[4].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
+                Subplots[4].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
+                
+                Subplots[4].set_xlim(0, 2 * pi)
+                Subplots[4].set_title(r"$\Delta I$ [-]", fontsize = self.fontsize)
+                Subplots[4].set_xlabel(r"Image azimuth [rad]", fontsize = self.fontsize)
+                Subplots[4].set_xticks(x_ticks)
+                Subplots[4].set_xticklabels(x_tick_labels)
+                
+                Subplots[4].ticklabel_format(style = 'sci', axis = 'y', scilimits=(0, 0))
+                Subplots[4].yaxis.set_major_locator(MaxNLocator(nbins = 6))
             
             """" ================================================================================================================================================== """
             
-            Kerr_Intensity      = Kerr_redshift**4 * (Kerr_Pol_x**2 + Kerr_Pol_y**2)
-            Numerical_Intensity = Numerical_redshift**4 * (Numerical_Pol_x**2 + Numerical_Pol_y**2)
+            if Subplots[5] != None:
+                
+                Delta_EVPA = arctan((Numerical_Pol_x * Kerr_Pol_y - Numerical_Pol_y * Kerr_Pol_x) / (Numerical_Pol_x * Kerr_Pol_x + Numerical_Pol_y * Kerr_Pol_y))
+                Delta_EVPA = append(Delta_EVPA, Delta_EVPA)
+                idx = argmax(abs(Delta_EVPA))
+                
+                print("X = {}".format(Kerr_X_coords[idx]))
+                print("Y = {}".format(Kerr_Y_coords[idx]))
+                
+                Subplots[0].plot(Kerr_X_coords[idx], Kerr_Y_coords[idx], "ro")
+                
+                Delta_EVPA_idx_split = self.split_EVPA(EVPA = Delta_EVPA)
+                
+                for idx in range(len(Delta_EVPA_idx_split) - 1):
+                    Subplots[5].plot(Image_azimuth[Delta_EVPA_idx_split[idx] : Delta_EVPA_idx_split[idx + 1]] - Image_azimuth[0], Delta_EVPA[Delta_EVPA_idx_split[idx] : Delta_EVPA_idx_split[idx + 1]], "C0")       
+                    Subplots[5].plot(Image_azimuth[Delta_EVPA_idx_split[idx + 1] - 1 : Delta_EVPA_idx_split[idx + 1] + 1] - Image_azimuth[0], Delta_EVPA[Delta_EVPA_idx_split[idx + 1] - 1 : Delta_EVPA_idx_split[idx + 1] + 1], "C0--")               
+                           
+                Delta_EVPA_max = max(Delta_EVPA)
+                Delta_EVPA_min = min(Delta_EVPA)
+                
+                Fig_padding = 0.1 * abs(Delta_EVPA_max - Delta_EVPA_min)
+                
+                Subplots[5].set_ylim(Delta_EVPA_min - Fig_padding, Delta_EVPA_max + Fig_padding)
+                Subplots[5].set_aspect(0.91 * 2 * pi  / (Delta_EVPA_max - Delta_EVPA_min + 2 * Fig_padding))
+                
+                Subplots[5].minorticks_on()
+                Subplots[5].tick_params(axis = "both", direction = "out")
+                Subplots[5].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
+                Subplots[5].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
             
-            Subplots[4].plot(Image_azimuth - Image_azimuth[0],Numerical_Intensity - Kerr_Intensity)
-            Delta_I_max = max(Numerical_Intensity - Kerr_Intensity)
-            Delta_I_min = min(Numerical_Intensity - Kerr_Intensity)
-            
-            Fig_padding = 0.1 * abs(Delta_I_max - Delta_I_min)
-            
-            Subplots[4].set_ylim(Delta_I_min - Fig_padding, Delta_I_max + Fig_padding)
-            Subplots[4].set_aspect(0.91 * 2 * pi  / (Delta_I_max - Delta_I_min + 2 * Fig_padding))
-            
-            Subplots[4].minorticks_on()
-            Subplots[4].tick_params(axis = "both", direction = "out")
-            Subplots[4].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
-            Subplots[4].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
-            
-            Subplots[4].set_xlim(0, 2 * pi)
-            Subplots[4].set_title(r"$\Delta I$ [-]", fontsize = self.fontsize)
-            Subplots[4].set_xlabel(r"Image azimuth [rad]", fontsize = self.fontsize)
-            Subplots[4].set_xticks(x_ticks)
-            Subplots[4].set_xticklabels(x_tick_labels)
-               
-            Subplots[4].ticklabel_format(style = 'sci', axis = 'y', scilimits=(0, 0))
-            Subplots[4].yaxis.set_major_locator(MaxNLocator(nbins = 6))
-            
-            """" ================================================================================================================================================== """
-            
-            Subplots[5].plot(Image_azimuth - Image_azimuth[0],arctan(-Numerical_Pol_x / Numerical_Pol_y) - arctan(-Kerr_Pol_x / Kerr_Pol_y))
-            Delta_EVPA_max = max(arctan(-Numerical_Pol_x / Numerical_Pol_y) - arctan(-Kerr_Pol_x / Kerr_Pol_y))
-            Delta_EVPA_min = min(arctan(-Numerical_Pol_x / Numerical_Pol_y) - arctan(-Kerr_Pol_x / Kerr_Pol_y))
-            
-            Fig_padding = 0.1 * abs(Delta_EVPA_max - Delta_EVPA_min)
-            
-            Subplots[5].set_ylim(Delta_EVPA_min - Fig_padding, 1.1 * Delta_EVPA_max + Fig_padding)
-            Subplots[5].set_aspect(0.91 * 2 * pi  / (Delta_EVPA_max - Delta_EVPA_min + 2 * Fig_padding))
-            
-            Subplots[5].minorticks_on()
-            Subplots[5].tick_params(axis = "both", direction = "out")
-            Subplots[5].tick_params(which = 'minor', length = 4, labelsize = self.fontsize)
-            Subplots[5].tick_params(which = 'major', length = 8, labelsize = self.fontsize) 
+                Subplots[5].set_xlim(0, 2 * pi)
+                Subplots[5].set_title(r"$\Delta$EVPA [rad]", fontsize = self.fontsize)
+                Subplots[5].set_xlabel(r"Image azimuth [rad]", fontsize = self.fontsize)
+                Subplots[5].set_xticks(x_ticks)
+                Subplots[5].set_xticklabels(x_tick_labels)
+                
+                Subplots[5].yaxis.set_major_locator(MaxNLocator(nbins = 6))
+                
+                idx = argmax(abs(Delta_EVPA))
+                print("Azimuth at max Delta EVPA = {} pi".format(round(Image_azimuth[idx] / pi, 2)))
+                print("Delta EVPA max = {} pi".format(round(Delta_EVPA[idx] / pi, 4)))
         
-            Subplots[5].set_xlim(0, 2 * pi)
-            Subplots[5].set_title(r"$\Delta$EVPA [rad]", fontsize = self.fontsize)
-            Subplots[5].set_xlabel(r"Image azimuth [rad]", fontsize = self.fontsize)
-            Subplots[5].set_xticks(x_ticks)
-            Subplots[5].set_xticklabels(x_tick_labels)
-            
-            Subplots[5].yaxis.set_major_locator(MaxNLocator(nbins = 6))
-            
-            
+    def split_EVPA(self, EVPA):
 
+        DISCONTINUITY_TRESHOLD = pi / 2
+
+        branch_index = []
+        branch_index.append(0)
+
+        for index, _ in enumerate(EVPA):
+
+            if index > 1 and abs(EVPA[index] - EVPA[index - 1]) > DISCONTINUITY_TRESHOLD:
+
+                branch_index.append(index)
+
+        branch_index.append(len(EVPA) - 1)
+
+        return branch_index
+
+        
 if __name__ == "__main__":
     
-    plt.rcParams['axes.titlepad'] = 20
+    plt.rcParams['axes.titlepad'] = 15
     plt.rcParams['text.usetex'] = True
-    plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
     plt.rcParams['font.family'] = 'serif' # or 'sans-serif' or 'monospace'
     plt.rcParams['font.serif'] = 'cmr10'
     plt.rcParams['font.sans-serif'] = 'cmss10'
     plt.rcParams['font.monospace'] = 'cmtt10'
     plt.rcParams["axes.formatter.use_mathtext"] = True
+    plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}' + '\n' + r'\usepackage{xcolor}'
     
-    Sim_path = "E:\\Numerical_metric_runs\\Zero_curvature\\Config_II_70_deg_B_0.87_0.0_0.5_min_order_0_max_order_0_zoom"
+    horizon_radii = [0.01, 0.2] 
     
+    # for idx, Model in enumerate(["II", "V"]):
+        
+    #     for B_field in [[0.0, 1.0, 0.0]]:
+        
+    #         for inc in [17]:
+    
+    #             Sim_path = "E:\\Numerical_metric_runs\\Zero_curvature\\Config_{}_{}_deg_B_{}_{}_{}_min_order_0_max_order_0".format(Model, inc, B_field[0], B_field[1], B_field[2])
+                
+    #             Visualizer_instance = Polarization_visuzlier(Sim_path = Sim_path, 
+    #                                                         fontsize = 22, 
+    #                                                         Fig_output_path = "E:\\Numerical_metric_runs\\Zero_curvature\\Figures\\Config_{}_{}_deg_min_order_0_max_order_0".format(Model, inc),
+    #                                                         Numerical_title = r"Model {}$^0_{{{}}}$".format(Model, horizon_radii[idx]))
+                
+    #             Visualizer_instance.Plot_polarization_ticks(Pixel_skip_step = 32, Scale_factor = 0.75)
+                
+    Sim_path = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/Numerical_metric_runs/Zero_curvature/Config_V_70_deg_B_0.0_1.0_0.0_min_order_0_max_order_0_zoom"
+                
     Visualizer_instance = Polarization_visuzlier(Sim_path = Sim_path, 
-                                                 fontsize = 22, 
-                                                 Fig_output_path = "E:\\Numerical_metric_runs\\Zero_curvature\\Figures\\Config_II_70_deg_min_order_0_max_order_0",
-                                                 Numerical_title = r"Configuration II$^0_{0.01}$")
-    
-    # Visualizer_instance.Plot_polarization_ticks(Pixel_skip_step = 32, Scale_factor = 0.75)
-    
+                                                            fontsize = 22, 
+                                                            Fig_output_path = "E:\\Numerical_metric_runs\\Zero_curvature\\Figures\\Config_II_70_deg_min_order_0_max_order_0",
+                                                            Numerical_title = r"Model V$^0_{0.2}$")
+                    
     Figure = plt.figure(figsize = (13, 10.5), layout = "compressed")
     
     Figure.suptitle(r"$i = {}$, $B_r = {}$, $B_\theta = {}$, $B_\phi = {}$".format(float(Visualizer_instance.Numerical_sim_parser.Simulation_metadata["Observer Inclination [Deg]"]),
-                                                                                       Visualizer_instance.B_r,
-                                                                                       Visualizer_instance.B_theta,
-                                                                                       Visualizer_instance.B_phi),
+                                                                                         Visualizer_instance.B_r,
+                                                                                         Visualizer_instance.B_theta,
+                                                                                         Visualizer_instance.B_phi),
                     fontsize = Visualizer_instance.fontsize + 4,
-                    bbox = dict(facecolor = 'none', edgecolor = 'black', boxstyle = 'round, pad = 0.2'),
-                    y = 1)
+                    bbox = dict(facecolor = 'none', edgecolor = 'black', boxstyle = 'round, pad = 0.3'),
+                    y = 0.99)
     
     Numerical_subplot = Figure.add_subplot(231)
     Kerr_subplot = Figure.add_subplot(234)
     Intensity_subplot = Figure.add_subplot(232)
     Delta_Intensity_subplot = Figure.add_subplot(235)
     EVPA_subplot = Figure.add_subplot(233)
-    
     Delta_EVPA_subplot = Figure.add_subplot(236)
     
     Subplots = [Numerical_subplot, Kerr_subplot, Intensity_subplot, EVPA_subplot, Delta_Intensity_subplot, Delta_EVPA_subplot]
     
-    Visualizer_instance.get_image_at_fixed_source_radius(r_source = 0.6810, 
-                                                         tolerance = 0.01, 
-                                                         length_step = 0.21, 
-                                                         Scale_factor = 0.75, 
-                                                         axis_limits = [-3, 4.5, -2, 4.5],
-                                                         Tick_visualization = True,
-                                                         Curve_visualization = False,
-                                                         Subplots = Subplots)
+    for orbit_mult in [1]:
+        
+        Visualizer_instance.get_image_at_fixed_source_radius(r_source = orbit_mult * 1.2121, 
+                                                            tolerance = 0.02, 
+                                                            num_points = 65, 
+                                                            Scale_factor = 1.25,  
+                                                            axis_limits = [-3, 4.5, -2, 4.5],
+                                                            Tick_visualization = True,
+                                                            Curve_visualization = False,
+                                                            Subplots = Subplots)
+        
+        Visualizer_instance.get_image_at_fixed_source_radius(r_source = orbit_mult * 1.2121, 
+                                                            tolerance = 0.0003, 
+                                                            num_points = 65, 
+                                                            Scale_factor = 1.25, 
+                                                            axis_limits = [-4, 4, -2, 4],
+                                                            Tick_visualization = False,
+                                                            Curve_visualization = True,
+                                                            Subplots = Subplots)
     
-    Visualizer_instance.get_image_at_fixed_source_radius(r_source = 0.6810, 
-                                                         tolerance = 0.0005, 
-                                                         length_step = 0.005, 
-                                                         Scale_factor = 0.75, 
-                                                         axis_limits = [-3, 4.5, -2, 4.5],
-                                                         Tick_visualization = False,
-                                                         Curve_visualization = True,
-                                                         Subplots = Subplots)
+    # # Visualizer_instance.get_image_at_fixed_source_radius(r_source = 5 * 1.2121, 
+    # #                                                      tolerance = 0.02, 
+    # #                                                      length_step = 0.35, 
+    # #                                                      Scale_factor = 1.75, 
+    # #                                                      axis_limits = [-15, 15, -5, 11],
+    # #                                                      Tick_visualization = True,
+    # #                                                      Curve_visualization = False,
+    # #                                                      Subplots = Subplots,
+    # #                                                      Source_coords = "Kerr",
+    # #                                                      Plot_disk = False)
+    
+    # # Visualizer_instance.get_image_at_fixed_source_radius(r_source = 5 * 1.2121, 
+    # #                                                      tolerance = 0.005,
+    # #                                                      length_step = 0.006, 
+    # #                                                      Scale_factor = 1.75, 
+    # #                                                      axis_limits = [-15, 15, -5, 11],
+    # #                                                      Tick_visualization = False,
+    # #                                                      Curve_visualization = True,
+    # #                                                      Subplots = Subplots,
+    # #                                                      Source_coords = "Kerr",
+    # #                                                      Plot_disk = False)
  
-    # Visualizer_instance.get_image_at_fixed_source_radius_numerical_only(r_source = 0.24029573045223954249, 
-    #                                                                     tolerance = 0.002, 
-    #                                                                     length_step = 0.21, 
-    #                                                                     Scale_factor = 0.75, 
-    #                                                                     axis_limits = [-4, 4, -4, 4])
+    # # Visualizer_instance.get_image_at_fixed_source_radius_numerical_only(r_source = 0.24029573045223954249, 
+    # #                                                                     tolerance = 0.002, 
+    # #                                                                     length_step = 0.21, 
+    # #                                                                     Scale_factor = 0.75, 
+    # #                                                                     axis_limits = [-4, 4, -4, 4])
     
-    if not os.path.exists(Visualizer_instance.Output_path):
-        os.makedirs(Visualizer_instance.Output_path)
+    # # if not os.path.exists(Visualizer_instance.Output_path):
+    # #     os.makedirs(Visualizer_instance.Output_path)
             
-    Figure.savefig(Visualizer_instance.Output_path + "\\ISCO_zoom_B_{}_{}_{}.png".format(Visualizer_instance.B_r,
-                                                                                         Visualizer_instance.B_theta,
-                                                                                         Visualizer_instance.B_phi), bbox_inches = 'tight')
+    # Figure.savefig(Visualizer_instance.Output_path + "\\ISCO_zoom_B_{}_{}_{}_v3.pdf".format(Visualizer_instance.B_r,
+    #                                                                                          Visualizer_instance.B_theta,
+    #                                                                                          Visualizer_instance.B_phi), bbox_inches = 'tight',
+    #                                                                                          pad_inches = 0.15)
     
     plt.show()

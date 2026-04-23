@@ -73,7 +73,6 @@ double* Wormhole_class::get_ISCO() {
 double* Wormhole_class::get_Photon_Sphere() {
 
     double M = this->Mass;
-    double a = this->Spin_Param;
 
     static double photon_orbit[2]{};
 
@@ -320,7 +319,6 @@ void Wormhole_class::get_EOM(const double* const State_Vector, double* const Der
     double omega = 2 * this->Spin_Param * this->Mass * this->Mass / sqrt_r2 / sqrt_r2 / sqrt_r2;
     double d_ell_omega = -3 * omega / sqrt_r2 * d_ell_r;
 
-    double exponent = -1 / sqrt_r2 - this->Redshift_Param / (sqrt_r2 * sqrt_r2);
     double N = exp(-this->Mass / sqrt_r2 - this->Redshift_Param * this->Mass * this->Mass / sqrt_r2 / sqrt_r2);
     double d_ell_N = N * (1 / (sqrt_r2 * sqrt_r2) + 2 * this->Redshift_Param / (sqrt_r2 * sqrt_r2 * sqrt_r2)) * d_ell_r;
 

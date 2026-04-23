@@ -156,6 +156,9 @@ int main(int argument_count, char** cmd_line_args) {
         s_Ray_results.RK_integrator_debug_log.N_steps_rejected = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
         s_Ray_results.RK_integrator_debug_log.State_error_history = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
 
+        s_Ray_results.Polarization_debug_log.PW_constant[0] = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
+        s_Ray_results.Polarization_debug_log.PW_constant[1] = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
+
         for (int index = I; index < e_Stokes_param_num; index++) {
 
             s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();

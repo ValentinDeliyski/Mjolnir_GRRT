@@ -110,7 +110,7 @@ struct Disk_model_parameters_type {
     /*! @brief Specifies the relative density at which we start evaluating the emission of the disk. */
     double Threshold_relative_density{};
 
-    /* ========= The density profile parameters ========= */
+    /* ========= The disk profile parameters ========= */
 
     Common_RIAF_params_type Common_RIAF_params{};
 
@@ -119,6 +119,10 @@ struct Disk_model_parameters_type {
     Novikov_Thorne_params_type Novikov_Thorne_params{};
 
     Numerical_disk_params_type Numerical_disk_params{};
+
+    EOS_params_type Thermal_EOS_params{};
+
+    EOS_params_type Mag_Press_EOS_params{};
 
 };
 
@@ -766,7 +770,7 @@ struct Observer_parameters_type {
 struct File_manager_parameters {
 
     /*! @brief The full path for the input file for simulation mode 2. */
-    std::string Sim_mode_2_imput_path{};
+    std::string Sim_mode_1_imput_path{};
 
     /*! @brief The full path for the output file directory. The actual simulation results get stored in the
        ...Output_file_directory\\Simulation_name folder. */
@@ -818,10 +822,10 @@ struct Initial_conditions_type {
     Order_counging_enums e_Order_counting_scheme{};
 
     /*! @brief Initial condition for simulation mode 3. The image X coordiante is used to compute the initial azimuthal momentum. */
-    double Sim_mode_3_X_init{};
+    double Sim_mode_2_X_init{};
 
     /*! @brief Initial condition for simulation mode 3. The image Y coodirnate is used to compute the initial polar momentum. */
-    double Sim_mode_3_Y_init{};
+    double Sim_mode_2_Y_init{};
 
     /*! @brief The initial photon momentum. */
     double Init_Momentum[4]{};
@@ -834,7 +838,7 @@ struct Initial_conditions_type {
 
     /*! @brief The number of metric parameter values that will be used during simulation mode 2.
        I usually use this mode to do "parameter sweeps", so this comes in handy when parsing the results. */
-    int Sim_mode_2_param_value_number{};
+    int Sim_mode_1_param_value_number{};
 
     /*! @brief The number of samples of the electron pitch angle to use when averaging the emission.
        NOTE: This only has an effect if Average_electron_pitch_angle is set to "ture". */
@@ -919,6 +923,14 @@ struct Adaptive_RK_Integrator_debug_type {
 
 };
 
+struct Polarization_debug_type {
+
+    double* Polarization_fourvec[4];
+
+    double* PW_constant[2];
+
+};
+
 struct Results_type {
 
     /*! @brief The struct that tholds the metric parameters. */
@@ -929,6 +941,8 @@ struct Results_type {
 
     /*! @brief The struct that holds the adaptive integrator debug parameters log. */
     Adaptive_RK_Integrator_debug_type RK_integrator_debug_log{};
+
+    Polarization_debug_type Polarization_debug_log{};
 
     /*! @brief Array that holds the integrated intensity for each polarization component. */
     double Intensity[e_Stokes_param_num]{};

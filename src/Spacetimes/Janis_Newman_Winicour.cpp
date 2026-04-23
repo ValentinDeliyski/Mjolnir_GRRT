@@ -190,7 +190,6 @@ Metric_type JNW_class::get_d2r_local_metric(const double* const Local_State_Vect
 
     double r2 = r * r;
     double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
 
     double r_singularity = 2 * this->Mass / this->Gamma;
 
@@ -224,7 +223,6 @@ void JNW_class::get_EOM(const double* const State_vector, double* const Derivati
     double sin2 = sin1 * sin1;
 
     double cos1 = cos(State_vector[e_theta]);
-    double cos2 = cos1 * cos1;
 
     double r_singularity = 2 * this->Mass / this->Gamma;
 
@@ -268,7 +266,7 @@ bool JNW_class::terminate_integration(const double* const State_vector) {
 };
 
 
-void JNW_class::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void JNW_class::Convert_global_to_local_coords(const double* const, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 
@@ -298,7 +296,7 @@ void JNW_class::Convert_global_to_local_coords(const double* const State_Vector_
 
 }
 
-void JNW_class::Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void JNW_class::Convert_local_to_global_coords(const double* const, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 

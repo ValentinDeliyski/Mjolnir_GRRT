@@ -9,7 +9,7 @@ sys.path.append(parent_directory)
 
 from Mjolnir_Configurator import Simulation_configurator
 from Support_functions.Parsers import Units_class, Simulation_Parser
-from Support_functions.Spacetimes_new import Kerr
+from Support_functions.Spacetimes_new import Kerr, Gauss_Bonnet
 
 from numpy import pi, tan, sqrt, linspace, arctan, array
 from numpy.typing import NDArray
@@ -23,6 +23,8 @@ class Simulation:
     def __init__(self):
         
         self.Sim_config = Simulation_configurator()
+        Kerr_instance = Kerr(mass = 1, spin_param = 0.98)
+        Gauss_Bonnet_instance = Gauss_Bonnet(Param = 0.48)
         
         self.Sim_config.simulation_mode = {"Value": 3, "Unit": "[-]"} 
         
@@ -32,44 +34,25 @@ class Simulation:
         self.Sim_config.max_image_order = {"Value": 10, "Unit": "[-]"}
 
         """ ================================================== The Numerical Metric ================================================== """
-
-        self.ADM_Mass = 0.320009597074143
-        self.ADM_Ang_Momentum = 0.12599589859284263
         
-        self.r_ISCO = 0.63296637310928431723
-        
-        self.Sim_config.metric_parameters.Metric_type    = {"Value": "Numerical", "Unit": "[-]"}
-        
-        self.Sim_config.metric_parameters.Mass           = {"Value": self.ADM_Mass, "Unit": "[M]"}
-        self.Sim_config.metric_parameters.Horizon_radius = {"Value": 0.3, "Unit": "[G/c^2]"}
-        self.Sim_config.metric_parameters.Spin           = {"Value": self.ADM_Ang_Momentum / self.ADM_Mass, "Unit": "[M]"}
-        
-        self.Sim_config.metric_parameters.Scattering_radius = {"Value": 300 * self.ADM_Mass, "Unit": "[M]"} 
-        self.Sim_config.metric_parameters.Numerical_metric_anzatz_type = {"Value": "Anzatz_1", "Unit": "[-]"} 
-        
-        self.Sim_config.metric_parameters.Distance_to_singular_point = {"Value": 1e-3, "Unit": "[M]"}
+        self.Sim_config.metric_parameters.Metric_type = {"Value": "Einstein-Gauss-Bonnet", "Unit": "[-]"}
+        self.Sim_config.metric_parameters.Spin        = {"Value": 0.98, "Unit": "[M]"}
         
         """ ================================================ Observer ================================================ """
    
-        self.Sim_config.observer.Distance    = {"Value": 1e4 * self.ADM_Mass, "Unit": "[M]"}
+        self.Sim_config.observer.Distance    = {"Value": 1e4 , "Unit": "[M]"}
         self.Sim_config.observer.Inclination = {"Value": 80 * pi / 180, "Unit": "[Rad]"}
         self.Sim_config.observer.Obs_frequency = {"Value": 230e9, "Unit": "[Hz]"}
         
         self.Sim_config.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[Hz]"}
         self.Sim_config.observer.Use_angular_coords = {"Value": 1, "Unit": "[M]"}
         
-        self.Nominal_Image_x_max = 15 * self.ADM_Mass
-        self.Nominal_Image_y_max = 15 * self.ADM_Mass
-        
-        self.Nominal_Image_x_angle_max = arctan(self.Nominal_Image_x_max / self.Sim_config.observer.Distance["Value"])
-        self.Nominal_Image_y_angle_max = arctan(self.Nominal_Image_y_max / self.Sim_config.observer.Distance["Value"])
-         
         """ ================================================== Disk ================================================== """
         
         self.Sim_config.disk_model.Disk_Model = {"Value": "Novikov-Thorne", "Unit": "[-]"}
         
-        self.Sim_config.disk_model.r_in_NT_disk = {"Value": self.r_ISCO, "Unit": "[M]"} 
-        self.Sim_config.disk_model.r_out_NT_disk = {"Value": 15 * self.ADM_Mass, "Unit": "[M]"} 
+        self.Sim_config.disk_model.r_in_NT_disk = {"Value": Gauss_Bonnet_instance.get_ISCO()[0], "Unit": "[M]"} 
+        self.Sim_config.disk_model.r_out_NT_disk = {"Value": 25, "Unit": "[M]"} 
         
         """ =============================================== Integrator =============================================== """
         
@@ -95,7 +78,7 @@ if __name__ == "__main__":
     
     Sim_parser_instance = Simulation_Parser("C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Debug_simulation\\Debug_log")
     
-    plt.title(r"Config $VI^{0}_{0.3}$ $F(r)$")
+    plt.title(r"Kerr $F(r)$, $a = 0.98M$")
     plt.plot(array(Sim_parser_instance.NT_Flux_r_coords), array(Sim_parser_instance.NT_Flux))
-    plt.xlim([0, 3])
+    plt.xlim([0, 10])
     plt.show()

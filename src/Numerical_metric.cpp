@@ -768,8 +768,6 @@ Metric_type Numerical_metric::get_dtheta_metric(const double* const Local_State_
     /* ---- References for the sake of readability ---- */
 
     const double& W = s_Potentials.W;
-    const double& exp_2F_0 = s_Potentials.exp_2F_0;
-    const double& exp_2F_1 = s_Potentials.exp_2F_1;
     const double& exp_2F_2 = s_Potentials.exp_2F_2;
 
     const double& dtheta_W = s_dtheta_Potentials.W;
@@ -992,7 +990,7 @@ bool Numerical_metric::terminate_integration(const double* const State_vector) {
     return scatter or hit_horizon;
 };
 
-void Numerical_metric::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void Numerical_metric::Convert_global_to_local_coords(const double* const, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 
@@ -1022,7 +1020,7 @@ void Numerical_metric::Convert_global_to_local_coords(const double* const State_
 
 }
 
-void Numerical_metric::Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void Numerical_metric::Convert_local_to_global_coords(const double* const, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 

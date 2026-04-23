@@ -387,7 +387,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
 
             Transfer_functions_type temp_Transfer_functions{};
 
-            this->get_synchrotron_transfer_fit_functions(e_Thermal_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Sim_Context, &temp_Transfer_functions);
+            this->get_synchrotron_transfer_fit_functions(e_Thermal_ensamble, p_Emission_medium_state, &Transfer_args_corrected, &temp_Transfer_functions);
 
             // The U component is 0 by definition
             p_Transfer_functions->Emission_functions[I] += temp_Transfer_functions.Emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
@@ -427,7 +427,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
         Transfer_args_corrected.sin_pitch_angle = sin_pitch_angle;
         Transfer_args_corrected.cos_pitch_angle = cos(pitch_angle);
 
-        this->get_synchrotron_transfer_fit_functions(e_Thermal_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Sim_Context, p_Transfer_functions);
+        this->get_synchrotron_transfer_fit_functions(e_Thermal_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Transfer_functions);
 
     }
 
@@ -504,7 +504,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
 
             Transfer_functions_type temp_Transfer_functions{};
 
-            this->get_synchrotron_transfer_fit_functions(e_Kappa_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Sim_Context, &temp_Transfer_functions);
+            this->get_synchrotron_transfer_fit_functions(e_Kappa_ensamble, p_Emission_medium_state, &Transfer_args_corrected, &temp_Transfer_functions);
 
             // The U component is 0 by definition
             p_Transfer_functions->Emission_functions[I] += temp_Transfer_functions.Emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
@@ -539,7 +539,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
         Transfer_args_corrected.sin_emission_angle = sin_pitch_angle;
         Transfer_args_corrected.cos_emission_angle = cos(pitch_angle);
 
-        this->get_synchrotron_transfer_fit_functions(e_Kappa_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Sim_Context, p_Transfer_functions);
+        this->get_synchrotron_transfer_fit_functions(e_Kappa_ensamble, p_Emission_medium_state, &Transfer_args_corrected, p_Transfer_functions);
 
     }
 
@@ -572,7 +572,7 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
     Transfer_args.frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency / Transfer_args.redshift;
     Transfer_args.f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
 
-    this->get_synchrotron_transfer_fit_functions(e_Phenomenological_ensamble, p_Emission_medium_state, &Transfer_args, p_Sim_Context, p_Transfer_functions);
+    this->get_synchrotron_transfer_fit_functions(e_Phenomenological_ensamble, p_Emission_medium_state, &Transfer_args, p_Transfer_functions);
 
     /* Account for the relativistic doppler effect via the redshift. */
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
@@ -776,13 +776,11 @@ void Emission_models_class::get_debug_synchrotron_functions(Transfer_functions_t
 void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensamble_enums e_Ensamble_type,
                                                                            const Emission_medium_state_type* const p_Emission_medium_state,
                                                                            const void* const p_Transfer_args,
-                                                                           const Simulation_Context_type* const p_Sim_Context,
                                                                            Transfer_functions_type* const p_Transfer_functions) const {
 
     /* The dimensionless frequency needs to get extracted from the p_Transfer_args pointer, but it first needs to be recast to not-void.
        This happens in the scopes of the switch statemeent below, so I create a variable here to store it. */
     double  frequency{};
-    double& obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
     switch (e_Ensamble_type) {
 

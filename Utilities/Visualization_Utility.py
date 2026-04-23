@@ -3,31 +3,42 @@ import matplotlib.pyplot as plt
 from Support_functions.Parsers import*
 
 if __name__ == "__main__":
-    
-    fig_title = r"Numerical Config VII$^{-5}_{0.05}$"
-            
+
     plt.rcParams['axes.titlepad'] = 20
     plt.rcParams['text.usetex'] = True
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
-    EHT_Array           = ["ngEHT"]
-    Sim_path            = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Utilities/Wormhole_sim_paper/M87_Wormhole_a_0.9_redshift_2_obsf_230/Wormhole"
-    Sim_Frequency_Bins  = ["230"] # In units of [GHz]
+    for a in [0, 0.98, 2]:
+        
+        for gamma in [5]:
+                       
+            fig_title = rf"$a = {a}$, $\gamma = {gamma}$, $i = 80^\circ$"
+                    
+            EHT_Array           = ["ngEHT"]
+            Sim_path            = f"C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Wormhole_sim_paper\\Wormhole_a_{a}_redshift_{gamma}_inc_20\\"
+            Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
-    Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
-                                Sim_Frequency_Bins = Sim_Frequency_Bins,
-                                Array              = EHT_Array,
-                                Font_size          = 32, 
-                                Label_Pad          = 8, 
-                                Common_file_name   = "Wormhole",
-                                Respect_folder_structure = False)
+            Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
+                                        Sim_Frequency_Bins = Sim_Frequency_Bins,
+                                        Array              = EHT_Array,
+                                        Font_size          = 32, 
+                                        Label_Pad          = 8, 
+                                        Common_file_name   = "Wormhole",
+                                        Respect_folder_structure = False)
 
-    Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
-                                       Save_Figures          = False, 
-                                       Radiation_Component   = "Stokes I",
-                                       Custom_fig_title      = fig_title,
-                                       Obs_effective_distance = Visualizer.Units.M87_DISTANCE_GEOMETRICAL,
-                                       Colormap = "hot")
+            for Radiation_Component in ["Pattern", "NT Pow Flux", "NT Redshift", "NT Log Flux", "NT Flux"]:
+
+                Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
+                                                   Save_Figures          = True, 
+                                                   Radiation_Component   = Radiation_Component,
+                                                   Custom_fig_title      = fig_title,
+                                                   Use_angular_coords    = False,
+                                                   Obs_effective_distance = Visualizer.Units.M87_DISTANCE_GEOMETRICAL,
+                                                   Power = 10,
+                                                   Add_Intensity_Slice = False,
+                                                   Colormap_str = "hot")
+
+        plt.close()
 
     # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
     #                               Contour_specs      = [], 
@@ -68,4 +79,4 @@ if __name__ == "__main__":
 
                
     # plt.close("all")
-    plt.show()
+    # plt.show()

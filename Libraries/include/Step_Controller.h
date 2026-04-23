@@ -54,8 +54,6 @@ public:
 
         for (int idx = 0; idx < State_size; idx++) {
 
-            auto test = std::abs(State_Error_Vector[idx]);
-
             Total_State_Error += std::pow(std::abs(State_Error_Vector[idx]) / (Abs_tol + std::abs(State_Vector[idx]) * Rel_tol), 2);
 
         }

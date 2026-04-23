@@ -12,7 +12,7 @@ File_manager_class::File_manager_class(Initial_conditions_type *p_Initial_Condit
     this->p_Initial_Conditions  = p_Initial_Conditions;
     this->Truncate_files        = p_Initial_Conditions->File_manager_params.Truncate_files;
 
-    this->sim_mode_2_ray_number = 0;
+    this->sim_mode_1_ray_number = 0;
 
     this->Output_File_Path = "";
     this->Output_File = new std::ofstream();
@@ -26,16 +26,16 @@ void File_manager_class::get_geodesic_data(double J_data[], double p_theta_data[
     double J_input{};
     double P_input{};
 
-    geodesic_data.open(this->p_Initial_Conditions->File_manager_params.Sim_mode_2_imput_path, std::ios::in);
+    geodesic_data.open(this->p_Initial_Conditions->File_manager_params.Sim_mode_1_imput_path, std::ios::in);
 
     while (true) {
 
         if (geodesic_data >> J_input >> P_input) {
 
-            J_data[this->sim_mode_2_ray_number] = J_input;
-            p_theta_data[this->sim_mode_2_ray_number] = P_input;
+            J_data[this->sim_mode_1_ray_number] = J_input;
+            p_theta_data[this->sim_mode_1_ray_number] = P_input;
             
-            this->sim_mode_2_ray_number += 1;
+            this->sim_mode_1_ray_number += 1;
         }
 
         if (geodesic_data.eof()) {
@@ -75,15 +75,15 @@ void File_manager_class::write_observer_metadata(std::ofstream* Output_file) {
 
     case 2:
 
-        *Output_file << "Number Of Photons Per Param Value: " << this->sim_mode_2_ray_number << '\n'
-                     << "Number Of Param Values: " << p_Initial_Conditions->Sim_mode_2_param_value_number << '\n';
+        *Output_file << "Number Of Photons Per Param Value: " << this->sim_mode_1_ray_number << '\n'
+                     << "Number Of Param Values: " << p_Initial_Conditions->Sim_mode_1_param_value_number << '\n';
 
         break;
 
     case 3:
 
-        *Output_file << "X_init [M] = " << this->p_Initial_Conditions->Sim_mode_3_X_init << "\n" 
-                     << "Y_init [M] = " << this->p_Initial_Conditions->Sim_mode_3_Y_init << "\n";
+        *Output_file << "X_init [M] = " << this->p_Initial_Conditions->Sim_mode_2_X_init << "\n" 
+                     << "Y_init [M] = " << this->p_Initial_Conditions->Sim_mode_2_Y_init << "\n";
 
         break;
 
@@ -631,6 +631,12 @@ void File_manager_class::write_simulation_metadata() {
                           << "ZAMO Polarization vector x [-],"
                           << "ZAMO Polarization vector y [-],";
 
+       if (Spacetime_enums::Kerr == this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
+
+            *this->Output_File << "PW Constant 1 [-]," << "PW Constant 2 [-],";
+
+       }
+
     }
 
     *this->Output_File << '\n';
@@ -862,6 +868,17 @@ void File_manager_class::log_photon_path(Results_type* p_Ray_results) {
 
             }
 
+
+            if (Spacetime_enums::Kerr == this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
+
+                for (int Pol_component = 0; Pol_component < 2; Pol_component++) {
+
+                    *this->Output_File << 0.0 << ",";
+
+                }
+
+            }
+
         }
         else {
 
@@ -876,6 +893,16 @@ void File_manager_class::log_photon_path(Results_type* p_Ray_results) {
             for (int Pol_component = 0; Pol_component < 2; Pol_component++) {
 
                 *this->Output_File << p_Ray_results->Ray_log_struct.Ray_polarization_log[Pol_component][idx] << ",";
+
+            }
+
+            if (Spacetime_enums::Kerr == this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
+
+                for (int Pol_component = 0; Pol_component < 2; Pol_component++) {
+
+                    *this->Output_File << p_Ray_results->Polarization_debug_log.PW_constant[Pol_component][idx] << ",";
+
+                }
 
             }
 

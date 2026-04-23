@@ -93,3 +93,11 @@ struct Novikov_Thorne_params_type {
 	double r_out;
 
 };
+
+struct EOS_params_type {
+
+	double Polytrope_Coeff;
+
+	double Polytrope_Power;
+
+};

@@ -219,7 +219,6 @@ void Black_Hole_w_Dark_Matter_Halo_class::get_EOM(const double* const Global_Sta
     double sin2 = sin1 * sin1;
 
     double cos1 = cos(Global_State_Vector[e_theta]);
-    double cos2 = cos1 * cos1;
 
     const double& M = this->Mass;
     double r2 = r * r;
@@ -261,7 +260,7 @@ bool Black_Hole_w_Dark_Matter_Halo_class::terminate_integration(const double* co
 
 };
 
-void Black_Hole_w_Dark_Matter_Halo_class::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void Black_Hole_w_Dark_Matter_Halo_class::Convert_global_to_local_coords(const double* const, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 
@@ -291,7 +290,7 @@ void Black_Hole_w_Dark_Matter_Halo_class::Convert_global_to_local_coords(const d
 
 }
 
-void Black_Hole_w_Dark_Matter_Halo_class::Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void Black_Hole_w_Dark_Matter_Halo_class::Convert_local_to_global_coords(const double* const, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 

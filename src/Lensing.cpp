@@ -21,16 +21,6 @@
 #include <iostream>
 #include <complex>
 
-void static log_ray_emission(double Stokes_Vector[e_Stokes_param_num], double Optical_depth, Results_type* p_Ray_Results) {
-    
-    for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
-
-        p_Ray_Results->Ray_log_struct.Ray_emission_log[stokes_idx][p_Ray_Results->Ray_log_struct.Log_offset] = Stokes_Vector[stokes_idx] ;
-
-    }
-
-}
-
 Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
                                              double inv_Tetrad[4][4],
                                              const Simulation_Context_type* const p_Sim_Context,
@@ -321,7 +311,7 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
     double& r_in = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_in;
     double& r_out = p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.r_out;
 
-    if (abs(State_at_event_global[e_r]) < r_out and abs(State_at_event_global[e_r]) > r_in and !p_Ray_results->NT_Disk_found) {
+    if (State_at_event_local[e_r] < r_out and State_at_event_local[e_r] > r_in and !p_Ray_results->NT_Disk_found) {
 
         // Set a bunch of counters that keep track where on the photon trajectory the log from the Novikov-Thorne disk is supposed to start
         // This variable gets used in the Emission_Integrator_class a bit down to init the spline of the geodesic
@@ -479,7 +469,7 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     p_Ray_results->NT_Disk_found = false;
 
-    while (!Geodesic_Integrator.integration_complete) {
+    while (not Geodesic_Integrator.integration_complete) {
 
         Geodesic_Integrator.Propagate_ray();
 
@@ -510,15 +500,35 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
 
     }
 
+
     p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset + 1;
     p_Ray_results->Metric_parameters      = p_Sim_Context->p_Init_Conditions->Metric_parameters;
 
-    interpolate_celestial_sphere_crossing(Geodesic_Integrator.get_current_State_Vector_global(),
-                                          Geodesic_Integrator.get_previous_State_Vector_global(),
-                                          p_Sim_Context->p_Init_Conditions->Metric_parameters.Scattering_radius, 
-                                          p_Ray_results->Celestial_sphere_crossing_coords);
+    // This stupid check exists because of the wormhole. Otherwise it does not color in black the shadow region, 
+    // and I don't want to pass the global state into this function.
+    if (Geodesic_Integrator.get_current_State_Vector_global()[e_r] < 0) {
+
+        interpolate_celestial_sphere_crossing(Geodesic_Integrator.get_current_State_Vector_local(),
+                                              Geodesic_Integrator.get_previous_State_Vector_local(),
+                                              1e100, 
+                                              p_Ray_results->Celestial_sphere_crossing_coords);
+
+
+    }
+    else {
+
+        interpolate_celestial_sphere_crossing(Geodesic_Integrator.get_current_State_Vector_local(),
+                                              Geodesic_Integrator.get_previous_State_Vector_local(),
+                                              p_Sim_Context->p_Init_Conditions->Metric_parameters.Scattering_radius,
+                                              p_Ray_results->Celestial_sphere_crossing_coords);
+
+    }
 
     memcpy(p_Ray_results->Final_State_Vector, Geodesic_Integrator.get_current_State_Vector_global(), e_Full_state_size * sizeof(double));
+
+    // This is here to ensure that the last integration step (which triggered the integrator to stop) 
+    // is not taken into account when propagating the emission
+    p_Ray_results->Ray_log_struct.Log_offset -= 1;
 
     /* =========== Integrate the radiative transfer equations forward along the ray for the RIAF models =========== */
 

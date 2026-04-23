@@ -139,7 +139,7 @@ private:
 
     Return_Values Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded);
 
-    void Run_Explicit_Runge_Kutta(Integrator_enums e_Active_integrator);
+    void Run_Explicit_Runge_Kutta();
 
     void Run_ESDIRK54();
 

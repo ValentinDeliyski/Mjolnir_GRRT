@@ -51,7 +51,7 @@ class Novikov_Thorne_Model_class {
 
     public:
      
-        double* Flux_integral;
+        double* Flux_integral_array;
         double* Flux_r_coords;
 
         /* @brief Pointer to the spacetime class. Stored in here so one does not have to pass it in as arguments to the functions.*/

@@ -13,7 +13,6 @@
 #include "General_GR_functions.h"
 #include "General_math_functions.h"
 
-
 class Emission_models_class {
 
 private:
@@ -116,7 +115,6 @@ private:
     void get_synchrotron_transfer_fit_functions(const Ensamble_enums e_Ensamble_type,
                                                  const Emission_medium_state_type* const p_Emission_medium_state,
                                                  const void* const p_Transfer_args,
-                                                 const Simulation_Context_type* const p_Sim_Context,
                                                  Transfer_functions_type* const p_Transfer_functions) const;
 
 public:

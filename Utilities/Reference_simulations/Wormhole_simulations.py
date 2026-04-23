@@ -124,13 +124,9 @@ class Wormhole_simulation_cofigurator:
         self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         
         self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.RK_abs_accuracy = {"Value": 1e-10, "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.RK_rel_accuracy = {"Value": 1e-10, "Unit": "[-]"}
-            
         self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
         
         self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
         
         """ =============== The simulation name and input file path =============== """
         self.Simulation_configurator.simulation_name = {"Value": central_object + "_Wormhole_a_{}_redshift_{}_obsf_{}".format(spin, redshift_f, int(obs_freq / 1e9)), "Unit": "[-]"}

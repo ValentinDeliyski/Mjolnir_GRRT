@@ -1,5 +1,8 @@
 ﻿#include "Input_parser.h"
+
+#pragma warning(push, 0)
 #include "tinyxml2.h"
+#pragma warning(pop)
 
 Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element, Hotspot_model_parameters_type *Hotspot_params) {
 
@@ -1395,9 +1398,9 @@ Return_Values static parse_file_manager_params(tinyxml2::XMLElement* File_manage
     tinyxml2::XMLElement* temp_param_var;
 
     // -------------------- Sim mode 2 input file path
-    temp_param_var = File_manager_element->FirstChildElement("Sim_mode_2_input_file_path");
+    temp_param_var = File_manager_element->FirstChildElement("Sim_mode_1_input_file_path");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the simulation mode 2 input file path!" << "\n"; return ERROR; }
-    if (temp_param_var->GetText() != nullptr) { File_manager_params->Sim_mode_2_imput_path = temp_param_var->GetText(); }
+    if (temp_param_var->GetText() != nullptr) { File_manager_params->Sim_mode_1_imput_path = temp_param_var->GetText(); }
 
     // -------------------- Output file path
     temp_param_var = File_manager_element->FirstChildElement("Output_file_directory");
@@ -1462,17 +1465,17 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     if (temp_param_var == nullptr) { std::cout << "Failed to find the simulation mode!" << "\n"; return ERROR; }
     p_Initial_conditions->Simulation_mode = static_cast<Simulation_mode_enums>(std::stoi(temp_param_var->GetText()));
 
-    temp_param_var = Root_node->FirstChildElement("Sim_mode_2_param_value_number");
+    temp_param_var = Root_node->FirstChildElement("Sim_mode_1_param_value_number");
     if (temp_param_var == nullptr) { std::cout << "Failed to find the simulation mode 2 number of metric parameter values!" << "\n"; return ERROR; }
-    p_Initial_conditions->Sim_mode_2_param_value_number = std::stoi(temp_param_var->GetText());
+    p_Initial_conditions->Sim_mode_1_param_value_number = std::stoi(temp_param_var->GetText());
 
-    temp_param_var = Root_node->FirstChildElement("Sim_mode_3_X_init");
+    temp_param_var = Root_node->FirstChildElement("Sim_mode_2_X_init");
     if (temp_param_var == nullptr) { std::cout << "Failed to find sim mode 3 X init!" << "\n"; return ERROR; }
-    p_Initial_conditions->Sim_mode_3_X_init = std::stod(temp_param_var->GetText());
+    p_Initial_conditions->Sim_mode_2_X_init = std::stod(temp_param_var->GetText());
 
-    temp_param_var = Root_node->FirstChildElement("Sim_mode_3_Y_init");
+    temp_param_var = Root_node->FirstChildElement("Sim_mode_2_Y_init");
     if (temp_param_var == nullptr) { std::cout << "Failed to find sim mode 3 Y init!" << "\n"; return ERROR; }
-    p_Initial_conditions->Sim_mode_3_Y_init = std::stod(temp_param_var->GetText());
+    p_Initial_conditions->Sim_mode_2_Y_init = std::stod(temp_param_var->GetText());
 
     temp_param_var = Root_node->FirstChildElement("Min_image_order");
     if (temp_param_var == nullptr) { std::cout << "Failed to find min image order!" << "\n"; return ERROR; }

@@ -17,7 +17,7 @@ Emission_Integrator_class::Emission_Integrator_class(const Simulation_Context_ty
     for (int idx = e_x; idx <= e_y; idx++) {
 
         this->Polarization_log[idx] = p_Ray_results->Ray_log_struct.Ray_polarization_log[idx];
-
+        this->PW_Constant_log[idx] = p_Ray_results->Polarization_debug_log.PW_constant[idx];
     }
 
     /* --------------------------------------------------- Init the counters -------------------------------------------------- */
@@ -277,13 +277,13 @@ void Emission_Integrator_class::get_Radiative_transfer_RHS(const double* const E
 
 void Emission_Integrator_class::Update_emission_log(const double* const New_Stokes_Vector) {
 
-    this->Current_emission_log_idx += 1;
-
     for (int idx = 0; idx < e_Stokes_param_num; idx++) {
 
         this->Emission_log[idx][this->Current_emission_log_idx] = New_Stokes_Vector[idx];
 
     }
+
+    this->Current_emission_log_idx += 1;
 
 }
 
@@ -414,7 +414,7 @@ void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start
     memcpy(this->Current_Pol_Vector, New_Pol_Vector, e_Stokes_param_num * sizeof(std::complex<double>));
     this->Current_Affine_Param += Step;
 
-    this->Update_polarization_log(New_Pol_Vector, End_Affine_Param);
+    this->Update_polarization_log();
 
 }
 
@@ -494,19 +494,26 @@ void Emission_Integrator_class::Map_Polarization_Vector_to_Stokes(const double i
 }
 
 
-void Emission_Integrator_class::Update_polarization_log(const std::complex<double>* const New_Polarization_Vector, const double New_affine_param) {
-
-    this->Current_polarization_log_idx += 1;
+void Emission_Integrator_class::Update_polarization_log() {
 
     std::complex<double> Polarization_vector_ZAMO[4];
-    Metric_type s_Metric = this->p_Sim_Context->p_Spacetime->get_global_metric(this->get_ray_Global_State_Vector(New_affine_param));
+    Metric_type s_Metric = this->p_Sim_Context->p_Spacetime->get_global_metric(this->get_ray_Global_State_Vector(this->Current_Affine_Param));
 
-    Contravariant_coord_to_ZAMO(&s_Metric, New_Polarization_Vector, Polarization_vector_ZAMO);
+    Contravariant_coord_to_ZAMO(&s_Metric, this->Current_Pol_Vector, Polarization_vector_ZAMO);
 
     this->Polarization_log[e_x][this->Current_polarization_log_idx] = Polarization_vector_ZAMO[e_phi].real();
     this->Polarization_log[e_y][this->Current_polarization_log_idx] = Polarization_vector_ZAMO[e_theta].real();
-}
 
+    if (Spacetime_enums::Kerr == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
+
+        this->PW_Constant_log[e_x][this->Current_polarization_log_idx] = get_Penrose_Walker_constant(this->get_ray_Global_State_Vector(this->Current_Affine_Param), this->p_Sim_Context, this->Current_Pol_Vector).real();
+        this->PW_Constant_log[e_y][this->Current_polarization_log_idx] = get_Penrose_Walker_constant(this->get_ray_Global_State_Vector(this->Current_Affine_Param), this->p_Sim_Context, this->Current_Pol_Vector).imag();
+
+    }
+
+    this->Current_polarization_log_idx += 1;
+
+}
 
 const std::complex<double>* const Emission_Integrator_class::get_current_Polarization_Vector() const {
 

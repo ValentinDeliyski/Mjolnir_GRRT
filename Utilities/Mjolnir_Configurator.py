@@ -182,7 +182,7 @@ class Emission_models():
 
 class File_manager():
 
-    __slots__ = ("Sim_mode_2_input_file_path", 
+    __slots__ = ("Sim_mode_1_input_file_path", 
                  "Output_file_directory", 
                  "Common_file_names", 
                  "Vert_shader_path", 
@@ -206,9 +206,9 @@ class Simulation_configurator:
                  "emission_pitch_angle_samples_to_average",
                  "object_mass",
                  "simulation_mode",
-                 "sim_mode_2_param_value_number",
-                 "sim_mode_3_X_init",
-                 "sim_mode_3_Y_init",
+                 "sim_mode_1_param_value_number",
+                 "sim_mode_2_X_init",
+                 "sim_mode_2_Y_init",
                  "min_image_order",
                  "max_image_order",
                  "Order_counting_scheme")
@@ -220,11 +220,11 @@ class Simulation_configurator:
                  object_mass: dict[str, float | str] = {"Value": 6.2e9, "Unit": "[M_sun]"},
                  simulation_name: dict[str, str] = {"Value": "Test_Simulation", "Unit": "[-]"},
                  simulation_mode: dict[str, int | str] = {"Value": 0, "Unit": "[-]"}, 
-                 sim_mode_2_param_value_number: dict[str, int | str] = {"Value": 1, "Unit": "[-]"},
-                 sim_mode_3_X_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
-                 sim_mode_3_Y_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
+                 sim_mode_1_param_value_number: dict[str, int | str] = {"Value": 1, "Unit": "[-]"},
+                 sim_mode_2_X_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
+                 sim_mode_2_Y_init: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
                  min_image_order: dict[str, int | str] = {"Value": 0, "Unit": "[-]"},
-                 max_image_order: dict[str, int | str] = {"Value": 10, "Unit": "[-]"},
+                 max_image_order: dict[str, int | str] = {"Value": 4, "Unit": "[-]"},
                  Order_counting_scheme: dict[str, str] = {"Value": "Turning point based", "Unit": "[-]"}):
 
         self.average_emission_pitch_angle = Average_emission_pitch_angle
@@ -233,9 +233,9 @@ class Simulation_configurator:
         self.simulation_name = simulation_name
         self.object_mass = object_mass
         self.simulation_mode = simulation_mode
-        self.sim_mode_2_param_value_number = sim_mode_2_param_value_number
-        self.sim_mode_3_X_init = sim_mode_3_X_init
-        self.sim_mode_3_Y_init = sim_mode_3_Y_init
+        self.sim_mode_1_param_value_number = sim_mode_1_param_value_number
+        self.sim_mode_2_X_init = sim_mode_2_X_init
+        self.sim_mode_2_Y_init = sim_mode_2_Y_init
         self.min_image_order = min_image_order
         self.max_image_order = max_image_order
         self.Order_counting_scheme = Order_counting_scheme
@@ -252,8 +252,8 @@ class Simulation_configurator:
     def _configure_geodesic_integrator_settings(self, Init_stepsize: dict[str, float | str] = {"Value": 1e-5, "Unit": "[M]"},
                                              RK_abs_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
                                              RK_rel_accuracy: dict[str, float | str] = {"Value": 1e-13, "Unit": "[-]"},
-                                             ESDIRK54_abs_accuracy: dict[str, float | str] = {"Value": 1e-8, "Unit": "[-]"},
-                                             ESDIRK54_rel_accuracy: dict[str, float | str] = {"Value": 1e-8, "Unit": "[-]"},
+                                             ESDIRK54_abs_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"},
+                                             ESDIRK54_rel_accuracy: dict[str, float | str] = {"Value": 1e-6, "Unit": "[-]"},
                                              Step_controller_type: dict[str, str] = {"Value": "Gustafsson", "Unit": "[-]"},
                                              Safety_factor_1: dict[str, float | str] = {"Value": 0.9, "Unit": "[-]"},
                                              Safety_factor_2: dict[str, float | str] = {"Value": 1e-35, "Unit": "[-]"},
@@ -306,7 +306,7 @@ class Simulation_configurator:
         self.geodesic_integrator.Integrator_type = Integrator_type
         
     def _configure_rad_transfer_integrator_settings(self,
-                                                    Integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"}):
+                                                    Integrator_type: dict[str, str] = {"Value": "RK54", "Unit": "[-]"}):
 
         self.rad_transfer_integrator = Rad_Transfer_Integrator()
         self.rad_transfer_integrator.Integrator_type = Integrator_type
@@ -580,7 +580,7 @@ class Simulation_configurator:
                                       Frag_shader_path: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Libraries/shaders/default.frag",
                                       Output_file_directory: str = "C:/Users/Valur/Documents/Repos/Mjolnir_GRRT/Sim_Results",
                                       Common_file_names: str = "",
-                                      Sim_mode_2_input_file_path: str = "",
+                                      Sim_mode_1_input_file_path: str = "",
                                       Truncate_files: int = 1):                       
 
         self.file_manager = File_manager()
@@ -589,7 +589,7 @@ class Simulation_configurator:
         self.file_manager.Frag_shader_path = Frag_shader_path
         self.file_manager.Output_file_directory = Output_file_directory
         self.file_manager.Common_file_names = Common_file_names
-        self.file_manager.Sim_mode_2_input_file_path = Sim_mode_2_input_file_path
+        self.file_manager.Sim_mode_1_input_file_path = Sim_mode_1_input_file_path
         self.file_manager.Truncate_files = Truncate_files
 
     def generate_simulation_input(self, Path_to_input_dir: str, Input_file_name: str):
@@ -601,9 +601,9 @@ class Simulation_configurator:
         ET.SubElement(XML_root_node, "Average_emission_pitch_angle", units = "[-]").text = "{}".format(self.average_emission_pitch_angle["Value"])
         ET.SubElement(XML_root_node, "Emission_pitch_angle_samples_to_average", units = "[-]").text = "{}".format(self.emission_pitch_angle_samples_to_average["Value"])
         ET.SubElement(XML_root_node, "Central_object_mass", units = str(self.object_mass["Unit"])).text = "{}".format(self.object_mass["Value"])
-        ET.SubElement(XML_root_node, "Sim_mode_2_param_value_number", units = str(self.sim_mode_2_param_value_number["Unit"])).text = "{}".format(self.sim_mode_2_param_value_number["Value"])
-        ET.SubElement(XML_root_node, "Sim_mode_3_X_init", units = str(self.sim_mode_3_X_init["Unit"])).text = "{}".format(self.sim_mode_3_X_init["Value"])
-        ET.SubElement(XML_root_node, "Sim_mode_3_Y_init", units = str(self.sim_mode_3_Y_init["Unit"])).text = "{}".format(self.sim_mode_3_Y_init["Value"])
+        ET.SubElement(XML_root_node, "Sim_mode_1_param_value_number", units = str(self.sim_mode_1_param_value_number["Unit"])).text = "{}".format(self.sim_mode_1_param_value_number["Value"])
+        ET.SubElement(XML_root_node, "Sim_mode_2_X_init", units = str(self.sim_mode_2_X_init["Unit"])).text = "{}".format(self.sim_mode_2_X_init["Value"])
+        ET.SubElement(XML_root_node, "Sim_mode_2_Y_init", units = str(self.sim_mode_2_Y_init["Unit"])).text = "{}".format(self.sim_mode_2_Y_init["Value"])
         ET.SubElement(XML_root_node, "Min_image_order", units = str(self.min_image_order["Unit"])).text = "{}".format(self.min_image_order["Value"])
         ET.SubElement(XML_root_node, "Max_image_order", units = str(self.max_image_order["Unit"])).text = "{}".format(self.max_image_order["Value"])
         ET.SubElement(XML_root_node, "Order_counting_scheme", units = str(self.Order_counting_scheme["Unit"])).text = "{}".format(self.Order_counting_scheme["Value"])

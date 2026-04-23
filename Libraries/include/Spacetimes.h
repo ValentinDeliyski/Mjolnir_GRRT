@@ -22,31 +22,31 @@ public:
 
     /* --------------------------------------------------- Metric and its derivatives --------------------------------------------------- */
 
-    virtual Metric_type get_local_metric(const double* const Local_State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_local_metric!"); };
+    virtual Metric_type get_local_metric(const double* const) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_local_metric!"); };
 
-    virtual Metric_type get_dr_local_metric(const double* const Local_State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dr_local_metric!"); };
+    virtual Metric_type get_dr_local_metric(const double* const) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dr_local_metric!"); };
 
-    virtual Metric_type get_dtheta_local_metric(const double* const Local_State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dtheta_local_metric!"); };
+    virtual Metric_type get_dtheta_local_metric(const double* const) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dtheta_local_metric!"); };
 
-    virtual Metric_type get_global_metric(const double* const Global_State_vector) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_global_metric!"); };
+    virtual Metric_type get_global_metric(const double* const) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_global_metric!"); };
 
-    virtual Metric_type get_dr_global_metric(const double* const Global_State_vector) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dr_global_metric!"); };
+    virtual Metric_type get_dr_global_metric(const double* const) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dr_global_metric!"); };
 
-    virtual Metric_type get_dtheta_global_metric(const double* const Global_State_vector) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dtheta_global_metric!"); };
+    virtual Metric_type get_dtheta_global_metric(const double* const) const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_dtheta_global_metric!"); };
 
-    virtual Metric_type get_d2r_local_metric(const double* const Local_State_Vector) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_d2r_local_metric!"); };
+    virtual Metric_type get_d2r_local_metric(const double* const) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_d2r_local_metric!"); };
 
     /* ------------------------------------------------------ Equations of motion ------------------------------------------------------ */
 
-    virtual void get_EOM(const double* const Global_State_vector, double* const Derivatives) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_EOM!"); };
+    virtual void get_EOM(const double* const, double* const) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_EOM!"); };
 
     /* ---------------------------------------------- Integration Termination Conditions ----------------------------------------------- */
 
-    virtual bool terminate_integration(const double* const State_vector) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in terminate_integration!"); };
+    virtual bool terminate_integration(const double* const) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in terminate_integration!"); };
 
-    virtual void Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in Convert_global_to_local_coords!"); };
+    virtual void Convert_global_to_local_coords(const double* const, const double* const, double*, Coord_conversion_enums) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in Convert_global_to_local_coords!"); };
 
-    virtual void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in Convert_global_to_local_coords!"); };
+    virtual void Convert_local_to_global_coords(const double* const, const double* const, double*, Coord_conversion_enums) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in Convert_global_to_local_coords!"); };
 
 };
 

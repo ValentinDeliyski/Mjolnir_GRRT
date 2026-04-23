@@ -14,7 +14,7 @@ from Support_functions.Spacetimes_new import Kerr
 from numpy import pi, tan, sqrt, linspace
 from numpy.typing import NDArray
 
-from multiprocessing import Pool
+import multiprocessing
 import subprocess
 
 class bcolors:
@@ -30,7 +30,7 @@ class bcolors:
 
 class Simulation:
     
-    def __init__(self):
+    def __init__(self, resolution, spin, inclination):
         
         """ These parameters correspond to the ones in table 1 of https://arxiv.org/pdf/2309.10053. """
         
@@ -38,21 +38,12 @@ class Simulation:
         self.Simulation_configurator = Simulation_configurator()
         
         self.Simulation_configurator.simulation_mode = {"Value": 0, "Unit": "[-]"} 
-        self.Simulation_configurator.metric_parameters.WH_stop_at_throat = {"Value": 0, "Unit": "[-]"}  
-        self.Simulation_configurator.file_manager.Sim_mode_2_input_file_path = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Schwarzschild_r6_20deg_500_photons_direct.csv"
-        
-        self.Simulation_configurator.observer.Include_polarization = {"Value": 1, "Unit": "[-]"}
         self.Simulation_configurator.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[-]"}
         
         """ Central black hole setup"""
         self.Simulation_configurator.metric_parameters.Metric_type = {"Value": "Kerr",  "Unit": "[-]"}
-        self.Simulation_configurator.object_mass                   = {"Value": 4.297e6, "Unit": "[M_sun]"}
         self.Simulation_configurator.metric_parameters.Mass        = {"Value": 1, "Unit": "[M]"}
-        self.Simulation_configurator.metric_parameters.Spin        = {"Value": 0.98, "Unit": "[M]"}
-        self.Simulation_configurator.metric_parameters.WH_redshift = {"Value": 0, "Unit": "[M]"}
-        self.Object_distance                                       = {"Value": 8.277e3, "Unit": "[Pc]"}
-        self.Simulation_configurator.min_image_order               = {"Value": 0, "Unit": "[-]"}
-        self.Simulation_configurator.max_image_order               = {"Value": 10, "Unit": "[-]"}
+        self.Simulation_configurator.metric_parameters.Spin        = {"Value": spin, "Unit": "[M]"}
         
         """ Accretion disk setup """   
         self.Simulation_configurator.disk_model.Disk_Model = {"Value": "Novikov-Thorne", "Unit": "[-]"}
@@ -60,49 +51,76 @@ class Simulation:
         Kerr_instance = Kerr(self.Simulation_configurator.metric_parameters.Mass["Value"], self.Simulation_configurator.metric_parameters.Spin["Value"])
         
         self.Simulation_configurator.disk_model.r_in_NT_disk = {"Value": Kerr_instance.get_ISCO()[0], "Unit": "[M]"} 
-        self.Simulation_configurator.disk_model.r_out_NT_disk = {"Value": 50 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"} 
+        self.Simulation_configurator.disk_model.r_out_NT_disk = {"Value": 25 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"} 
          
-        self.Simulation_configurator.disk_model.Mag_field_geometry_r     = {"Value": 0.1, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Mag_field_geometry_theta = {"Value": 0.2, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Mag_field_geometry_phi   = {"Value": 0.3, "Unit": "[-]"}
-        
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
         
         """ Observer setup """
-        self.Simulation_configurator.observer.Distance    = {"Value": 1e4 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
-        self.Simulation_configurator.observer.Inclination = {"Value": 80 * pi / 180, "Unit": "[Rad]"}
-        self.Simulation_configurator.observer.Azimuth     = {"Value": 0,              "Unit": "[Rad]"}
+        self.Simulation_configurator.observer.Distance    = {"Value": 1e4,         "Unit":  "[M]" }
+        self.Simulation_configurator.observer.Inclination = {"Value": inclination * pi / 180, "Unit": "[Rad]"}
+        self.Simulation_configurator.observer.Azimuth     = {"Value": 0,           "Unit": "[Rad]"}
+        
+        self.Simulation_configurator.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[Hz]"}
         
         self.Observer_FOV = {"Value": 150, "Unit": "[micro-arcsec]"}
+    
+        self.Simulation_configurator.observer.Image_y_min = {"Value": -15, "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_y_max = {"Value":  15, "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_x_min = {"Value": -35, "Unit": "[M]"}
+        self.Simulation_configurator.observer.Image_x_max = {"Value":  35, "Unit": "[M]"}
         
-        self.Simulation_configurator.observer.Image_y_min = {"Value": -10 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
-        self.Simulation_configurator.observer.Image_y_max = {"Value":  10 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
-        self.Simulation_configurator.observer.Image_x_min = {"Value": -10 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
-        self.Simulation_configurator.observer.Image_x_max = {"Value":  10 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"}
-        
-        self.Simulation_configurator.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 256 , "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_x = {"Value": resolution, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": resolution, "Unit": "[-]"}
         
         """ Configure the integrator """
+        
+        self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.max_integration_count = {"Value": 1000000, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        
+        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
 
+        self.Simulation_configurator.simulation_name = {"Value": "Kerr_a_{}_inc_{}".format(spin, inclination), "Unit": "[-]"}
         
         """ The simulation output file path """
-        self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"
+        self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Wormhole_sim_paper"
 
     def run_simulation(self):
         
-        self.Simulation_configurator.simulation_name = {"Value": "Thin_Disk_Reference_Simulation", "Unit": "[-]"}
-
-        self.Simulation_configurator.generate_simulation_input(Path_to_input_dir = "Reference_simulations\\Thin_Disk_Reference_Simulation",
-                                                               Input_file_name = "Thin_Disk_Reference_Simulation_input.XML")
+        self.Simulation_configurator.generate_simulation_input(Path_to_input_dir = "Wormhole_sim_paper\\" + self.Simulation_configurator.simulation_name["Value"],
+                                                               Input_file_name   = self.Simulation_configurator.simulation_name["Value"] + "_input.XML")
             
         """ Run the simulation """
-        filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Thin_Disk_Reference_Simulation\\Thin_Disk_Reference_Simulation_input.xml"
-        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
+        filename = ("C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\" + 
+                    "Wormhole_sim_paper\\" + 
+                    self.Simulation_configurator.simulation_name["Value"] + 
+                    "\\" + 
+                    self.Simulation_configurator.simulation_name["Value"] + 
+                    "_input.XML")    
+        
+        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 0"
+        
         subprocess.call(args, shell = True)          
 
 if __name__ == "__main__":
 
-    Sim_instance = Simulation()
-    Sim_instance.run_simulation()
+    Processses = []
+
+    for spin in [0, 0.98]:
+        
+        for inc in [80]:
+            
+            Sim_instance = Simulation(spin = spin,
+                                      inclination = inc,
+                                      resolution = 2048)
+            
+            Process = multiprocessing.Process(target = Sim_instance.run_simulation)  
+                
+            Process.start()
+            Processses.append(Process)     
+
+    for Process in Processses:
+        Process.join()

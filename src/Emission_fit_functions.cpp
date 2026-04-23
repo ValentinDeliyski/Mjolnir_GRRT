@@ -4,8 +4,9 @@
 #include "Spacetimes.h"
 #include "Constants.h"
 
+#pragma warning(push, 0)
 #include "gsl/gsl_sf_hyperg.h"
-
+#pragma warning(pop)
 /* =============================================== Thermal Synchrotron Transfer Functions =============================================== */
 
 void Emission_models_class::get_thermal_synchrotron_emission_fit_functions(const Thermal_transfer_f_arguments_type* const p_Transfer_arags,

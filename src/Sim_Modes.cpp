@@ -248,7 +248,7 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
     p_Sim_Context->File_manager->create_output_file();
     p_Sim_Context->File_manager->open_output_file();
 
-    for (int photon_idx = 0; photon_idx <= p_Sim_Context->File_manager->sim_mode_2_ray_number - 1; photon_idx += 1) {
+    for (int photon_idx = 0; photon_idx <= p_Sim_Context->File_manager->sim_mode_1_ray_number - 1; photon_idx += 1) {
 
         /*
 
@@ -278,7 +278,7 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
            and therefore not automatically reinitialized to 0s. I have to manually do it. */
         Zero_results_struct(p_Ray_results);
 
-        print_progress(photon_idx, p_Sim_Context->File_manager->sim_mode_2_ray_number - 1, true);
+        print_progress(photon_idx, p_Sim_Context->File_manager->sim_mode_1_ray_number - 1, true);
 
     }
 
@@ -290,8 +290,8 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
 
 void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
-    double& X_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_X_init;
-    double& Y_init = p_Sim_Context->p_Init_Conditions->Sim_mode_3_Y_init;
+    double& X_init = p_Sim_Context->p_Init_Conditions->Sim_mode_2_X_init;
+    double& Y_init = p_Sim_Context->p_Init_Conditions->Sim_mode_2_Y_init;
 
     get_initial_conditions_from_image_coords(p_Sim_Context->p_Init_Conditions, X_init, Y_init);
 
@@ -317,7 +317,7 @@ void run_debug_simulation(const Simulation_Context_type* const p_Sim_Context) {
     Debug_mode_struct Debug_struct{};
 
     Debug_struct.Array_length = 1500;
-    Debug_struct.NT_Flux_integral_array = p_Sim_Context->p_NT_model->Flux_integral;
+    Debug_struct.NT_Flux_integral_array = p_Sim_Context->p_NT_model->Flux_integral_array;
     Debug_struct.NT_Flux_r_coord_array = p_Sim_Context->p_NT_model->Flux_r_coords;
 
     p_Sim_Context->File_manager->open_output_file();

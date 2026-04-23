@@ -20,17 +20,11 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
         if (this->s_Disk_params.Numerical_disk_params.e_Spline_type == Spline_selection_enums::GSL_linear) {
 
             this->Spline_instance_density = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
-            this->Spline_instance_mag_field_r = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
-            this->Spline_instance_mag_field_theta = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
-            this->Spline_instance_mag_field_phi = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
 
         }
         else {
 
             this->Spline_instance_density = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
-            this->Spline_instance_mag_field_r = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
-            this->Spline_instance_mag_field_theta = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
-            this->Spline_instance_mag_field_phi = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
 
         }
 
@@ -44,29 +38,6 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
                           this->s_Disk_params.Numerical_disk_params.Radial_grid_size,
                           this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
 
-        gsl_spline2d_init(this->Spline_instance_mag_field_r,
-                          this->s_Disk_params.Numerical_disk_params.Radial_grid,
-                          this->s_Disk_params.Numerical_disk_params.Theta_grid,
-                          this->s_Disk_params.Numerical_disk_params.Raw_B_field_r_data,
-                          this->s_Disk_params.Numerical_disk_params.Radial_grid_size,
-                          this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
-
-    
-        gsl_spline2d_init(this->Spline_instance_mag_field_theta,
-                          this->s_Disk_params.Numerical_disk_params.Radial_grid,
-                          this->s_Disk_params.Numerical_disk_params.Theta_grid,
-                          this->s_Disk_params.Numerical_disk_params.Raw_B_field_theta_data,
-                          this->s_Disk_params.Numerical_disk_params.Radial_grid_size,
-                          this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
-
-    
-        gsl_spline2d_init(this->Spline_instance_mag_field_phi,
-                          this->s_Disk_params.Numerical_disk_params.Radial_grid,
-                          this->s_Disk_params.Numerical_disk_params.Theta_grid,
-                          this->s_Disk_params.Numerical_disk_params.Raw_B_field_phi_data,
-                          this->s_Disk_params.Numerical_disk_params.Radial_grid_size,
-                          this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
-
     }
 
 }
@@ -76,17 +47,11 @@ Disk_model_type::~Disk_model_type() {
     if (this->s_Disk_params.e_Disk_model == Disk_model_enums::e_Numerical_Polytrope) {
 
         gsl_spline2d_free(this->Spline_instance_density);
-        gsl_spline2d_free(this->Spline_instance_mag_field_r);
-        gsl_spline2d_free(this->Spline_instance_mag_field_theta);
-        gsl_spline2d_free(this->Spline_instance_mag_field_phi);
 
         gsl_interp_accel_free(this->Radial_interp_accelerator);
         gsl_interp_accel_free(this->Theta_interp_accelerator);
 
         delete this->s_Disk_params.Numerical_disk_params.Raw_density_data;
-        delete this->s_Disk_params.Numerical_disk_params.Raw_B_field_r_data;
-        delete this->s_Disk_params.Numerical_disk_params.Raw_B_field_theta_data;
-        delete this->s_Disk_params.Numerical_disk_params.Raw_B_field_phi_data;
 
         delete this->s_Disk_params.Numerical_disk_params.Radial_grid;
         delete this->s_Disk_params.Numerical_disk_params.Theta_grid;
@@ -94,27 +59,25 @@ Disk_model_type::~Disk_model_type() {
     }
 }
 
+double Disk_model_type::get_disk_internal_energy(double density) const {
+
+    /* This assumes a ideal fluid, which is undergoing an iso-entropic process (Rezzolla (2.248)).
+       The polytropic index of the polytropic EOS (Gamma) is assumed to be equal to the adiabatic index,
+       which appears in the ideal fluid thermal EOS (2.228) */
+
+    const double& K = this->s_Disk_params.Thermal_EOS_params.Polytrope_Coeff;
+    const double& Gamma = this->s_Disk_params.Thermal_EOS_params.Polytrope_Power;
+
+    return K / (Gamma - 1) * std::pow(density, Gamma - 1);
+}
+
 double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* const p_Profile_parameters,
                                          Profile_enums e_Profile_type) const {
 
     double Profile{};
     double Exponent_arg{};
-    int Err_code{};
 
     switch (e_Profile_type) {
-
-    case e_Numerical:
-
-         Err_code = gsl_spline2d_eval_e(this->Spline_instance_density, 
-                                        p_Profile_parameters->radial_coordinate, 
-                                        p_Profile_parameters->theta_coordinate, 
-                                        this->Radial_interp_accelerator, 
-                                        this->Theta_interp_accelerator,
-                                        &Profile);
-
-        if (GSL_EDOM == Err_code) { Profile = 0.0; }
-
-        break;
 
     case e_Power_law:
 
@@ -139,7 +102,7 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
 
     }
 
-    if (p_Profile_parameters->radial_coordinate < p_Profile_parameters->cutoff_radius and e_Profile_type != e_Numerical) {
+    if (p_Profile_parameters->radial_coordinate < p_Profile_parameters->cutoff_radius) {
 
         double Cutoff_exponent_arg = (p_Profile_parameters->radial_coordinate - p_Profile_parameters->cutoff_radius) / p_Profile_parameters->cutoff_scale;
 
@@ -158,6 +121,32 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
     Disk_profile_parameters_type Density_profile_params{}, Temperature_profile_params{};
 
     switch (e_Disk_model) {
+
+    case e_Numerical_Polytrope:
+
+        /* ------------------------------------------------ Get the density profile ------------------------------------------------ */
+
+        int Err_code = gsl_spline2d_eval_e(this->Spline_instance_density,
+                                           State_Vector[e_r],
+                                           State_Vector[e_theta],
+                                           this->Radial_interp_accelerator,
+                                           this->Theta_interp_accelerator,
+                                           &p_Emission_medium_state->Density);
+
+        if (GSL_EDOM == Err_code) { p_Emission_medium_state->Density = 0.0; }
+
+        /* TODO: Scale this thing so it comes out in g / cm^3 */
+
+        /* ------------------------------------------------ Get the temperature profile ------------------------------------------------ */
+
+        double Internal_energy = this->get_disk_internal_energy(p_Emission_medium_state->Density);
+        const double& Gamma = this->s_Disk_params.Thermal_EOS_params.Polytrope_Power;
+
+        p_Emission_medium_state->Temperature = M_PROTON_SI / BOLTZMANN_CONST_SI * (Gamma - 1) * Internal_energy;
+
+        /* TODO: Scale this thing so it comes out in K */
+
+        break;
 
     case e_Phenom_RIAF_1:
 
@@ -237,7 +226,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
     case e_Phenom_RIAF_3:
 
-        /* ============= This is anlagous to https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6, but I offser the radial vairable. ============= */
+        /* ============= This is anlagous to https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6, but I offset the radial vairable. ============= */
 
         Density_profile_params.radial_coordinate = State_Vector[e_r];
 

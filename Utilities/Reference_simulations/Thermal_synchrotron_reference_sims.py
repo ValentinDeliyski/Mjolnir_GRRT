@@ -80,13 +80,9 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         
         self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.RK_abs_accuracy = {"Value": 1e-10, "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.RK_rel_accuracy = {"Value": 1e-10, "Unit": "[-]"}
-            
         self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
         
         self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
         
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
         
@@ -184,4 +180,4 @@ Sim_2_thread = threading.Thread(target = Thermal_syhnchrotron_reference_sims_ins
 Sim_1_thread.start()
 time.sleep(1)
 
-# Sim_2_thread.start()
+Sim_2_thread.start()

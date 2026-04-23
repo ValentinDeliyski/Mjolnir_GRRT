@@ -1,5 +1,18 @@
 #pragma once
 #include <complex>
+typedef double const Real;
+
+const int Nyström_size = 6;
+
+Real Nyström_Deriv_coeffs[Nyström_size][Nyström_size] = { {   0.,      0.,         0.,       0.,   0., 0.},
+                                                          {1. / 3,     0.,         0.,       0.,   0., 0.},
+                                                          {4. / 25, 6. / 25,       0.,       0.,   0., 0.},
+                                                          {1. / 4,    -3.,     15. / 4,      0.,   0., 0.},
+                                                          {2. / 27, 10. / 9,  -50. / 81,  8. / 81, 0., 0.},
+                                                          {2. / 25, 12. / 25,   2. / 15,  8. / 75, 0., 0.} };
+
+Real Nyström_Coeff_sol[Nyström_size] = { 23. / 192 , 0., 125. / 192, 0., -27. / 64, 125. / 192 };
+Real Nyström_Coeff_param[Nyström_size] = { 0 , 1. / 3, 2. / 5, 1., 2. / 3, 4. / 5 };
 
 constexpr std::complex<double> complex_i = { 0.0, 1.0 };
 

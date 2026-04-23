@@ -93,7 +93,6 @@ Metric_type Minkowski_class::get_d2r_local_metric(const double* const Local_Stat
 
     Metric_type s_d2r_Minkowski_metric{};
 
-    const double& r = Local_State_Vector[e_r];
     const double sin_theta = sin(Local_State_Vector[e_theta]);
 
     /* ------------------------------------ Only the non-zero components are explicitly evaluated. ------------------------------------ */
@@ -138,7 +137,7 @@ bool Minkowski_class::terminate_integration(const double* const State_vector) {
 
 };
 
-void Minkowski_class::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void Minkowski_class::Convert_global_to_local_coords(const double* const, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 
@@ -168,7 +167,7 @@ void Minkowski_class::Convert_global_to_local_coords(const double* const State_V
 
 }
 
-void Minkowski_class::Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void Minkowski_class::Convert_local_to_global_coords(const double* const, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 

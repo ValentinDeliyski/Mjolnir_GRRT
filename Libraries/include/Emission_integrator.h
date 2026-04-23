@@ -9,8 +9,6 @@
 #include "gsl/gsl_spline.h"
 #include "gsl/gsl_spline2d.h"
 
-class Emission_models_class;
-
 class Emission_Integrator_class {
 
 private:
@@ -102,6 +100,8 @@ private:
 
     double* Polarization_log[3];
 
+    double* PW_Constant_log[2];
+
      /* ---------- These hold the affine parameter and steps that the geodesic integrator took ----------- */
     // Only used to setup the gsl spline. They get delete[] called on them at the end of the init function
     double* Affine_param_log;
@@ -131,7 +131,7 @@ private:
     /* --------------------------------- Internal functions --------------------------------- */
 
     void Update_emission_log(const double* const New_Stokes_Vector);
-    void Update_polarization_log(const std::complex<double>*  const New_Polarization_Vector, const double New_affine_param);
+    void Update_polarization_log();
 
     const double* const get_ray_Local_State_Vector(const double Affine_param);
 

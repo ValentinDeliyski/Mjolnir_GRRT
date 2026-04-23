@@ -336,3 +336,38 @@ class Surface_Cubic_B_spline():
                 Z_surface = array(Partial_Z_grid)
 
         return X_surface, Y_surface, Z_surface
+    
+    def evaluate_spline_single_point(self, x, y, x_grid_len, y_grid_len) -> float:
+        
+        x_grid = self.x_grid_points[::y_grid_len]
+        y_grid = self.y_grid_points[0:y_grid_len]
+        
+        x_bin_idx: int = min(int(digitize(x, x_grid) - 1), x_grid_len - 2)
+        y_bin_idx: int = min(int(digitize(y, y_grid) - 1), y_grid_len - 2)
+     
+        U = (x - x_grid[x_bin_idx]) / (x_grid[x_bin_idx + 1] - x_grid[x_bin_idx])
+        V = (y - y_grid[y_bin_idx]) / (y_grid[y_bin_idx + 1] - y_grid[y_bin_idx])
+
+        a_coeff_V, b_coeff_V, c_coeff_V, d_coeff_V, e_coeff_V, f_coeff_V = self.get_delta_coeffs(self.y_grid_steps, y_bin_idx + 3)
+        a_coeff_U, b_coeff_U, c_coeff_U, d_coeff_U, e_coeff_U, f_coeff_U = self.get_delta_coeffs(self.x_grid_steps, x_bin_idx + 3)
+        
+        """ === Compute the basis polynomials vectors === """
+        
+        V1 = -a_coeff_V * V**3 + 3 * a_coeff_V * V**2 - 3 * a_coeff_V * V + a_coeff_V 
+        V2 = (a_coeff_V + b_coeff_V + c_coeff_V) * V**3 + (-3 * a_coeff_V - 3 * b_coeff_V) * V**2 + (3 * a_coeff_V - 3 * e_coeff_V) * V + 1 - a_coeff_V - f_coeff_V
+        V3 = (-b_coeff_V - c_coeff_V - d_coeff_V) * V**3 + 3 * b_coeff_V * V**2 + 3 * e_coeff_V * V + f_coeff_V
+        V4 = V**3 * d_coeff_V
+        
+        Basis_V_vector = array([V1, V2, V3, V4])
+        
+        U1 = -a_coeff_U * U**3 + 3 * a_coeff_U * U**2 - 3 * a_coeff_U * U + a_coeff_U 
+        U2 = (a_coeff_U + b_coeff_U + c_coeff_U) * U**3 + (-3 * a_coeff_U - 3 * b_coeff_U) * U**2 + (3 * a_coeff_U - 3 * e_coeff_U) * U + 1 - a_coeff_U - f_coeff_U
+        U3 = (-b_coeff_U - c_coeff_U - d_coeff_U) * U**3 + 3 * b_coeff_U * U**2 + 3 * e_coeff_U * U + f_coeff_U
+        U4 = U**3 * d_coeff_U
+        
+        Basis_U_vector = array([U1, U2, U3, U4])
+            
+        Control_point_matrix = self.get_control_point_matrix(Control_vector = self.Control_vector_Z, U_idx = x_bin_idx, V_idx = y_bin_idx)
+        Spline_value = dot(Basis_V_vector, dot(Control_point_matrix, Basis_U_vector))
+ 
+        return Spline_value

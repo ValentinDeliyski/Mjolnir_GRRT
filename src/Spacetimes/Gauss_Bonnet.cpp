@@ -220,7 +220,6 @@ void Gauss_Bonnet_class::get_EOM(const double* const State_vector, double* const
     double sin2 = sin1 * sin1;
 
     double cos1 = cos(State_vector[e_theta]);
-    double cos2 = cos1 * cos1;
 
     double root = sqrt(1. + 8. * this->Gamma * this->Mass / r / r / r);
 
@@ -251,7 +250,7 @@ bool Gauss_Bonnet_class::terminate_integration(const double* const State_vector)
 
 };
 
-void Gauss_Bonnet_class::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void Gauss_Bonnet_class::Convert_global_to_local_coords(const double* const, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 
@@ -281,7 +280,7 @@ void Gauss_Bonnet_class::Convert_global_to_local_coords(const double* const Stat
 
 }
 
-void Gauss_Bonnet_class::Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void Gauss_Bonnet_class::Convert_local_to_global_coords(const double* const, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 

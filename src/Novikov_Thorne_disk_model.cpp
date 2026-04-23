@@ -36,7 +36,7 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
     this->Flux_integral_spline_instance = gsl_spline_alloc(gsl_interp_cspline, Flux_integral_interpolat_size);
     this->Flux_integral_accelerator = gsl_interp_accel_alloc();
 
-    this->Flux_integral = new double[Flux_integral_interpolat_size];
+    this->Flux_integral_array = new double[Flux_integral_interpolat_size];
     this->Flux_r_coords = new double[Flux_integral_interpolat_size];
 
     for (int idx = 0; idx < Flux_integral_interpolat_size; idx++) {
@@ -47,11 +47,11 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
         Local_State_Vector[e_r] = this->Flux_r_coords[idx];
         Local_State_Vector[e_theta] = M_PI_2;
 
-        this->Flux_integral[idx] = this->get_Flux(Local_State_Vector);
+        this->Flux_integral_array[idx] = this->get_Flux(Local_State_Vector);
 
     }
 
-    gsl_spline_init(this->Flux_integral_spline_instance, this->Flux_r_coords, Flux_integral, Flux_integral_interpolat_size);
+    gsl_spline_init(this->Flux_integral_spline_instance, this->Flux_r_coords, Flux_integral_array, Flux_integral_interpolat_size);
 
 }
 
@@ -61,7 +61,7 @@ Novikov_Thorne_Model_class::~Novikov_Thorne_Model_class(){
     gsl_spline_free(this->Flux_integral_spline_instance);
     gsl_interp_accel_free(this->Flux_integral_accelerator);
 
-    free(this->Flux_integral);
+    free(this->Flux_integral_array);
     free(this->Flux_r_coords);
 
 }

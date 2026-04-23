@@ -61,7 +61,7 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
     glViewport(0, 0, 1024, int(aspect_ratio * 1024));
 
     // The simulation image is interpreted as a texture
-    GLuint texture = init_texture();
+    init_texture();
 
     // This thing (after linkning) combines the bottom two things into one object
     // NEEDS TO BE BEFORE THE VERTEX BUFFER AND ELEMENT BUFFER CALLS
@@ -102,7 +102,7 @@ void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
 
 }
 
-void Rendering_engine::update_rendering_window() {
+void Rendering_engine::update_rendering_window() const {
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, this->ray_number_x, this->ray_number_y, 0, GL_RGB, GL_FLOAT, this->texture_buffer);
     // Specify the color of the background
@@ -118,7 +118,7 @@ void Rendering_engine::update_rendering_window() {
 
 }
 
-void Rendering_engine::set_pixel_color(float Intensity, int texture_indexer) {
+void Rendering_engine::set_pixel_color(float Intensity, int texture_idx) {
 
     float x = Intensity / this->Max_Intensity;
 
@@ -144,9 +144,9 @@ void Rendering_engine::set_pixel_color(float Intensity, int texture_indexer) {
 
     if (B > 1.0f) { B = 1.0f; }
 
-    texture_buffer[texture_indexer + 0] = R;
-    texture_buffer[texture_indexer + 1] = G;
-    texture_buffer[texture_indexer + 2] = B;
+    texture_buffer[texture_idx + 0] = R;
+    texture_buffer[texture_idx + 1] = G;
+    texture_buffer[texture_idx + 2] = B;
 
 }
 
@@ -222,19 +222,19 @@ void Rendering_engine::Vertex_array::Linkattrib(GLuint index, GLuint numComponen
 
 }
 
-void Rendering_engine::Vertex_array::Bind() {
+void Rendering_engine::Vertex_array::Bind() const {
 
     glBindVertexArray(this->ID);
 
 }
 
-void Rendering_engine::Vertex_array::Unbind() {
+void Rendering_engine::Vertex_array::Unbind() const {
 
     glBindVertexArray(0);
 
 }
 
-void Rendering_engine::Vertex_array::Delete() {
+void Rendering_engine::Vertex_array::Delete() const {
 
 
     glDeleteVertexArrays(1, &this->ID);
@@ -350,19 +350,20 @@ Rendering_engine::Shader::Shader(const char* vertexFile, const char* fragmentFil
 
 }
 
-void Rendering_engine::Shader::Activate() {
+void Rendering_engine::Shader::Activate() const {
 
     glUseProgram(this->ID);
 
 }
 
-void Rendering_engine::Shader::Delete() {
+void Rendering_engine::Shader::Delete() const {
 
     glDeleteProgram(this->ID);
 
 }
 
-void Rendering_engine::Window_Callbacks::define_button_callbacks(GLFWwindow* window, int key, int scancode, int action, int mods) {
+// GSL expects the first argument to be a window handle, the second argument to be an int "scancode" and the final to be an int "mods". I dont use them, so I do not label them
+void Rendering_engine::Window_Callbacks::define_button_callbacks(GLFWwindow*, int key, int, int action, int) {
     
     if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
 
@@ -386,7 +387,7 @@ void Rendering_engine::Window_Callbacks::define_button_callbacks(GLFWwindow* win
 
 }
 
-void Rendering_engine::Free_memory() {
+void Rendering_engine::Free_memory() const {
 
     free(this->Intensity_buffer);
     free(this->texture_buffer);

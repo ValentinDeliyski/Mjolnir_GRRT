@@ -1,11 +1,14 @@
 from numpy.typing import NDArray
 from numpy import float64, bool_
-from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes, argmax
+from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes, argmax, log
+from math import ceil, floor
 
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.image import AxesImage 
+from matplotlib import colormaps
 from matplotlib.colorbar import Colorbar 
+from matplotlib import ticker
 
 from matplotlib import pyplot as plt
 from astropy.io import fits
@@ -99,7 +102,7 @@ class Sim_Visualizer():
         self.Ehtim_paths      = []
         
         if not self.Respect_folder_structure:
-            self.Ray_tracer_paths.append(Sim_path)  
+            self.Ray_tracer_paths.append(Sim_path + self.Metric)  
             return
             
         for freq in self.Frequency_Bins:
@@ -162,17 +165,27 @@ class Sim_Visualizer():
                                 Save_Figures: bool,
                                 Custom_fig_title: str,
                                 Obs_effective_distance: float,
-                                Colormap: str = "seismic") -> None:
+                                Use_angular_coords: bool,
+                                Power: float,
+                                Add_Intensity_Slice: bool,
+                                Colormap_str: str = "seismic") -> None:
 
         Frequency_str_addon: str = ""
 
-        if len(self.Frequency_Bins) == 1:
-            Main_Figure: Figure = plt.figure(figsize = (20, 8))
-            
-        else:
-            Main_Figure: Figure = plt.figure(figsize = (20, 16))
+        if Add_Intensity_Slice:
 
-        Main_Figure.suptitle(Custom_fig_title, fontsize = self.Font_size)
+            if len(self.Frequency_Bins) == 1:
+                Main_Figure: Figure = plt.figure(figsize = (20, 8), layout = 'compressed')
+                
+            else:
+                Main_Figure: Figure = plt.figure(figsize = (20, 16), layout = 'compressed')
+                
+        else:
+            if len(self.Frequency_Bins) == 1:
+                Main_Figure: Figure = plt.figure(figsize = (15, 6), layout = 'compressed')
+                
+            else:
+                Main_Figure: Figure = plt.figure(figsize = (10, 16), layout = 'compressed')
 
         for Sim_number, Freq_str in enumerate(self.Frequency_Bins):          
             
@@ -182,22 +195,37 @@ class Sim_Visualizer():
 
             # =============== PLot the Simulated Image =============== #
             
-            Fig_title: str       = "Simulated Image at {}GHz".format(int(Obs_frequency / 1e9))
-            X_Slice_tile: str    = "Brightness temperature at " + r'$\delta_{\text{rel}} = 0$'
+            if Custom_fig_title == None:
+                Fig_title: str  = "Simulated Image at {}GHz".format(int(Obs_frequency / 1e9))
+            else:
+                Fig_title: str  = Custom_fig_title
+                
+            if Use_angular_coords:
+                X_Slice_tile: str = "Brightness temperature at " + r'$\delta_{\text{rel}} = 0$'
+            else:
+                X_Slice_tile: str = "Brightness temperature at " + r'$X = 0$'
+                
             X_Slice_y_label: str = r'$T_b\,\,[10^9\, K]$'
 
             # Set the X and Y axis limits, rescaling them for an observer, located at "Obs_effective_distance", rather than the simulation "Observer Distance [M]", and conver to to micro AS 
             axes_limits: NDArray[float64] = self.Sim_Parsers[Sim_number].Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
-            axes_limits = arctan(array([float64(Limit) for Limit in axes_limits]) / Obs_effective_distance)
-            axes_limits = arctan(axes_limits) * self.Units.RAD_TO_MICRO_AS
-
+            axes_limits = (array([float64(Limit) for Limit in axes_limits]))
+            
+            if Use_angular_coords:
+                axes_limits = arctan(axes_limits / Obs_effective_distance) * self.Units.RAD_TO_MICRO_AS
+            
             # The literature (for some reason) has the X axis going positive to negative, 
             # so I invert the X axis limits
             axes_limits[0] = -axes_limits[0]
             axes_limits[1] = -axes_limits[1]
             
-            Image_Subplot: Axes = Main_Figure.add_subplot(100 * len(self.Frequency_Bins) + 20 + (2 * Sim_number + 1))
-            
+            if Add_Intensity_Slice:   
+                Image_Subplot: Axes = Main_Figure.add_subplot(100 * len(self.Frequency_Bins) + 20 + (2 * Sim_number + 1))
+            else:
+                Image_Subplot: Axes = Main_Figure.add_subplot(100 * len(self.Frequency_Bins) + 10 + (Sim_number + 1))
+                
+            File_suffix = ""
+                
             match Radiation_Component:
             
                 case "Stokes I":
@@ -207,6 +235,8 @@ class Sim_Visualizer():
                     Cmap_min: float = 0
                                 
                     Cbar_label: str = r"Brightness Temperature [$10^9$K]"
+                    
+                    File_suffix = "Stokes_I"
 
                 case "Stokes Q":
                     Data_to_plot: NDArray[float64] = Q_Intensity / max(I_Intensity.flatten()) * 100
@@ -215,6 +245,8 @@ class Sim_Visualizer():
                     Cmap_min: float = -Cmap_max
                     
                     Cbar_label: str = r"Q Fractional Intensity [\%]"
+                    
+                    File_suffix = "Stokes_Q"
 
                 case "Stokes U":
                     Data_to_plot = U_Intensity / max(I_Intensity.flatten()) * 100
@@ -224,6 +256,8 @@ class Sim_Visualizer():
 
                     Cbar_label: str = r"U Fractional Intensity [\%]"
 
+                    File_suffix = "Stokes_U"
+                    
                 case "Stokes V":
                     Data_to_plot: NDArray[float64] = V_Intensity / max(I_Intensity.flatten()) * 100
                                        
@@ -231,6 +265,8 @@ class Sim_Visualizer():
                     Cmap_min: float = -Cmap_max
                     
                     Cbar_label: str = r"V Fractional Intensity [\%]"
+                    
+                    File_suffix = "Stokes_V"
 
                 case "LP Fraction":
                     Data_to_plot: NDArray[float64] = sqrt(U_Intensity**2 + Q_Intensity**2) / max(abs(I_Intensity.flatten())) * 100
@@ -240,21 +276,102 @@ class Sim_Visualizer():
               
                     Cbar_label: str = r"LP fraction [\%]"
                     
-                case "NT":
-                    Data_to_plot: NDArray[float64] =  Disk_redshift
+                    File_suffix = "LP_Fraction"
+                    
+                case "NT Flux":
+                    Data_to_plot: NDArray[float64] = Disk_redshift**4 * Disk_flux / 1e-6
                     
                     Cmap_max: float = max((Data_to_plot.flatten()))
                     Cmap_min: float = 0
                     
-                    Cbar_label: str      = r"Flux [$10^{-5}\dot{M}M^{-2}$]"
-                    Fig_title: str       = r"Simulated Image"
-                    X_Slice_tile: str    = r"Flux at $\delta_{\text{rel}} = 0$"
-                    X_Slice_y_label: str = r"Flux $[10^{-5}\dot{M}M^{-2}]$"
+                    Cbar_label: str      = r"Flux [$10^{-6}\dot{M}M^{-2}$]"
                     
-                    idx = argmax(Data_to_plot.flatten())
-                    print(min(Data_to_plot.flatten()))
-                    print(Data_to_plot.flatten()[idx])
-                    print(1 / Disk_redshift.flatten()[idx] - 1)
+                    if Custom_fig_title == None:
+                        Fig_title: str  = r"Simulated Image"
+                    else:
+                        Fig_title: str  = Custom_fig_title
+                
+                    if Use_angular_coords:
+                        X_Slice_tile: str = r"Flux at $\delta_{\text{rel}} = 0$"
+                    else:
+                        X_Slice_tile: str = r"Flux at $X = 0$"
+                    
+                    X_Slice_y_label: str = r"Flux $[10^{-6}\dot{M}M^{-2}]$"
+                    
+                    File_suffix = "Flux"
+                    
+                case "NT Pow Flux":
+                    Data_to_plot: NDArray[float64] = Disk_redshift**4 * Disk_flux
+                    
+                    Data_to_plot[Data_to_plot != 0] = (Data_to_plot[Data_to_plot != 0] / max(Data_to_plot.flatten()))**(1 / Power)
+                    Data_to_plot[Data_to_plot == 0] = min(Data_to_plot[Data_to_plot != 0])
+                    
+                    Cmap_max: float = max((Data_to_plot.flatten()))
+                    Cmap_min: float = min((Data_to_plot.flatten()))
+                    
+                    Cbar_label: str = rf"$\left(\frac{{\text{{Flux}}}}{{\max\text{{Flux}}}}\right)^{{\frac{{1}}{{{Power:.0f}}}}}$, [-]"
+                    
+                    if Custom_fig_title == None:
+                        Fig_title: str = r"Simulated Image"
+                    else:
+                        Fig_title: str = Custom_fig_title
+                                
+                    if Use_angular_coords:
+                        X_Slice_tile: str = rf"$\left(\frac{{\text{{Flux}}}}{{\max\text{{Flux}}}}\right)^{{\frac{{1}}{{{Power:.0f}}}}}$ at $\delta_{{\text{{rel}}}} = 0$"
+                    else:
+                        X_Slice_tile: str = rf"$\left(\frac{{\text{{Flux}}}}{{\max\text{{Flux}}}}\right)^{{\frac{{1}}{{{Power:.0f}}}}}$ at $X = 0$"
+                    
+                    X_Slice_y_label: str = rf"$\left(\frac{{\text{{Flux}}}}{{\max\text{{Flux}}}}\right)^{{\frac{{1}}{{{Power:.0f}}}}}$ [-]"
+                    
+                    File_suffix = "Pow_Flux"
+                    
+                case "NT Log Flux":
+                    
+                    Data_to_plot: NDArray[float64] = Disk_redshift**4 * Disk_flux
+                
+                    Data_to_plot[Data_to_plot == 0] = Data_to_plot[Data_to_plot != 0].min()  
+                    Data_to_plot= log(Data_to_plot / Data_to_plot.max())
+            
+                    Cmap_max: float = Data_to_plot.max()
+                    Cmap_min: float = Data_to_plot.min()
+                    
+                    Cbar_label: str = r"Log$\left(\frac{\text{Flux}}{\max\text{Flux}}\right)$ [-]"
+                    
+                    if Custom_fig_title == None:
+                        Fig_title: str = r"Simulated Image"
+                    else:
+                        Fig_title: str = Custom_fig_title
+                                
+                    if Use_angular_coords:
+                        X_Slice_tile: str = r"Log$\left(\frac{\text{Flux}}{\max\text{Flux}}\right)$ at $\delta_{\text{rel}} = 0$"
+                    else:
+                        X_Slice_tile: str = r"Log$\left(\frac{\text{Flux}}{\max\text{Flux}}\right)$ at $X = 0$"
+                    
+                    X_Slice_y_label: str = r"Log$\left(\frac{\text{Flux}}{\max\text{Flux}}\right)$ $[-]$"
+                    
+                    File_suffix = "Log_Flux"
+                    
+                case "NT Redshift":
+                    Data_to_plot: NDArray[float64] = Disk_redshift
+                    
+                    Cmap_max: float = max((Data_to_plot.flatten()))
+                    Cmap_min: float = 0
+                    
+                    Cbar_label: str      = r"Redshift [-]"         
+                               
+                    if Custom_fig_title == None:
+                        Fig_title: str  = r"Simulated Image"
+                    else:
+                        Fig_title: str  = Custom_fig_title
+                                 
+                    if Use_angular_coords:
+                        X_Slice_tile: str = r"Redshift at $\delta_{\text{rel}} = 0$"
+                    else:
+                        X_Slice_tile: str = r"Redshift at $X = 0$"
+                        
+                    X_Slice_y_label: str = r"Redshift $[-]$"
+                    
+                    File_suffix = "Redshift"
 
                 case "Pattern":
                     Data_to_plot = self.get_celestial_sphere_pattern(Celestial_Theta = Celestial_theta, Celestial_Phi = Celestial_phi)
@@ -263,6 +380,8 @@ class Sim_Visualizer():
                     Cmap_min: float = 0.0
                                 
                     Cbar_label: str = r"Brightness Temperature [$10^9$K]"
+                    
+                    File_suffix = "Pattern"
 
                 case _:
                     print("Incorrect Radiation Component!")
@@ -274,20 +393,30 @@ class Sim_Visualizer():
                                                                path = self.Sim_path)
 
             # Create the plot of the Simulated Image
-            Image: AxesImage = Image_Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = Colormap, extent = tuple(axes_limits), vmin = Cmap_min, vmax = Cmap_max)
+            # Colormap = colormaps[Colormap_str]
+            # Colormap.set_bad("k")
+            Image: AxesImage = Image_Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = Colormap_str, extent = tuple(axes_limits), vmin = Cmap_min, vmax = Cmap_max, )
 
-            colorbar: Colorbar = Main_Figure.colorbar(Image, ax = Image_Subplot, fraction = 0.046, pad = 0.04)
-            colorbar.set_label(Cbar_label, fontsize = self.Font_size, labelpad = self.Label_Pad)
-            colorbar.ax.tick_params(labelsize = self.Font_size)
+            if Radiation_Component != "Pattern":
+                colorbar: Colorbar = Main_Figure.colorbar(Image, ax = Image_Subplot, fraction = 0.046 * abs(axes_limits[2] - axes_limits[3]) / abs(axes_limits[0] - axes_limits[1]), pad = 0.04)
+                colorbar.set_label(Cbar_label, fontsize = self.Font_size, labelpad = self.Label_Pad)
+                colorbar.ax.tick_params(labelsize = self.Font_size)
+                colorbar.locator = ticker.MaxNLocator(nbins = 8)
+                colorbar.update_ticks()
 
             Image_Subplot.set_title(Fig_title, fontsize = self.Font_size)
-            Image_Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
-            Image_Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
-
+            
+            if Use_angular_coords:
+                Image_Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+                Image_Subplot.set_ylabel(r'$\delta_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+            else:
+                Image_Subplot.set_xlabel(r'$X,\,\,[M]$', fontsize = self.Font_size)
+                Image_Subplot.set_ylabel(r'$Y,\,\,[M]$', fontsize = self.Font_size)
+        
             plt.xticks(fontsize = self.Font_size)
             plt.yticks(fontsize = self.Font_size)
             
-            if "Pattern" != Radiation_Component:
+            if Add_Intensity_Slice:
 
                 #=============== PLot the Brigtness Temperature at y = 0 of the Simulated Image ===============#
 
@@ -301,12 +430,19 @@ class Sim_Visualizer():
                 T_Brightness_min_norm: float = min(T_Brightness)
                 x_coords: NDArray[float64]   = linspace(axes_limits[0], axes_limits[1], X_resolution)
 
+                Limit_pad = 0.1 * (T_Brightness_norm - T_Brightness_min_norm)
+
                 # Create the plot of "T_b(alpha) | y = 0"
                 T_Brightness_Subplot.plot(x_coords, T_Brightness)
                 T_Brightness_Subplot.invert_xaxis()
-                T_Brightness_Subplot.set_ylim(1.1 * T_Brightness_min_norm, 1.1 * T_Brightness_norm)
+                T_Brightness_Subplot.set_ylim(T_Brightness_min_norm, T_Brightness_norm + Limit_pad)
                 T_Brightness_Subplot.set_title(X_Slice_tile, fontsize = self.Font_size)
-                T_Brightness_Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+                
+                if Use_angular_coords:
+                    T_Brightness_Subplot.set_xlabel(r'$\alpha_{rel}\,\,[\mu$as]', fontsize = self.Font_size)
+                else:
+                    T_Brightness_Subplot.set_xlabel(r'$X,\,\,[M]$', fontsize = self.Font_size)
+   
                 T_Brightness_Subplot.set_ylabel(X_Slice_y_label, fontsize = self.Font_size, labelpad = self.Label_Pad)
 
             Frequency_str_addon += Freq_str
@@ -314,23 +450,18 @@ class Sim_Visualizer():
             plt.xticks(fontsize = self.Font_size)
             plt.yticks(fontsize = self.Font_size)
 
-        Main_Figure.tight_layout()
-
         if Save_Figures:
-
+            
             if self.Respect_folder_structure:
                 Figures_folder_path = self.Sim_path + "Figures\\"
             else:
-                Figures_folder_path = self.Sim_path + "\\Figures\\"
+                Figures_folder_path = os.path.abspath('...') +  "\\Figures\\" + self.Sim_path.split("\\")[-2] + "\\"
 
             if not os.path.exists(Figures_folder_path):
                 os.makedirs(Figures_folder_path)
 
             Main_Figure.savefig(Figures_folder_path + 
-                                "Ray_tracer_plot_" + 
-                                Frequency_str_addon +
-                                "_" + Radiation_Component +
-                                ".png", bbox_inches = 'tight')
+                                File_suffix + ".pdf", bbox_inches = 'tight', dpi = 600) # type: ignore
 
     def plot_EHTIM_results(self, Make_contour_plots: bool, Contour_specs: list, Save_Figures: bool, Plot_no_blur: bool, Custom_fig_title: str):
 

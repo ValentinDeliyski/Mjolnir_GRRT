@@ -81,7 +81,6 @@ enum Profile_enums: std::underlying_type_t <std::byte> {
     e_Gaussian              = 1,
     e_Hybrid_power_gaussian = 2,
     e_Spherical             = 3,
-    e_Numerical             = 4,
 
 };
 

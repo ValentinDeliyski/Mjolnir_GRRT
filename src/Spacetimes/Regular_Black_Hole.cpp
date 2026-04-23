@@ -98,7 +98,7 @@ Metric_type RBH_class::get_dr_local_metric(const double* const Local_State_Vecto
 
     double r2 = r * r;
     double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
+
     double rho = sqrt(r2 + this->Parameter * this->Parameter);
     double rho3 = rho * rho * rho;
 
@@ -154,7 +154,7 @@ Metric_type RBH_class::get_d2r_local_metric(const double* const Local_State_Vect
 
     double r2 = r * r;
     double sin_theta = sin(theta);
-    double cos_theta = cos(theta);
+
     double rho = sqrt(r2 + this->Parameter * this->Parameter);
     double rho3 = rho * rho * rho;
     double rho5 = rho * rho * rho * rho * rho;
@@ -183,7 +183,6 @@ void RBH_class::get_EOM(const double* const State_vector, double* const Derivati
     double sin2 = sin1 * sin1;
 
     double cos1 = cos(State_vector[e_theta]);
-    double cos2 = cos1 * cos1;
 
     Derivatives[e_p_t] = - 1 / (1 - 2 * this->Mass / rho) * State_vector[e_p_t];
     Derivatives[e_r] = (1 - 2 * this->Mass / rho) * State_vector[e_p_r];
@@ -210,7 +209,7 @@ bool RBH_class::terminate_integration(const double* const State_vector) {
 
 }
 
-void RBH_class::Convert_global_to_local_coords(const double* const State_Vector_Global, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void RBH_class::Convert_global_to_local_coords(const double* const, const double* const Global_Vec_to_Convert, double* Local_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 
@@ -240,7 +239,7 @@ void RBH_class::Convert_global_to_local_coords(const double* const State_Vector_
 
 }
 
-void RBH_class::Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
+void RBH_class::Convert_local_to_global_coords(const double* const, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) {
 
     switch (Entry_to_convert) {
 
