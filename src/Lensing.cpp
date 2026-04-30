@@ -37,8 +37,6 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
     Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_global_metric(State_Vector_Global);
 
-    Return_Values Plasma_velocity_OK{};
-
     // ---------------- The velocity vector -> this is chosen to be the local emitter's velocity when we are inside the emission medium, 
     // otherwise it is chosen to be the observer's velocity. I use the theta dependant profile for the observer velocity, because it tends to be well defined below ISCO.
     double Plasma_velocity_contravariant[4]{};
@@ -57,24 +55,16 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
     // ---------------- Determine which part of the emission medium we are in -> this determines the local magnetic field. The hotspot and jet models are allowed to have their own 
     // local magneic field, while outside them the field is considered due to the accretion disk.
 
-    p_Sim_Context->p_Emission_Model->get_plasma_velocity(p_Sim_Context->p_Init_Conditions->Hotspot_params.Position,
-                                                         p_Sim_Context,
-                                                         p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type,
-                                                         p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction,
-                                                         s_Hotspot_state.Plasma_Velocity);
-
     const bool In_hotspot = p_Sim_Context->p_Emission_Model->p_Hotspot_Model->is_inside_hotspot(State_Vector_Local,
                                                                                                 &s_Hotspot_state);
 
     const bool In_disk = p_Sim_Context->p_Emission_Model->p_Disk_Model->is_inside_disk(State_Vector_Local,
-                                                                                       p_Sim_Context->p_Emission_Model->p_Disk_Model->s_Disk_params.e_Disk_model,
                                                                                        &s_Disk_state);
-
     if (Overwride) {
 
         double Local_north_vector[4] = { 0, 0, -1, 0 };
 
-        memcpy(Spacelike_vector_contravariant, Local_north_vector, 4 * sizeof(double));
+        Manipulate_index(&s_Metric, Local_north_vector, Spacelike_vector_contravariant, Raise_index);
         memcpy(Plasma_velocity_contravariant, p_Sim_Context->p_Observer->get_obs_velocity(), 4 * sizeof(double));
 
     }
@@ -83,53 +73,24 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
         /* We are inside the hotspot - we assume the dominant magnetic field here is whatever the local field of the spot is -
            a.e. inisde the hotspot, the disk magnetic field is "screened" by the spot. */
 
+        memcpy(Plasma_velocity_contravariant, p_Sim_Context->p_Emission_Model->p_Hotspot_Model->get_hotspot_velocity(false, State_Vector_Local), 4 * sizeof(double));
+
         p_Sim_Context->p_Emission_Model->p_Hotspot_Model->get_density_and_temperature(State_Vector_Local, &s_Hotspot_state);
+        p_Sim_Context->p_Emission_Model->p_Hotspot_Model->get_magnetic_field(State_Vector_Local, &s_Metric, &s_Hotspot_state);
 
-        s_Hotspot_state.Magnetization = p_Sim_Context->p_Init_Conditions->Hotspot_params.Magnetization;
-        memcpy(s_Hotspot_state.Magnetic_fields.Mag_field_geometry_vector, p_Sim_Context->p_Init_Conditions->Hotspot_params.Mag_field_geometry, 3 * sizeof(double));
-
-        s_Hotspot_state.Magnetic_fields.e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Hotspot_params.e_Mag_field_geometry;
-        s_Hotspot_state.Magnetic_fields.e_Mag_field_magnitude_profile = p_Sim_Context->p_Init_Conditions->Hotspot_params.e_Mag_field_magnitude_profile;
-
-        Plasma_velocity_OK = p_Sim_Context->p_Emission_Model->get_plasma_velocity(State_Vector_Local,
-                                                                                  p_Sim_Context,
-                                                                                  p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type,
-                                                                                  p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction,
-                                                                                  s_Hotspot_state.Plasma_Velocity);
-
-        if (OK != Plasma_velocity_OK) { return ERROR; }
-
-        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_Vector_Local, &s_Metric, &s_Hotspot_state);
         memcpy(Spacelike_vector_contravariant, s_Hotspot_state.Magnetic_fields.B_field_plasma_frame, 4 * sizeof(double));
-        memcpy(Plasma_velocity_contravariant, s_Hotspot_state.Plasma_Velocity, 4 * sizeof(double));
 
     }
     else if (!In_hotspot and In_disk) {
 
         /* We are outside the hotspot - we assume the dominant magnetic field here is due to the background accretion disk. */
 
-        p_Sim_Context->p_Emission_Model->p_Disk_Model->get_density_and_temperature(State_Vector_Local,
-                                                                                   p_Sim_Context->p_Emission_Model->p_Disk_Model->s_Disk_params.e_Disk_model,
-                                                                                   &s_Disk_state);
+        memcpy(Plasma_velocity_contravariant, p_Sim_Context->p_Emission_Model->p_Disk_Model->get_disk_velocity(State_Vector_Local), 4 * sizeof(double));
 
-        s_Disk_state.Magnetization = p_Sim_Context->p_Init_Conditions->Disk_params.Magnetization;
-        memcpy(s_Disk_state.Magnetic_fields.Mag_field_geometry_vector, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
-
-        s_Disk_state.Magnetic_fields.e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_geometry;
-        s_Disk_state.Magnetic_fields.e_Mag_field_magnitude_profile = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_magnitude_profile;
-
-        Plasma_velocity_OK = p_Sim_Context->p_Emission_Model->get_plasma_velocity(State_Vector_Local,
-                                                                                  p_Sim_Context,
-                                                                                  p_Sim_Context->p_Init_Conditions->Disk_params.Velocity_profile_type,
-                                                                                  p_Sim_Context->p_Init_Conditions->Disk_params.Radial_velocity_fraction,
-                                                                                  s_Disk_state.Plasma_Velocity);
-
-        if (OK != Plasma_velocity_OK) { return ERROR; }
-
-        p_Sim_Context->p_Emission_Model->get_magnetic_field(State_Vector_Local, &s_Metric, &s_Disk_state);
+        p_Sim_Context->p_Emission_Model->p_Disk_Model->get_density_and_temperature(State_Vector_Local, &s_Disk_state);
+        p_Sim_Context->p_Emission_Model->p_Disk_Model->get_magnetic_field(State_Vector_Local, &s_Metric, &s_Disk_state);
 
         memcpy(Spacelike_vector_contravariant, s_Disk_state.Magnetic_fields.B_field_plasma_frame, 4 * sizeof(double));
-        memcpy(Plasma_velocity_contravariant, s_Disk_state.Plasma_Velocity, 4 * sizeof(double));
 
     }
     else { return NOT_IN_EMISSION_MEDIUM; }
@@ -167,23 +128,10 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
     /* --- Raise / Lower indicies on the three main 4-vectors - this is needed for computing the final tetrad vector --- */
 
-    double inv_Metric[4][4]{};
-    invert_metric(inv_Metric, s_Metric.Metric);
-
     double Wave_vector_contravariant[4]{};
-
-    for (int left_idx = 0; left_idx < 4; left_idx++) {
-
-        for (int right_idx = 0; right_idx < 4; right_idx++) {
-
-            Wave_vector_contravariant[left_idx] += inv_Metric[left_idx][right_idx] * Wave_Vector_covariant[right_idx];
-
-            Spacelike_vector_covariant[left_idx] += s_Metric.Metric[left_idx][right_idx] * Spacelike_vector_contravariant[right_idx];
-            Plasma_velocity_covariant[left_idx]  += s_Metric.Metric[left_idx][right_idx] * Plasma_velocity_contravariant[right_idx];
-
-        }
-
-    }
+    Manipulate_index(&s_Metric, Wave_Vector_covariant, Wave_vector_contravariant, Raise_index);
+    Manipulate_index(&s_Metric, Spacelike_vector_contravariant, Spacelike_vector_covariant, Lower_index);
+    Manipulate_index(&s_Metric, Plasma_velocity_contravariant, Plasma_velocity_covariant, Lower_index);
 
     /* --------------------- Compute the first two tetrad basis vectors --------------------- */
 
@@ -238,15 +186,9 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
 
         }
 
-    }
+    }    
 
     /* --------------------- Compute the inverse tetrad --------------------- */
-
-    // Technically this is the inverse Minkowski metric (with upper indicies)
-    const double Minkowski_Metric[4][4] = { {-1., 0., 0., 0.},
-                                            { 0., 1., 0., 0.},
-                                            { 0., 0., 1., 0.},
-                                            { 0., 0., 0., 1.} };
 
     for (int left_idx = 0; left_idx < 4; left_idx++) {
 
@@ -282,21 +224,11 @@ bool static Is_inside_emission_medium(const Simulation_Context_type* const p_Sim
     Emission_medium_state_type s_Hotspot_state{};
     Emission_medium_state_type s_Disk_state{};
 
-    Return_Values Hotspot_velocity_OK = p_Sim_Context->p_Emission_Model->get_plasma_velocity(p_Sim_Context->p_Init_Conditions->Hotspot_params.Position,
-                                                                                             p_Sim_Context,
-                                                                                             p_Sim_Context->p_Init_Conditions->Hotspot_params.Velocity_profile_type,
-                                                                                             p_Sim_Context->p_Init_Conditions->Hotspot_params.Radial_velocity_fraction,
-                                                                                             s_Hotspot_state.Plasma_Velocity);
-    bool In_hotspot = false;
-    
-    if (OK == Hotspot_velocity_OK) {
-
-        In_hotspot = p_Sim_Context->p_Emission_Model->p_Hotspot_Model->is_inside_hotspot(State_Vector_Local,
+    bool In_hotspot = p_Sim_Context->p_Emission_Model->p_Hotspot_Model->is_inside_hotspot(State_Vector_Local,
                                                                                          &s_Hotspot_state);
-    }
+ 
 
     const bool In_disk = p_Sim_Context->p_Emission_Model->p_Disk_Model->is_inside_disk(State_Vector_Local,
-                                                                                       p_Sim_Context->p_Emission_Model->p_Disk_Model->s_Disk_params.e_Disk_model,
                                                                                        &s_Disk_state);
 
     return In_hotspot or In_disk;
@@ -394,15 +326,11 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                 case ERROR:
 
                     throw std::runtime_error("Could not construct the Stokes basis at the current ray point!\n");
-                    break;
-
-                case NOT_IN_EMISSION_MEDIUM:
-                    continue;
 
                 default:
 
-                    Radiative_transfer_integrator.Map_Polarization_Vector_to_Stokes(inv_Tetrad);
-                    break;
+                    Radiative_transfer_integrator.normalize_polarization_vector(Current_State_Global[e_ray_affine_param]);
+                    Radiative_transfer_integrator.Map_Polarization_Vector_to_Stokes(inv_Tetrad, false);
 
                 }
             }
@@ -419,7 +347,8 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
 
-                Radiative_transfer_integrator.Map_Stokes_to_Polarization_Vector(Tetrad);
+                Radiative_transfer_integrator.Map_Stokes_to_Polarization_Vector(Tetrad, false);
+                Radiative_transfer_integrator.normalize_polarization_vector(Current_State_Global[e_ray_affine_param]);
 
             }
         }
@@ -448,7 +377,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
         }
 
-        Radiative_transfer_integrator.Map_Polarization_Vector_to_Stokes(Observer_inv_Tetrad);
+        Radiative_transfer_integrator.Map_Polarization_Vector_to_Stokes(Observer_inv_Tetrad, false);
 
     }
 

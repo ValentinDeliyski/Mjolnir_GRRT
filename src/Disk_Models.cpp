@@ -5,6 +5,7 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
     if (nullptr != p_Sim_Context) {
 
         this->s_Disk_params = p_Sim_Context->p_Init_Conditions->Disk_params;
+        this->p_Sim_Context = p_Sim_Context;
 
     }
     else { throw std::runtime_error("Could not load the disk parameter struct! \n"); }
@@ -114,24 +115,28 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
 
 }
 
+
+
 void Disk_model_type::get_density_and_temperature(const double* const State_Vector,
-                                                  Disk_model_enums e_Disk_model,
                                                   Emission_medium_state_type* const p_Emission_medium_state) const {
 
     Disk_profile_parameters_type Density_profile_params{}, Temperature_profile_params{};
 
-    switch (e_Disk_model) {
+    const double& Gamma = this->s_Disk_params.Thermal_EOS_params.Polytrope_Power;
+    int Err_code = 0;
+
+    switch (this->s_Disk_params.e_Disk_model) {
 
     case e_Numerical_Polytrope:
 
         /* ------------------------------------------------ Get the density profile ------------------------------------------------ */
 
-        int Err_code = gsl_spline2d_eval_e(this->Spline_instance_density,
-                                           State_Vector[e_r],
-                                           State_Vector[e_theta],
-                                           this->Radial_interp_accelerator,
-                                           this->Theta_interp_accelerator,
-                                           &p_Emission_medium_state->Density);
+        Err_code = gsl_spline2d_eval_e(this->Spline_instance_density,
+                                       State_Vector[e_r],
+                                       State_Vector[e_theta],
+                                       this->Radial_interp_accelerator,
+                                       this->Theta_interp_accelerator,
+                                       &p_Emission_medium_state->Density);
 
         if (GSL_EDOM == Err_code) { p_Emission_medium_state->Density = 0.0; }
 
@@ -139,10 +144,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
         /* ------------------------------------------------ Get the temperature profile ------------------------------------------------ */
 
-        double Internal_energy = this->get_disk_internal_energy(p_Emission_medium_state->Density);
-        const double& Gamma = this->s_Disk_params.Thermal_EOS_params.Polytrope_Power;
-
-        p_Emission_medium_state->Temperature = M_PROTON_SI / BOLTZMANN_CONST_SI * (Gamma - 1) * Internal_energy;
+        p_Emission_medium_state->Temperature = M_PROTON_SI / BOLTZMANN_CONST_SI * (Gamma - 1) * this->get_disk_internal_energy(p_Emission_medium_state->Density);
 
         /* TODO: Scale this thing so it comes out in K */
 
@@ -331,10 +333,213 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
 }
 
-bool Disk_model_type::is_inside_disk(const double* const State_Vector, Disk_model_enums e_Disk_model, Emission_medium_state_type* const Disk_State) const {
+bool Disk_model_type::is_inside_disk(const double* const State_Vector, Emission_medium_state_type* const Disk_State) const {
 
-    this->get_density_and_temperature(State_Vector, e_Disk_model, Disk_State);
+    this->get_density_and_temperature(State_Vector, Disk_State);
 
     return (Disk_State->Density / this->s_Disk_params.Electron_density_scale > this->s_Disk_params.Threshold_relative_density);
+
+}
+
+
+void Disk_model_type::get_magnetic_field(const double* const Local_State_Vector,
+                                         const Metric_type* const p_Metric,
+                                         Emission_medium_state_type* const Emission_medium_state) const {
+
+    /* ================================================================================================================================================================ *|
+    |                                                                                                                                                                    |
+    |  The reference for this implementation is https://arxiv.org/pdf/2404.13824v1, expressions (1.54). The desired megnetic field geometry is specified for an          |
+    |  Eualrian observer, with covarian 4-velocity n_mu = (-Lapse, 0, 0, 0). Writing the dual Maxwell tensor in terms of the magnetic 4-vector measured by a comoving    |
+    |  with  the plasma observer, and his 4-velocity (1.20 - but they have a overall missing minus sign for some reason), one can express the Eulerian magnetic field by |
+    |  projecting the *F^mu^nu onto n_mu. Inverting this expression, one obtains the magnetic 4-vector measured by the comoving observer in terms of the one measured by |
+    |  the Eulerian observer.                                                                                                                                            |
+    |                                                                                                                                                                    |
+    * ================================================================================================================================================================= */
+
+    /* ======================= References for the sake of readability ======================= */
+
+    double (&B_eulerian)[4] = Emission_medium_state->Magnetic_fields.B_field_eulerian_frame;
+    double (&B_plasma)[4] = Emission_medium_state->Magnetic_fields.B_field_plasma_frame;
+    double& B_plasma_norm = Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm;
+
+    const double& r = Local_State_Vector[e_r];
+
+    const double& Power = this->s_Disk_params.Mag_field_power;
+    const double& B_0 = this->s_Disk_params.Mag_field_B_0;
+    const double& r_0 = this->s_Disk_params.Mag_field_r_0;
+
+    /* ====================================================================================== */
+
+    B_eulerian[e_t] = 0.0;
+
+    switch (this->s_Disk_params.e_Mag_field_geometry) {
+
+    case Constant:
+
+        B_eulerian[e_r]     = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_r - 1];
+        B_eulerian[e_theta] = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_theta - 1];
+        B_eulerian[e_phi]   = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_phi - 1];
+
+        break;
+
+    case Vertical:
+
+        B_eulerian[e_r]     = cos(Local_State_Vector[e_theta]);
+        B_eulerian[e_theta] = -sin(Local_State_Vector[e_theta]);
+        B_eulerian[e_phi]   = 0;
+
+        break;
+
+    case Toroidal:
+
+        B_eulerian[e_r]     = 0;
+        B_eulerian[e_theta] = 0;
+        B_eulerian[e_phi]   = 1;
+
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported magnetic field geometry!");
+
+    }
+
+    /* --------------------------------------------- Normalize the magnetic vector in the Eularian frame. --------------------------------------------- */
+
+    double Mag_field_eularian_norm{};
+
+    for (int idx = 0; idx < 4; idx++) {
+
+        Mag_field_eularian_norm += B_eulerian[idx] * B_eulerian[idx];
+
+    }
+
+    for (int idx = 0; idx < 4; idx++) {
+
+        B_eulerian[idx] /= sqrt(Mag_field_eularian_norm);
+
+    }
+
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
+
+    const double Lorentz_factor = Emission_medium_state->Plasma_Velocity[e_t] * p_Metric->Lapse_function;
+
+    for (int left_idx = 0; left_idx < 4; left_idx++) {
+
+        for (int right_idx = 0; right_idx < 4; right_idx++) {
+
+            B_plasma[e_t] += p_Metric->Metric[left_idx][right_idx] * Emission_medium_state->Plasma_Velocity[left_idx] * B_eulerian[right_idx] / p_Metric->Lapse_function;
+        }
+
+    }
+
+    for (int index = 0; index < 4; index++) {
+
+        B_plasma[index] = (B_eulerian[index] + p_Metric->Lapse_function * B_plasma[e_t] * Emission_medium_state->Plasma_Velocity[index]) / Lorentz_factor;
+
+    }
+
+    switch (this->s_Disk_params.e_Mag_field_magnitude_profile) {
+
+    case Magnetization_based:
+
+        B_plasma_norm = sqrt(this->s_Disk_params.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Emission_medium_state->Density * M_PROTON_CGS * 4 * std::numbers::pi);
+        break;
+
+    case Power_law_based:
+
+        B_plasma_norm = B_0 * pow(r_0 / r, Power);
+        break;
+
+    default:
+        std::cout << "Unsupported magnetic field magnitude profile! \n";
+        exit(ERROR);
+
+    }
+
+}
+
+const double* const Disk_model_type::get_disk_velocity(const double* const Local_State_Vector) {
+
+    /* The reference for this implementation is https://arxiv.org/pdf/2206.12066. */
+
+    /* === Initialize some variables === */
+    double Omega{}, rho{}, ell{}, u_t{}, u_phi{}, Normalization{}, inv_metric[4][4]{};
+
+
+    Metric_type s_Metric = this->p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
+    Metric_type s_dr_Metric = this->p_Sim_Context->p_Spacetime->get_dr_local_metric(Local_State_Vector);
+
+    /* = References for the sake of readability = */
+
+    const double& r_source = Local_State_Vector[e_r];
+    const double& theta_source = Local_State_Vector[e_theta];
+
+    const auto& g = s_Metric.Metric;
+    const auto& dr_g = s_dr_Metric.Metric;
+
+    /* ========================================== */
+
+    invert_metric(inv_metric, s_Metric.Metric);
+
+    switch (this->s_Disk_params.Velocity_profile_type) {
+
+    case e_Keplarian:
+
+        /* This velocity profile is defined only for orbit radii > ISCO. */
+        if (fabs(r_source) < this->p_Sim_Context->p_Spacetime->get_ISCO()[Inner]) { throw std::runtime_error("Disk with a Keplarian velocity profile extends below the ISCO orbit!"); }
+
+        Omega = (-dr_g[e_t][e_phi] + sqrt(dr_g[e_t][e_phi] * dr_g[e_t][e_phi] - dr_g[e_t][e_t] * dr_g[e_phi][e_phi])) / dr_g[e_phi][e_phi];
+        Normalization = g[e_t][e_t] + 2 * g[e_t][e_phi] * Omega + g[e_phi][e_phi] * Omega * Omega;
+
+        this->Disk_Velocity[e_t] = sqrt(-1.0 / Normalization);
+        this->Disk_Velocity[e_r] = 0.0;
+        this->Disk_Velocity[e_theta] = 0.0;
+        this->Disk_Velocity[e_phi] = this->Disk_Velocity[e_t] * Omega;
+
+        break;
+
+    default:
+
+        rho = r_source * fabs(sin(theta_source));
+        ell = sqrt(rho * rho * rho) / (1 + rho);
+
+        /* I have noticed that this velocity profile becomes ill-defined in some places for the metric in the below "if" clause.
+           I correct this by modifying the angular momentum profile by something that seems reasonable. */
+        if (Janis_Newman_Winicour == this->p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
+
+            double& gamma = p_Sim_Context->p_Init_Conditions->Metric_parameters.JNW_Gamma_Parameter;
+            ell *= pow(1. - 2. / r_source / gamma, gamma);
+
+        }
+        else if (Wormhole == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
+
+            ell *= (1. - p_Sim_Context->p_Init_Conditions->Metric_parameters.R_throat / r_source);
+
+        }
+
+        u_t = -1.0 / sqrt(-(inv_metric[e_t][e_t] - 2 * inv_metric[e_t][e_phi] * ell + inv_metric[e_phi][e_phi] * ell * ell));
+        u_phi = -u_t * ell;
+
+        /* Convert U_source to contravariant components to compute the circular velocity profile */
+        this->Disk_Velocity[e_t] = inv_metric[e_t][e_t] * u_t + inv_metric[e_t][e_phi] * u_phi;
+        this->Disk_Velocity[e_r] = 0.0;
+        this->Disk_Velocity[e_theta] = 0.0;
+        this->Disk_Velocity[e_phi] = inv_metric[e_phi][e_phi] * u_phi + inv_metric[e_phi][e_t] * u_t;
+
+        break;
+
+    }
+
+    if (isnan(this->Disk_Velocity[e_t]) or
+        isinf(this->Disk_Velocity[e_t]) or
+        isnan(this->Disk_Velocity[e_phi]) or
+        isinf(this->Disk_Velocity[e_phi])) {
+
+        throw std::runtime_error("Invalid disk velocity!");
+
+    }
+
+    return this->Disk_Velocity;
 
 }

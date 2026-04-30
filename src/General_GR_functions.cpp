@@ -46,6 +46,106 @@ double get_eq_induced_metric_det(const double Metric[4][4]) {
 
 }
 
+double get_4vec_dot_product(const double* const Vector_1, const double* const Vector_2, const double Metric[4][4], Tensor_type_enums Vector_type) {
+
+    double inv_metric[4][4]{};
+    double dot_procut{};
+
+    switch (Vector_type) {
+
+    case Covariant:
+
+        invert_metric(inv_metric, Metric);
+
+        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+            for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+                dot_procut += inv_metric[left_idx][right_idx] * Vector_1[left_idx] * Vector_2[right_idx];
+
+            }
+
+        }
+
+        break;
+
+    case Contravariant:
+
+        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+            for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+                dot_procut += Metric[left_idx][right_idx] * Vector_1[left_idx] * Vector_2[right_idx];
+
+            }
+
+        }
+
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported Tensor type - something broke in the get_4vec_dot_product function!");
+
+    }
+
+    return dot_procut;
+
+
+
+
+
+
+
+}
+
+double get_real_4vec_norm(const double* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type) {
+
+    double inv_metric[4][4]{};
+    double vec_norm_squrated{};
+
+    switch (Vector_type) {
+
+    case Covariant:
+
+        invert_metric(inv_metric, Metric);
+
+        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+            for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+                vec_norm_squrated += inv_metric[left_idx][right_idx] * Vector[left_idx] * Vector[right_idx];
+
+            }
+
+        }
+
+        break;
+
+    case Contravariant:
+
+        for (int left_idx = 0; left_idx <= 3; left_idx++) {
+
+            for (int right_idx = 0; right_idx <= 3; right_idx++) {
+
+                vec_norm_squrated += Metric[left_idx][right_idx] * Vector[left_idx] * Vector[right_idx];
+
+            }
+
+        }
+
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported Tensor type - something broke in the get_real_4vec_norm function!");
+
+    }
+
+    return std::sqrt(vec_norm_squrated);
+
+}
+
 double get_complex_4vec_norm(const std::complex<double>* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type) {
 
     double inv_metric[4][4]{};
@@ -85,7 +185,7 @@ double get_complex_4vec_norm(const std::complex<double>* const Vector, const dou
 
     default:
 
-        throw std::runtime_error("Unsupported Tensor type - something broke in the get_4vec_norm function!");
+        throw std::runtime_error("Unsupported Tensor type - something broke in the get_complex_4vec_norm function!");
 
     }
 
@@ -123,6 +223,20 @@ void Manipulate_index(const Metric_type* const p_Metric, const double* const Vec
 void Normalize_complex_vector(std::complex<double>* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type) {
 
     double Vector_norm = get_complex_4vec_norm(Vector, Metric, Vector_type);
+
+    if (isinf(1.0 / Vector_norm) or isnan(1.0 / Vector_norm)) { return; }
+
+    for (int idx = 0; idx < 4; idx++) {
+
+        Vector[idx] *= 1.0 / Vector_norm;
+
+    }
+
+}
+
+void Normalize_real_vector(double* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type) {
+
+    double Vector_norm = get_real_4vec_norm(Vector, Metric, Vector_type);
 
     if (isinf(1.0 / Vector_norm) or isnan(1.0 / Vector_norm)) { std::cout << "Invalid vector norm! \n"; exit(ERROR); }
 

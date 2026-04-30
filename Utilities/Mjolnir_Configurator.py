@@ -88,7 +88,6 @@ class Hotspot_model():
                  "Density_profile",
                  "Temperature_profile",
                  "Velocity_profile",
-                 "Radial_velocity_fraction",
                  
                  "Density_scale_factor",
                  "Density_spread",
@@ -202,7 +201,6 @@ class Simulation_configurator:
                  "NT_model_params", 
                  "file_manager", 
                  "average_emission_pitch_angle", 
-                 "thermalize_emission_medium",
                  "emission_pitch_angle_samples_to_average",
                  "object_mass",
                  "simulation_mode",
@@ -215,7 +213,6 @@ class Simulation_configurator:
 
     def __init__(self, 
                  Average_emission_pitch_angle: dict[str, int | str] = {"Value": 1, "Unit": "[-]"}, 
-                 thermalize_emission_medium: dict[str, int | str] = {"Value": 0, "Unit": "[-]"}, 
                  emission_pitch_angle_samples_to_average: dict[str, int | str] = {"Value": 50, "Units": "[-]"},
                  object_mass: dict[str, float | str] = {"Value": 6.2e9, "Unit": "[M_sun]"},
                  simulation_name: dict[str, str] = {"Value": "Test_Simulation", "Unit": "[-]"},
@@ -228,7 +225,6 @@ class Simulation_configurator:
                  Order_counting_scheme: dict[str, str] = {"Value": "Turning point based", "Unit": "[-]"}):
 
         self.average_emission_pitch_angle = Average_emission_pitch_angle
-        self.thermalize_emission_medium = thermalize_emission_medium
         self.emission_pitch_angle_samples_to_average = emission_pitch_angle_samples_to_average
         self.simulation_name = simulation_name
         self.object_mass = object_mass
@@ -508,8 +504,7 @@ class Simulation_configurator:
     def _configure_hotspot_model(self, Ensamble_type: dict[str, str] = {"Value": "Kappa", "Unit": "[-]"},
                                        Density_profile: dict[str, str] = {"Value": "Gaussian", "Unit": "[-]"},
                                        Temperature_profile: dict[str, str] = {"Value": "Gaussian", "Unit": "[-]"},
-                                       Velocity_profile: dict[str, str] = {"Value": "Theta Dependant", "Unit": "[-]"},
-                                       Radial_velocity_fraction: dict[str, float | str] = {"Value": 0, "Unit": "[-]"},
+                                       Velocity_profile: dict[str, str] = {"Value": "Circular Fixed Rate", "Unit": "[-]"},
                                        
                                        Radius: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
                                        Temporal_spread: dict[str, float | str] = {"Value": 85, "Unit": "[GM/c^3]"},
@@ -546,7 +541,6 @@ class Simulation_configurator:
         self.hotspot_model.Temperature_profile = Temperature_profile
         
         self.hotspot_model.Velocity_profile         = Velocity_profile
-        self.hotspot_model.Radial_velocity_fraction = Radial_velocity_fraction
 
         self.hotspot_model.Density_scale_factor     = Density_scale_factor     
         self.hotspot_model.Density_power_law_power  = Density_power_law_power
@@ -597,7 +591,6 @@ class Simulation_configurator:
         Encoding = 'UTF-8'
         XML_root_node = ET.Element("Simulation_Input", {"Simulation_Name": self.simulation_name["Value"]})
         ET.SubElement(XML_root_node, "Simulation_mode", units = str(self.simulation_mode["Unit"])).text = "{}".format(self.simulation_mode["Value"])
-        ET.SubElement(XML_root_node, "Thermalize_emission_medium", units = "[-]").text = "{}".format(self.thermalize_emission_medium["Value"])
         ET.SubElement(XML_root_node, "Average_emission_pitch_angle", units = "[-]").text = "{}".format(self.average_emission_pitch_angle["Value"])
         ET.SubElement(XML_root_node, "Emission_pitch_angle_samples_to_average", units = "[-]").text = "{}".format(self.emission_pitch_angle_samples_to_average["Value"])
         ET.SubElement(XML_root_node, "Central_object_mass", units = str(self.object_mass["Unit"])).text = "{}".format(self.object_mass["Value"])
@@ -758,7 +751,6 @@ class Simulation_configurator:
  
             if Hotspot_attrib_name == "Velocity_profile":
                 ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Hotspot_attrib["Value"])
-                ET.SubElement(Sub_element, "Radial_velocity_fraction", units = "-").text = "{}".format(self.hotspot_model.Radial_velocity_fraction["Value"])
             else:
                 Sub_element.text = "{}".format(Hotspot_attrib["Value"])
 

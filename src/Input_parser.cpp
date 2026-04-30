@@ -72,10 +72,6 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
 
     else{std::cout << "Unsupported velocity profile type for the hotspot!" << "\n"; return ERROR; }
 
-    temp_param_var = Hotspot_element->FirstChildElement("Velocity_profile")->FirstChildElement("Radial_velocity_fraction");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot radial velocity fraction!" << "\n"; return ERROR; }
-    Hotspot_params->Radial_velocity_fraction = std::stod(temp_param_var->GetText());
-
     // -------------------- The density sclae factor
     temp_param_var = Hotspot_element->FirstChildElement("Density_scale_factor");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot density scale factor!" << "\n"; return ERROR; }
@@ -101,22 +97,22 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field geometry phi component!" << "\n"; return ERROR; }
     Hotspot_params->Mag_field_geometry[e_phi - 1] = std::stod(temp_param_var->GetText());
 
-    Hotspot_params->Position[e_t] = 0.0;
+    Hotspot_params->Init_Position[e_t] = 0.0;
 
     // -------------------- The distance to the hotspot center
     temp_param_var = Hotspot_element->FirstChildElement("Distance");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the distance to the hotspot center!" << "\n"; return ERROR; }
-    Hotspot_params->Position[e_r] = std::stod(temp_param_var->GetText());
+    Hotspot_params->Init_Position[e_r] = std::stod(temp_param_var->GetText());
 
     // -------------------- The hotspot inclination
     temp_param_var = Hotspot_element->FirstChildElement("Inclination");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot inclination!" << "\n"; return ERROR; }
-    Hotspot_params->Position[e_theta] = std::stod(temp_param_var->GetText());
+    Hotspot_params->Init_Position[e_theta] = std::stod(temp_param_var->GetText());
 
     // -------------------- The hotspot azimuth
     temp_param_var = Hotspot_element->FirstChildElement("Azimuth");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot Azimuth!" << "\n"; return ERROR; }
-    Hotspot_params->Position[e_phi] = std::stod(temp_param_var->GetText());
+    Hotspot_params->Init_Position[e_phi] = std::stod(temp_param_var->GetText());
 
     // -------------------- The magnetization
     temp_param_var = Hotspot_element->FirstChildElement("Magnetization");
@@ -227,7 +223,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     // -------------------- The disk Magnetic field radial scale
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_radial_scale");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field radial scale!" << "\n"; return ERROR; }
-    Hotspot_params->Mag_field_radial_scale = std::stod(temp_param_var->GetText());
+    Hotspot_params->Mag_field_r_0 = std::stod(temp_param_var->GetText());
 
     // -------------------- The disk Magnetic field geometry enum
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_geometry");
@@ -245,7 +241,7 @@ Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element,
     // -------------------- The hotspot Magnetic field magnitude scale
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_magnitude_scale");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the hotspot magnetic field scale!" << "\n"; return ERROR; }
-    Hotspot_params->Mag_field_magnitude_scale = std::stod(temp_param_var->GetText());
+    Hotspot_params->Mag_field_B_0 = std::stod(temp_param_var->GetText());
 
     // -------------------- The hotspot Magnetic field power law power
     temp_param_var = Hotspot_element->FirstChildElement("Mag_field_power");
@@ -401,7 +397,7 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     // -------------------- The disk Magnetic field magnitude scale
     temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_magnitude_scale");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field scale!" << "\n"; return ERROR; }
-    Disk_params->Mag_field_magnitude_scale = std::stod(temp_param_var->GetText());
+    Disk_params->Mag_field_B_0 = std::stod(temp_param_var->GetText());
 
     // -------------------- The disk Magnetic field power law power
     temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_power");
@@ -411,7 +407,7 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     // -------------------- The disk Magnetic field radial scale
     temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_radial_scale");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk magnetic field radial scale!" << "\n"; return ERROR; }
-    Disk_params->Mag_field_radial_scale = std::stod(temp_param_var->GetText());
+    Disk_params->Mag_field_r_0 = std::stod(temp_param_var->GetText());
 
     // -------------------- The disk Magnetic field geometry enum
     temp_param_var = Common_paramaters_element->FirstChildElement("Mag_field_geometry");
@@ -1454,10 +1450,6 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     temp_param_var = Root_node->FirstChildElement("Emission_pitch_angle_samples_to_average");
     if (temp_param_var == nullptr) { std::cout << "Failed to find the number of pitch angle samples to average!" << "\n"; return ERROR; }
     p_Initial_conditions->Emission_pitch_angle_samples_to_average = std::stoi(temp_param_var->GetText());
-
-    temp_param_var = Root_node->FirstChildElement("Thermalize_emission_medium");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the Thermalize_emission_medium flag!" << "\n"; return ERROR; }
-    p_Initial_conditions->Thermalize_emission_medium = std::stoi(temp_param_var->GetText());
 
     /* ====================================== Parse the simulation mode specific settings ====================================== */
 

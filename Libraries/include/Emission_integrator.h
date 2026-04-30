@@ -124,6 +124,9 @@ private:
     double Current_State_Vector[e_Dynamic_state_size]{};
     double Current_Affine_Param{};
 
+    std::complex<double> Temp_Pol_Vector[e_Stokes_param_num]{};
+    double Temp_Stokes_Vector[e_Stokes_param_num]{};
+
     /* --------------- Pointers to a bunch of functions that the radiative transfer needs ---------------- */
 
     const Simulation_Context_type* p_Sim_Context;
@@ -170,10 +173,11 @@ public:
 
     void Propagate_Polarization_Vector(const double Start_Affine_Param, const double End_Affine_Param, const Tensor_type_enums Vec_type);
 
-    void Map_Stokes_to_Polarization_Vector(const double Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num]);
+    void Map_Stokes_to_Polarization_Vector(const double Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num], bool Map_Between_Intermediate);
 
-    void Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num]);
+    void Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num], bool Map_Between_Intermediate);
 
     const double* const get_current_Stokes_Vector() const;
 
+    void normalize_polarization_vector(const double Affine_param); 
 };

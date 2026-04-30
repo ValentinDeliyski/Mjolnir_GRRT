@@ -68,12 +68,12 @@ void Emission_models_class::get_thermal_synchrotron_absorbtion_fit_functions(con
 }
 
 void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const Thermal_transfer_f_arguments_type* const p_Transfer_args,
-                                                                                 double* const Faradey_fucntions) const {
+                                                                          double* const Faradey_functions) const {
 
     /* The reference for this implementation is from Appendix B2 of https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf, expressions (33) to (37). */
 
     /* Zero out the Faradey functions just in case. */
-    memset(Faradey_fucntions, 0, e_Stokes_param_num * sizeof(double));
+    memset(Faradey_functions, 0, e_Stokes_param_num * sizeof(double));
 
     /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
@@ -82,23 +82,30 @@ void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const 
     double const K1_Bessel = std::cyl_bessel_k(1.0, 1.0 / p_Transfer_args->T_electron_dim);
     double const K2_Bessel = std::cyl_bessel_k(2.0, 1.0 / p_Transfer_args->T_electron_dim);
 
-    if (isnan(p_Transfer_args->X) or isinf(p_Transfer_args->X) or isinf(1.0 / p_Transfer_args->X) or isinf(1e10 / K2_Bessel)) { return; }
+    if (isnan(p_Transfer_args->X) or isinf(p_Transfer_args->X) or isinf(1.0 / p_Transfer_args->X) or isinf(1 / K2_Bessel)) { return; }
 
-    double const common_exp_term = exp(-1.699 / p_Transfer_args->sqrt_X);
+    double const common_exp_term = exp(-1.69 / p_Transfer_args->sqrt_X);
 
     double const f_0 = 2.001 * exp(-19.78 / p_Transfer_args->X_to_0_p_5175)
                      - cos(39.89 / p_Transfer_args->sqrt_X) * exp(-70.16 / p_Transfer_args->X_to_0_p_6)
                      - 0.011 * common_exp_term;
 
     double const f_m = f_0
-                     + (0.011 * common_exp_term - 0.003135 * p_Transfer_args->cbrt_X * p_Transfer_args->cbrt_X * p_Transfer_args->cbrt_X * p_Transfer_args->cbrt_X)
+                     + (0.011 * common_exp_term - 0.003135 * p_Transfer_args->cbrt_X * p_Transfer_args->X)
                      * 0.5 * (1 + tanh(10 * log(0.6648 / p_Transfer_args->sqrt_X)));
 
     double const delta_J_5 = 0.4379 * log(1 + 1.3414 / p_Transfer_args->X_to_0_p_7515);
 
-    Faradey_fucntions[Q] = f_m * p_Transfer_args->sin_pitch_angle * p_Transfer_args->sin_pitch_angle * (K1_Bessel / K2_Bessel + 6 * p_Transfer_args->T_electron_dim);
+    Faradey_functions[Q] = f_m * p_Transfer_args->sin_pitch_angle * p_Transfer_args->sin_pitch_angle * (K1_Bessel / K2_Bessel + 6 * p_Transfer_args->T_electron_dim);
 
-    Faradey_fucntions[V] = (K0_Bessel - delta_J_5) / K2_Bessel * p_Transfer_args->cos_pitch_angle;
+    Faradey_functions[V] = (K0_Bessel - delta_J_5) / K2_Bessel * p_Transfer_args->cos_pitch_angle;
+
+    if (std::abs(Faradey_functions[Q]) > 1e10 or std::abs(Faradey_functions[V]) > 1e10) {
+
+        Faradey_functions[Q] = 0.0;
+        Faradey_functions[V] = 0.0;
+
+    }
 
 }
 
@@ -200,7 +207,7 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
     else {
 
         _2F1 = pow(1. - z, -a) * std::tgamma(c) / std::tgamma(b) * std::tgamma(b - a) / std::tgamma(c - a) * gsl_sf_hyperg_2F1(a, c - b, a - b + 1., 1. / (1. - z))
-             + pow(1. - z, -b) * std::tgamma(c) / std::tgamma(a) * std::tgamma(a - b) / std::tgamma(c - b) * gsl_sf_hyperg_2F1(b, c - a, b - a + 1., 1. / (1 - z));
+             + pow(1. - z, -b) * std::tgamma(c) / std::tgamma(a) * std::tgamma(a - b) / std::tgamma(c - b) * gsl_sf_hyperg_2F1(b, c - a, b - a + 1., 1. / (1. - z));
 
     }
 
@@ -314,6 +321,13 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
 
         Faradey_functions[Q] = (25. / 2 * T_dim - sqrt_T_dim + 5. * sqrt_T_dim * exp_T_dim) * Q_coeff * sin_emission_angle * sin_emission_angle;
         Faradey_functions[V] = (T_dim + 13. / 14) / (2. * T_dim + 13. / 14)* K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
+
+    }
+
+    if (std::abs(Faradey_functions[Q]) > 1e10 or std::abs(Faradey_functions[V]) > 1e10) {
+
+        Faradey_functions[Q] = 0.0;
+        Faradey_functions[V] = 0.0;
 
     }
 

@@ -101,11 +101,11 @@ struct Disk_model_parameters_type {
        This vector gets normalized with the metric before use. */
     double Mag_field_geometry[3]{};
 
-    double Mag_field_magnitude_scale{};
+    double Mag_field_B_0{};
 
     double Mag_field_power{};
 
-    double Mag_field_radial_scale{};
+    double Mag_field_r_0{};
 
     /*! @brief Specifies the relative density at which we start evaluating the emission of the disk. */
     double Threshold_relative_density{};
@@ -140,21 +140,6 @@ struct Magnetic_fields_type {
     /*! @brief The magnitude of the magnetic field in the plasma frame in units of [G]. */
     double B_field_plasma_frame_norm{};
 
-    /*! @brief Specifies the direction of the magnetic field. */
-    Magnetic_field_geometry_enums e_Mag_field_geometry{};
-
-    /*! @brief Specifies how the magnitude of the magnetic field is calculated. */
-    Magnetic_field_magnitude_enums e_Mag_field_magnitude_profile{};
-
-    /*! @brief This is the overall scale factor for the power-law magnetic field profile, which is given by Mag_field_magnitude_scale * pow(Mag_field_radial_scale / State_Vector[e_r], Mag_field_power) */
-    double Mag_field_magnitude_scale{};
-
-    /*! @brief This determines the power of the power-law magnetic field profile, which is given by Mag_field_magnitude_scale * pow(Mag_field_radial_scale / State_Vector[e_r], Mag_field_power) */
-    double Mag_field_power{};
-
-    /*! @brief This affects the power-law magnetic field profile, which is given by Mag_field_magnitude_scale * pow(Mag_field_radial_scale / State_Vector[e_r], Mag_field_power) */
-    double Mag_field_radial_scale{};
-
 };
 
 struct Hotspot_model_parameters_type {
@@ -175,12 +160,8 @@ struct Hotspot_model_parameters_type {
     /*! @brief Specifies the velocity profile of the hotspot. */
     Velocity_enums Velocity_profile_type{};
 
-    /*! @brief Specifies the magnitude of the radial velocity component. I use this to interpolate the circular velocity profile,
-      specified by the "Velocity_profile_type" enum, with a purely radial profile. The range is [0, 1]. */
-    double Radial_velocity_fraction{};
-
     /*! @brief The hotspot initial position, specified as [Time, Distance, Polar Angle, Azimuth Angle]. */
-    double Position[4]{};
+    double Init_Position[4]{};
 
     /*! @brief Struct that holds all the hotspot model parameters. */
     Hotspot_model_params_type Profile_params{};
@@ -209,26 +190,23 @@ struct Hotspot_model_parameters_type {
     double Threshold_relative_density{};
 
     /*! @brief This is the overall scale factor for the power-law magnetic field profile, which is given by Mag_field_magnitude_scale * pow(Mag_field_radial_scale / State_Vector[e_r], Mag_field_power) */
-    double Mag_field_magnitude_scale{};
+    double Mag_field_B_0{};
 
     /*! @brief This determines the power of the power-law magnetic field profile, which is given by Mag_field_magnitude_scale * pow(Mag_field_radial_scale / State_Vector[e_r], Mag_field_power) */
     double Mag_field_power{};
 
     /*! @brief This affects the power-law magnetic field profile, which is given by Mag_field_magnitude_scale * pow(Mag_field_radial_scale / State_Vector[e_r], Mag_field_power) */
-    double Mag_field_radial_scale{};
+    double Mag_field_r_0{};
 
 };
 
 struct Emission_medium_state_type {
 
-    /*! @brief The density of the emission medium at the current point in units of [g / cm^3]. */
+    /*! @brief The number density of the emission medium at the current point in units of [1 / cm^3]. */
     double Density{};
 
     /*! @brief The temperature of the emission medium at the current point in units of [K]. */
     double Temperature{};
-
-    /*! @brief The magnetization of the emission medium at the current point. */
-    double Magnetization{};
 
     /*! @brief Pointer to the plasma velocity array at the current point in geometric units and local coordinates. */
     double Plasma_Velocity[4];
@@ -860,10 +838,6 @@ struct Initial_conditions_type {
        of the polarization vector (though the stokes vector will be zero, so the "if" statement in which
        the parallel transport is placed won't pass, so really only the ray will be propagated). */
     int Min_order{};
-
-    /*! @brief Boolean flag that controls weather to simply add the hotspot and disk density and temperatures
-       (effectively treating them as one single medium). */
-    bool Thermalize_emission_medium{};
 
 };
 

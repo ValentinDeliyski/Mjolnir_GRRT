@@ -29,9 +29,6 @@ private:
     /* Flag that controls weather to include the polarization calculations. */
     bool Include_polarization{};
 
-    /* Flag that controls weather we simulate in the "Thermalized" mode where we add densities and temperatuers, rather than emission functions. */
-    bool Thermalize_emission_medium{};
-
     // ====================== Thermally Distributed synchrotron Fit Functions ====================== //
 
     //! Evaluates the thermal sychrotron emission fit functions.
@@ -123,38 +120,6 @@ public:
     Hotspot_model_type* p_Hotspot_Model;
 
     Emission_models_class(Simulation_Context_type* p_Sim_Context);
-    
-    //! Computes the emission medium's plasma 4-velocity
-    /*! Computes the emission medium's plasma 4-velocity
-     *
-     *   \param [in] State_Vector_Local - Current photon state vector in local coordinates.
-     *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct
-     *   \param [in] Velocity_profile - Enum for the type of velocity profile
-     *   \param [in] Radial_velocity_fraction - The fractional part of the velocity that is in the radial direction [-1, 1]
-     *   \param [out] Plasma_Velocity - Pointer to the array that holds the plasma velocity vectors in local coordinates
-     */
-    Return_Values get_plasma_velocity(const double* const State_Vector_Local,
-                                      const Simulation_Context_type* const p_Sim_Context, 
-                                      Velocity_enums const Velocity_profile,
-                                      double const Radial_velocity_fraction,
-                                      double* Plasma_Velocity);
-    
-    //! Computes the magnetic field 4-vector in the coordinate and plasma frames.
-    /*! Computes the magnetic field 4-vector, measured by a comoving obverver (with 4-velocity Plasma_velocity) and a static observer (with 4-velocity n_mu = {-1, 0, 0, 0}).
-     *
-     *    NOTE: The magnitude of the magnetic field in these frames is different, because its not concerved under Lorentz boosts.
-     *          In the plasma frame I set the geometry of the field, then scale it by B_Plasma_norm_CGS.
-     *
-     *    NOTE: The magnitudes of the magnetic fields in these frames are given in [G].
-     * 
-     *   \param [in] State_Vector - Current photon state vector - used to get the photon position.
-     *   \param [in] p_Metric - Pointer to the metric that should be used in the calculations.
-     *   \param [out] Emission_medium_state - Pointer to the struct that holds the emission medium state.
-     *   \return Nothing.
-     */
-    void get_magnetic_field(const double* const State_Vector,
-                            const Metric_type* const Metric,
-                            Emission_medium_state_type* const p_Emission_medium_state) ;
     
     //! Main "Selector" For The Transfer Functions.
     /*! Calculates the density, temperature, magnetic field and 4-velocity of the chosen emission medium and calls the respective transfer functions evaluation.

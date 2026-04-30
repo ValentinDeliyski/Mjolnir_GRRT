@@ -128,8 +128,6 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affin
 
     }
 
-    double New_Stokes_vector[e_Stokes_param_num]{};
-    double Temp_Stokes_Vector[e_Stokes_param_num]{};
     double Temp_affine_param{};
 
     const double Geometric_Step = End_Affine_Param - Start_Affine_Param;
@@ -137,17 +135,6 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affin
     this->Current_Affine_Param = Start_Affine_Param;
 
     for (int RK_stage = 0; RK_stage < RK_size; RK_stage++) {
-
-        memcpy(Temp_Stokes_Vector, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
-
-        for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
-
-            for (int derivative_idx = 0; derivative_idx < RK_stage; derivative_idx++) {
-
-                Temp_Stokes_Vector[state_idx] += CGS_Step * Stage_coeff[RK_stage][derivative_idx] * this->Rad_Transfer_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
-
-            }
-        }
 
         Temp_affine_param = this->Current_Affine_Param + Affine_param_coeff[RK_stage] * Geometric_Step;
 
@@ -168,35 +155,44 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affin
             add_vectors(Temp_Transfer_functions.Emission_functions, Total_Transfer_Functions.Emission_functions, e_Stokes_param_num, Total_Transfer_Functions.Emission_functions);
             add_vectors(Temp_Transfer_functions.Faradey_functions, Total_Transfer_Functions.Faradey_functions, e_Stokes_param_num, Total_Transfer_Functions.Faradey_functions);
 
-            
         }
 
         this->get_Radiative_transfer_RHS(Total_Transfer_Functions.Emission_functions,
                                          Total_Transfer_Functions.Absorbtion_functions,
                                          Total_Transfer_Functions.Faradey_functions,
-                                         Temp_Stokes_Vector,
+                                         this->Temp_Stokes_Vector,
                                          this->Rad_Transfer_RHS_log + RK_stage * e_Stokes_param_num);
 
-        /* ------------------------------------------------------------------------------------------------------------------------------------------------------- */
+        /* -------------------------------------------------------- Propagate the intermediate Stokes Vector -------------------------------------------------------- */
+
+        memcpy(this->Temp_Stokes_Vector, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
+
+        for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
+
+            for (int derivative_idx = 0; derivative_idx < RK_stage; derivative_idx++) {
+
+                this->Temp_Stokes_Vector[state_idx] += CGS_Step * Stage_coeff[RK_stage][derivative_idx] * this->Rad_Transfer_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
+
+            }
+        }
+
+        /* ---------------------------------------------------------------------------------------------------------------------------------------------------------- */
 
     }
 
-    memcpy(New_Stokes_vector, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
+    this->Current_Affine_Param += Geometric_Step;
 
     for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
 
         for (int derivative_idx = 0; derivative_idx < RK_size; derivative_idx++) {
 
-            New_Stokes_vector[state_idx] += CGS_Step * Main_solution_coeff[derivative_idx] * this->Rad_Transfer_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
+            this->Current_Stokes_Vector[state_idx] += CGS_Step * Main_solution_coeff[derivative_idx] * this->Rad_Transfer_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
 
         }
 
     }
 
-    memcpy(this->Current_Stokes_Vector, New_Stokes_vector, e_Stokes_param_num * sizeof(double));
-    this->Current_Affine_Param += Geometric_Step;
-
-    this->Update_emission_log(New_Stokes_vector);
+    this->Update_emission_log(this->Current_Stokes_Vector);
 
 }
 
@@ -325,7 +321,7 @@ const double* const Emission_Integrator_class::get_ray_Global_State_Vector(const
 
 }
 
-const double* const Emission_Integrator_class::get_current_Stokes_Vector() const {
+const double* const Emission_Integrator_class::get_current_Stokes_Vector() const{
 
     return this->Current_Stokes_Vector;
 
@@ -366,71 +362,85 @@ void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start
 
     }
 
-    std::complex<double> New_Pol_Vector[e_Stokes_param_num]{};
-    std::complex<double> Temp_Pol_Vector[e_Stokes_param_num]{};
     double Temp_affine_param{};
 
     const double Step = End_Affine_Param - Start_Affine_Param;
     this->Current_Affine_Param = Start_Affine_Param;
 
     for (int RK_stage = 0; RK_stage < RK_size; RK_stage++) {
-    
-        memcpy(Temp_Pol_Vector, this->Current_Pol_Vector, e_Stokes_param_num * sizeof(std::complex<double>));
+
+        Temp_affine_param = this->Current_Affine_Param + Affine_param_coeff[RK_stage] * Step;
+
+        /* --------------------------------------- Get the Parallel Transport RHS --------------------------------------- */
+
+        this->get_Parallel_Transport_RHS(this->get_ray_Global_State_Vector(Temp_affine_param),
+                                         this->Temp_Pol_Vector,
+                                         e_Vec_type,
+                                         this->Parallel_Transport_RHS_log + RK_stage * e_Stokes_param_num);
+
+        /* -------------------------------------------------------------------------------------------------------------- */
+
+        memcpy(this->Temp_Pol_Vector, this->Current_Pol_Vector, e_Stokes_param_num * sizeof(std::complex<double>));
     
         for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
     
             for (int derivative_idx = 0; derivative_idx < RK_stage; derivative_idx++) {
     
-                Temp_Pol_Vector[state_idx] += Step * Stage_coeff[RK_stage][derivative_idx] * this->Parallel_Transport_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
+                this->Temp_Pol_Vector[state_idx] += Step * Stage_coeff[RK_stage][derivative_idx] * this->Parallel_Transport_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
     
             }
         }
-    
-        Temp_affine_param = this->Current_Affine_Param + Affine_param_coeff[RK_stage] * Step;
-    
-        /* --------------------------------------- Get the Parallel Transport RHS --------------------------------------- */
-    
-        this->get_Parallel_Transport_RHS(this->get_ray_Global_State_Vector(Temp_affine_param),
-                                         Temp_Pol_Vector, 
-                                         e_Vec_type, 
-                                         this->Parallel_Transport_RHS_log + RK_stage * e_Stokes_param_num);
-    
-        /* -------------------------------------------------------------------------------------------------------------- */
-    
+   
     }
     
-    memcpy(New_Pol_Vector, this->Current_Pol_Vector, e_Stokes_param_num * sizeof(std::complex<double>));
-
     for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
     
         for (int derivative_idx = 0; derivative_idx < RK_size; derivative_idx++) {
     
-            New_Pol_Vector[state_idx] += Step * Main_solution_coeff[derivative_idx] * this->Parallel_Transport_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
+            this->Current_Pol_Vector[state_idx] += Step * Main_solution_coeff[derivative_idx] * this->Parallel_Transport_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
     
         }
     
     }
     
-    memcpy(this->Current_Pol_Vector, New_Pol_Vector, e_Stokes_param_num * sizeof(std::complex<double>));
     this->Current_Affine_Param += Step;
+
+    this->normalize_polarization_vector(this->Current_Affine_Param);
 
     this->Update_polarization_log();
 
 }
 
-void Emission_Integrator_class::Map_Stokes_to_Polarization_Vector(const double Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num]) {
+void Emission_Integrator_class::Map_Stokes_to_Polarization_Vector(const double Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num], bool Map_Between_Intermediate) {
 
-    memset(this->Current_Pol_Vector, 0, 4 * sizeof(std::complex<double>));
+    double* Stokes_Vector_to_map = nullptr;
+    std::complex<double>* Pol_Vector_to_map = nullptr;
 
-    std::complex<double> Stokes_Basis_Pol_vec[e_Stokes_param_num];
+    if (Map_Between_Intermediate) {
 
-    double Polarized_Intensity = vector_norm(this->Current_Stokes_Vector + 1, 3);
+        Stokes_Vector_to_map = this->Temp_Stokes_Vector;
+        Pol_Vector_to_map = this->Temp_Pol_Vector;
 
-    Stokes_Basis_Pol_vec[1] = M_SQRT1_2;
+    }
+    else {
 
-    if (!isinf(this->Current_Stokes_Vector[Q] / Polarized_Intensity) and !isnan(this->Current_Stokes_Vector[Q] / Polarized_Intensity)) {
+        Stokes_Vector_to_map = this->Current_Stokes_Vector;
+        Pol_Vector_to_map = this->Current_Pol_Vector;
 
-        Stokes_Basis_Pol_vec[1] = sqrt((1 + this->Current_Stokes_Vector[Q] / Polarized_Intensity) / 2);
+
+    }
+
+    memset(Pol_Vector_to_map, 0, 4 * sizeof(std::complex<double>));
+
+    std::complex<double> Stokes_Basis_Pol_vec[e_Stokes_param_num]{};
+
+    double Polarized_Intensity = vector_norm(Stokes_Vector_to_map + 1, 3);
+
+    Stokes_Basis_Pol_vec[1] = 1.0 / std::numbers::sqrt2;
+
+    if (!isinf(Stokes_Vector_to_map[Q] / Polarized_Intensity) and !isnan(Stokes_Vector_to_map[Q] / Polarized_Intensity)) {
+
+        Stokes_Basis_Pol_vec[1] = sqrt((1 + Stokes_Vector_to_map[Q] / Polarized_Intensity) / 2);
 
     }
 
@@ -438,7 +448,7 @@ void Emission_Integrator_class::Map_Stokes_to_Polarization_Vector(const double S
 
     if (!isinf(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity)) and !isnan(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity))) {
 
-        Stokes_Basis_Pol_vec[2] = (this->Current_Stokes_Vector[U] - complex_i * this->Current_Stokes_Vector[V]) / (2.0 * Stokes_Basis_Pol_vec[1] * Polarized_Intensity);
+        Stokes_Basis_Pol_vec[2] = (Stokes_Vector_to_map[U] - complex_i * Stokes_Vector_to_map[V]) / (2.0 * Stokes_Basis_Pol_vec[1] * Polarized_Intensity);
 
     }
 
@@ -446,7 +456,7 @@ void Emission_Integrator_class::Map_Stokes_to_Polarization_Vector(const double S
 
         for (int stokes_idx = 0; stokes_idx < 4; stokes_idx++) {
 
-            this->Current_Pol_Vector[coord_idx] += Stokes_Tetrad[stokes_idx][coord_idx] * Stokes_Basis_Pol_vec[stokes_idx];
+            Pol_Vector_to_map[coord_idx] += Stokes_Tetrad[stokes_idx][coord_idx] * Stokes_Basis_Pol_vec[stokes_idx];
 
         }
 
@@ -454,45 +464,50 @@ void Emission_Integrator_class::Map_Stokes_to_Polarization_Vector(const double S
 
 }
 
-void Emission_Integrator_class::Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num]) {
+void Emission_Integrator_class::Map_Polarization_Vector_to_Stokes(const double inv_Stokes_Tetrad[e_Stokes_param_num][e_Stokes_param_num], bool Map_Between_Intermediate) {
 
     std::complex<double> Stokes_Basis_Pol_vec[4]{};
     
+    double* Stokes_Vector_to_map = nullptr;
+    std::complex<double>* Pol_Vector_to_map = nullptr;
+
+    if (Map_Between_Intermediate) {
+
+        Stokes_Vector_to_map = this->Temp_Stokes_Vector;
+        Pol_Vector_to_map = this->Temp_Pol_Vector;
+
+    }
+    else {
+
+        Stokes_Vector_to_map = this->Current_Stokes_Vector;
+        Pol_Vector_to_map = this->Current_Pol_Vector;
+
+    }
+
     for (int stokes_idx = 0; stokes_idx < 4; stokes_idx++) {
     
         for (int coord_idx = 0; coord_idx < 4 ; coord_idx++) {
     
-            Stokes_Basis_Pol_vec[stokes_idx] += inv_Stokes_Tetrad[stokes_idx][coord_idx] * this->Current_Pol_Vector[coord_idx];
+            Stokes_Basis_Pol_vec[stokes_idx] += inv_Stokes_Tetrad[stokes_idx][coord_idx] * Pol_Vector_to_map[coord_idx];
 
         }
 
     }
 
-    double Polarized_Intensity = vector_norm(this->Current_Stokes_Vector + 1, 3);
+    Normalize_complex_vector(Stokes_Basis_Pol_vec, Minkowski_Metric, Contravariant);
 
-    this->Current_Stokes_Vector[Q] = (Polarized_Intensity * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[1]) -
-                                                             Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[2]))).real();
+    double Polarized_Intensity = vector_norm(Stokes_Vector_to_map + 1, 3);
+
+    Stokes_Vector_to_map[Q] = (Polarized_Intensity * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[1]) -
+                                                      Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[2]))).real();
     
-    this->Current_Stokes_Vector[U] = (Polarized_Intensity * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]) +
-                                                             Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[1]))).real();
+    Stokes_Vector_to_map[U] = (Polarized_Intensity * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]) +
+                                                      Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[1]))).real();
     
-    this->Current_Stokes_Vector[V] = (Polarized_Intensity * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]) - 
-                                                             Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[1]))).imag();
-
-    double Polarized_Intensity_after_mapping = vector_norm(this->Current_Stokes_Vector + 1, 3);
-
-    if (!isnan(1. / Polarized_Intensity_after_mapping) and !isinf(1.0 / Polarized_Intensity_after_mapping)) {
-
-        for (int idx = 1; idx < 4; idx++) {
-
-            this->Current_Stokes_Vector[idx] *= Polarized_Intensity / Polarized_Intensity_after_mapping;
-
-        }
-
-    }
+    Stokes_Vector_to_map[V] = (Polarized_Intensity * (Stokes_Basis_Pol_vec[1] * std::conj(Stokes_Basis_Pol_vec[2]) -
+                                                      Stokes_Basis_Pol_vec[2] * std::conj(Stokes_Basis_Pol_vec[1]))).imag();
 
 }
-
 
 void Emission_Integrator_class::Update_polarization_log() {
 
@@ -520,3 +535,31 @@ const std::complex<double>* const Emission_Integrator_class::get_current_Polariz
     return this->Current_Pol_Vector;
 
 };
+
+void Emission_Integrator_class::normalize_polarization_vector(const double Affine_param) {
+
+    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_local_metric(this->get_ray_Global_State_Vector(Affine_param));
+
+    double norm{};
+
+    for (int idx1 = 0; idx1 < 4; idx1++) {
+
+        for (int idx2 = 0; idx2 < 4; idx2++) {
+
+            norm += (s_Metric.Metric[idx1][idx2] * this->Current_Pol_Vector[idx1] * std::conj(this->Current_Pol_Vector[idx2])).real();
+
+        }
+
+    }
+
+    norm = std::sqrt(norm);
+
+    if (isinf(1.0 / norm) or isnan(1.0 / norm)) { return; }
+
+    for (int idx = 0; idx < 4; idx++) {
+
+        this->Current_Pol_Vector[idx] = this->Current_Pol_Vector[idx] / norm;
+
+    }
+
+}

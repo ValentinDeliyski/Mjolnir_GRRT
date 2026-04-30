@@ -1,5 +1,6 @@
 #pragma once
 #include <complex>
+#include <numbers>
 typedef double const Real;
 
 const int Nyström_size = 6;
@@ -14,6 +15,11 @@ Real Nyström_Deriv_coeffs[Nyström_size][Nyström_size] = { {   0.,      0.,      
 Real Nyström_Coeff_sol[Nyström_size] = { 23. / 192 , 0., 125. / 192, 0., -27. / 64, 125. / 192 };
 Real Nyström_Coeff_param[Nyström_size] = { 0 , 1. / 3, 2. / 5, 1., 2. / 3, 4. / 5 };
 
+constexpr double Minkowski_Metric[4][4] = { {-1., 0., 0., 0.},
+                                            { 0., 1., 0., 0.},
+                                            { 0., 0., 1., 0.},
+                                            { 0., 0., 0., 1.} };
+
 constexpr std::complex<double> complex_i = { 0.0, 1.0 };
 
 /*
@@ -26,10 +32,9 @@ constexpr double M_SUN_SI = 1.989e30;
 
 constexpr double G_NEWTON_SI = 6.6743e-11;
 
+constexpr double M_PROTON_SI = 1.6726219e-27;
 constexpr double M_ELECTRON_SI = 9.1093837e-31;
 constexpr double Q_ELECTRON_SI = 1.60217663e-19;
-
-constexpr double M_PROTON_SI = 1.67262192e-27;
 
 constexpr double C_LIGHT_SI         = 299792458;
 constexpr double BOLTZMANN_CONST_SI = 1.380649e-23;

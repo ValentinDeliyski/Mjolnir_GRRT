@@ -262,8 +262,8 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
         case Power_law_based:
 
             *Output_file << "Magnetic field magnitude profile: Power law based\n"
-                         << "Magnetic field scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_magnitude_scale << "\n"
-                         << "Magnetic field radial scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_radial_scale << "\n"
+                         << "Magnetic field scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_B_0 << "\n"
+                         << "Magnetic field radial scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_r_0 << "\n"
                          << "Magnetic field power law: " << this->p_Initial_Conditions->Disk_params.Mag_field_power << "\n";
 
             break;
@@ -394,16 +394,16 @@ void File_manager_class::write_hotspot_metadata(std::ofstream* Output_file) {
                  << this->p_Initial_Conditions->Hotspot_params.Electron_temperature_scale
                  << "\n";
 
-    *Output_file << "--------------------------- Hotspot Position" << "\n";
+    *Output_file << "--------------------------- Initial Hotspot Position" << "\n";
 
     *Output_file << "Distance [M]: "
-                 << this->p_Initial_Conditions->Hotspot_params.Position[e_r]
+                 << this->p_Initial_Conditions->Hotspot_params.Init_Position[e_r]
                  << "\n"
                  << "Inclination [Deg]: "
-                 << this->p_Initial_Conditions->Hotspot_params.Position[e_theta] * 180.0 / M_PI
+                 << this->p_Initial_Conditions->Hotspot_params.Init_Position[e_theta] * 180.0 / M_PI
                  << "\n"
                  << "Azimuth [Deg]: "
-                 << this->p_Initial_Conditions->Hotspot_params.Position[e_phi] * 180.0 / M_PI
+                 << this->p_Initial_Conditions->Hotspot_params.Init_Position[e_phi] * 180.0 / M_PI
                  << "\n";
 
     *Output_file << "Coordinate time offset [M]: " << this->p_Initial_Conditions->Hotspot_params.Profile_params.Coord_time_offset - this->p_Initial_Conditions->Observer_params.distance << "\n";

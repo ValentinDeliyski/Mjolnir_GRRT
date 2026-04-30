@@ -5,31 +5,99 @@ Hotspot_model_type::Hotspot_model_type(Simulation_Context_type* p_Sim_Context) {
     if (nullptr != p_Sim_Context) {
 
         this->s_Hotspot_params = p_Sim_Context->p_Init_Conditions->Hotspot_params;
-
+        this->p_Spacetime = p_Sim_Context->p_Spacetime;
     }
     else { throw std::runtime_error("Could not load the hotspot parameter struct! \n"); }
 
+    memset(this->Current_Velocity, 0, 4 * sizeof(double));
+
+    this->Current_Position.Distance = this->s_Hotspot_params.Init_Position[e_r];
+    this->Current_Position.Inclination = this->s_Hotspot_params.Init_Position[e_theta];
+    this->Current_Position.Azimuth = this->s_Hotspot_params.Init_Position[e_phi];
+
 }
 
-Hotspot_position_type Hotspot_model_type::get_hotspot_position(const double* const State_Vector,
-                                                               const double* const Hotspot_Velocity) const {
+double* Hotspot_model_type::get_hotspot_velocity(bool Eval_at_hotspot_center, const double* const Local_State_Vector) {
 
-    Hotspot_position_type Hotspot_position{};
-    double Hotspot_ang_velocity{};
+    double Hotspot_State_Vector[e_Dynamic_state_size]{};
 
-    if (nullptr != Hotspot_Velocity) { Hotspot_ang_velocity = Hotspot_Velocity[e_phi] / Hotspot_Velocity[e_t]; }
+    Hotspot_State_Vector[e_r] = this->Current_Position.Distance;
+    Hotspot_State_Vector[e_theta] = this->Current_Position.Inclination;
+    Hotspot_State_Vector[e_phi] = this->Current_Position.Azimuth;
 
-    Hotspot_position.Distance    = this->s_Hotspot_params.Position[e_r];
-    Hotspot_position.Inclination = M_PI_2;
-    Hotspot_position.Azimuth     = this->s_Hotspot_params.Position[e_phi] + Hotspot_ang_velocity * State_Vector[e_t];
+    Metric_type s_Metric{};
 
-   double sin_hotspot_inclination = sin(Hotspot_position.Inclination);
+    if (Eval_at_hotspot_center) {
 
-    Hotspot_position.x = Hotspot_position.Distance * sin_hotspot_inclination * cos(Hotspot_position.Azimuth);
-    Hotspot_position.y = Hotspot_position.Distance * sin_hotspot_inclination * sin(Hotspot_position.Azimuth);
-    Hotspot_position.z = Hotspot_position.Distance * cos(Hotspot_position.Inclination);
+        s_Metric = this->p_Spacetime->get_local_metric(Hotspot_State_Vector);
 
-    return Hotspot_position;
+    }
+    else {
+
+        s_Metric = this->p_Spacetime->get_local_metric(Local_State_Vector);
+
+    }
+
+    Metric_type s_dr_Metric = this->p_Spacetime->get_dr_local_metric(Hotspot_State_Vector);
+
+    /* = References for the sake of readability = */
+
+    const auto& g = s_Metric.Metric;
+    const auto& dr_g = s_dr_Metric.Metric;
+
+    /* ========================================== */
+
+    if (e_Circular_fixed_rate != this->s_Hotspot_params.Velocity_profile_type) {
+
+        throw std::runtime_error("Invalid hotspot velocity profile!");
+
+    }
+
+    /* This is the angular velocity of a geodesic with zero a radial velocity component. */
+    const double Omega = (-dr_g[e_t][e_phi] + sqrt(dr_g[e_t][e_phi] * dr_g[e_t][e_phi] - dr_g[e_t][e_t] * dr_g[e_phi][e_phi])) / dr_g[e_phi][e_phi];
+    const double Normalization = g[e_t][e_t] + 2 * g[e_t][e_phi] * Omega + g[e_phi][e_phi] * Omega * Omega;
+
+    this->Current_Velocity[e_t]     = sqrt(-1.0 / Normalization);
+    this->Current_Velocity[e_r]     = 0.0;
+    this->Current_Velocity[e_theta] = 0.0;
+    this->Current_Velocity[e_phi]   = this->Current_Velocity[e_t] * Omega;
+
+    if (isnan(this->Current_Velocity[e_t]) or
+        isinf(this->Current_Velocity[e_t]) or
+        isnan(this->Current_Velocity[e_phi]) or
+        isinf(this->Current_Velocity[e_phi])) {
+
+        throw std::runtime_error("Invalid hotspot velocity!");
+
+    }
+
+    if (nullptr == this->Current_Velocity) { throw std::runtime_error("Hotspot velocity is a null pointer!"); }
+
+    return this->Current_Velocity;
+
+}
+
+Hotspot_position_type Hotspot_model_type::get_hotspot_position(const double* const Local_State_Vector) {
+
+    /* The entire hotspot is supposed to move with the angular velocity of its center, 
+       so here I just get the velocity of the center. The call to get_hotspot_velocity() updates
+       the velocity internally in the this->Current_Velocity variable. */
+
+    this->get_hotspot_velocity(true, Local_State_Vector);
+
+    const double Hotspot_ang_velocity = this->Current_Velocity[e_phi] / this->Current_Velocity[e_t];
+
+    this->Current_Position.Distance    = this->s_Hotspot_params.Init_Position[e_r];
+    this->Current_Position.Inclination = this->s_Hotspot_params.Init_Position[e_theta];
+    this->Current_Position.Azimuth     = this->s_Hotspot_params.Init_Position[e_phi] + Hotspot_ang_velocity * Local_State_Vector[e_t];
+
+   double sin_hotspot_inclination = sin(this->Current_Position.Inclination);
+
+   this->Current_Position.x = this->Current_Position.Distance * sin_hotspot_inclination * cos(this->Current_Position.Azimuth);
+   this->Current_Position.y = this->Current_Position.Distance * sin_hotspot_inclination * sin(this->Current_Position.Azimuth);
+   this->Current_Position.z = this->Current_Position.Distance * cos(this->Current_Position.Inclination);
+
+    return this->Current_Position;
 
 }
 
@@ -46,9 +114,7 @@ double Hotspot_model_type::get_hotspot_profile(const Hotspot_profile_parameters_
 
     case e_Spherical:
 
-        if (p_Profile_parameters->Distance_from_sphere_center < p_Profile_parameters->Sphere_radius) {
-            return 1.0; 
-        }
+        if (p_Profile_parameters->Distance_from_sphere_center < p_Profile_parameters->Sphere_radius) { return 1.0; }
         else { return 0.0; }
 
     case e_Hybrid_power_gaussian:
@@ -64,9 +130,9 @@ double Hotspot_model_type::get_hotspot_profile(const Hotspot_profile_parameters_
 };
 
 void Hotspot_model_type::get_density_and_temperature(const double* const State_Vector,
-                                                     Emission_medium_state_type* const p_Emission_medium_state) const {
+                                                     Emission_medium_state_type* const p_Emission_medium_state) {
 
-    Hotspot_position_type Hotspot_position = this->get_hotspot_position(State_Vector, p_Emission_medium_state->Plasma_Velocity);
+    Hotspot_position_type Hotspot_position = this->get_hotspot_position(State_Vector);
 
     const double& photon_r  = State_Vector[e_r];
     double sin_photon_theta = sin(State_Vector[e_theta]);
@@ -109,7 +175,7 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     p_Emission_medium_state->Density = this->s_Hotspot_params.Electron_density_scale * Spatial_profile * Temporal_profile;
     
-    if (isnan(p_Emission_medium_state->Density) or isinf(p_Emission_medium_state->Density) or p_Emission_medium_state->Density < 0) {
+    if (isnan(p_Emission_medium_state->Density) or isinf(p_Emission_medium_state->Density) or p_Emission_medium_state->Density < 0.0) {
 
         throw std::runtime_error(std::format("Invalid hotspot density profile: {} \n", p_Emission_medium_state->Density));
 
@@ -144,10 +210,127 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
 }
 
-bool Hotspot_model_type::is_inside_hotspot(const double* const State_Vector, Emission_medium_state_type* const Hotspot_State) const {
+bool Hotspot_model_type::is_inside_hotspot(const double* const State_Vector, Emission_medium_state_type* const Hotspot_State) {
 
     this->get_density_and_temperature(State_Vector, Hotspot_State);
 
     return (Hotspot_State->Density / this->s_Hotspot_params.Electron_density_scale > this->s_Hotspot_params.Threshold_relative_density);
+
+}
+
+void Hotspot_model_type::get_magnetic_field(const double* const Local_State_Vector,
+                                             const Metric_type* const p_Metric,
+                                             Emission_medium_state_type* const Emission_medium_state) const {
+
+    /* ================================================================================================================================================================ *|
+    |                                                                                                                                                                    |
+    |  The reference for this implementation is https://arxiv.org/pdf/2404.13824v1, expressions (1.54). The desired megnetic field geometry is specified for an          |
+    |  Eualrian observer, with covarian 4-velocity n_mu = (-Lapse, 0, 0, 0). Writing the dual Maxwell tensor in terms of the magnetic 4-vector measured by a comoving    |
+    |  with  the plasma observer, and his 4-velocity (1.20 - but they have a overall missing minus sign for some reason), one can express the Eulerian magnetic field by |
+    |  projecting the *F^mu^nu onto n_mu. Inverting this expression, one obtains the magnetic 4-vector measured by the comoving observer in terms of the one measured by |
+    |  the Eulerian observer.                                                                                                                                            |
+    |                                                                                                                                                                    |
+    * ================================================================================================================================================================= */
+
+    /* ======================= References for the sake of readability ======================= */
+
+    double (&B_eulerian)[4] = Emission_medium_state->Magnetic_fields.B_field_eulerian_frame;
+    double (&B_plasma)[4] = Emission_medium_state->Magnetic_fields.B_field_plasma_frame;
+    double& B_plasma_norm = Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm;
+
+    const double& r = Local_State_Vector[e_r];
+
+    const double& Power = this->s_Hotspot_params.Mag_field_power;
+    const double& B_0 = this->s_Hotspot_params.Mag_field_B_0;
+    const double& r_0 = this->s_Hotspot_params.Mag_field_r_0;
+
+    /* ====================================================================================== */
+
+    B_eulerian[e_t] = 0.0;
+
+    switch (this->s_Hotspot_params.e_Mag_field_geometry) {
+
+    case Constant:
+
+        B_eulerian[e_r]     = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_r - 1];
+        B_eulerian[e_theta] = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_theta - 1];
+        B_eulerian[e_phi]   = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_phi - 1];
+
+        break;
+
+    case Vertical:
+
+        B_eulerian[e_r]     = cos(Local_State_Vector[e_theta]);
+        B_eulerian[e_theta] = -sin(Local_State_Vector[e_theta]);
+        B_eulerian[e_phi]   = 0;
+
+        break;
+
+    case Toroidal:
+
+        B_eulerian[e_r]     = 0;
+        B_eulerian[e_theta] = 0;
+        B_eulerian[e_phi]   = 1;
+
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported magnetic field geometry!");
+
+    }
+
+    /* --------------------------------------------- Normalize the magnetic vector in the Eularian frame. --------------------------------------------- */
+
+    double Mag_field_eularian_norm{};
+
+    for (int idx = 0; idx < 4; idx++) {
+
+        Mag_field_eularian_norm += B_eulerian[idx] * B_eulerian[idx];
+
+    }
+
+    for (int idx = 0; idx < 4; idx++) {
+
+        B_eulerian[idx] /= sqrt(Mag_field_eularian_norm);
+
+    }
+
+    /* ------------------------------------------------------------------------------------------------------------------------------------------------ */
+
+    const double Lorentz_factor = this->Current_Velocity[e_t] * p_Metric->Lapse_function;
+
+    for (int left_idx = 0; left_idx < 4; left_idx++) {
+
+        for (int right_idx = 0; right_idx < 4; right_idx++) {
+
+            B_plasma[e_t] += p_Metric->Metric[left_idx][right_idx] * this->Current_Velocity[left_idx] * B_eulerian[right_idx] / p_Metric->Lapse_function;
+        }
+
+    }
+
+    for (int index = 0; index < 4; index++) {
+
+        B_plasma[index] = (B_eulerian[index] + p_Metric->Lapse_function * B_plasma[e_t] * this->Current_Velocity[index]) / Lorentz_factor;
+
+    }
+
+    switch (this->s_Hotspot_params.e_Mag_field_magnitude_profile) {
+
+    case Magnetization_based:
+
+        B_plasma_norm = sqrt(this->s_Hotspot_params.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Emission_medium_state->Density * M_PROTON_CGS * 4 * std::numbers::pi);
+        break;
+
+    case Power_law_based:
+
+        B_plasma_norm = B_0 * pow(r_0 / r, Power);
+        break;
+
+    default:
+
+        throw std::runtime_error("Unsupported magnetic field magnitude profile for the hotspot!");
+
+    }
 
 }
