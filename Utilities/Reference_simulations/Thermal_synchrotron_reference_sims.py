@@ -41,18 +41,18 @@ class Thermal_syhnchrotron_reference_sims:
         self.Object_distance = {"Value": 16.9e6, "Unit": "[Pc]"}
         
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Temperature_scale_factor = {"Value": 1e11, "Unit": "[K]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Temperature_scale_factor = {"Value": 1e11, "Unit": "[K]"}
         
-        self.Simulation_configurator.disk_model.Magnetization = {"Value": 0.01, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Magnetization = {"Value": 0.01, "Unit": "[-]"}
         
-        self.Simulation_configurator.disk_model.Density_cutoff_radius     = {"Value": 0, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Temperature_cutoff_radius = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_cutoff_radius     = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Temperature_cutoff_radius = {"Value": 0, "Unit": "[-]"}
         
         self.Simulation_configurator.disk_model.Ensamble_type = {"Value": "Thermal",   "Unit": "[-]"}
         self.Simulation_configurator.disk_model.Disk_Model    = {"Value": "Phenom_RIAF_1", "Unit": "[-]"}
         
-        self.Simulation_configurator.disk_model.Density_power_law_power     = {"Value": 2.0, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Temperature_power_law_power = {"Value": 1.0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_power_law_power     = {"Value": 2.0, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Temperature_power_law_power = {"Value": 1.0, "Unit": "[-]"}
         
         self.Simulation_configurator.disk_model.Velocity_profile = {"Value": "Theta Dependant", "Unit": "[-]"}
         
@@ -69,8 +69,8 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.observer.Image_x_min = {"Value": -(self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
         self.Simulation_configurator.observer.Image_x_max = {"Value":  (self.Object_distance["Value"] * self.Units.PC_TO_METER) / (self.Simulation_configurator.object_mass["Value"] * self.Units.M_SUN_SI * self.Units.GR_MASS_TO_METER) * tan(self.Observer_FOV["Value"] / 2 / self.Units.RAD_TO_MICRO_AS), "Unit": "[M]"}
 
-        self.Simulation_configurator.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
@@ -79,10 +79,10 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         
-        self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
-        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.max_upper_stepsize = {"Value": 100, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 10, "Unit": "[-]"}
         
-        self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 5, "Unit": "[-]"}
+        self.Simulation_configurator.emission_integrator.Rad_Transfer_Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
         
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
         
@@ -95,11 +95,11 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.01, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Opening_angle = {"Value": 0.1, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Density_power_law_scale     = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
-        self.Simulation_configurator.disk_model.Temperature_power_law_scale = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Opening_angle = {"Value": 0.1, "Unit": "[tan(angle)]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_power_law_scale     = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Temperature_power_law_scale = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
         
-        self.Simulation_configurator.disk_model.Density_scale_factor = {"Value": 1.5e6, "Unit": "[g/cm^3]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_scale_factor = {"Value": 1.5e6, "Unit": "[g/cm^3]"}
         
         """ The simulation name and input file path """
         self.Simulation_configurator.simulation_name = {"Value": "Reference_Simulation_1", "Unit": "[-]"}
@@ -138,11 +138,11 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.01, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Opening_angle = {"Value": 1, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Density_power_law_scale  = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
-        self.Simulation_configurator.disk_model.Temperature_cutoff_scale = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Opening_angle = {"Value": 1, "Unit": "[tan(angle)]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_power_law_scale  = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Temperature_cutoff_scale = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
         
-        self.Simulation_configurator.disk_model.Density_scale_factor = {"Value": 0.7e6, "Unit": "[g/cm^3]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_scale_factor = {"Value": 0.7e6, "Unit": "[g/cm^3]"}
         
         """ The simulation name and input file path """
         self.Simulation_configurator.simulation_name = {"Value": "Reference_Simulation_2", "Unit": "[-]"}

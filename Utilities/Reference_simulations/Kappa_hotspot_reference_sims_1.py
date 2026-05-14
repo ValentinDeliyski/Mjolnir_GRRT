@@ -49,7 +49,7 @@ class Hotspot_reference_sims:
         self.Object_distance                                       = {"Value": 8.277e3, "Unit": "[Pc]"}
         
         """ Kill the accretion disk """   
-        self.Simulation_configurator.disk_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
+        self.Simulation_configurator.disk_model.Enabled_flag = {"Value": 0, "Unit": "[-]"}
 
         """ Hotspot setup """
         self.Simulation_configurator.hotspot_model.Density_scale_factor     = {"Value": 2e6, "Unit": "[g/cm^3]"}
@@ -76,7 +76,6 @@ class Hotspot_reference_sims:
         
         """ This value for the initial hotspot azimuth makes it appear on the anti-beaming size at t_obs = 0. This makes the light curve look nicer. """
         self.Simulation_configurator.hotspot_model.Azimuth           = {"Value": pi * 0.50,  "Unit": "[M]"} 
-        self.Simulation_configurator.hotspot_model.Velocity_profile  = {"Value": "Circular Fixed Rate", "Unit": "[-]"}
         
         """ Observer setup """
         self.Simulation_configurator.observer.Distance    = {"Value": 1e4,            "Unit": "[M]"}
@@ -96,18 +95,17 @@ class Hotspot_reference_sims:
         
         """ Configure the integrator """
         
-        self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        # self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK54", "Unit": "[-]"}
+        self.Simulation_configurator.emission_integrator.Rad_Transfer_Integrator_type = {"Value": "Analytic", "Unit": "[-]"}
+        self.Simulation_configurator.emission_integrator.Parallel_Transport_Integrator_type = {"Value": "RK54", "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         
-        self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.RK_abs_accuracy = {"Value": 1e-10, "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.RK_rel_accuracy = {"Value": 1e-10, "Unit": "[-]"}
+        # self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
             
-        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.max_upper_stepsize = {"Value": 100, "Unit": "[-]"}
         
-        self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 10, "Unit": "[-]"}
         
         """ The simulation output file path """
         self.Simulation_configurator.file_manager.Output_file_directory = parent_directory + "Reference_simulations"

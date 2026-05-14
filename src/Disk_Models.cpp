@@ -10,7 +10,7 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
     }
     else { throw std::runtime_error("Could not load the disk parameter struct! \n"); }
 
-    if (this->s_Disk_params.e_Disk_model == Disk_model_enums::e_Numerical_Polytrope) {
+    if (this->s_Disk_params.e_Disk_model == Disk_model_enums::e_Numerical) {
 
         if (this->s_Disk_params.Numerical_disk_params.e_Spline_type == Spline_selection_enums::Custom_cubic) {
 
@@ -20,12 +20,12 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
 
         if (this->s_Disk_params.Numerical_disk_params.e_Spline_type == Spline_selection_enums::GSL_linear) {
 
-            this->Spline_instance_density = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+            this->Spline_instance_density = gsl_spline2d_alloc(gsl_interp2d_bilinear, this->s_Disk_params.Numerical_disk_params.R_coord_grid_size, this->s_Disk_params.Numerical_disk_params.Z_coord_grid_size);
 
         }
         else {
 
-            this->Spline_instance_density = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.Radial_grid_size, this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+            this->Spline_instance_density = gsl_spline2d_alloc(gsl_interp2d_bicubic, this->s_Disk_params.Numerical_disk_params.R_coord_grid_size, this->s_Disk_params.Numerical_disk_params.Z_coord_grid_size);
 
         }
 
@@ -33,11 +33,11 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
         this->Theta_interp_accelerator = gsl_interp_accel_alloc();
 
         gsl_spline2d_init(this->Spline_instance_density,
-                          this->s_Disk_params.Numerical_disk_params.Radial_grid,
-                          this->s_Disk_params.Numerical_disk_params.Theta_grid,
-                          this->s_Disk_params.Numerical_disk_params.Raw_density_data,
-                          this->s_Disk_params.Numerical_disk_params.Radial_grid_size,
-                          this->s_Disk_params.Numerical_disk_params.Theta_grid_size);
+                          this->s_Disk_params.Numerical_disk_params.R_coord_grid.get(),
+                          this->s_Disk_params.Numerical_disk_params.Z_coord_grid.get(),
+                          this->s_Disk_params.Numerical_disk_params.Density_data.get(),
+                          this->s_Disk_params.Numerical_disk_params.R_coord_grid_size,
+                          this->s_Disk_params.Numerical_disk_params.Z_coord_grid_size);
 
     }
 
@@ -45,29 +45,21 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
 
 Disk_model_type::~Disk_model_type() {
 
-    if (this->s_Disk_params.e_Disk_model == Disk_model_enums::e_Numerical_Polytrope) {
+    if (this->s_Disk_params.e_Disk_model == Disk_model_enums::e_Numerical) {
 
         gsl_spline2d_free(this->Spline_instance_density);
 
         gsl_interp_accel_free(this->Radial_interp_accelerator);
         gsl_interp_accel_free(this->Theta_interp_accelerator);
 
-        delete this->s_Disk_params.Numerical_disk_params.Raw_density_data;
-
-        delete this->s_Disk_params.Numerical_disk_params.Radial_grid;
-        delete this->s_Disk_params.Numerical_disk_params.Theta_grid;
-
     }
 }
 
-double Disk_model_type::get_disk_internal_energy(double density) const {
+double Disk_model_type::get_disk_internal_energy(double density, double K, double Gamma) const {
 
     /* This assumes a ideal fluid, which is undergoing an iso-entropic process (Rezzolla (2.248)).
        The polytropic index of the polytropic EOS (Gamma) is assumed to be equal to the adiabatic index,
        which appears in the ideal fluid thermal EOS (2.228) */
-
-    const double& K = this->s_Disk_params.Thermal_EOS_params.Polytrope_Coeff;
-    const double& Gamma = this->s_Disk_params.Thermal_EOS_params.Polytrope_Power;
 
     return K / (Gamma - 1) * std::pow(density, Gamma - 1);
 }
@@ -80,19 +72,19 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
 
     switch (e_Profile_type) {
 
-    case e_Power_law:
+    case Profile_enums::e_Power_law:
 
         Profile = std::pow(p_Profile_parameters->power_law_scale / p_Profile_parameters->radial_coordinate, p_Profile_parameters->power);
         break;
 
-    case e_Hybrid_power_gaussian:
+    case Profile_enums::e_Hybrid_power_gaussian:
 
         Exponent_arg = (p_Profile_parameters->gaussian_variable - p_Profile_parameters->gaussian_mean) / p_Profile_parameters->gaussian_std;
 
         Profile = std::pow(p_Profile_parameters->power_law_scale / p_Profile_parameters->radial_coordinate, p_Profile_parameters->power) * exp(-std::pow(Exponent_arg, 2) / 2);
         break;
 
-    case e_Gaussian:
+    case Profile_enums::e_Gaussian:
 
         Exponent_arg = (p_Profile_parameters->gaussian_variable - p_Profile_parameters->gaussian_mean) / p_Profile_parameters->gaussian_std;
 
@@ -115,42 +107,43 @@ double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* con
 
 }
 
-
-
 void Disk_model_type::get_density_and_temperature(const double* const State_Vector,
                                                   Emission_medium_state_type* const p_Emission_medium_state) const {
 
     Disk_profile_parameters_type Density_profile_params{}, Temperature_profile_params{};
 
-    const double& Gamma = this->s_Disk_params.Thermal_EOS_params.Polytrope_Power;
+    const double& Gamma = this->s_Disk_params.Numerical_disk_params.Polytrope_index;
+    const double& K = this->s_Disk_params.Numerical_disk_params.Polytrope_coeff;
     int Err_code = 0;
 
     switch (this->s_Disk_params.e_Disk_model) {
 
-    case e_Numerical_Polytrope:
+    case Disk_model_enums::e_Numerical:
 
         /* ------------------------------------------------ Get the density profile ------------------------------------------------ */
 
         Err_code = gsl_spline2d_eval_e(this->Spline_instance_density,
                                        State_Vector[e_r],
-                                       State_Vector[e_theta],
+                                       std::abs(State_Vector[e_r] * cos(State_Vector[e_theta])),
                                        this->Radial_interp_accelerator,
                                        this->Theta_interp_accelerator,
                                        &p_Emission_medium_state->Density);
 
         if (GSL_EDOM == Err_code) { p_Emission_medium_state->Density = 0.0; }
 
-        /* TODO: Scale this thing so it comes out in g / cm^3 */
+        p_Emission_medium_state->Density = std::abs(p_Emission_medium_state->Density);
+
+        /* TODO: Scale this thing so it comes out in 1 / cm^3 */
 
         /* ------------------------------------------------ Get the temperature profile ------------------------------------------------ */
 
-        p_Emission_medium_state->Temperature = M_PROTON_SI / BOLTZMANN_CONST_SI * (Gamma - 1) * this->get_disk_internal_energy(p_Emission_medium_state->Density);
+        p_Emission_medium_state->Temperature = M_PROTON_SI / BOLTZMANN_CONST_SI * (Gamma - 1) * this->get_disk_internal_energy(p_Emission_medium_state->Density, K, Gamma);
 
         /* TODO: Scale this thing so it comes out in K */
 
         break;
 
-    case e_Phenom_RIAF_1:
+    case Disk_model_enums::e_Phenom_RIAF_1:
 
         /* ============= This is the model used in https://arxiv.org/pdf/2206.12066, with an added cutoff exponential. ============= */
 
@@ -167,7 +160,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         Density_profile_params.cutoff_radius = this->s_Disk_params.Common_RIAF_params.Density_cutoff_radius;
         Density_profile_params.cutoff_scale = this->s_Disk_params.Common_RIAF_params.Density_cutoff_scale;
 
-        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Hybrid_power_gaussian);
+        p_Emission_medium_state->Density = this->s_Disk_params.Common_RIAF_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Hybrid_power_gaussian);
 
         /* ---------------------------------------------- Get the temperature profile ---------------------------------------------- */
 
@@ -184,11 +177,11 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         Temperature_profile_params.cutoff_radius = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_radius;
         Temperature_profile_params.cutoff_scale = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_scale;
 
-        p_Emission_medium_state->Temperature = this->s_Disk_params.Electron_temperature_scale * this->get_disk_profile(&Temperature_profile_params, e_Power_law);
+        p_Emission_medium_state->Temperature = this->s_Disk_params.Common_RIAF_params.Electron_temperature_scale * this->get_disk_profile(&Temperature_profile_params, e_Power_law);
 
         break;
 
-    case e_Phenom_RIAF_2:
+    case Disk_model_enums::e_Phenom_RIAF_2:
 
         /* ============= This is the model used in https://arxiv.org/pdf/2209.09931, with an added cutoff exponential. ============= */
 
@@ -205,7 +198,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         Density_profile_params.cutoff_radius = this->s_Disk_params.Common_RIAF_params.Density_cutoff_radius;
         Density_profile_params.cutoff_scale = this->s_Disk_params.Common_RIAF_params.Density_cutoff_scale;
 
-        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Hybrid_power_gaussian);
+        p_Emission_medium_state->Density = this->s_Disk_params.Common_RIAF_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Hybrid_power_gaussian);
 
         /* ---------------------------------------------- Get the temperature profile ---------------------------------------------- */
 
@@ -222,11 +215,11 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         Temperature_profile_params.cutoff_radius = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_radius;
         Temperature_profile_params.cutoff_scale = this->s_Disk_params.Common_RIAF_params.Temperature_cutoff_scale;
 
-        p_Emission_medium_state->Temperature = this->s_Disk_params.Electron_temperature_scale * this->get_disk_profile(&Temperature_profile_params, e_Power_law);
+        p_Emission_medium_state->Temperature = this->s_Disk_params.Common_RIAF_params.Electron_temperature_scale * this->get_disk_profile(&Temperature_profile_params, e_Power_law);
         
         break;
 
-    case e_Phenom_RIAF_3:
+    case Disk_model_enums::e_Phenom_RIAF_3:
 
         /* ============= This is anlagous to https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6, but I offset the radial vairable. ============= */
 
@@ -244,7 +237,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         Density_profile_params.cutoff_radius = 0.0;
         Density_profile_params.cutoff_scale  = 0.0;
 
-        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Gaussian);
+        p_Emission_medium_state->Density = this->s_Disk_params.Common_RIAF_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Gaussian);
 
         /* ------------------------------------------------- Get the theta density profile ------------------------------------------------- */
         
@@ -274,11 +267,11 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         Temperature_profile_params.cutoff_radius = 0.0;
         Temperature_profile_params.cutoff_scale = 0.0;
 
-        p_Emission_medium_state->Temperature = this->s_Disk_params.Electron_temperature_scale * this->get_disk_profile(&Temperature_profile_params, e_Gaussian);
+        p_Emission_medium_state->Temperature = this->s_Disk_params.Common_RIAF_params.Electron_temperature_scale * this->get_disk_profile(&Temperature_profile_params, e_Gaussian);
 
         break;
 
-    case e_Colab_test_1:
+    case Disk_model_enums::e_Colab_test_1:
 
         /* =============== This is the model used in https://iopscience.iop.org/article/10.3847/1538-4357/ab96c6/pdf ============== */
 
@@ -289,7 +282,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         Density_profile_params.gaussian_mean     = 0.0;
         Density_profile_params.gaussian_std      = this->s_Disk_params.Colab_test_1_params.Radial_scale;
 
-        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale * this->get_disk_profile(&Density_profile_params, e_Gaussian);
+        p_Emission_medium_state->Density = this->s_Disk_params.Colab_test_1_params.Density_scale * this->get_disk_profile(&Density_profile_params, e_Gaussian);
 
         /* The above only evaluates the radial part of the profile. Below we evaluate the vertical part (another gaussian). */
 
@@ -308,10 +301,10 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
         break;
 
-    case e_Debug_constant_density:
+    case Disk_model_enums::e_Debug_constant_density:
 
-        p_Emission_medium_state->Density = this->s_Disk_params.Electron_density_scale;
-        p_Emission_medium_state->Temperature = this->s_Disk_params.Electron_temperature_scale;
+        p_Emission_medium_state->Density = 1;
+        p_Emission_medium_state->Temperature = 1;
 
         break;
         
@@ -335,16 +328,49 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
 bool Disk_model_type::is_inside_disk(const double* const State_Vector, Emission_medium_state_type* const Disk_State) const {
 
+    if (!this->s_Disk_params.Enable_flag) {
+
+        return false;
+
+    }
+
     this->get_density_and_temperature(State_Vector, Disk_State);
 
-    return (Disk_State->Density / this->s_Disk_params.Electron_density_scale > this->s_Disk_params.Threshold_relative_density);
+    return (Disk_State->Density / this->s_Disk_params.Max_disk_density > this->s_Disk_params.Threshold_relative_density);
 
 }
-
 
 void Disk_model_type::get_magnetic_field(const double* const Local_State_Vector,
                                          const Metric_type* const p_Metric,
                                          Emission_medium_state_type* const Emission_medium_state) const {
+
+    switch (this->s_Disk_params.e_Disk_model) {
+
+    case Disk_model_enums::e_Numerical:
+
+        this->get_numerical_mag_field(Local_State_Vector, p_Metric, Emission_medium_state);
+        break;
+
+    default: 
+
+        this->get_phenomenological_mag_field(Local_State_Vector, p_Metric, Emission_medium_state);
+        break;
+
+    }
+
+ }
+
+void Disk_model_type::get_numerical_mag_field(const double* const Local_State_Vector,
+                                              const Metric_type* const p_Metric,
+                                              Emission_medium_state_type* const Emission_medium_state) const {
+
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm = 1;
+
+}
+
+void Disk_model_type::get_phenomenological_mag_field(const double* const Local_State_Vector,
+                                                    const Metric_type* const p_Metric,
+                                                    Emission_medium_state_type* const Emission_medium_state) const {
 
     /* ================================================================================================================================================================ *|
     |                                                                                                                                                                    |
@@ -356,6 +382,22 @@ void Disk_model_type::get_magnetic_field(const double* const Local_State_Vector,
     |                                                                                                                                                                    |
     * ================================================================================================================================================================= */
 
+    Phenomenological_mag_field_params_type Mag_field_params{};
+
+    switch (this->s_Disk_params.e_Disk_model) {
+
+    case Disk_model_enums::e_Colab_test_1:
+
+        Mag_field_params = this->s_Disk_params.Colab_test_1_params.Mag_field_params;
+        break;
+
+    default:
+
+        Mag_field_params = this->s_Disk_params.Common_RIAF_params.Mag_field_params;
+        break;
+
+    }
+
     /* ======================= References for the sake of readability ======================= */
 
     double (&B_eulerian)[4] = Emission_medium_state->Magnetic_fields.B_field_eulerian_frame;
@@ -364,17 +406,17 @@ void Disk_model_type::get_magnetic_field(const double* const Local_State_Vector,
 
     const double& r = Local_State_Vector[e_r];
 
-    const double& Power = this->s_Disk_params.Mag_field_power;
-    const double& B_0 = this->s_Disk_params.Mag_field_B_0;
-    const double& r_0 = this->s_Disk_params.Mag_field_r_0;
+    const double& Power = Mag_field_params.Mag_field_power;
+    const double& B_0 = Mag_field_params.Mag_field_B_0;
+    const double& r_0 = Mag_field_params.Mag_field_r_0;
 
     /* ====================================================================================== */
 
     B_eulerian[e_t] = 0.0;
 
-    switch (this->s_Disk_params.e_Mag_field_geometry) {
+    switch (Mag_field_params.e_Mag_field_geometry) {
 
-    case Constant:
+    case Magnetic_field_geometry_enums::Constant:
 
         B_eulerian[e_r]     = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_r - 1];
         B_eulerian[e_theta] = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_theta - 1];
@@ -382,7 +424,7 @@ void Disk_model_type::get_magnetic_field(const double* const Local_State_Vector,
 
         break;
 
-    case Vertical:
+    case Magnetic_field_geometry_enums::Vertical:
 
         B_eulerian[e_r]     = cos(Local_State_Vector[e_theta]);
         B_eulerian[e_theta] = -sin(Local_State_Vector[e_theta]);
@@ -390,7 +432,7 @@ void Disk_model_type::get_magnetic_field(const double* const Local_State_Vector,
 
         break;
 
-    case Toroidal:
+    case Magnetic_field_geometry_enums::Toroidal:
 
         B_eulerian[e_r]     = 0;
         B_eulerian[e_theta] = 0;
@@ -439,14 +481,14 @@ void Disk_model_type::get_magnetic_field(const double* const Local_State_Vector,
 
     }
 
-    switch (this->s_Disk_params.e_Mag_field_magnitude_profile) {
+    switch (Mag_field_params.e_Mag_field_magnitude_profile) {
 
-    case Magnetization_based:
+    case Magnetic_field_magnitude_enums::Magnetization_based:
 
-        B_plasma_norm = sqrt(this->s_Disk_params.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Emission_medium_state->Density * M_PROTON_CGS * 4 * std::numbers::pi);
+        B_plasma_norm = sqrt(Mag_field_params.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Emission_medium_state->Density * M_PROTON_CGS * 4 * std::numbers::pi);
         break;
 
-    case Power_law_based:
+    case Magnetic_field_magnitude_enums::Power_law_based:
 
         B_plasma_norm = B_0 * pow(r_0 / r, Power);
         break;

@@ -6,4 +6,4 @@
 #include "Structs.h"
 #include <cmath>
 
-void Propagate_ray(const Simulation_Context_type* s_Sim_Context, Results_type* const Ray_results);
+void Propagate_ray(const Simulation_Context_type* const s_Sim_Context, Results_type* const Ray_results);

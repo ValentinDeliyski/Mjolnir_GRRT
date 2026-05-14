@@ -3,10 +3,8 @@
 #include "Emission_Models.h"
 #include "Spacetimes.h"
 #include "Constants.h"
-
-#pragma warning(push, 0)
 #include "gsl/gsl_sf_hyperg.h"
-#pragma warning(pop)
+
 /* =============================================== Thermal Synchrotron Transfer Functions =============================================== */
 
 void Emission_models_class::get_thermal_synchrotron_emission_fit_functions(const Thermal_transfer_f_arguments_type* const p_Transfer_arags,
@@ -19,7 +17,7 @@ void Emission_models_class::get_thermal_synchrotron_emission_fit_functions(const
 
     /* Check weather the fit function p_Transfer_args are numerically OK to use in the expressions - they have problems at velry low densities where the emission/absorbtion is negligable.
        In such cases I directly return. */
-    if (isnan(p_Transfer_arags->X) or isinf(p_Transfer_arags->X) or isinf(1.0 / p_Transfer_arags->cbrt_X)) { return; }
+    if (isnan(p_Transfer_arags->X) or isinf(p_Transfer_arags->X)) { return; }
 
     /* This silly magic number pops up as a coefficient in the fit functions. */
     constexpr double TWO_TO_11_OVER_12 = 1.887749;
@@ -38,7 +36,7 @@ void Emission_models_class::get_thermal_synchrotron_emission_fit_functions(const
                             * exponent;
 
     Emission_functions[V] = p_Transfer_arags->cos_pitch_angle / p_Transfer_arags->T_electron_dim
-                            * (M_PI / 3 + M_PI / 3 * p_Transfer_arags->cbrt_X + (2. / 300) * p_Transfer_arags->sqrt_X + (2 * M_PI / 19.) * p_Transfer_arags->sqrt_X * p_Transfer_arags->sqrt_X) * exponent;
+                            * (M_PI / 3 + M_PI / 3 * p_Transfer_arags->cbrt_X + (2. / 300) * p_Transfer_arags->sqrt_X + (2 * M_PI / 19.) * p_Transfer_arags->cbrt_X * p_Transfer_arags->cbrt_X) * exponent;
 
 }
 
@@ -86,7 +84,7 @@ void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const 
 
     double const common_exp_term = exp(-1.69 / p_Transfer_args->sqrt_X);
 
-    double const f_0 = 2.001 * exp(-19.78 / p_Transfer_args->X_to_0_p_5175)
+    double const f_0 = 2.011 * exp(-19.78 / p_Transfer_args->X_to_0_p_5175)
                      - cos(39.89 / p_Transfer_args->sqrt_X) * exp(-70.16 / p_Transfer_args->X_to_0_p_6)
                      - 0.011 * common_exp_term;
 
@@ -94,16 +92,19 @@ void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const 
                      + (0.011 * common_exp_term - 0.003135 * p_Transfer_args->cbrt_X * p_Transfer_args->X)
                      * 0.5 * (1 + tanh(10 * log(0.6648 / p_Transfer_args->sqrt_X)));
 
+    // TODO: This term blows up the raditive transfer for large X. Figure out how to fix it
     double const delta_J_5 = 0.4379 * log(1 + 1.3414 / p_Transfer_args->X_to_0_p_7515);
 
     Faradey_functions[Q] = f_m * p_Transfer_args->sin_pitch_angle * p_Transfer_args->sin_pitch_angle * (K1_Bessel / K2_Bessel + 6 * p_Transfer_args->T_electron_dim);
 
-    Faradey_functions[V] = (K0_Bessel - delta_J_5) / K2_Bessel * p_Transfer_args->cos_pitch_angle;
+    Faradey_functions[V] = (K0_Bessel - 0 * delta_J_5) / K2_Bessel * p_Transfer_args->cos_pitch_angle;
 
     if (std::abs(Faradey_functions[Q]) > 1e10 or std::abs(Faradey_functions[V]) > 1e10) {
 
         Faradey_functions[Q] = 0.0;
         Faradey_functions[V] = 0.0;
+
+        return;
 
     }
 
@@ -169,7 +170,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
 }
 
 void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
-                                                                                  double* const Absorbtion_functions) const {
+                                                                           double* const Absorbtion_functions) const {
 
     // The reference for these expressions is https://arxiv.org/pdf/1602.08749, equations (39), (40), (41) and (42).
     
@@ -218,7 +219,7 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
     // ----------------------------------------------------------------------- High frequency fit coefficients ------------------------------------------------------------------------ //
 
     double Absorbtion_functions_high[e_Stokes_param_num]{};
-    double Common_factor_high = pow(p_Transfer_args->X, -(1 + p_Transfer_args->kappa) / 2) * M_PI * (2 / M_2_SQRTPI) / 3 * (p_Transfer_args->kappa - 2) * (p_Transfer_args->kappa - 1) * p_Transfer_args->kappa / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim) / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim) / (p_Transfer_args->kappa * p_Transfer_args->T_electron_dim)
+    double Common_factor_high = pow(p_Transfer_args->X, -(1 + p_Transfer_args->kappa) / 2) * pow(std::numbers::pi, 3. / 2) / 3 * (p_Transfer_args->kappa - 2) * (p_Transfer_args->kappa - 1) * p_Transfer_args->kappa / std::pow(p_Transfer_args->kappa * p_Transfer_args->T_electron_dim, 3)
                               * (2 * std::tgamma(2 + p_Transfer_args->kappa / 2) / (2 + p_Transfer_args->kappa) - 1.0);
 
     // ------------------------------------------------------------------------ Bridging function ------------------------------------------------------------------------ //
@@ -236,14 +237,14 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
     double power_Q = 7.0 / 5 * pow(p_Transfer_args->kappa, -23.0 / 20);
 
     Absorbtion_functions_low[Q]  = Common_factor_low * 25.0 / 48;
-    Absorbtion_functions_high[Q] = Common_factor_high * (441 * pow(p_Transfer_args->kappa, -144.0 / 25) + 11.0 / 20);
+    Absorbtion_functions_high[Q] = Common_factor_high * (441. * pow(p_Transfer_args->kappa, -144.0 / 25) + 11.0 / 20);
 
     Absorbtion_functions[Q] = -pow(pow(Absorbtion_functions_low[Q], -power_Q) + pow(Absorbtion_functions_high[Q], -power_Q), -1.0 / power_Q);
 
     double power_V = 61.0 / 50 * pow(p_Transfer_args->kappa, -142.0 / 125) + 7.0 / 1000;
 
     Absorbtion_functions_low[V]  = Common_factor_low * pow((pow(p_Transfer_args->sin_emission_angle, -114.0 / 50) - 1), 223.0 / 500) / p_Transfer_args->X_to_7_over_20 * pow(p_Transfer_args->kappa, -7.0 / 10);
-    Absorbtion_functions_high[V] = Common_factor_high * 143.0 / 10 * pow(p_Transfer_args->T_electron_dim, -116.0 / 125) * sqrt(pow(p_Transfer_args->sin_emission_angle, -41.0 / 20) - 1) * (169 * pow(p_Transfer_args->kappa, -8) + 13.0 / 2500 * p_Transfer_args->kappa - 263. / 5000 / 200 + 47.0 / 200 / p_Transfer_args->kappa) / p_Transfer_args->sqrt_X;
+    Absorbtion_functions_high[V] = Common_factor_high * 143.0 / 10 * pow(p_Transfer_args->T_electron_dim, -116.0 / 125) * sqrt(pow(p_Transfer_args->sin_emission_angle, -41.0 / 20) - 1) * (169 * pow(p_Transfer_args->kappa, -8) + 13.0 / 2500 * p_Transfer_args->kappa - 263. / 5000 + 47.0 / 200 / p_Transfer_args->kappa) / p_Transfer_args->sqrt_X;
     
     Absorbtion_functions[V] = pow(pow(Absorbtion_functions_low[V], -power_V) + pow(Absorbtion_functions_high[V], -power_V), -1.0 / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
 
@@ -320,7 +321,7 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
         V_coeff = 1 - 0.17 * log(1 + 0.313 / p_Transfer_args->sqrt_X);
 
         Faradey_functions[Q] = (25. / 2 * T_dim - sqrt_T_dim + 5. * sqrt_T_dim * exp_T_dim) * Q_coeff * sin_emission_angle * sin_emission_angle;
-        Faradey_functions[V] = (T_dim + 13. / 14) / (2. * T_dim + 13. / 14)* K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
+        Faradey_functions[V] = (T_dim + 13. / 14) / (2. * T_dim + 13. / 14) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
 
     }
 
@@ -359,8 +360,8 @@ void Emission_models_class::get_phenomenological_synchrotron_fit_functions(const
     const double& emission_coeff     = this->s_Emission_params.Phenomenological_emission_coeff;
     const double& abs_coeff          = this->s_Emission_params.Phenomenological_absorbtion_coeff;
 
-    p_Transfer_functions->Emission_functions[I] = (emission_coeff / this->p_Disk_Model->s_Disk_params.Electron_density_scale / common_factor_emission) * pow(p_Transfer_args->redshift, emission_power_law);
+    p_Transfer_functions->Emission_functions[I] = (emission_coeff / this->p_Disk_Model->s_Disk_params.Max_disk_density / common_factor_emission) * pow(p_Transfer_args->redshift, emission_power_law);
 
-    p_Transfer_functions->Absorbtion_functions[I] = (abs_coeff * emission_coeff / this->p_Disk_Model->s_Disk_params.Electron_density_scale / common_factor_absorbtion) * pow(p_Transfer_args->redshift, source_f_power_law + emission_power_law);
+    p_Transfer_functions->Absorbtion_functions[I] = (abs_coeff * emission_coeff / this->p_Disk_Model->s_Disk_params.Max_disk_density / common_factor_absorbtion) * pow(p_Transfer_args->redshift, source_f_power_law + emission_power_law);
 
 }

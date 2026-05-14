@@ -8,14 +8,14 @@ if __name__ == "__main__":
     plt.rcParams['text.usetex'] = True
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
-    for a in [0, 0.98, 2]:
+    for a in [0]:
         
         for gamma in [5]:
                        
-            fig_title = rf"$a = {a}$, $\gamma = {gamma}$, $i = 80^\circ$"
+            fig_title = rf"Numerical disk at $i = 80^\circ$"
                     
             EHT_Array           = ["ngEHT"]
-            Sim_path            = f"C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Wormhole_sim_paper\\Wormhole_a_{a}_redshift_{gamma}_inc_20\\"
+            Sim_path            = f"C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Numerical_disks\\Numerical_disk_Kerr_a_0.5_inc_80\\"
             Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
             Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
@@ -23,22 +23,22 @@ if __name__ == "__main__":
                                         Array              = EHT_Array,
                                         Font_size          = 32, 
                                         Label_Pad          = 8, 
-                                        Common_file_name   = "Wormhole",
+                                        Common_file_name   = "Kerr",
                                         Respect_folder_structure = False)
 
-            for Radiation_Component in ["Pattern", "NT Pow Flux", "NT Redshift", "NT Log Flux", "NT Flux"]:
+            for Radiation_Component in ["Stokes I"]:
 
                 Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
-                                                   Save_Figures          = True, 
+                                                   Save_Figures          = False, 
                                                    Radiation_Component   = Radiation_Component,
                                                    Custom_fig_title      = fig_title,
                                                    Use_angular_coords    = False,
                                                    Obs_effective_distance = Visualizer.Units.M87_DISTANCE_GEOMETRICAL,
                                                    Power = 10,
-                                                   Add_Intensity_Slice = False,
+                                                   Add_Intensity_Slice = True,
                                                    Colormap_str = "hot")
 
-        plt.close()
+        # plt.close()
 
     # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      
     #                               Contour_specs      = [], 
@@ -79,4 +79,4 @@ if __name__ == "__main__":
 
                
     # plt.close("all")
-    # plt.show()
+    plt.show()

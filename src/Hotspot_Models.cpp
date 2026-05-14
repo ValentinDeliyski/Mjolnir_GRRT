@@ -212,6 +212,12 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
 bool Hotspot_model_type::is_inside_hotspot(const double* const State_Vector, Emission_medium_state_type* const Hotspot_State) {
 
+    if (!this->s_Hotspot_params.Enable_flag) {
+
+        return false;
+
+    }
+
     this->get_density_and_temperature(State_Vector, Hotspot_State);
 
     return (Hotspot_State->Density / this->s_Hotspot_params.Electron_density_scale > this->s_Hotspot_params.Threshold_relative_density);

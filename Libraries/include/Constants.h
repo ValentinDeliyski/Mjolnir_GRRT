@@ -64,3 +64,5 @@ constexpr double OBS_FREQUENCY_CGS = 230e9;
 constexpr double CGS_TO_JANSKY = 1e+23;
 
 constexpr double MASS_TO_CM = M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
+
+constexpr double MIN_INTENSITY_THRESHOLD = 1e-40;

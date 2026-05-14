@@ -143,7 +143,9 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         */
 
-        p_Sim_Context->File_manager->create_output_file();
+        // Populate the File Manager class instance
+        File_manager_class File_manager = File_manager_class(p_Sim_Context->p_Init_Conditions);
+        File_manager.create_output_file();
 
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
@@ -158,7 +160,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         std::cout << '\n' << "Generating image for " << p_Sim_Context->p_Init_Conditions->File_manager_params.Simulation_name << "...\n";
 
-        p_Sim_Context->File_manager->open_output_file();
+        File_manager.open_output_file();
 
         for (int V_pixel_num = 0; V_pixel_num < Y_resolution; V_pixel_num++) {
 
@@ -181,7 +183,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
                 /* ------------------ Results logging happens here ------------------ */
 
-                p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
+                File_manager.write_image_data_to_file(p_Ray_results);
 
                 /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), 
                    and therefore not automatically reinitialized to 0s. I have to manually do it. */
@@ -191,7 +193,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
         }
 
-        p_Sim_Context->File_manager->close_output_file();
+        File_manager.close_output_file();
 
         auto end_time = std::chrono::high_resolution_clock::now();
 
@@ -229,6 +231,9 @@ void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Re
 
 void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
 
+    // Populate the File Manager class instance
+    File_manager_class File_manager = File_manager_class(p_Sim_Context->p_Init_Conditions);
+
     /*
 
     Read the initial conditions from file
@@ -237,7 +242,7 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
 
     double p_phi_data[500]{}, p_theta_data[500]{};
 
-    p_Sim_Context->File_manager->get_geodesic_data(p_phi_data, p_theta_data);
+    File_manager.get_geodesic_data(p_phi_data, p_theta_data);
 
     /*
 
@@ -245,10 +250,10 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
 
     */
 
-    p_Sim_Context->File_manager->create_output_file();
-    p_Sim_Context->File_manager->open_output_file();
+    File_manager.create_output_file();
+    File_manager.open_output_file();
 
-    for (int photon_idx = 0; photon_idx <= p_Sim_Context->File_manager->sim_mode_1_ray_number - 1; photon_idx += 1) {
+    for (int photon_idx = 0; photon_idx <= File_manager.sim_mode_1_ray_number - 1; photon_idx += 1) {
 
         /*
 
@@ -272,23 +277,26 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
         
         */
 
-        p_Sim_Context->File_manager->write_image_data_to_file(p_Ray_results);
+        File_manager.write_image_data_to_file(p_Ray_results);
 
         /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope),
            and therefore not automatically reinitialized to 0s. I have to manually do it. */
         Zero_results_struct(p_Ray_results);
 
-        print_progress(photon_idx, p_Sim_Context->File_manager->sim_mode_1_ray_number - 1, true);
+        print_progress(photon_idx, File_manager.sim_mode_1_ray_number - 1, true);
 
     }
 
-    p_Sim_Context->File_manager->close_output_file();
+    File_manager.close_output_file();
 
     std::cout << '\n';
 
 }
 
 void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
+
+    // Populate the File Manager class instance
+    File_manager_class File_manager = File_manager_class(p_Sim_Context->p_Init_Conditions);
 
     double& X_init = p_Sim_Context->p_Init_Conditions->Sim_mode_2_X_init;
     double& Y_init = p_Sim_Context->p_Init_Conditions->Sim_mode_2_Y_init;
@@ -297,14 +305,17 @@ void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Resul
 
     Propagate_ray(p_Sim_Context, p_Ray_results);
 
-    p_Sim_Context->File_manager->create_output_file();
-    p_Sim_Context->File_manager->open_output_file();
-    p_Sim_Context->File_manager->log_photon_path(p_Ray_results);
-    p_Sim_Context->File_manager->close_output_file();
+    File_manager.create_output_file();
+    File_manager.open_output_file();
+    File_manager.log_photon_path(p_Ray_results);
+    File_manager.close_output_file();
 
 }
 
 void run_debug_simulation(const Simulation_Context_type* const p_Sim_Context) {
+
+    // Populate the File Manager class instance
+    File_manager_class File_manager = File_manager_class(p_Sim_Context->p_Init_Conditions);
 
     /*
 
@@ -312,7 +323,7 @@ void run_debug_simulation(const Simulation_Context_type* const p_Sim_Context) {
 
     */
 
-    p_Sim_Context->File_manager->create_output_file();
+    File_manager.create_output_file();
 
     Debug_mode_struct Debug_struct{};
 
@@ -320,8 +331,8 @@ void run_debug_simulation(const Simulation_Context_type* const p_Sim_Context) {
     Debug_struct.NT_Flux_integral_array = p_Sim_Context->p_NT_model->Flux_integral_array;
     Debug_struct.NT_Flux_r_coord_array = p_Sim_Context->p_NT_model->Flux_r_coords;
 
-    p_Sim_Context->File_manager->open_output_file();
-    p_Sim_Context->File_manager->write_debug_data_to_file(&Debug_struct);
-    p_Sim_Context->File_manager->close_output_file();
+    File_manager.open_output_file();
+    File_manager.write_debug_data_to_file(&Debug_struct);
+    File_manager.close_output_file();
 
 }

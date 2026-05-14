@@ -3,7 +3,8 @@
 
 Emission_Integrator_class::Emission_Integrator_class(const Simulation_Context_type* p_Sim_Context, Results_type* const p_Ray_results) {
 
-    this->e_Active_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Radiative_transfer_integrator;
+    this->e_Active_rad_transfer_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Radiative_transfer_integrator;
+    this->e_Active_parallel_transport_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Parallel_transport_integrator;
 
     this->p_Sim_Context = p_Sim_Context;
     this->Ray_log_length = p_Ray_results->Ray_log_struct.Log_length;
@@ -27,57 +28,51 @@ Emission_Integrator_class::Emission_Integrator_class(const Simulation_Context_ty
 
     /* ------------------------------------------ Construct the geodesic ray splines ------------------------------------------ */
 
-    double* Ray_Log[e_Dynamic_state_size]{};
+    std::unique_ptr<double[]> Affine_param_log = std::make_unique<double[]>(p_Ray_results->Ray_log_struct.Log_length);
 
-    double* Radial_Ray_log_global[2]{};
+    std::unique_ptr<double[]> Ray_Log[e_Dynamic_state_size];
+    std::unique_ptr<double[]> Radial_Ray_log_global[2];
     
-    for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
+    for (size_t idx = 0; idx < e_Dynamic_state_size; idx++) {
 
-        Ray_Log[idx] = new double[p_Ray_results->Ray_log_struct.Log_length];
+        Ray_Log[idx] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct.Log_length);
 
     }
 
-    Radial_Ray_log_global[0] = new double[p_Ray_results->Ray_log_struct.Log_length];
-    Radial_Ray_log_global[1] = new double[p_Ray_results->Ray_log_struct.Log_length];
+    Radial_Ray_log_global[0] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct.Log_length);
+    Radial_Ray_log_global[1] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct.Log_length);
 
-    this->Affine_param_log = new double[p_Ray_results->Ray_log_struct.Log_length];
 
-    for (int log_idx = 0; log_idx < p_Ray_results->Ray_log_struct.Log_length; log_idx++) {
+    for (size_t log_idx = 0; log_idx < p_Ray_results->Ray_log_struct.Log_length; log_idx++) {
 
         for (int component_idx = 0; component_idx < e_Dynamic_state_size; component_idx++) {
 
-            Ray_Log[component_idx][(p_Ray_results->Ray_log_struct.Log_length - 1) - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_local[component_idx + log_idx * e_Full_state_size];
+            Ray_Log[component_idx][p_Ray_results->Ray_log_struct.Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_local[component_idx + log_idx * e_Full_state_size];
 
         }
 
-        Radial_Ray_log_global[0][(p_Ray_results->Ray_log_struct.Log_length - 1) - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_global[e_r + log_idx * e_Full_state_size];
-        Radial_Ray_log_global[1][(p_Ray_results->Ray_log_struct.Log_length - 1) - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_global[e_p_r + log_idx * e_Full_state_size];
+        Radial_Ray_log_global[0][p_Ray_results->Ray_log_struct.Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_global[e_r + log_idx * e_Full_state_size];
+        Radial_Ray_log_global[1][p_Ray_results->Ray_log_struct.Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_global[e_p_r + log_idx * e_Full_state_size];
 
-        this->Affine_param_log[(p_Ray_results->Ray_log_struct.Log_length - 1) - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_local[e_ray_affine_param + log_idx * e_Full_state_size];
+        Affine_param_log[p_Ray_results->Ray_log_struct.Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_local[e_ray_affine_param + log_idx * e_Full_state_size];
     }
 
     for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
 
         this->p_Ray_spline_instance[idx] = gsl_spline_alloc(gsl_interp_cspline, p_Ray_results->Ray_log_struct.Log_length);
-        gsl_spline_init(this->p_Ray_spline_instance[idx], this->Affine_param_log, Ray_Log[idx], p_Ray_results->Ray_log_struct.Log_length);
-        
-        delete Ray_Log[idx];
+        gsl_spline_init(this->p_Ray_spline_instance[idx], Affine_param_log.get(), Ray_Log[idx].get(), p_Ray_results->Ray_log_struct.Log_length);
 
     }
 
     /* ---------------------------------------- Radial spline in global coordinates ---------------------------------------- */
 
     this->p_Ray_spline_instance[e_Dynamic_state_size + 0] = gsl_spline_alloc(gsl_interp_cspline, p_Ray_results->Ray_log_struct.Log_length);
-    gsl_spline_init(this->p_Ray_spline_instance[e_Dynamic_state_size + 0], this->Affine_param_log, Radial_Ray_log_global[0], p_Ray_results->Ray_log_struct.Log_length);
-    delete Radial_Ray_log_global[0];
+    gsl_spline_init(this->p_Ray_spline_instance[e_Dynamic_state_size + 0], Affine_param_log.get(), Radial_Ray_log_global[0].get(), p_Ray_results->Ray_log_struct.Log_length);
 
     this->p_Ray_spline_instance[e_Dynamic_state_size + 1] = gsl_spline_alloc(gsl_interp_cspline, p_Ray_results->Ray_log_struct.Log_length);
-    gsl_spline_init(this->p_Ray_spline_instance[e_Dynamic_state_size + 1], this->Affine_param_log, Radial_Ray_log_global[1], p_Ray_results->Ray_log_struct.Log_length);
-    delete Radial_Ray_log_global[1];
+    gsl_spline_init(this->p_Ray_spline_instance[e_Dynamic_state_size + 1], Affine_param_log.get(), Radial_Ray_log_global[1].get(), p_Ray_results->Ray_log_struct.Log_length);
 
     this->p_Spline_accelerator = gsl_interp_accel_alloc();
-
-    delete this->Affine_param_log;
 
 }
 
@@ -93,9 +88,9 @@ Emission_Integrator_class::~Emission_Integrator_class() {
 
 }
 
-void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affine_Param, const double End_Affine_Param) {
+void Emission_Integrator_class::Run_Runge_Kutta_Stokes_Vector(const double Start_Affine_Param, const double End_Affine_Param) {
 
-    if (RK78_Fehlberg != e_Active_integrator and RK78_DP != e_Active_integrator and RK54 != e_Active_integrator) {
+    if (RK78_Fehlberg != e_Active_rad_transfer_integrator and RK78_DP != e_Active_rad_transfer_integrator and RK54 != e_Active_rad_transfer_integrator) {
 
         throw std::runtime_error("Wrong active integrator in Emission_Integrator_class::Run_Explicit_Runge_Kutta()!");
 
@@ -109,7 +104,7 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affin
     auto Embedded_solution_coeff = this->RK78_DP_Coeff_sol_embeded;
     auto Affine_param_coeff = this->RK78_DP_Coeff_affine_param;
 
-    if (RK78_Fehlberg == this->e_Active_integrator) {
+    if (RK78_Fehlberg == this->e_Active_rad_transfer_integrator) {
 
         Stage_coeff = this->RK78_Fhelberg_Coeff_deriv;
         Main_solution_coeff = this->RK78_Fhelberg_Coeff_sol_main;
@@ -117,7 +112,7 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affin
         Affine_param_coeff = this->RK78_Fhelberg_Coeff_affine_param;
 
     }
-    else if (RK54 == this->e_Active_integrator) {
+    else if (RK54 == this->e_Active_rad_transfer_integrator) {
 
         Stage_coeff = this->RK54_Coeff_deriv;
         Main_solution_coeff = this->RK54_Coeff_sol_main;
@@ -192,7 +187,7 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affin
 
     }
 
-    this->Update_emission_log(this->Current_Stokes_Vector);
+    this->Update_emission_log();
 
 }
 
@@ -271,11 +266,11 @@ void Emission_Integrator_class::get_Radiative_transfer_RHS(const double* const E
 
 }
 
-void Emission_Integrator_class::Update_emission_log(const double* const New_Stokes_Vector) {
+void Emission_Integrator_class::Update_emission_log() {
 
     for (int idx = 0; idx < e_Stokes_param_num; idx++) {
 
-        this->Emission_log[idx][this->Current_emission_log_idx] = New_Stokes_Vector[idx];
+        this->Emission_log[idx][this->Current_emission_log_idx] = this->Current_Stokes_Vector[idx];
 
     }
 
@@ -329,7 +324,7 @@ const double* const Emission_Integrator_class::get_current_Stokes_Vector() const
 
 void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start_Affine_Param, const double End_Affine_Param, const Tensor_type_enums e_Vec_type) {
 
-    if (RK78_Fehlberg != e_Active_integrator and RK78_DP != e_Active_integrator and RK54 != e_Active_integrator) {
+    if (RK78_Fehlberg != this->e_Active_parallel_transport_integrator and RK78_DP != this->e_Active_parallel_transport_integrator and RK54 != this->e_Active_parallel_transport_integrator) {
 
         throw std::runtime_error("Wrong active integrator in Emission_Integrator_class::Propagate_Polarization_Vector()!");
 
@@ -343,7 +338,7 @@ void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start
     auto Embedded_solution_coeff = this->RK78_DP_Coeff_sol_embeded;
     auto Affine_param_coeff = this->RK78_DP_Coeff_affine_param;
 
-    if (RK78_Fehlberg == this->e_Active_integrator) {
+    if (RK78_Fehlberg == this->e_Active_parallel_transport_integrator) {
 
         Stage_coeff = this->RK78_Fhelberg_Coeff_deriv;
         Main_solution_coeff = this->RK78_Fhelberg_Coeff_sol_main;
@@ -351,7 +346,7 @@ void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start
         Affine_param_coeff = this->RK78_Fhelberg_Coeff_affine_param;
 
     }
-    else if (RK54 == this->e_Active_integrator) {
+    else if (RK54 == this->e_Active_parallel_transport_integrator) {
 
         Stage_coeff = this->RK54_Coeff_deriv;
         Main_solution_coeff = this->RK54_Coeff_sol_main;
@@ -369,6 +364,17 @@ void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start
 
     for (int RK_stage = 0; RK_stage < RK_size; RK_stage++) {
 
+        memcpy(this->Temp_Pol_Vector, this->Current_Pol_Vector, e_Stokes_param_num * sizeof(std::complex<double>));
+    
+        for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
+    
+            for (int derivative_idx = 0; derivative_idx < RK_stage; derivative_idx++) {
+    
+                this->Temp_Pol_Vector[state_idx] += Step * Stage_coeff[RK_stage][derivative_idx] * this->Parallel_Transport_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
+    
+            }
+        }
+
         Temp_affine_param = this->Current_Affine_Param + Affine_param_coeff[RK_stage] * Step;
 
         /* --------------------------------------- Get the Parallel Transport RHS --------------------------------------- */
@@ -380,17 +386,6 @@ void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start
 
         /* -------------------------------------------------------------------------------------------------------------- */
 
-        memcpy(this->Temp_Pol_Vector, this->Current_Pol_Vector, e_Stokes_param_num * sizeof(std::complex<double>));
-    
-        for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
-    
-            for (int derivative_idx = 0; derivative_idx < RK_stage; derivative_idx++) {
-    
-                this->Temp_Pol_Vector[state_idx] += Step * Stage_coeff[RK_stage][derivative_idx] * this->Parallel_Transport_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
-    
-            }
-        }
-   
     }
     
     for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
@@ -404,9 +399,6 @@ void Emission_Integrator_class::Propagate_Polarization_Vector(const double Start
     }
     
     this->Current_Affine_Param += Step;
-
-    this->normalize_polarization_vector(this->Current_Affine_Param);
-
     this->Update_polarization_log();
 
 }
@@ -434,21 +426,33 @@ void Emission_Integrator_class::Map_Stokes_to_Polarization_Vector(const double S
 
     std::complex<double> Stokes_Basis_Pol_vec[e_Stokes_param_num]{};
 
-    double Polarized_Intensity = vector_norm(Stokes_Vector_to_map + 1, 3);
-
     Stokes_Basis_Pol_vec[1] = 1.0 / std::numbers::sqrt2;
+    Stokes_Basis_Pol_vec[2] = 1.0 / std::numbers::sqrt2;
 
-    if (!isinf(Stokes_Vector_to_map[Q] / Polarized_Intensity) and !isnan(Stokes_Vector_to_map[Q] / Polarized_Intensity)) {
+    const double Polarized_Intensity = vector_norm(Stokes_Vector_to_map + 1, 3);
 
-        Stokes_Basis_Pol_vec[1] = sqrt((1 + Stokes_Vector_to_map[Q] / Polarized_Intensity) / 2);
+    if (Polarized_Intensity < std::numeric_limits<double>::min()) { return; }
+
+    const double Normalized_Q = Stokes_Vector_to_map[Q] / Polarized_Intensity;
+    const double Normalized_U = Stokes_Vector_to_map[U] / Polarized_Intensity;
+    const double Normalized_V = Stokes_Vector_to_map[V] / Polarized_Intensity;
+
+    if (std::abs(Normalized_Q) > 1 or std::abs(Normalized_V) > 1) {
+
+        throw std::runtime_error("Normalized polarization components > 1 in Map_Stokes_to_Polarization_Vector()!");
 
     }
 
-    Stokes_Basis_Pol_vec[2] = 1.;
+    Stokes_Basis_Pol_vec[1] = sqrt((1 + Normalized_Q) / 2);
 
-    if (!isinf(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity)) and !isnan(1. / std::norm(Stokes_Basis_Pol_vec[1] * Polarized_Intensity))) {
+    if (Stokes_Basis_Pol_vec[1].real() < std::numeric_limits<double>::min()) {
 
-        Stokes_Basis_Pol_vec[2] = (Stokes_Vector_to_map[U] - complex_i * Stokes_Vector_to_map[V]) / (2.0 * Stokes_Basis_Pol_vec[1] * Polarized_Intensity);
+        Stokes_Basis_Pol_vec[2] = 1.0;
+
+    }
+    else {
+
+        Stokes_Basis_Pol_vec[2] = (Normalized_U - complex_i * Normalized_V) / (2.0 * Stokes_Basis_Pol_vec[1]);
 
     }
 
@@ -538,15 +542,15 @@ const std::complex<double>* const Emission_Integrator_class::get_current_Polariz
 
 void Emission_Integrator_class::normalize_polarization_vector(const double Affine_param) {
 
-    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_local_metric(this->get_ray_Global_State_Vector(Affine_param));
+    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_global_metric(this->get_ray_Global_State_Vector(Affine_param));
 
-    double norm{};
+    std::complex <double> norm{};
 
     for (int idx1 = 0; idx1 < 4; idx1++) {
 
         for (int idx2 = 0; idx2 < 4; idx2++) {
 
-            norm += (s_Metric.Metric[idx1][idx2] * this->Current_Pol_Vector[idx1] * std::conj(this->Current_Pol_Vector[idx2])).real();
+            norm += (s_Metric.Metric[idx1][idx2] * this->Current_Pol_Vector[idx1] * std::conj(this->Current_Pol_Vector[idx2]));
 
         }
 
@@ -554,12 +558,271 @@ void Emission_Integrator_class::normalize_polarization_vector(const double Affin
 
     norm = std::sqrt(norm);
 
-    if (isinf(1.0 / norm) or isnan(1.0 / norm)) { return; }
+    if (isinf(1.0 / norm.real()) or isnan(1.0 / norm.real())) { return; }
 
     for (int idx = 0; idx < 4; idx++) {
 
         this->Current_Pol_Vector[idx] = this->Current_Pol_Vector[idx] / norm;
 
     }
+
+}
+
+void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affine_Param, const double End_Affine_Param) {
+
+    switch (this->e_Active_rad_transfer_integrator) {
+
+    case Rad_Analytic:
+
+        this->Run_Analytic_Stokes_Vector_Propagator(Start_Affine_Param, End_Affine_Param);
+
+        break;
+
+    default:
+
+        this->Run_Runge_Kutta_Stokes_Vector(Start_Affine_Param, End_Affine_Param);
+        break;
+         
+    }
+
+}
+
+void Emission_Integrator_class::Get_radiative_transfer_operators(const double* const Absorbtion_functions,
+                                                                 const double* const Faradey_functions,
+                                                                 double const CGS_Step,
+                                                                 double Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num],
+                                                                 double Integrated_Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num]) {
+     
+    /* The reference for this implementation is from appendix D in https://arxiv.org/pdf/1602.03184.pdf, originally derived in https://doi.org/10.1007/BF00165988 */
+
+    memset(Transfer_Operator, 0, 16 * sizeof(double));
+    memset(Integrated_Transfer_Operator, 0, 16 * sizeof(double));
+
+    // Here I define a bunch of references, because its going to get hairy if I don't...
+    auto& alpha = Absorbtion_functions;
+    auto& rho = Faradey_functions;
+
+    /* These are the variables defined in D8 - D13, used in calculating the M matricies */
+    double const alpha_squared = alpha[Q] * alpha[Q] +
+                                 alpha[U] * alpha[U] +
+                                 alpha[V] * alpha[V];
+
+    double const rho_squared = rho[Q] * rho[Q] +
+                               rho[U] * rho[U] +
+                               rho[V] * rho[V];
+
+    double const alpha_rho = alpha[Q] * rho[Q] +
+                             alpha[U] * rho[U] +
+                             alpha[V] * rho[V];
+
+    // sigma is the sign of the variable alpha_rho
+    double const sigma = copysign(1.0, alpha_rho);
+
+    // These quantities can go ever so sligtly negative, which physically should not happen, but nmerically it does.
+    // This breaks the sqrt() functions, and so guards have to be put in place
+    double const Theta = 2 * std::sqrt((alpha_squared - rho_squared) * (alpha_squared - rho_squared) / 4 + alpha_rho * alpha_rho);
+
+    if (isnan(Theta)) { throw std::runtime_error("Inavlid value for the Theta coefficient in Get_radiative_transfer_operators()! \n"); }
+
+    if (isinf(1 / Theta)) { 
+
+        /* We only end up in here when absorbtion and faradey rotation are negligable. */
+
+        double const M_1[4][4] = { {1.0, 0.0, 0.0, 0.0},
+                                   {0.0, 1.0, 0.0, 0.0},
+                                   {0.0, 0.0, 1.0, 0.0},
+                                   {0.0, 0.0, 0.0, 1.0} };
+        
+        const double exp_term = exp(-alpha[I] * CGS_Step);
+
+        for (int row_idx = 0; row_idx < e_Stokes_param_num; row_idx++) {
+
+            for (int colum_idx = 0; colum_idx < e_Stokes_param_num; colum_idx++) {
+
+                Transfer_Operator[row_idx][colum_idx] = M_1[row_idx][colum_idx] * exp_term;
+
+                if (not isnan(1 / alpha[I]) and not isinf(1 / alpha[I])) {
+
+                    Integrated_Transfer_Operator[row_idx][colum_idx] = M_1[row_idx][colum_idx] / alpha[I] * (1. - exp_term);
+
+                }
+                else {
+
+                    /* ------- This is the zero absorbtion case ------- */
+
+                    Integrated_Transfer_Operator[row_idx][colum_idx] = M_1[row_idx][colum_idx] * CGS_Step;
+
+                }
+
+            }
+
+        }
+        
+        return; 
+    
+    }
+
+    double const Lambda[2] = { std::sqrt((Theta / 2 + (alpha_squared - rho_squared) / 2)),
+                               std::sqrt((Theta / 2 - (alpha_squared - rho_squared) / 2)) };
+
+    if (isnan(Lambda[0]) or isnan(Lambda[1])) {
+
+        throw std::runtime_error("Inavlid value for the Lambda coefficient in Get_radiative_transfer_operators()! \n");
+
+    }
+
+    /* Thesse are used in the "scaling factors" infront of the M matricies */
+    double const exp_I = exp(-alpha[I] * CGS_Step);
+
+    double const cosh_term = cosh(Lambda[0] * CGS_Step);
+    double const cos_term = cos(Lambda[1] * CGS_Step);
+
+    double const sinh_term = sinh(Lambda[0] * CGS_Step);
+    double const sin_term = sin(Lambda[1] * CGS_Step);
+
+    /* ========================== M_1 Matrix calculation ========================== */
+
+    double const M_1_scale_factor = exp_I * (cosh_term + cos_term) / 2;
+
+    double const M_1[4][4] = { {1.0, 0.0, 0.0, 0.0},
+                               {0.0, 1.0, 0.0, 0.0},
+                               {0.0, 0.0, 1.0, 0.0},
+                               {0.0, 0.0, 0.0, 1.0} };
+
+    /* ========================== M_2 Matrix calculation ========================== */
+
+    const double M_2_scale_factor = -exp_I * sin_term / Theta;
+
+    if (isinf(M_2_scale_factor) or isnan(M_2_scale_factor)) {
+
+        throw std::runtime_error("Inavlid value for M_2_scale_factor in Get_radiative_transfer_operators()!");
+
+    }
+
+    double const M_2[4][4] = { {                         0,                          (Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]), (Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V])},
+                               {(Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]),                           0,                          (sigma * Lambda[0] * alpha[V] + Lambda[1] * rho[V]), (-sigma * Lambda[0] * alpha[U] - Lambda[1] * rho[U])},
+                               {(Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (-sigma * Lambda[0] * alpha[V] - Lambda[1] * rho[V]),                           0,                          (sigma * Lambda[0] * alpha[Q] + Lambda[1] * rho[Q])},
+                               {(Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V]), (sigma * Lambda[0] * alpha[U] + Lambda[1] * rho[U]), (-sigma * Lambda[0] * alpha[Q] - Lambda[1] * rho[Q]),                           0                         } };
+
+    /* ========================== M_3 Matrix calculation ========================== */
+
+    double const M_3_scale_factor = -exp_I * sinh_term / Theta;
+
+    if (isinf(M_3_scale_factor) or isnan(M_3_scale_factor)) {
+
+        throw std::runtime_error("Inavlid value for M_3_scale_factor in Get_radiative_transfer_operators()!");
+
+    }
+
+    double const M_3[4][4] = { {						 0,							 (Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]), (Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[Q]), (Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V])},
+                               {(Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]),	 		               0,                          (-sigma * Lambda[1] * alpha[V] + Lambda[0] * rho[V]), (sigma * Lambda[1] * alpha[U] - Lambda[0] * rho[U])},
+                               {(Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[U]), (sigma * Lambda[1] * alpha[V] - Lambda[0] * rho[V]),	                         0,	                         (-sigma * Lambda[1] * alpha[Q] + Lambda[0] * rho[Q])},
+                               {(Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V]), (-sigma * Lambda[1] * alpha[U] + Lambda[0] * rho[U]), (sigma * Lambda[1] * alpha[Q] - Lambda[0] * rho[Q]),                           0                         } };
+
+    /* ========================== M_4 Matrix calculation ========================== */
+
+    double const M_4_scale_factor = exp_I * (cosh_term - cos_term) / Theta;
+
+    if (isinf(M_4_scale_factor) or isnan(M_4_scale_factor)) {
+
+        throw std::runtime_error("Inavlid value for M_4_scale_factor in Get_radiative_transfer_operators()!");
+
+    }
+
+    double const M_4[4][4] = { {   (alpha_squared + rho_squared) / 2,                      (alpha[V] * rho[U] - alpha[U] * rho[V]),                                     (alpha[Q] * rho[V] - alpha[V] * rho[Q]),                                     (alpha[U] * rho[Q] - alpha[Q] * rho[U])},
+                               {(alpha[U] * rho[V] - alpha[V] * rho[U]), (alpha[Q] * alpha[Q] + rho[Q] * rho[Q] - (alpha_squared + rho_squared) / 2),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                                     (alpha[V] * alpha[Q] + rho[V] * rho[Q])},
+                               {(alpha[V] * rho[Q] - alpha[Q] * rho[V]),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                   (alpha[U] * alpha[U] + rho[U] * rho[U] - (alpha_squared + rho_squared) / 2),                   (alpha[U] * alpha[V] + rho[U] * rho[V])},
+                               {(alpha[Q] * rho[U] - alpha[U] * rho[Q]),                   (alpha[V] * alpha[Q] + rho[V] * rho[Q]),                                     (alpha[U] * alpha[V] + rho[U] * rho[V]),                   (alpha[V] * alpha[V] + rho[V] * rho[V] - (alpha_squared + rho_squared) / 2)} };
+
+    /* ========================== This is the formal operator O(s,s') - the solution to D1 ========================== */
+
+    for (int row_idx = 0; row_idx < e_Stokes_param_num; row_idx++) {
+
+        for (int colum_idx = 0; colum_idx < e_Stokes_param_num; colum_idx++) {
+
+            Transfer_Operator[row_idx][colum_idx] = M_1_scale_factor * M_1[row_idx][colum_idx] +
+                                                    M_2_scale_factor * M_2[row_idx][colum_idx] +
+                                                    M_3_scale_factor * M_3[row_idx][colum_idx] +
+                                                    M_4_scale_factor * M_4[row_idx][colum_idx];
+
+        }
+
+    }
+
+    /* ========================== The intergral of O(s,s') for constant M matricies ========================== */
+
+    /* This part of the implementation is adapted from equation (24) of https://academic.oup.com/mnras/article/475/1/43/4712230 */
+
+    double const f_1 = 1.0 / (alpha[I] * alpha[I] - Lambda[0] * Lambda[0]);
+    double const f_2 = 1.0 / (alpha[I] * alpha[I] + Lambda[1] * Lambda[1]);
+
+    if (isinf(f_1) or isnan(f_1) or isinf(f_2) or isnan(f_2)) {
+
+        throw std::runtime_error("Inavlid values for f_1 and f_2 in Get_radiative_transfer_operators()!");
+
+    }
+
+    for (int row_idx = 0; row_idx < e_Stokes_param_num; row_idx++) {
+
+        for (int colum_idx = 0; colum_idx < e_Stokes_param_num; colum_idx++) {
+
+
+            Integrated_Transfer_Operator[row_idx][colum_idx] = -Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) +
+                                                                Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) -
+                                                                exp_I * ((-Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I]  * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * cosh_term +
+                                                                        ( -Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I]  * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * cos_term +
+                                                                        (  -alpha[I] * f_2 * M_2[row_idx][colum_idx] - Lambda[1] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * sin_term -
+                                                                        (   alpha[I] * f_1 * M_3[row_idx][colum_idx] - Lambda[0] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * sinh_term);
+
+        }
+
+    }
+
+}
+
+void Emission_Integrator_class::Run_Analytic_Stokes_Vector_Propagator(const double Start_Affine_Param, const double End_Affine_Param) {
+
+    Transfer_functions_type Total_Transfer_Functions{};
+
+    for (int emission_medium = Disk; emission_medium < e_Emission_medium_number; emission_medium++) {
+
+        Transfer_functions_type Temp_Transfer_functions{};
+
+        this->p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(this->get_ray_Local_State_Vector(Start_Affine_Param),
+                                                                                this->p_Sim_Context,
+                                                                                static_cast<Emission_medium_enums>(emission_medium),
+                                                                                &Temp_Transfer_functions);
+
+        add_vectors(Temp_Transfer_functions.Absorbtion_functions, Total_Transfer_Functions.Absorbtion_functions, e_Stokes_param_num, Total_Transfer_Functions.Absorbtion_functions);
+        add_vectors(Temp_Transfer_functions.Emission_functions, Total_Transfer_Functions.Emission_functions, e_Stokes_param_num, Total_Transfer_Functions.Emission_functions);
+        add_vectors(Temp_Transfer_functions.Faradey_functions, Total_Transfer_Functions.Faradey_functions, e_Stokes_param_num, Total_Transfer_Functions.Faradey_functions);
+
+    }
+
+    const double Geometric_Step = std::abs(End_Affine_Param - Start_Affine_Param);
+    const double CGS_Step = Geometric_Step * MASS_TO_CM * this->p_Sim_Context->p_Init_Conditions->central_object_mass;
+
+    double Transfer_operator[4][4]{};
+    double Integrated_transfer_operator[4][4];
+
+    this->Get_radiative_transfer_operators(Total_Transfer_Functions.Absorbtion_functions, Total_Transfer_Functions.Faradey_functions, CGS_Step, Transfer_operator, Integrated_transfer_operator);
+
+    double Transfered_emission_vector[e_Stokes_param_num]{};
+
+    // Placeholder vector for use in the mat_vec_multiply_4D() function
+    double Temp_Intensity[e_Stokes_param_num]{};
+    memcpy(Temp_Intensity, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
+
+    mat_vec_multiply_4D(Integrated_transfer_operator, Total_Transfer_Functions.Emission_functions, Transfered_emission_vector);
+    mat_vec_multiply_4D(Transfer_operator, Temp_Intensity, this->Current_Stokes_Vector);
+
+    for (int index = 0; index < e_Stokes_param_num; index++) {
+
+        this->Current_Stokes_Vector[index] += Transfered_emission_vector[index];
+
+    }
+
+    this->Current_Affine_Param += Geometric_Step;
+    this->Update_emission_log();
 
 }

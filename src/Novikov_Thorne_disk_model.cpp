@@ -22,14 +22,12 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
     this->e_Spacetime = p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime;
 
-    this->e_Mag_field_geometry = p_Sim_Context->p_Init_Conditions->Disk_params.e_Mag_field_geometry;
-
     this->Flux_integral_fucntion_struct.function = &NT_flux_integrand_wrapper;
     this->Flux_integral_workspace = gsl_integration_cquad_workspace_alloc(20000);
 
     memset(this->Disk_veclovity_vector, 0, 4 * sizeof(double));
     memset(this->Source_polarization_vector, 0, 4 * sizeof(double));
-    memcpy(this->Mag_field_geometry, p_Sim_Context->p_Init_Conditions->Disk_params.Mag_field_geometry, 3 * sizeof(double));
+    memcpy(this->Mag_field_geometry, p_Sim_Context->p_Init_Conditions->Disk_params.Novikov_Thorne_params.Mag_field_geometry, 3 * sizeof(double));
 
     const int Flux_integral_interpolat_size = 1500;
 

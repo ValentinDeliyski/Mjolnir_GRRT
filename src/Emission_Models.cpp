@@ -266,7 +266,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     else {
 
         /* The magnetic field is the one measured by a comoving with the plasma observer, but expressed in the cooridante frame */
-        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_eulerian_frame, p_Emission_medium_state->Plasma_Velocity, Local_State_Vector, p_Sim_Context);
+        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame, p_Emission_medium_state->Plasma_Velocity, Local_State_Vector, p_Sim_Context);
         double sin_pitch_angle = sin(pitch_angle);
 
         double one_over_sqrt_sin    = 1. / sqrt(sin_pitch_angle);
@@ -347,19 +347,17 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
     /* This function call populates the density and temperature values for the hotspot - this is why they are not populated along with the magnetic field parameters. */
     Is_inside_hotspot = this->p_Hotspot_Model->is_inside_hotspot(Local_State_Vector, &Hotspot_state);
 
-    Return_Values Plasma_velocity_OK{};
-
     switch (Emission_medium) {
 
     case Disk:
 
-        memcpy(Emission_medium_state.Plasma_Velocity, this->p_Disk_Model->get_disk_velocity(Local_State_Vector), 4 * sizeof(double));
-
-        /* This function call populates the density and temperature values for the disk - this is why they are not populated along with the magnetic field parameters. */
+       /* This function call populates the density and temperature values for the disk - this is why they are not populated along with the magnetic field parameters. */
         Is_inside_disk = this->p_Disk_Model->is_inside_disk(Local_State_Vector, &Emission_medium_state);
 
         if (!Is_inside_disk) { return; };
-        
+
+        memcpy(Emission_medium_state.Plasma_Velocity, this->p_Disk_Model->get_disk_velocity(Local_State_Vector), 4 * sizeof(double));
+
         if (Is_inside_hotspot) {
 
             /* -------- We are inside the hotspot - set the magnetic field properties of the disk to be equal to those of the hotspot. -------- */
@@ -395,8 +393,6 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
         throw std::runtime_error("Unsupported emissison medium - something broke in the get_radiative_transfer_functions function!");
 
     }
-
-    if (OK != Plasma_velocity_OK) { return; }
  
     switch (Emission_medium_state.Ensamble_type) {
 

@@ -105,7 +105,7 @@ enum Disk_model_enums : std::underlying_type_t <std::byte> {
     e_Debug_constant_density = 5,
 
     /* TODO */
-    e_Numerical_Polytrope = 6
+    e_Numerical = 6
 
 };
 

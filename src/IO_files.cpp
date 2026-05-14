@@ -156,6 +156,11 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
 
     switch (this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
+    case e_Numerical:
+
+        *Output_file << "Active disk model: Phenomenological_RIAF_1\n";
+        break;
+
     case e_Phenom_RIAF_1:
 
         *Output_file << "Active disk model: Phenomenological_RIAF_1\n";
@@ -183,7 +188,12 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
     }
 
     if (e_Phenom_RIAF_1 == this->p_Initial_Conditions->Disk_params.e_Disk_model or
-        e_Phenom_RIAF_2 == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+        e_Phenom_RIAF_2 == this->p_Initial_Conditions->Disk_params.e_Disk_model or
+        e_Phenom_RIAF_3 == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+
+        
+        *Output_file << "Maximum Density [g / cm^3]: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Electron_density_scale << "\n"
+                     << "Maximum Temperature [K]: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Electron_temperature_scale << "\n";
 
         *Output_file << "--------------------------- Model Parameters\n"
                      << "Disk Opening Angle Parameter: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Disk_opening_angle << "\n"
@@ -195,6 +205,50 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
                      << "Disk Temperature power law power: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_power_law_power << "\n"
                      << "Disk Temperature cutoff radius: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_cutoff_radius << "\n"
                      << "Disk Temperature cutoff scale: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Temperature_cutoff_scale << "\n";
+
+        *Output_file << "--------------------------- Magnetic Field Parameters\n";
+
+        switch (this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Mag_field_params.e_Mag_field_geometry) {
+
+        case Toroidal:
+
+            *Output_file << "Disk Magnetic field geometry: Toroidal\n";
+            break;
+
+        case Vertical:
+
+            *Output_file << "Disk Magnetic field geometry: Vertical\n";
+            break;
+
+        case Constant:
+
+            *Output_file << "Disk Magnetic field geometry: [" << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Mag_field_params.Mag_field_geometry[e_r - 1] << " "
+                << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Mag_field_params.Mag_field_geometry[e_theta - 1] << " "
+                << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Mag_field_params.Mag_field_geometry[e_phi - 1] << "]"
+                << "\n";
+            break;
+
+        }
+
+        switch (this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Mag_field_params.e_Mag_field_magnitude_profile) {
+
+        case Magnetization_based:
+
+            *Output_file << "Magnetic field magnitude profile: Magnetization based\n";
+            *Output_file << "Disk Magnetization [-]: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Mag_field_params.Magnetization << "\n";
+
+            break;
+
+        case Power_law_based:
+
+            *Output_file << "Magnetic field magnitude profile: Power law based\n"
+                         << "Magnetic field scale: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Mag_field_params.Mag_field_B_0 << "\n"
+                         << "Magnetic field radial scale: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Mag_field_params.Mag_field_r_0 << "\n"
+                         << "Magnetic field power law: " << this->p_Initial_Conditions->Disk_params.Common_RIAF_params.Mag_field_params.Mag_field_power << "\n";
+
+            break;
+        }
+   
     }
     else if (e_Novikov_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
@@ -206,87 +260,60 @@ void File_manager_class::write_accretion_disk_metadata(std::ofstream* Output_fil
                      << "Outer Disk Radius [M]: "
                      << this->p_Initial_Conditions->Disk_params.Novikov_Thorne_params.r_out
                      << "\n";
+
+        *Output_file << "--------------------------- Magnetic Field Parameters\n";
+
+        *Output_file << "Disk Magnetic field geometry: [" << this->p_Initial_Conditions->Disk_params.Novikov_Thorne_params.Mag_field_geometry[e_r - 1] << " "
+                                                          << this->p_Initial_Conditions->Disk_params.Novikov_Thorne_params.Mag_field_geometry[e_theta - 1] << " "
+                                                          << this->p_Initial_Conditions->Disk_params.Novikov_Thorne_params.Mag_field_geometry[e_phi - 1] << "]"
+                                                          << "\n";
+
     }
     else {
 
         *Output_file << "--------------------------- Model Parameters\n"
                      << "Disk Radial Scale: " << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Radial_scale << "\n"
                      << "Disk Vertical Scale: " << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Vertical_scale << "\n";
-    }
 
-    if (e_Novikov_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+        *Output_file << "--------------------------- Magnetic Field Parameters\n";
 
-        *Output_file << "Maximum Density [g / cm^3]: " << this->p_Initial_Conditions->Disk_params.Electron_density_scale << "\n"
-                     << "Maximum Temperature [K]: " << this->p_Initial_Conditions->Disk_params.Electron_temperature_scale << "\n";
-    }
+        switch (this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Mag_field_params.e_Mag_field_geometry) {
 
-    *Output_file << "--------------------------- Magnetic Field Parameters\n";
+        case Toroidal:
 
-    if (e_Novikov_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
+            *Output_file << "Disk Magnetic field geometry: Toroidal\n";
+            break;
 
-        *Output_file << "Disk Magnetization [-]: " << this->p_Initial_Conditions->Disk_params.Magnetization << "\n";
+        case Vertical:
 
-    }
+            *Output_file << "Disk Magnetic field geometry: Vertical\n";
+            break;
 
-    switch (this->p_Initial_Conditions->Disk_params.e_Mag_field_geometry) {
+        case Constant:
 
-    case Toroidal:
+            *Output_file << "Disk Magnetic field geometry: [" << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Mag_field_params.Mag_field_geometry[e_r - 1] << " "
+                                                              << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Mag_field_params.Mag_field_geometry[e_theta - 1] << " "
+                                                              << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Mag_field_params.Mag_field_geometry[e_phi - 1] << "]"
+                                                              << "\n";
+            break;
 
-        *Output_file << "Disk Magnetic field geometry: Toroidal\n";
-        break;
+        }
 
-    case Vertical:
-
-        *Output_file << "Disk Magnetic field geometry: Vertical\n";
-        break;
-
-    case Constant:
-
-        *Output_file << "Disk Magnetic field geometry: [" << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_r - 1] << " "
-                                                     << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_theta - 1] << " "
-                                                     << this->p_Initial_Conditions->Disk_params.Mag_field_geometry[e_phi - 1] << "]"
-                                                     << "\n";
-        break;
-
-    }
-
-    if (e_Novikov_Thorne != this->p_Initial_Conditions->Disk_params.e_Disk_model) {
-
-        switch (this->p_Initial_Conditions->Disk_params.e_Mag_field_magnitude_profile) {
+        switch (this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Mag_field_params.e_Mag_field_magnitude_profile) {
 
         case Magnetization_based:
 
             *Output_file << "Magnetic field magnitude profile: Magnetization based\n";
+            *Output_file << "Disk Magnetization [-]: " << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Mag_field_params.Magnetization << "\n";
+
             break;
 
         case Power_law_based:
 
             *Output_file << "Magnetic field magnitude profile: Power law based\n"
-                         << "Magnetic field scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_B_0 << "\n"
-                         << "Magnetic field radial scale: " << this->p_Initial_Conditions->Disk_params.Mag_field_r_0 << "\n"
-                         << "Magnetic field power law: " << this->p_Initial_Conditions->Disk_params.Mag_field_power << "\n";
-
-            break;
-        }
-
-        *Output_file << "--------------------------- Misc Parameters\n";
-
-        switch (this->p_Initial_Conditions->Disk_params.Ensamble_type) {
-
-        case e_Phenomenological_ensamble:
-
-            *Output_file << "Disk ensamble type: Phenomenological" << "\n";
-
-            break;
-
-        case e_Kappa_ensamble:
-            *Output_file << "Disk ensamble type: Kappa" << "\n";
-
-            break;
-
-        default:
-
-            *Output_file << "Disk ensamble type: Thermal" << "\n";
+                         << "Magnetic field scale: " << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Mag_field_params.Mag_field_B_0 << "\n"
+                         << "Magnetic field radial scale: " << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Mag_field_params.Mag_field_r_0 << "\n"
+                         << "Magnetic field power law: " << this->p_Initial_Conditions->Disk_params.Colab_test_1_params.Mag_field_params.Mag_field_power << "\n";
 
             break;
         }
@@ -547,7 +574,7 @@ void File_manager_class::write_integrator_metadata(std::ofstream* Output_file) {
 
         *Output_file << "Step type [-]: Adaptive \n";
         *Output_file << "Max relative step increase [-]: " << this->p_Initial_Conditions->Integrator_params.Geodesic_Step_Controller_Params.Max_rel_step_increase << "\n";
-        *Output_file << "Max stepsize [M]: " << this->p_Initial_Conditions->Integrator_params.Geodesic_Step_Controller_Params.Max_stepsize << "\n";
+        *Output_file << "Max stepsize [M]: " << this->p_Initial_Conditions->Integrator_params.Geodesic_Step_Controller_Params.Max_upper_stepsize << "\n";
 
 
     }
@@ -882,7 +909,7 @@ void File_manager_class::log_photon_path(Results_type* p_Ray_results) {
         }
         else {
 
-            int idx = log_index - (p_Ray_results->Ray_log_struct.Log_length - p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge);
+            size_t idx = log_index - (p_Ray_results->Ray_log_struct.Log_length - p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge);
 
             for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
 

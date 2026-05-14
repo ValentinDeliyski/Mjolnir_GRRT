@@ -144,9 +144,6 @@ int main(int argument_count, char** cmd_line_args) {
 
         }
 
-        // Populate the File Manager class instance
-        s_Sim_Context.File_manager = new File_manager_class(s_Sim_Context.p_Init_Conditions);
-
         // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
         static Results_type s_Ray_results{};
 
@@ -182,7 +179,7 @@ int main(int argument_count, char** cmd_line_args) {
         |============================== Run the simulation ==============================|
 
         */
-
+        gsl_set_error_handler_off();
         switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
 
         case Image_generation:

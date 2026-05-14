@@ -68,6 +68,8 @@ struct Disk_profile_parameters_type {
 
 struct Disk_model_parameters_type {
 
+    bool Enable_flag{};
+
     /*! @brief Specifies the used model of the disk. */
     Disk_model_enums e_Disk_model{};
 
@@ -77,38 +79,10 @@ struct Disk_model_parameters_type {
     /*! @brief Specifies the velocity profile of the disk. */
     Velocity_enums Velocity_profile_type{};
 
-    /*! @brief Specifies the magnitude of the radial velocity component. I use this to interpolate the circular velocity profile,
-       specified by the "Velocity_profile_type" enum, with a purely radial profile. The range is [0, 1]. */
-    double Radial_velocity_fraction{};
-
-    /*! @brief The peak density value in [g / cm^3]. */
-    double Electron_density_scale{};
-
-    /*! @brief The peak temperature value in [K]. */
-    double Electron_temperature_scale{};
-
-    /*! @brief Specifies the direction of the magnetic field. */
-    Magnetic_field_geometry_enums e_Mag_field_geometry{};
-
-    /*! @brief Specifies how the magnitude of the magnetic field is calculated. */
-    Magnetic_field_magnitude_enums e_Mag_field_magnitude_profile{};
-
-    /*! @brief The disk magnetization value [-]. */
-    double Magnetization{};
-
-    /*! @brief The constant magnetic field geometry in the Eularian frame.
-       The components are specified as [B_r, B_theta, B_phi].
-       This vector gets normalized with the metric before use. */
-    double Mag_field_geometry[3]{};
-
-    double Mag_field_B_0{};
-
-    double Mag_field_power{};
-
-    double Mag_field_r_0{};
-
     /*! @brief Specifies the relative density at which we start evaluating the emission of the disk. */
     double Threshold_relative_density{};
+
+    double Max_disk_density{};
 
     /* ========= The disk profile parameters ========= */
 
@@ -119,10 +93,6 @@ struct Disk_model_parameters_type {
     Novikov_Thorne_params_type Novikov_Thorne_params{};
 
     Numerical_disk_params_type Numerical_disk_params{};
-
-    EOS_params_type Thermal_EOS_params{};
-
-    EOS_params_type Mag_Press_EOS_params{};
 
 };
 
@@ -143,6 +113,8 @@ struct Magnetic_fields_type {
 };
 
 struct Hotspot_model_parameters_type {
+
+    bool Enable_flag{};
 
     /*! @brief Specifies the statistical ensamble of the hotspot. */
     Ensamble_enums Ensamble_type{};
@@ -629,7 +601,9 @@ struct Step_Controller_parameters_type {
     double Init_stepzie{};
 
     /*! @brief The Maximum allowed stepsize, when using the adaptive integrator. Also the constant value for the fixed step. */
-    double Max_stepsize{};
+    double Max_upper_stepsize{};
+
+    double Min_upper_stepsize{};
 
     /*! @brief A multiplicative factor forr the integration step in the range (0, 1] that makes the integrator more stable. */
     double Safety_1{};
@@ -655,6 +629,12 @@ struct Step_Controller_parameters_type {
     /*! @brief The adaptive ESDIRK5(4) relative error threshold parameter. */
     double ESDIRK54_rel_accuracy{};
 
+    double Dist_to_Observer{};
+
+    double Dist_at_min_upper_stepsize{};
+
+    double Max_step_b_coeff{};
+
 };
 
 struct Integrator_parameters_type {
@@ -670,6 +650,9 @@ struct Integrator_parameters_type {
 
     /*! @brief Enum that selects which radiative transfer integrator to use. */
     Integrator_enums e_Radiative_transfer_integrator{};
+
+    /*! @brief Enum that selects which radiative transfer integrator to use. */
+    Integrator_enums e_Parallel_transport_integrator{};
 
     /*! @brief Enum that selects which geodesic integrator to use by default. When that one fails to integrate a given geodesic, we switch to ESDIRK54. */
     Integrator_enums e_Default_geodesic_integrator{};
@@ -858,9 +841,6 @@ struct Simulation_Context_type {
     /*! @brief Pointer to the class that holds all the Novikov-Thorne related functions. */
     Novikov_Thorne_Model_class* p_NT_model{};
 
-    /*! @brief Pointer to the class that holds all the file manager related functions. */
-    File_manager_class* File_manager{};
-
 };
 
 struct Ray_log_type {
@@ -876,14 +856,14 @@ struct Ray_log_type {
     /* Pointer to the array that holds the entire photon trajectory in global coordinates. */
     double* Ray_path_log_global;
 
-    int Log_offet_at_disk_edge;
+    size_t Log_offet_at_disk_edge;
 
     /* Int that specifies where in the log to write.
        This exists for the sole purpose of minimizing the number of arguments in the functions that write to the photon log. */
-    int Log_offset;
+    size_t Log_offset;
 
     /* The length of the photon log. */
-    int Log_length;
+    size_t Log_length;
 
 };
 

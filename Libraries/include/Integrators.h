@@ -127,7 +127,7 @@ private:
     Ray_log_type* p_Ray_log_struct;
 
     Spacetime_Base_Class* p_Spacetime;
-    Step_controller_class* p_Step_controller;
+    std::unique_ptr<Step_controller_class> p_Step_controller;
 
     /* ----------- Root finder environment variables ----------- */
 

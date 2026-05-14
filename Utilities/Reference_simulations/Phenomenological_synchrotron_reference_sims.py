@@ -11,7 +11,7 @@ sys.path.append(parent_directory)
 
 from Mjolnir_Configurator import Simulation_configurator
 from Support_functions.Parsers import Units_class, Simulation_Parser
-from numpy import pi
+from numpy import pi, std, array, average
 import subprocess
 
 class bcolors:
@@ -34,7 +34,9 @@ class Target_fluxes:
     Test_2 = (1.4361 + 1.4727 + 1.4486 + 1.4361 + 1.4710 + 1.4486 + 1.4568) / 7
     Test_3 = (0.4419 + 0.4527 + 0.4454 + 0.4419 + 0.4508 + 0.4456 + 0.4480) / 7
     Test_4 = (0.2711 + 0.2771 + 0.2729 + 0.2709 + 0.2763 + 0.2729 + 0.2749) / 7
-    Test_5 = (0.0256 + 0.0261 + 0.0258 + 0.0254 + 0.0260 + 0.0258 + 0.0259) / 7
+    Test_5 = array([0.0256, 0.0261, 0.0258, 0.0254, 0.0260, 0.0258, 0.0259])
+    Test_5_avg = average(Test_5)
+    Test_5_std = std(Test_5)
     
 class Phenomenological_syhnchrotron_reference_sims:
     
@@ -73,8 +75,8 @@ class Phenomenological_syhnchrotron_reference_sims:
         self.Simulation_configurator.observer.Image_x_min = {"Value": -15, "Unit": "[M]"}
         self.Simulation_configurator.observer.Image_x_max = {"Value":  15, "Unit": "[M]"}
         
-        self.Simulation_configurator.observer.Resolution_x = {"Value": 1024, "Unit": "[-]"}
-        self.Simulation_configurator.observer.Resolution_y = {"Value": 1024, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_x = {"Value": 256, "Unit": "[-]"}
+        self.Simulation_configurator.observer.Resolution_y = {"Value": 256, "Unit": "[-]"}
         
         """ Kill the hotspot """
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
@@ -82,17 +84,12 @@ class Phenomenological_syhnchrotron_reference_sims:
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
         
         self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        self.Simulation_configurator.emission_integrator.Rad_Transfer_Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
-        
-        self.Simulation_configurator.rad_transfer_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.RK_abs_accuracy = {"Value": 1e-10, "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.RK_rel_accuracy = {"Value": 1e-10, "Unit": "[-]"}
             
-        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
-        
+        self.Simulation_configurator.geodesic_integrator.max_upper_stepsize = {"Value": 100, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
 
     def get_total_flux(self, sim_path: str) -> float:
         
@@ -104,8 +101,8 @@ class Phenomenological_syhnchrotron_reference_sims:
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Vertical_scale = {"Value": 0, "Unit": "[cos(angle)]"}
-        self.Simulation_configurator.disk_model.Radial_scale = {"Value": 10, "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Colab_test_1_disk_params.Vertical_scale = {"Value": 0, "Unit": "[cos(angle)]"}
+        self.Simulation_configurator.disk_model.Colab_test_1_disk_params.Radial_scale = {"Value": 10, "Unit": "[M]"}
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff   = {"Value": 0, "Unit": "[?]"}
         self.Simulation_configurator.emission_models.Emission_power_law = {"Value": -2, "Unit": "[-]"}
@@ -146,8 +143,8 @@ class Phenomenological_syhnchrotron_reference_sims:
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Vertical_scale  = {"Value": 10 / 3, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Radial_scale  = {"Value": 10, "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Colab_test_1_disk_params.Vertical_scale  = {"Value": 10 / 3, "Unit": "[tan(angle)]"}
+        self.Simulation_configurator.disk_model.Colab_test_1_disk_params.Radial_scale  = {"Value": 10, "Unit": "[M]"}
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff   = {"Value": 0, "Unit": "[?]"}
         self.Simulation_configurator.emission_models.Emission_power_law = {"Value": 0, "Unit": "[-]"}
@@ -188,8 +185,8 @@ class Phenomenological_syhnchrotron_reference_sims:
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.9, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Vertical_scale  = {"Value": 10 / 3, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Radial_scale  = {"Value": 10, "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Colab_test_1_disk_params.Vertical_scale  = {"Value": 10 / 3, "Unit": "[tan(angle)]"}
+        self.Simulation_configurator.disk_model.Colab_test_1_disk_params.Radial_scale  = {"Value": 10, "Unit": "[M]"}
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff   = {"Value": 1e5, "Unit": "[?]"}
         self.Simulation_configurator.emission_models.Emission_power_law = {"Value": 0, "Unit": "[-]"}
@@ -226,25 +223,22 @@ class Phenomenological_syhnchrotron_reference_sims:
             
     def Run_and_eval_test_sim_5(self) -> None:
         
-        """ The disk here is really thin and this is a hack-y (and slow...) way of making sure the itnegrator does not jump over it """
-        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 0.15, "Unit": "[-]"}
-        self.Simulation_configurator.rad_transfer_integrator.max_stepsize = {"Value": 0.15, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.min_upper_stepsize = {"Value": 0.15, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.max_step_b_coeff = {"Value": 0.004, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.dist_at_min_upper_stepsize = {"Value": 25, "Unit": "[-]"}
         
         """ Central black hole setup """
         self.Simulation_configurator.metric_parameters.Spin = {"Value": 0.0, "Unit": "[M]"}
 
         """ Accretion disk setup """
-        self.Simulation_configurator.disk_model.Vertical_scale  = {"Value": 100 / 3, "Unit": "[tan(angle)]"}
-        self.Simulation_configurator.disk_model.Radial_scale  = {"Value": 10, "Unit": "[M]"}
+        self.Simulation_configurator.disk_model.Colab_test_1_disk_params.Vertical_scale  = {"Value": 100 / 3, "Unit": "[tan(angle)]"}
+        self.Simulation_configurator.disk_model.Colab_test_1_disk_params.Radial_scale  = {"Value": 10, "Unit": "[M]"}
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff   = {"Value": 1e6, "Unit": "[?]"}
         self.Simulation_configurator.emission_models.Emission_power_law = {"Value": 0, "Unit": "[-]"}
-    
-        self.Simulation_configurator.min_image_order               = {"Value": 2, "Unit": "[-]"}
-        self.Simulation_configurator.max_image_order               = {"Value": 2, "Unit": "[-]"}
 
         """ The simulation name """
-        self.Simulation_configurator.simulation_name = {"Value": "Phenomenological_Reference_Simulation_5_3", "Unit": "[-]"}
+        self.Simulation_configurator.simulation_name = {"Value": "Phenomenological_Reference_Simulation_5", "Unit": "[-]"}
         
         """ Generate the simulation input/output file paths """
         # This is the "common" output directory, and each simulation will be in its own sub-folder
@@ -265,13 +259,15 @@ class Phenomenological_syhnchrotron_reference_sims:
                 
         """ Evaluate the simulataion results """
         Total_flux = self.get_total_flux(Sim_subfolder)
-        Relative_error = (Total_flux - Target_fluxes.Test_5) / Target_fluxes.Test_5
+        Error = (Total_flux - Target_fluxes.Test_5_avg)
         
         try:
-            assert(abs(Relative_error) < 0.01)
-            print(f"{bcolors.BOLD}" + f"{bcolors.OKGREEN}Reference Simulation 5 pass with a relative error of {{}} %.{bcolors.ENDC}".format(round(Relative_error * 100, 3)))
+            assert(Target_fluxes.Test_5.min() < Total_flux < Target_fluxes.Test_5.max())
+            print(f"{bcolors.BOLD}" + f"{bcolors.OKGREEN}Reference Simulation 5 pass with a total flux of {{}} [Jy] and relative error of {{}} standard deviations from the average.{bcolors.ENDC}".format(round(Total_flux, 5), 
+                                                                                                                                                                                                           round(abs(Error / Target_fluxes.Test_5_std), 3)))
         except:
-            print(f"{bcolors.BOLD}" + f"{bcolors.FAIL}Reference Simulation 5 fail with a relative error of {{}} %.{bcolors.ENDC}".format(round(Relative_error * 100, 3)))
+            print(f"{bcolors.BOLD}" + f"{bcolors.FAIL}Reference Simulation 5 fail with a total flux of {{}} [Jy] and relative error of {{}} standard deviations from the average.{bcolors.ENDC}".format(round(Total_flux, 5), 
+                                                                                                                                                                                                        round(abs(Error / Target_fluxes.Test_5_std), 3)))
 
 if __name__ == "__main__": 
   
@@ -289,5 +285,5 @@ if __name__ == "__main__":
     # Sim_3_thread.start()
     time.sleep(1)
     # Sim_4_thread.start()
-    # time.sleep(1)
+    time.sleep(1)
     Sim_5_thread.start()

@@ -31,9 +31,6 @@ class Novikov_Thorne_Model_class {
 
         double Source_polarization_vector[4];
 
-        /*! @brief Specifies the direction of the magnetic field. */
-        Magnetic_field_geometry_enums e_Mag_field_geometry{};
-
         /*! @brief Array that holds the magnetic field direction vector in the plasma frame
             (for the case e_Mag_field_geometry == Constant). */
         double Mag_field_geometry[3]{};

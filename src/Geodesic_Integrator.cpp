@@ -13,7 +13,28 @@ Step_controller_class::Step_controller_class(const Step_Controller_parameters_ty
 
 }
 
-void Step_controller_class::update_step(Integrator_enums e_Active_integrator) {
+double Step_controller_class::get_max_step(const double r) const {
+
+    const double Step_ratio = this->Parameters.Min_upper_stepsize / this->Parameters.Max_upper_stepsize;
+
+    /* This thing should ideally be as close to 2 * Step_ratio / (1 - Step_ratio) as possible, while still being smaller. 
+       When it is exactly equal to 2 * Step_ratio / (1 - Step_ratio), arctanh_arg becomes equal to 1. */
+    const double c_coeff = 0.999 * 2 * Step_ratio / (1 - Step_ratio);
+    const double arctanh_arg = 1 + c_coeff - (2 + c_coeff) * Step_ratio;
+
+    if (std::abs(arctanh_arg) >= 1) {
+
+        return this->Parameters.Max_upper_stepsize;
+
+    }
+
+    const double a_coeff = this->Parameters.Max_step_b_coeff * atanh(arctanh_arg) + this->Parameters.Dist_at_min_upper_stepsize / this->Parameters.Dist_to_Observer;
+
+    return this->Parameters.Max_upper_stepsize * (tanh((r / this->Parameters.Dist_to_Observer - a_coeff) / this->Parameters.Max_step_b_coeff) + 1. + c_coeff) / (2. + c_coeff);
+
+}
+
+void Step_controller_class::update_step(Integrator_enums e_Active_integrator, const double r) {
 
     this->previous_step = this->step;
 
@@ -66,11 +87,13 @@ void Step_controller_class::update_step(Integrator_enums e_Active_integrator) {
 
     }
 
+    double max_stepsize = this->get_max_step(r);
+
     Rel_step_increase = std::min(this->Parameters.Max_rel_step_increase, std::max(this->Parameters.Min_rel_step_increase, Rel_step_increase));
 
     this->step *= Rel_step_increase;
 
-    if (this->step > this->Parameters.Max_stepsize) { this->step = this->Parameters.Max_stepsize; };
+    if (this->step > max_stepsize) { this->step = max_stepsize; };
 
 }
 
@@ -98,7 +121,7 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
     this->p_Init_conditions = p_Sim_Context->p_Init_Conditions;
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
 
-    this->p_Step_controller = new Step_controller_class(this->p_Init_conditions->Integrator_params.Geodesic_Step_Controller_Params);
+    this->p_Step_controller = std::make_unique<Step_controller_class>(this->p_Init_conditions->Integrator_params.Geodesic_Step_Controller_Params);
 
     this->p_Ray_log_struct = &p_Ray_results->Ray_log_struct;
 
@@ -107,8 +130,8 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
 
     /* ------------------------------ Construct the initial state vector ------------------------------ */ 
 
-    double* Init_Global_State = this->p_Ray_log_struct->Ray_path_log_global;
-    double* Init_Local_State = this->p_Ray_log_struct->Ray_path_log_local;
+    double*& Init_Global_State = this->p_Ray_log_struct->Ray_path_log_global;
+    double*& Init_Local_State = this->p_Ray_log_struct->Ray_path_log_local;
 
     this->p_Ray_log_struct->Ray_path_log_global[e_t] = p_Sim_Context->p_Init_Conditions->Observer_params.init_time;
     this->p_Ray_log_struct->Ray_path_log_global[e_r] = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
@@ -143,7 +166,6 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
 
 Geodesic_Integrator_class::~Geodesic_Integrator_class() {
 
-    delete this->p_Step_controller;
     gsl_multiroot_fsolver_free(this->Root_finder);
     gsl_vector_free(this->gsl_trial_State_Vector);
 
@@ -252,7 +274,7 @@ void Geodesic_Integrator_class::Run_ESDIRK54() {
     if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
     this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
-    this->p_Step_controller->update_step(this->e_Active_integrator);
+    this->p_Step_controller->update_step(this->e_Active_integrator, New_State_vector_main[e_r]);
 
     if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step) {
 
@@ -372,7 +394,7 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta() {
     if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
     this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
-    this->p_Step_controller->update_step(this->e_Active_integrator);
+    this->p_Step_controller->update_step(this->e_Active_integrator, New_State_vector_main[e_r]);
 
     if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step){
 
@@ -413,7 +435,7 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta() {
 void Geodesic_Integrator_class::Update_ray_log(const double* const New_State_vector) {
 
     this->p_Ray_log_struct->Log_offset += 1;
-    int& log_offset = this->p_Ray_log_struct->Log_offset;
+    size_t& log_offset = this->p_Ray_log_struct->Log_offset;
 
     memcpy(&this->p_Ray_log_struct->Ray_path_log_global[log_offset * e_Full_state_size], New_State_vector, e_Dynamic_state_size * sizeof(double));
 

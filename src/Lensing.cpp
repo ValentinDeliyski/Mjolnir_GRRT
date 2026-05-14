@@ -265,7 +265,7 @@ void static Evaluate_Equatorial_Disk(const Simulation_Context_type* const p_Sim_
         Radiative_transfer_integrator.Propagate_Polarization_Vector(State_at_event_global[e_ray_affine_param], Logged_State[e_ray_affine_param], Contravariant);
 
         /* ========================================= Parallel transport the polarization vector back to the observer ========================================= */
-        for (int log_idx = p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge - 1; log_idx > 0; log_idx--) {
+        for (size_t log_idx = p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge - 1; log_idx > 0; log_idx--) {
 
             double* Current_State = &(p_Ray_results->Ray_log_struct.Ray_path_log_global[log_idx * e_Full_state_size]);
             double* Next_State = &(p_Ray_results->Ray_log_struct.Ray_path_log_global[(log_idx - 1) * e_Full_state_size]);
@@ -319,7 +319,9 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
             double Tetrad[4][4]{};
             double inv_Tetrad[4][4]{};
 
-            if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
+            double pol_frac = vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector() + 1, 3) / Radiative_transfer_integrator.get_current_Stokes_Vector()[I];
+
+            if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector(), e_Stokes_param_num) > MIN_INTENSITY_THRESHOLD) {
 
                 switch (Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, false, Current_State_Global, Current_State_Local)) {
 
@@ -335,6 +337,8 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                 }
             }
 
+            pol_frac = vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector() + 1, 3) / Radiative_transfer_integrator.get_current_Stokes_Vector()[I];
+
             /* ====================================== Propagate the radiative transfer equations ====================================== */
 
             if (Current_order >= p_Sim_Context->p_Init_Conditions->Min_order and Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
@@ -343,19 +347,22 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
             }
 
+            pol_frac = vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector() + 1, 3) / Radiative_transfer_integrator.get_current_Stokes_Vector()[I];
+
             /* ======================================================================================================================== */
 
-            if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization) {
+            if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector(), e_Stokes_param_num) > MIN_INTENSITY_THRESHOLD) {
 
                 Radiative_transfer_integrator.Map_Stokes_to_Polarization_Vector(Tetrad, false);
                 Radiative_transfer_integrator.normalize_polarization_vector(Current_State_Global[e_ray_affine_param]);
 
             }
+
         }
 
         /* ====================================== Parallel transport the polarization vector ====================================== */
 
-        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector(), e_Stokes_param_num) > 0) {
+        if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector(), e_Stokes_param_num) > MIN_INTENSITY_THRESHOLD) {
 
             Radiative_transfer_integrator.Propagate_Polarization_Vector(Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param], Contravariant);
         }
@@ -366,7 +373,7 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
 
     /* =============== The final mapping of the polarization vector to Stokes parameters at the observer ===================== */
 
-    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > 0) {
+    if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and Radiative_transfer_integrator.get_current_Stokes_Vector()[I] > MIN_INTENSITY_THRESHOLD) {
 
         double Observer_Tetrad[4][4]{};
         double Observer_inv_Tetrad[4][4]{};
@@ -428,7 +435,6 @@ void Propagate_ray(const Simulation_Context_type* const p_Sim_Context, Results_t
         }
 
     }
-
 
     p_Ray_results->Ray_log_struct.Log_length = p_Ray_results->Ray_log_struct.Log_offset + 1;
     p_Ray_results->Metric_parameters      = p_Sim_Context->p_Init_Conditions->Metric_parameters;

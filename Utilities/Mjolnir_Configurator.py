@@ -13,6 +13,67 @@ from numpy import pi, sqrt
 parent_directory = os.path.abspath('...')
 sys.path.append(parent_directory)
 
+class NT_disk_params_class():
+    
+    __slots__ = ("r_in", 
+                 "r_out", 
+                 "Mag_field_geometry_r",
+                 "Mag_field_geometry_theta",
+                 "Mag_field_geometry_phi")
+
+class Numerical_disk_params_class():
+    
+    __slots__ = ("Numerical_XML_path", "Density_Polytrope_Coeff", "Density_Polytrope_Power", "Spline_type")
+
+class Colab_test_1_disk_params_class():
+    
+    __slots__ = ("Density_scale_factor",
+                 
+                 "Radial_scale", 
+                 "Vertical_scale",
+                 
+                 "Magnetization",
+                 "Mag_field_geometry",
+                 
+                 "Mag_field_geometry_r",
+                 "Mag_field_geometry_theta",
+                 "Mag_field_geometry_phi",
+                 
+                 "Mag_field_magnitude_profile",
+                 "Mag_field_magnitude_scale",
+                 "Mag_field_radial_scale",
+                 "Mag_field_power")
+
+class Common_RIAF_disk_params_class():
+    
+    __slots__ = ("Density_scale_factor",
+                 "Temperature_scale_factor",
+                 
+                 "Opening_angle",
+                 
+                 "Density_power_law_scale",
+                 "Density_power_law_power",
+                 
+                 "Temperature_power_law_scale",
+                 "Temperature_power_law_power",
+                 
+                 "Density_cutoff_radius",
+                 "Density_cutoff_scale",
+                 "Temperature_cutoff_radius",
+                 "Temperature_cutoff_scale",
+                 
+                 "Magnetization",
+                 "Mag_field_geometry",
+                 
+                 "Mag_field_geometry_r",
+                 "Mag_field_geometry_theta",
+                 "Mag_field_geometry_phi",
+                 
+                 "Mag_field_magnitude_profile",
+                 "Mag_field_magnitude_scale",
+                 "Mag_field_radial_scale",
+                 "Mag_field_power")
+
 class Geodesic_Integrator():
 
     __slots__ = ("init_stepsize",
@@ -38,53 +99,40 @@ class Geodesic_Integrator():
                  "max_integration_count",
                  "max_affine_parameter",
                  "use_adaptive_step",
-                 "max_stepsize",
+                 "max_upper_stepsize",
+                 "min_upper_stepsize",
+                 "max_step_b_coeff",
+                 "dist_at_min_upper_stepsize",
                  "Integrator_type")
     
-class Rad_Transfer_Integrator():
+class Emission_Integrator():
 
-    __slots__ = ("Integrator_type",)
+    __slots__ = ("Rad_Transfer_Integrator_type",
+                 "Parallel_Transport_Integrator_type")
 
 class Disk_model():
 
-    __slots__ = ("Ensamble_type",
+    __slots__ = ("Enabled_flag",
+                 "Max_density",
+                 "Ensamble_type",
                  "Disk_Model",
                  "Velocity_profile",
-                 "Radial_velocity_fraction",
-                 "Density_scale_factor",
-                 "Temperature_scale_factor",
-                 
-                 "Opening_angle",
-                 "Density_power_law_scale",
-                 "Density_power_law_power",
-                 "Temperature_power_law_scale",
-                 "Temperature_power_law_power",
-                 "Density_cutoff_radius",
-                 "Density_cutoff_scale",
-                 "Temperature_cutoff_radius",
-                 "Temperature_cutoff_scale",
- 
-                 "Radial_scale",
-                 "Vertical_scale",
-                 
-                 "Magnetization",
-                 "Mag_field_geometry_r",
-                 "Mag_field_geometry_theta",
-                 "Mag_field_geometry_phi",
-                 "Mag_field_magnitude_scale",
-                 "Mag_field_power",
-                 "Mag_field_radial_scale",
-                 "Mag_field_geometry",
-                 "Mag_field_magnitude_profile",
-
                  "Threshold_relative_density",
                  
-                 "r_in_NT_disk",
-                 "r_out_NT_disk")
+                 "NT_disk_params",
+                 "Numerical_disk_params",
+                 "Colab_test_1_disk_params",
+                 "Common_RIAF_disk_params")
+    
+    NT_disk_params: NT_disk_params_class
+    Numerical_disk_params: Numerical_disk_params_class
+    Colab_test_1_disk_params: Colab_test_1_disk_params_class
+    Common_RIAF_disk_params: Common_RIAF_disk_params_class
     
 class Hotspot_model():
 
-    __slots__ = ("Ensamble_type",
+    __slots__ = ("Enabled_flag",
+                 "Ensamble_type",
                  "Density_profile",
                  "Temperature_profile",
                  "Velocity_profile",
@@ -192,7 +240,7 @@ class Simulation_configurator:
 
     __slots__ = ("simulation_name", 
                  "geodesic_integrator", 
-                 "rad_transfer_integrator", 
+                 "emission_integrator", 
                  "metric_parameters", 
                  "disk_model", 
                  "hotspot_model", 
@@ -268,7 +316,10 @@ class Simulation_configurator:
                                              Max_integration_count: dict[str, float | str] = {"Value": 1e7, "Unit": "[-]"},
                                              max_affine_parameter: dict[str, float | str] = {"Value": 1e6, "Unit": "[M]"},
                                              use_adaptive_step: dict[str, int | str] = {"Value": 1, "Unit": "[M]"},
-                                             max_stepsize: dict[str, int | str] = {"Value": 100, "Unit": "[M]"},
+                                             max_upper_stepsize: dict[str, float | str] = {"Value": 100, "Unit": "[M]"},
+                                             min_upper_stepsize: dict[str, float | str] = {"Value": 95, "Unit": "[M]"},
+                                             max_step_b_coeff: dict[str, float | str] = {"Value": 0.004, "Unit": "[-]"},
+                                             dist_at_min_upper_stepsize: dict[str, float | str] = {"Value": 15, "Unit": "[M]"},
                                              Integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"}):
 
         self.geodesic_integrator = Geodesic_Integrator()
@@ -298,14 +349,19 @@ class Simulation_configurator:
         self.geodesic_integrator.max_integration_count  = Max_integration_count
         self.geodesic_integrator.max_affine_parameter = max_affine_parameter
         self.geodesic_integrator.use_adaptive_step = use_adaptive_step
-        self.geodesic_integrator.max_stepsize = max_stepsize
+        self.geodesic_integrator.max_upper_stepsize = max_upper_stepsize
+        self.geodesic_integrator.min_upper_stepsize = min_upper_stepsize
+        self.geodesic_integrator.max_step_b_coeff = max_step_b_coeff
+        self.geodesic_integrator.dist_at_min_upper_stepsize = dist_at_min_upper_stepsize
         self.geodesic_integrator.Integrator_type = Integrator_type
         
     def _configure_rad_transfer_integrator_settings(self,
-                                                    Integrator_type: dict[str, str] = {"Value": "RK54", "Unit": "[-]"}):
+                                                    Rad_Transfer_Integrator_type: dict[str, str] = {"Value": "RK78_Fehlberg", "Unit": "[-]"},
+                                                    Parallel_Transport_Integrator_type: dict[str, str] = {"Value": "RK78_Fehlberg", "Unit": "[-]"}):
 
-        self.rad_transfer_integrator = Rad_Transfer_Integrator()
-        self.rad_transfer_integrator.Integrator_type = Integrator_type
+        self.emission_integrator = Emission_Integrator()
+        self.emission_integrator.Rad_Transfer_Integrator_type = Rad_Transfer_Integrator_type
+        self.emission_integrator.Parallel_Transport_Integrator_type = Parallel_Transport_Integrator_type
 
     def _configure_observer(self, Init_time:dict[str, float | str] = {"Value": 0, "Unit": "[M]"},
                                   Distance: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
@@ -361,7 +417,7 @@ class Simulation_configurator:
                                            EGB_gamma: dict[str, float | str] = {"Value": 1.15, "Unit": "[M^2]"}, 
                                            Halo_compactness: dict[str, float | str] = {"Value": 1e-4, "Unit": "[-]"},
                                            Halo_mass: dict[str, float | str] = {"Value": 1e4, "Unit": "[M]"},
-                                           Metric_type: dict[str, float | str] = {"Value": "Kerr", "Unit": "[-]"},
+                                           Metric_type: dict[str, str] = {"Value": "Kerr", "Unit": "[-]"},
                                            Numerical_metric_spline_path: str = "",
                                            Numerical_metric_anzatz_type: dict[str, str] = {"Value": "Anzatz_1", "Unit": "[-]"},
                                            Numerical_metric_spline_type: dict[str, str] = {"Value": "GSL_cubic", "Unit": "[-]"},
@@ -427,10 +483,12 @@ class Simulation_configurator:
         self.emission_models.Debug_rho_U_value = Debug_rho_U_value
         self.emission_models.Debug_rho_V_value = Debug_rho_V_value\
             
-    def _configure_disk_model(self, Ensamble_type: dict[str, str] = {"Value": "Thermal", "Unit": "[-]"},
+    def _configure_disk_model(self, Enabled_flag: dict[str, str | int] = {"Value": 1, "Unit": "[-]"},
+                                    Max_density: dict[str, str | float] = {"Value": 1e5, "Unit": "[-]"},
+                                    
+                                    Ensamble_type: dict[str, str] = {"Value": "Thermal", "Unit": "[-]"},
                                     Disk_Model: dict[str, str] = {"Value": "Phenom_RIAF_1", "Unit": "[-]"},
                                     Velocity_profile: dict[str, str] = {"Value": "Theta Dependant", "Unit": "[-]"},
-                                    Radial_velocity_fraction: dict[str, float | str] = {"Value": 0, "Unit": "[-]"},
                                     Density_scale_factor: dict[str, float | str] = {"Value": 1e5, "Unit": "[g/cm^3]"},
                                     Temperature_scale_factor: dict[str, float | str] = {"Value": 1e11, "Unit": "[K]"},
                                     
@@ -461,47 +519,82 @@ class Simulation_configurator:
                                     Threshold_relative_density: dict[str, float | str] = {"Value": 1e-3, "Unit": "[-]"},
                                     
                                     r_in_NT_disk: dict[str, float | str] = {"Value": 6, "Unit": "[M]"},
-                                    r_out_NT_disk: dict[str, float | str] = {"Value": 25, "Unit": "[M]"}):
+                                    r_out_NT_disk: dict[str, float | str] = {"Value": 25, "Unit": "[M]"}, 
+                                    
+                                    Numerical_XML_path: str = "",
+                                    Numerical_spline_type: dict[str, str] = {"Value": "GSL_cubic", "Unit": "[-]"},
+                                    Density_Polytrope_Coeff: dict[str, float | str] = {"Value": 0., "Unit": "[-]"},
+                                    Density_Polytrope_Power: dict[str, float | str] = {"Value": 4. / 3., "Unit": "[-]"}):
         
         self.disk_model = Disk_model()
-
-        self.disk_model.Ensamble_type  = Ensamble_type
-        self.disk_model.Disk_Model     = Disk_Model
-        self.disk_model.Velocity_profile         = Velocity_profile
-        self.disk_model.Radial_velocity_fraction = Radial_velocity_fraction
-        self.disk_model.Density_scale_factor     = Density_scale_factor
-        self.disk_model.Temperature_scale_factor = Temperature_scale_factor
-
-        self.disk_model.Mag_field_geometry_r     = Mag_field_geometry_r
-        self.disk_model.Mag_field_geometry_theta = Mag_field_geometry_theta
-        self.disk_model.Mag_field_geometry_phi   = Mag_field_geometry_phi
-        self.disk_model.Magnetization            = Magnetization
-
-        self.disk_model.Opening_angle = Opening_angle
-        self.disk_model.Density_power_law_scale = Density_power_law_scale
-        self.disk_model.Density_power_law_power = Density_power_law_power
-        self.disk_model.Temperature_power_law_scale = Temperature_power_law_scale
-        self.disk_model.Temperature_power_law_power = Temperature_power_law_power
-        self.disk_model.Density_cutoff_radius     = Density_cutoff_radius
-        self.disk_model.Density_cutoff_scale      = Density_cutoff_scale
-        self.disk_model.Temperature_cutoff_radius = Temperature_cutoff_radius
-        self.disk_model.Temperature_cutoff_scale  = Temperature_cutoff_scale
-
-        self.disk_model.Radial_scale = Radial_scale
-        self.disk_model.Vertical_scale = Vertical_scale
-
-        self.disk_model.Mag_field_magnitude_scale = Mag_field_magnitude_scale
-        self.disk_model.Mag_field_power        = Mag_field_power
-        self.disk_model.Mag_field_radial_scale = Mag_field_radial_scale
-        self.disk_model.Mag_field_geometry     = Mag_field_geometry
-        self.disk_model.Mag_field_magnitude_profile  = Mag_field_magnitude_profile
         
+        self.disk_model.Max_density = Max_density
+        self.disk_model.Enabled_flag = Enabled_flag
+        
+        self.disk_model.Ensamble_type = Ensamble_type
+        self.disk_model.Disk_Model  = Disk_Model
+        self.disk_model.Velocity_profile = Velocity_profile
         self.disk_model.Threshold_relative_density = Threshold_relative_density 
         
-        self.disk_model.r_in_NT_disk = r_in_NT_disk
-        self.disk_model.r_out_NT_disk = r_out_NT_disk
+        
+        self.disk_model.NT_disk_params = NT_disk_params_class()
+        self.disk_model.NT_disk_params.r_in = r_in_NT_disk
+        self.disk_model.NT_disk_params.r_out = r_out_NT_disk
+        self.disk_model.NT_disk_params.Mag_field_geometry_r     = Mag_field_geometry_r
+        self.disk_model.NT_disk_params.Mag_field_geometry_theta = Mag_field_geometry_theta
+        self.disk_model.NT_disk_params.Mag_field_geometry_phi   = Mag_field_geometry_phi
+        
+        self.disk_model.Numerical_disk_params = Numerical_disk_params_class()
+        self.disk_model.Numerical_disk_params.Numerical_XML_path = Numerical_XML_path
+        self.disk_model.Numerical_disk_params.Density_Polytrope_Coeff = Density_Polytrope_Coeff
+        self.disk_model.Numerical_disk_params.Density_Polytrope_Power = Density_Polytrope_Power
+        self.disk_model.Numerical_disk_params.Spline_type = Numerical_spline_type
+        
+        self.disk_model.Colab_test_1_disk_params = Colab_test_1_disk_params_class()
+        self.disk_model.Colab_test_1_disk_params.Vertical_scale = Vertical_scale
+        self.disk_model.Colab_test_1_disk_params.Radial_scale = Radial_scale
+                
+        self.disk_model.Colab_test_1_disk_params.Density_scale_factor     = Density_scale_factor
+        self.disk_model.Colab_test_1_disk_params.Mag_field_magnitude_profile  = Mag_field_magnitude_profile
+        
+        self.disk_model.Colab_test_1_disk_params.Magnetization = Magnetization
+        self.disk_model.Colab_test_1_disk_params.Mag_field_magnitude_scale = Mag_field_magnitude_scale
+        self.disk_model.Colab_test_1_disk_params.Mag_field_power        = Mag_field_power
+        self.disk_model.Colab_test_1_disk_params.Mag_field_radial_scale = Mag_field_radial_scale
+        
+        self.disk_model.Colab_test_1_disk_params.Mag_field_geometry_r     = Mag_field_geometry_r
+        self.disk_model.Colab_test_1_disk_params.Mag_field_geometry_theta = Mag_field_geometry_theta
+        self.disk_model.Colab_test_1_disk_params.Mag_field_geometry_phi   = Mag_field_geometry_phi
+        self.disk_model.Colab_test_1_disk_params.Mag_field_geometry = Mag_field_geometry
+        
+                
+        self.disk_model.Common_RIAF_disk_params = Common_RIAF_disk_params_class()   
+        self.disk_model.Common_RIAF_disk_params.Density_scale_factor     = Density_scale_factor
+        self.disk_model.Common_RIAF_disk_params.Temperature_scale_factor = Temperature_scale_factor
 
-    def _configure_hotspot_model(self, Ensamble_type: dict[str, str] = {"Value": "Kappa", "Unit": "[-]"},
+        self.disk_model.Common_RIAF_disk_params.Mag_field_geometry_r     = Mag_field_geometry_r
+        self.disk_model.Common_RIAF_disk_params.Mag_field_geometry_theta = Mag_field_geometry_theta
+        self.disk_model.Common_RIAF_disk_params.Mag_field_geometry_phi   = Mag_field_geometry_phi
+        self.disk_model.Common_RIAF_disk_params.Magnetization            = Magnetization
+            
+        self.disk_model.Common_RIAF_disk_params.Opening_angle = Opening_angle
+        self.disk_model.Common_RIAF_disk_params.Density_power_law_scale = Density_power_law_scale
+        self.disk_model.Common_RIAF_disk_params.Density_power_law_power = Density_power_law_power
+        self.disk_model.Common_RIAF_disk_params.Temperature_power_law_scale = Temperature_power_law_scale
+        self.disk_model.Common_RIAF_disk_params.Temperature_power_law_power = Temperature_power_law_power
+        self.disk_model.Common_RIAF_disk_params.Density_cutoff_radius     = Density_cutoff_radius
+        self.disk_model.Common_RIAF_disk_params.Density_cutoff_scale      = Density_cutoff_scale
+        self.disk_model.Common_RIAF_disk_params.Temperature_cutoff_radius = Temperature_cutoff_radius
+        self.disk_model.Common_RIAF_disk_params.Temperature_cutoff_scale  = Temperature_cutoff_scale
+            
+        self.disk_model.Common_RIAF_disk_params.Mag_field_magnitude_scale = Mag_field_magnitude_scale
+        self.disk_model.Common_RIAF_disk_params.Mag_field_power        = Mag_field_power
+        self.disk_model.Common_RIAF_disk_params.Mag_field_radial_scale = Mag_field_radial_scale
+        self.disk_model.Common_RIAF_disk_params.Mag_field_geometry     = Mag_field_geometry
+        self.disk_model.Common_RIAF_disk_params.Mag_field_magnitude_profile  = Mag_field_magnitude_profile
+        
+    def _configure_hotspot_model(self, Enabled_flag: dict[str, str | int] = {"Value": 1, "Unit": "[-]"},
+                                       Ensamble_type: dict[str, str] = {"Value": "Kappa", "Unit": "[-]"},
                                        Density_profile: dict[str, str] = {"Value": "Gaussian", "Unit": "[-]"},
                                        Temperature_profile: dict[str, str] = {"Value": "Gaussian", "Unit": "[-]"},
                                        Velocity_profile: dict[str, str] = {"Value": "Circular Fixed Rate", "Unit": "[-]"},
@@ -535,6 +628,7 @@ class Simulation_configurator:
                                        Threshold_relative_density: dict[str, float | str] = {"Value": 1e-3,  "Unit": "[-]"}):
 
         self.hotspot_model = Hotspot_model()
+        self.hotspot_model.Enabled_flag = Enabled_flag
 
         self.hotspot_model.Ensamble_type       = Ensamble_type     
         self.hotspot_model.Density_profile     = Density_profile   
@@ -666,67 +760,62 @@ class Simulation_configurator:
 
         # ============ Generate the accretion disk XML section ============ #
         
-        Novikov_Thorne_parameters = ["r_in",
-                                    "r_out"]
+        Common_slots = ["Max_density",
+                        "Ensamble_type",
+                        "Disk_Model",
+                        "Velocity_profile",
+                        "Threshold_relative_density"]
 
-        Common_RIAF_parameters = ["Opening_angle",
-                                  "Density_power_law_scale",
-                                  "Density_power_law_power",
-                                  "Temperature_power_law_scale",
-                                  "Temperature_power_law_power",
-                                  "Density_cutoff_radius",
-                                  "Density_cutoff_scale",
-                                  "Temperature_cutoff_radius",
-                                  "Temperature_cutoff_scale"]
-        
-        Colab_test_1_parameteres = ["Radial_scale",
-                                    "Vertical_scale"]
+        Disk_subelement = ET.SubElement(XML_root_node, "Accretion_Disk", attrib = {"Enabled_Flag": "{}".format(self.disk_model.Enabled_flag["Value"])}) 
 
-        Common_slots = [slot for slot in self.disk_model.__slots__ if slot not in Common_RIAF_parameters + Colab_test_1_parameteres + ["Radial_velocity_fraction"] + Novikov_Thorne_parameters + ["Disk_Model"]]
+        if self.disk_model.Enabled_flag["Value"] == 1:
 
-        Disk_subelement = ET.SubElement(XML_root_node, "Accretion_Disk") 
-        
-        Sub_element = ET.SubElement(Disk_subelement, "Disk_Model", units = "[-]").text = "{}".format(self.disk_model.Disk_Model["Value"])
-        
-        if self.disk_model.Disk_Model["Value"] == "Novikov-Thorne":     
-            Sub_element = ET.SubElement(Disk_subelement, "r_in", units = "[M]").text = "{}".format(self.disk_model.r_in_NT_disk["Value"])
-            Sub_element = ET.SubElement(Disk_subelement, "r_out", units = "[M]").text = "{}".format(self.disk_model.r_out_NT_disk["Value"])
-            Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry", units = "[-]").text = "{}".format(self.disk_model.Mag_field_geometry["Value"])
-            Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry_r", units = "[M]").text = "{}".format(self.disk_model.Mag_field_geometry_r["Value"])
-            Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry_theta", units = "[M]").text = "{}".format(self.disk_model.Mag_field_geometry_theta["Value"])
-            Sub_element = ET.SubElement(Disk_subelement, "Mag_field_geometry_phi", units = "[M]").text = "{}".format(self.disk_model.Mag_field_geometry_phi["Value"])
-            
-        else:
-            # ------------- Common subsection
             Common_subelement = ET.SubElement(Disk_subelement, "Common_parameters") 
             for Disk_attrib_name in Common_slots:
                 Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
                 Sub_element = ET.SubElement(Common_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"]))
-                
+                    
                 if Disk_attrib_name == "Velocity_profile":
                     ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Disk_attrib["Value"])
-                    ET.SubElement(Sub_element, "Radial_velocity_fraction", units = "-").text = "{}".format(self.disk_model.Radial_velocity_fraction["Value"])
                 else:
                     Sub_element.text = "{}".format(Disk_attrib["Value"])
 
             match self.disk_model.Disk_Model["Value"]:
-
+            
+                case "Novikov-Thorne":    
+                    NT_disk_subelement = ET.SubElement(Disk_subelement, "Novikov_Thorne_profile") 
+                    for Disk_attrib_name in self.disk_model.NT_disk_params.__slots__:
+                        Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model.NT_disk_params, Disk_attrib_name)
+                        ET.SubElement(NT_disk_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
+                    
                 case "Colab_test_1":
-
+                    
                     # ------------- Colab test 1 profile subsection
                     Colab_test_1_subelement = ET.SubElement(Disk_subelement, "Colab_test_1_profile") 
-                    for Disk_attrib_name in Colab_test_1_parameteres:
-                        Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
+                    for Disk_attrib_name in self.disk_model.Colab_test_1_disk_params.__slots__:
+                        Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model.Colab_test_1_disk_params, Disk_attrib_name)
                         ET.SubElement(Colab_test_1_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
-
+                        
+                case "Numerical":
+                    
+                    # ------------- Numerical disk subsection
+                    Numerical_disk_subelement = ET.SubElement(Disk_subelement, "Numerical_disk_profile") 
+                    for Disk_attrib_name in self.disk_model.Numerical_disk_params.__slots__:
+                        Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model.Numerical_disk_params, Disk_attrib_name)
+                        
+                        if (Disk_attrib_name == "Numerical_XML_path"):
+                            ET.SubElement(Numerical_disk_subelement, Disk_attrib_name).text = "{}".format(Disk_attrib)
+                        else:
+                            ET.SubElement(Numerical_disk_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
+                        
                 case _:
-
-                    # ------------- Phenomenological RIAF subsection
-                    Power_law_subelement = ET.SubElement(Disk_subelement, "Common_RIAF_profile") 
-                    for Disk_attrib_name in Common_RIAF_parameters:
-                        Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model, Disk_attrib_name)
-                        ET.SubElement(Power_law_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
-
+                    
+                    # ------------- Common RIAF disk subsection
+                    Common_RIAF_subelement = ET.SubElement(Disk_subelement, "Common_RAIF_profile") 
+                    for Disk_attrib_name in self.disk_model.Common_RIAF_disk_params.__slots__:
+                        Disk_attrib: dict[str, str | int | float] = getattr(self.disk_model.Common_RIAF_disk_params, Disk_attrib_name)
+                        ET.SubElement(Common_RIAF_subelement, Disk_attrib_name, units = str(Disk_attrib["Unit"])).text = "{}".format(Disk_attrib["Value"])
+                    
         # ============ Generate the hotspot XML section ============ #
 
         Gaussian_density_slots = ["Density_spread"]
@@ -742,80 +831,82 @@ class Simulation_configurator:
                                                                                      Sphere_slots + 
                                                                                      Hybrid_density_slots +
                                                                                      Hybrid_temperature_slots + 
-                                                                                   ["Radial_velocity_fraction"]]
+                                                                                   ["Radial_velocity_fraction", "Enabled_flag"]]
         
-        Hotspot_subelement = ET.SubElement(XML_root_node, "Hotspot") 
-        for Hotspot_attrib_name in Common_slots:
-            Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
-            Sub_element = ET.SubElement(Hotspot_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"]))
- 
-            if Hotspot_attrib_name == "Velocity_profile":
-                ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Hotspot_attrib["Value"])
-            else:
-                Sub_element.text = "{}".format(Hotspot_attrib["Value"])
-
-        match self.hotspot_model.Density_profile["Value"]:
-
-            case "Gaussian":
-                # ------------- Gaussian profile subsection
-                Gaussian_subelement = ET.SubElement(Hotspot_subelement, "Gaussian_profile") 
-                for Hotspot_attrib_name in Gaussian_density_slots:
-                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
-                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
-
-            case "Hybrid_power_law_gaussian":
-                # ------------- Hybrid profile subsection
-                Hybrid_subelement = ET.SubElement(Hotspot_subelement, "Hybrid_power_law_gaussian_profile") 
-                for Hotspot_attrib_name in Hybrid_density_slots:
-                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
-                    ET.SubElement(Hybrid_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
+        Hotspot_subelement = ET.SubElement(XML_root_node, "Hotspot", attrib = {"Enabled_Flag": "{}".format(self.hotspot_model.Enabled_flag["Value"])}) 
+        
+        if self.hotspot_model.Enabled_flag["Value"] == 1:
             
-            case _:
-                # ------------- Spherical profile subsection
-                Spherical_subelement = ET.SubElement(Hotspot_subelement, "Spherical_profile") 
-                for Hotspot_attrib_name in Sphere_slots:
-                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
-                    ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
+            for Hotspot_attrib_name in Common_slots:
+                Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                Sub_element = ET.SubElement(Hotspot_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"]))
+    
+                if Hotspot_attrib_name == "Velocity_profile":
+                    ET.SubElement(Sub_element, "Type", units = "-").text = "{}".format(Hotspot_attrib["Value"])
+                else:
+                    Sub_element.text = "{}".format(Hotspot_attrib["Value"])
 
-        match self.hotspot_model.Temperature_profile["Value"]:
+            match self.hotspot_model.Density_profile["Value"]:
 
-            case "Gaussian":
-                # ------------- Gaussian profile subsection
-                if "Gaussian_subelement" not in locals():
+                case "Gaussian":
+                    # ------------- Gaussian profile subsection
                     Gaussian_subelement = ET.SubElement(Hotspot_subelement, "Gaussian_profile") 
-                
-                for Hotspot_attrib_name in Gaussian_temperature_slots:
-                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
-                    ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"]) # type: ignore
+                    for Hotspot_attrib_name in Gaussian_density_slots:
+                        Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                        ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
 
-            case "Hybrid_power_law_gaussian":
-                
-                if "Hybrid_subelement" not in locals():
+                case "Hybrid_power_law_gaussian":
+                    # ------------- Hybrid profile subsection
                     Hybrid_subelement = ET.SubElement(Hotspot_subelement, "Hybrid_power_law_gaussian_profile") 
-
-                # ------------- Hybrid profile subsection
-                for Hotspot_attrib_name in Hybrid_temperature_slots:
-                    Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
-                    ET.SubElement(Hybrid_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"]) # type: ignore
-
-            case _:
-            
-                # ------------- Spherical profile subsectiontry: 
-                if "Spherical_subelement" not in locals():
-                    
+                    for Hotspot_attrib_name in Hybrid_density_slots:
+                        Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                        ET.SubElement(Hybrid_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
+                
+                case _:
+                    # ------------- Spherical profile subsection
                     Spherical_subelement = ET.SubElement(Hotspot_subelement, "Spherical_profile") 
-                    
                     for Hotspot_attrib_name in Sphere_slots:
                         Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
                         ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
-    
+
+            match self.hotspot_model.Temperature_profile["Value"]:
+
+                case "Gaussian":
+                    # ------------- Gaussian profile subsection
+                    if "Gaussian_subelement" not in locals():
+                        Gaussian_subelement = ET.SubElement(Hotspot_subelement, "Gaussian_profile") 
+                    
+                    for Hotspot_attrib_name in Gaussian_temperature_slots:
+                        Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                        ET.SubElement(Gaussian_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"]) # type: ignore
+
+                case "Hybrid_power_law_gaussian":
+                    
+                    if "Hybrid_subelement" not in locals():
+                        Hybrid_subelement = ET.SubElement(Hotspot_subelement, "Hybrid_power_law_gaussian_profile") 
+
+                    # ------------- Hybrid profile subsection
+                    for Hotspot_attrib_name in Hybrid_temperature_slots:
+                        Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                        ET.SubElement(Hybrid_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"]) # type: ignore
+
+                case _:
+                
+                    # ------------- Spherical profile subsectiontry: 
+                    if "Spherical_subelement" not in locals():
+                        
+                        Spherical_subelement = ET.SubElement(Hotspot_subelement, "Spherical_profile") 
+                        
+                        for Hotspot_attrib_name in Sphere_slots:
+                            Hotspot_attrib: dict[str, str | int | float] = getattr(self.hotspot_model, Hotspot_attrib_name)
+                            ET.SubElement(Spherical_subelement, Hotspot_attrib_name, units = str(Hotspot_attrib["Unit"])).text = "{}".format(Hotspot_attrib["Value"])
 
         # ============ Generate the emission models XML section ============ #
 
         Emission_subelement = ET.SubElement(XML_root_node, "Emission_models")
 
-        if ((self.hotspot_model.Ensamble_type["Value"] == "Phenomenological" and self.hotspot_model.Density_scale_factor["Value"] != 0) 
-            or (self.disk_model.Ensamble_type["Value"] == "Phenomenological" and self.disk_model.Density_scale_factor["Value"] != 0)):
+        if ((self.hotspot_model.Ensamble_type["Value"] == "Phenomenological" and self.hotspot_model.Enabled_flag["Value"] == 1) 
+            or (self.disk_model.Ensamble_type["Value"] == "Phenomenological" and self.disk_model.Enabled_flag["Value"] == 1)):
 
             for Emission_attrib_name in self.emission_models.__slots__:
 
@@ -825,8 +916,8 @@ class Simulation_configurator:
                     Emission_attrib: dict[str, str | int | float] = getattr(self.emission_models, Emission_attrib_name)
                     ET.SubElement(Emission_subelement, Emission_attrib_name, units = str(Emission_attrib["Unit"])).text = "{}".format(Emission_attrib["Value"])
 
-        if ((self.hotspot_model.Ensamble_type["Value"] == "Kappa" and self.hotspot_model.Density_scale_factor["Value"] != 0) 
-            or (self.disk_model.Ensamble_type["Value"] == "Kappa" and self.disk_model.Density_scale_factor["Value"] != 0)):
+        if ((self.hotspot_model.Ensamble_type["Value"] == "Kappa" and self.hotspot_model.Enabled_flag["Value"] == 1) 
+            or (self.disk_model.Ensamble_type["Value"] == "Kappa" and self.disk_model.Enabled_flag["Value"] == 1)):
             
             ET.SubElement(Emission_subelement, "Kappa", units = "[-]").text = "{}".format(getattr(self.emission_models, "Kappa")["Value"])
 
@@ -850,9 +941,9 @@ class Simulation_configurator:
             
         # ============ Generate the radiative transfer integrator XML section ============ #
 
-        Integrator_subelement = ET.SubElement(XML_root_node, "Rad_Transfer_Integrator")
-        for Integrator_attrib_name in self.rad_transfer_integrator.__slots__:
-            Integrator_attrib: dict[str, str | int | float] = getattr(self.rad_transfer_integrator, Integrator_attrib_name)
+        Integrator_subelement = ET.SubElement(XML_root_node, "Emission_Integrator")
+        for Integrator_attrib_name in self.emission_integrator.__slots__:
+            Integrator_attrib: dict[str, str | int | float] = getattr(self.emission_integrator, Integrator_attrib_name)
             ET.SubElement(Integrator_subelement, Integrator_attrib_name, units = str(Integrator_attrib["Unit"])).text = "{}".format(Integrator_attrib["Value"])
 
         # ============ Generate the file paths XML section ============ #

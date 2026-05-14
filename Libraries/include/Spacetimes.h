@@ -5,9 +5,9 @@
 #include "General_math_functions.h"
 #include "General_GR_functions.h"
 
-#include"gsl/gsl_interp2d.h"
-#include"gsl/gsl_spline.h"
-#include"gsl/gsl_spline2d.h"
+#include<gsl/gsl_interp2d.h>
+#include<gsl/gsl_spline.h>
+#include<gsl/gsl_spline2d.h>
 
 #include <iostream>
 #include <format>

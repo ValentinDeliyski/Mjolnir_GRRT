@@ -224,7 +224,7 @@ class Simulation_Parser():
                              abs(Window_limits[3] - Window_limits[2]) / X_resolution / Y_resolution / obs_pos**2)
 
         """ The base flux unit, returned by the ray-tracer is Jy. """
-        Total_Intensity_Jy: float = float(sum(sqrt(self.Q_Intensity**2 + self.U_Intensity**2 + self.V_Intensity**2)) * Pixel_area)
+        Total_Intensity_Jy: float = float(sum(sqrt(self.Q_Intensity**2 + self.U_Intensity**2 )) * Pixel_area)
 
         match unit:
             

@@ -14,11 +14,10 @@ public:
      *      1) PID controller
      *      2) Gustafsson controller
      *
-     *   \param [in] State_Vector - Pointer to the array that holds the photon State Vector.
-     *   \return Nothing
      */
+    void update_step(Integrator_enums e_Active_integrator, const double r);
 
-    void update_step(Integrator_enums e_Active_integrator);
+    double get_max_step(const double r) const;
 
     template<typename Vec_type>
     void update_state_errors(const Vec_type* State_Vector, const Vec_type* State_Error_Vector, Integrator_enums e_Active_integrator, int State_size) {
