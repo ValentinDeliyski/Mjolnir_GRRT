@@ -6,8 +6,12 @@
 
 struct Numerical_disk_params_type {
 
-	double Polytrope_coeff;
-	double Polytrope_index;
+	double Density_Polytrope_coeff;
+	double Density_Polytrope_index;
+
+	double Mag_pressure_Polytrope_coeff;
+	double Mag_pressure_Polytrope_index;
+
 
 	size_t Z_coord_grid_size;
 	size_t R_coord_grid_size;

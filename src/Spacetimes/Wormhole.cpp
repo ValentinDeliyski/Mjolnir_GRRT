@@ -48,41 +48,6 @@ Wormhole_class::Wormhole_class(const Metric_parameters_type* const p_Metric_Para
 
 }
 
-double* Wormhole_class::get_ISCO() {
-
-    double M = this->Mass;
-
-    static double r_ISCO[2]{};
-
-    if (this->Spin_Param < 0.016) {
-
-        r_ISCO[Inner] = 2 * M * (sqrt(4. / 9 * (6 * this->Redshift_Param + 1)) * cosh(1. / 3 * acosh((1 + 9 * this->Redshift_Param + 27. / 2 * this->Redshift_Param * this->Redshift_Param) / pow(6 * this->Redshift_Param + 1, 3. / 2))) + 1. / 3);
-        r_ISCO[Outer] = r_ISCO[Inner];
-    }
-    else {
-
-        r_ISCO[Inner] = this->R_Throat;
-        r_ISCO[Outer] = r_ISCO[Inner];
-
-    }
-
-    return r_ISCO;
-
-}
-
-double* Wormhole_class::get_Photon_Sphere() {
-
-    double M = this->Mass;
-
-    static double photon_orbit[2]{};
-
-    photon_orbit[Inner] = M / 2 * (1 + sqrt(1 + 8 * this->Redshift_Param));
-    photon_orbit[Outer] = photon_orbit[Inner];
-
-    return photon_orbit;
-
-}
-
 Metric_type Wormhole_class::get_local_metric(const double* const Local_State_Vector) const {
 
     const double& r = Local_State_Vector[e_r];

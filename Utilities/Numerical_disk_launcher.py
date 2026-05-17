@@ -39,6 +39,7 @@ class Simulation:
         
         self.Simulation_configurator.simulation_mode = {"Value": 0, "Unit": "[-]"} 
         self.Simulation_configurator.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[-]"}
+        self.Simulation_configurator.average_emission_pitch_angle = {"Value": 0, "Unit": "[-]"}
         
         """ Central black hole setup"""
         self.Simulation_configurator.metric_parameters.Metric_type = {"Value": "Kerr",  "Unit": "[-]"}
@@ -46,8 +47,14 @@ class Simulation:
         
         """ Accretion disk setup """   
         self.Simulation_configurator.disk_model.Disk_Model = {"Value": "Numerical", "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Max_density = {"Value": 1, "Unit": "[-]"}
-        self.Simulation_configurator.disk_model.Ensamble_type = {"Value": "Phenomenological", "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Max_density = {"Value": 1.61E+22 , "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Ensamble_type = {"Value": "Thermal", "Unit": "[-]"}
+        
+        self.Simulation_configurator.disk_model.Numerical_disk_params.Density_Polytrope_Coeff = {"Value": 0.004029645917, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.r_ISCO = {"Value": 4.233, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Ang_momentum_below_ISCO = {"Value": 3.414213760169089, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Ang_momentum_exponent = {"Value": 0.5, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Velocity_profile = {"Value": "von_Zeipel_cylinder", "Unit": "[-]"}
         
         self.Simulation_configurator.emission_models.Absorbtion_coeff = {"Value": 1e2, "Unit": "[-]"}
         
@@ -76,14 +83,14 @@ class Simulation:
         """ Configure the integrator """
         
         self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
-        # self.Simulation_configurator.emission_integrator.Rad_Transfer_Integrator_type = {"Value": "Analytic", "Unit": "[-]"}        
-        # # self.Simulation_configurator.geodesic_integrator.min_upper_stepsize = {"Value": 0.15, "Unit": "[-]"}
-        # # self.Simulation_configurator.geodesic_integrator.max_step_b_coeff = {"Value": 0.004, "Unit": "[-]"}
-        # # self.Simulation_configurator.geodesic_integrator.dist_at_min_upper_stepsize = {"Value": 25, "Unit": "[-]"}
+        self.Simulation_configurator.emission_integrator.Rad_Transfer_Integrator_type = {"Value": "Analytic", "Unit": "[-]"}        
+        self.Simulation_configurator.geodesic_integrator.min_upper_stepsize = {"Value": 0.005, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.max_step_b_coeff = {"Value": 0.004, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.dist_at_min_upper_stepsize = {"Value": 25, "Unit": "[-]"}
         
         self.Simulation_configurator.geodesic_integrator.max_integration_count = {"Value": 1000000, "Unit": "[-]"}
-        self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
-        self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-14, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-14, "Unit": "[-]"}
         
         self.Simulation_configurator.geodesic_integrator.max_upper_stepsize = {"Value": 100, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
@@ -112,5 +119,5 @@ class Simulation:
 
 if __name__ == "__main__":
 
-    Sim_instance = Simulation(inclination = 60, resolution = 256)
+    Sim_instance = Simulation(inclination = 80, resolution = 256)
     Sim_instance.run_simulation()

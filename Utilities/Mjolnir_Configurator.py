@@ -113,6 +113,9 @@ class Emission_Integrator():
 class Disk_model():
 
     __slots__ = ("Enabled_flag",
+                 "r_ISCO",
+                 "Ang_momentum_below_ISCO",
+                 "Ang_momentum_exponent",
                  "Max_density",
                  "Ensamble_type",
                  "Disk_Model",
@@ -521,12 +524,20 @@ class Simulation_configurator:
                                     r_in_NT_disk: dict[str, float | str] = {"Value": 6, "Unit": "[M]"},
                                     r_out_NT_disk: dict[str, float | str] = {"Value": 25, "Unit": "[M]"}, 
                                     
+                                    r_ISCO: dict[str, float | str] = {"Value": 6, "Unit": "[M]"}, 
+                                    Ang_momentum_below_ISCO: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
+                                    Ang_momentum_exponent: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
+                                    
                                     Numerical_XML_path: str = "",
                                     Numerical_spline_type: dict[str, str] = {"Value": "GSL_cubic", "Unit": "[-]"},
                                     Density_Polytrope_Coeff: dict[str, float | str] = {"Value": 0., "Unit": "[-]"},
                                     Density_Polytrope_Power: dict[str, float | str] = {"Value": 4. / 3., "Unit": "[-]"}):
         
         self.disk_model = Disk_model()
+        
+        self.disk_model.r_ISCO = r_ISCO
+        self.disk_model.Ang_momentum_below_ISCO = Ang_momentum_below_ISCO
+        self.disk_model.Ang_momentum_exponent = Ang_momentum_exponent
         
         self.disk_model.Max_density = Max_density
         self.disk_model.Enabled_flag = Enabled_flag
@@ -764,7 +775,10 @@ class Simulation_configurator:
                         "Ensamble_type",
                         "Disk_Model",
                         "Velocity_profile",
-                        "Threshold_relative_density"]
+                        "Threshold_relative_density",
+                        "r_ISCO",
+                        "Ang_momentum_below_ISCO",
+                        "Ang_momentum_exponent"]
 
         Disk_subelement = ET.SubElement(XML_root_node, "Accretion_Disk", attrib = {"Enabled_Flag": "{}".format(self.disk_model.Enabled_flag["Value"])}) 
 

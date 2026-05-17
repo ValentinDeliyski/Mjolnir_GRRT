@@ -12,6 +12,7 @@ class Novikov_Thorne_Model_class;
 class Observer_class;
 class File_manager_class;
 class Geodesic_Integrator_class;
+struct Disk_model_type;
 
 struct Hotspot_profile_parameters_type {
 
@@ -69,6 +70,12 @@ struct Disk_profile_parameters_type {
 struct Disk_model_parameters_type {
 
     bool Enable_flag{};
+
+    double r_ISCO;
+
+    double Ang_momentum_below_ISCO;
+
+    double Ang_momentum_exponent;
 
     /*! @brief Specifies the used model of the disk. */
     Disk_model_enums e_Disk_model{};
@@ -659,6 +666,14 @@ struct Integrator_parameters_type {
 
 };
 
+struct von_Zeipel_cylinder_condition_wrapper_struct {
+
+    Disk_model_type* Disk_model{};
+
+    Metric_type Metric{};
+
+};
+
 struct RHS_wrapper_struct {
 
     /*! @brief Pointer to the inegrator class instance. This exists so I can call member functions from the RHS wrapper in the run_ESDIRK54 function.  */
@@ -667,7 +682,6 @@ struct RHS_wrapper_struct {
     /*! @brief Pointer to the current iteration number. This is the gsl way of passing parameters to functions.  */
     void* p_Iteration_number{};
 
-   
 };
 
 struct Observer_parameters_type {

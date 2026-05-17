@@ -36,60 +36,6 @@ JNW_class::JNW_class(const Metric_parameters_type* const p_Metric_Parameters) {
 
 }
 
-double* JNW_class::get_ISCO() {
-
-    static double r_ISCO[2]{};
-
-    double r_singularity = 2 * this->Mass / this->Gamma;
-
-    if (this->Gamma > 1.0 / 2) {
-
-        r_ISCO[Inner] = 1.0 / this->Gamma * (3.0 * this->Gamma + 1.0 + sqrt(5 * this->Gamma * this->Gamma - 1));
-        r_ISCO[Outer] = r_ISCO[Inner];
-
-
-    }else if (this->Gamma > 1.0 / sqrt(5) and this->Gamma < 1.0 / 2) {
-
-            r_ISCO[Inner] = 1.0 / this->Gamma * (3.0 * this->Gamma + 1.0 - sqrt(5 * this->Gamma * this->Gamma - 1));
-            r_ISCO[Outer] = 1.0 / this->Gamma * (3.0 * this->Gamma + 1.0 + sqrt(5 * this->Gamma * this->Gamma - 1));
-
-    }
-    else {
-
-        r_ISCO[Inner] = r_singularity;
-        r_ISCO[Outer] = r_singularity;
-
-    }
-
-    return r_ISCO;
-
- };
-
-double* JNW_class::get_Photon_Sphere() {
-
-    static double photon_orbit[2]{};
-
-    double r_singularity = 2 * this->Mass / this->Gamma;
-
-    if (this->Gamma > 0.5) { // Weak naked singularity
-
-        photon_orbit[Inner] = (2 * this->Gamma + 1) * r_singularity / 2;
-       
-
-    }
-    else {
-
-        photon_orbit[Inner] = r_singularity;
-
-    }
-
-    photon_orbit[Outer] = photon_orbit[Inner];
-
-    return photon_orbit;
-
-};
-
-
 Metric_type JNW_class::get_local_metric(const double* const Local_State_Vector) const {
 
     const double& r = Local_State_Vector[e_r];

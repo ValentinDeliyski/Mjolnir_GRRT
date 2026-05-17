@@ -16,10 +16,6 @@ class Spacetime_Base_Class {
 
 public:
 
-    virtual double* get_ISCO() { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_ISCO!"); };
-
-    virtual double* get_Photon_Sphere() { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_Photon_sphere!"); };
-
     /* --------------------------------------------------- Metric and its derivatives --------------------------------------------------- */
 
     virtual Metric_type get_local_metric(const double* const) const  { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_local_metric!"); };
@@ -63,9 +59,6 @@ private:
 public:
 
     Kerr_class(const Metric_parameters_type* const Metric_Parameters);
-
-    double* get_ISCO() override;
-    double* get_Photon_Sphere() override;
 
     /* Metric and its derivatives */
 
@@ -148,9 +141,6 @@ public:
 
     Wormhole_class(const Metric_parameters_type* const p_Metric_Parameters);
 
-    double* get_ISCO();
-    double* get_Photon_Sphere();
-
     /* Metric and its derivatives */
 
     Metric_type get_local_metric(const double* const Local_State_Vector) const override;
@@ -190,9 +180,6 @@ private:
 public:
 
     RBH_class(const Metric_parameters_type* const p_Metric_Parameters);
-
-    double* get_ISCO();
-    double* get_Photon_Sphere();
 
     /* Metric and its derivatives */
 
@@ -237,9 +224,6 @@ public:
 
     JNW_class(const Metric_parameters_type* const p_Metric_Parameters);
 
-    double* get_ISCO();
-    double* get_Photon_Sphere();
-
     /* Metric and its derivatives */
 
     Metric_type get_local_metric(const double* const Local_State_Vector) const override;
@@ -280,9 +264,6 @@ public:
 
     Gauss_Bonnet_class(const Metric_parameters_type* const p_Metric_Parameters);
 
-    double* get_ISCO() ;
-    double* get_Photon_Sphere() ;
-
     /* Metric and its derivatives */
 
     Metric_type get_local_metric(const double* const Local_State_Vector) const override;
@@ -322,8 +303,6 @@ private:
 public:
 
     Black_Hole_w_Dark_Matter_Halo_class(const Metric_parameters_type* const p_Metric_Parameters);
-
-    double* get_ISCO();
 
     /* Metric and its derivatives */
 

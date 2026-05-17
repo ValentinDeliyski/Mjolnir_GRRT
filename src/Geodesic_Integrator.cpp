@@ -161,7 +161,7 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
     this->RHS_Wrapper_params = { this, nullptr };
     this->Function_to_solve = { &implicit_method_system_wrapper_f,
                                 e_Dynamic_state_size,
-                               &RHS_Wrapper_params };
+                                &this->RHS_Wrapper_params };
 }
 
 Geodesic_Integrator_class::~Geodesic_Integrator_class() {

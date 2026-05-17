@@ -36,30 +36,6 @@ RBH_class::RBH_class(const Metric_parameters_type* const p_Metric_Parameters){
 
 }
 
-double* RBH_class::get_ISCO() {
-
-    static double r_ISCO[2]{};
-
-    r_ISCO[Inner] = sqrt(36 * this->Mass * this->Mass - this->Parameter * this->Parameter);
-    r_ISCO[Outer] = r_ISCO[Inner];
-
-    return r_ISCO;
-
-}
-
-double* RBH_class::get_Photon_Sphere() {
-
-    double M = this->Mass;
-
-    static double photon_orbit[2]{};
-
-    photon_orbit[Inner] = sqrt(9 * M * M - this->Parameter * this->Parameter);
-    photon_orbit[Outer] = photon_orbit[Inner];
-
-    return photon_orbit;
-
-}
-
 Metric_type RBH_class::get_local_metric(const double* const Local_State_Vector) const {
 
     const double& r = Local_State_Vector[e_r];

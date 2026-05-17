@@ -1,8 +1,5 @@
 ﻿#include "Input_parser.h"
-
-#pragma warning(push, 0)
 #include "tinyxml2.h"
-#pragma warning(pop)
 
 Return_Values static parse_hotspot_params(tinyxml2::XMLElement* Hotspot_element, Hotspot_model_parameters_type *Hotspot_params) {
 
@@ -282,6 +279,21 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk max density!" << "\n"; return ERROR; }
     Disk_params->Max_disk_density = std::stod(temp_param_var->GetText());
 
+    // -------------------- r_ISCO
+    temp_param_var = Common_paramaters_element->FirstChildElement("r_ISCO");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse r_ISCO!" << "\n"; return ERROR; }
+    Disk_params->r_ISCO = std::stod(temp_param_var->GetText());
+
+    // -------------------- The angular momentum below ISCO
+    temp_param_var = Common_paramaters_element->FirstChildElement("Ang_momentum_below_ISCO");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the angular momentum below ISCO!" << "\n"; return ERROR; }
+    Disk_params->Ang_momentum_below_ISCO = std::stod(temp_param_var->GetText());
+
+    // -------------------- The angular momentum exponent
+    temp_param_var = Common_paramaters_element->FirstChildElement("Ang_momentum_exponent");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the angular momentum exponent!" << "\n"; return ERROR; }
+    Disk_params->Ang_momentum_exponent = std::stod(temp_param_var->GetText());
+
     // -------------------- The disk model
     temp_param_var = Common_paramaters_element->FirstChildElement("Disk_Model");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk model!" << "\n"; return ERROR; }
@@ -335,10 +347,11 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) { Disk_params->Velocity_profile_type = e_Keplarian; }
 
+    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "von_Zeipel_cylinder")) { Disk_params->Velocity_profile_type = e_von_Zeipel_cylinder; }
+
     else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
 
     /* ====================================================== Parameters for the specific disk models ====================================================== */
-
 
     tinyxml2::XMLElement* Disk_data_element{};
     tinyxml2::XMLElement* Density_data_element{};
@@ -398,12 +411,12 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
         // -------------------- The density polytrope coefficient
         temp_param_var = Disk_model_element->FirstChildElement("Density_Polytrope_Coeff");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope coefficient!" << "\n"; return ERROR; }
-        Disk_params->Numerical_disk_params.Polytrope_coeff = std::stod(temp_param_var->GetText());
+        Disk_params->Numerical_disk_params.Density_Polytrope_coeff = std::stod(temp_param_var->GetText());
 
         // --------------------  The density polytrope index
         temp_param_var = Disk_model_element->FirstChildElement("Density_Polytrope_Power");
         if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope index!" << "\n"; return ERROR; }
-        Disk_params->Numerical_disk_params.Polytrope_index = std::stod(temp_param_var->GetText());
+        Disk_params->Numerical_disk_params.Density_Polytrope_index = std::stod(temp_param_var->GetText());
 
         // --------------------  The density spline type
         Density_spline_type = Disk_model_element->FirstChildElement("Spline_type")->GetText();
@@ -423,9 +436,6 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
             Disk_params->Numerical_disk_params.e_Spline_type = GSL_linear;
         }
         else { std::cout << "Unsuppored disk spline type! \n"; return ERROR; }
-
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope index!" << "\n"; return ERROR; }
-        Disk_params->Numerical_disk_params.Polytrope_index = std::stod(temp_param_var->GetText());
 
         // --------------------  The density data XML path
         temp_param_var = Disk_model_element->FirstChildElement("Numerical_XML_path");

@@ -66,3 +66,12 @@ constexpr double CGS_TO_JANSKY = 1e+23;
 constexpr double MASS_TO_CM = M_SUN_SI * G_NEWTON_SI / C_LIGHT_SI / C_LIGHT_SI * METER_TO_CM;
 
 constexpr double MIN_INTENSITY_THRESHOLD = 1e-40;
+
+/*
+
+Conversion factors from geometric units to cgs
+
+*/
+
+constexpr double P_0 = 5.55173e38;
+constexpr double rho_0 = 6.17714e17;

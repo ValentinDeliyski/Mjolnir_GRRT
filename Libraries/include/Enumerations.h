@@ -123,7 +123,8 @@ enum Velocity_enums: std::underlying_type_t <std::byte> {
 
     e_Keplarian = 0,
     e_Theta_dependant = 1,
-    e_Circular_fixed_rate = 2
+    e_Circular_fixed_rate = 2,
+    e_von_Zeipel_cylinder = 3,
 
 };
 

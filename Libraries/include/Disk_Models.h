@@ -6,10 +6,11 @@
 #include "General_math_functions.h"
 #include "General_GR_functions.h"
 
-#include<gsl/gsl_interp2d.h>
-#include<gsl/gsl_spline.h>
-#include<gsl/gsl_spline2d.h>
-#include<gsl/gsl_errno.h>
+#include <gsl/gsl_interp2d.h>
+#include <gsl/gsl_spline2d.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_roots.h>
+#include <gsl/gsl_vector.h>
 
 struct Disk_model_type {
 
@@ -20,13 +21,22 @@ private:
     gsl_interp_accel* Radial_interp_accelerator;
     gsl_interp_accel* Theta_interp_accelerator;
 
+    gsl_function Function_to_solve;
+    gsl_root_fsolver* Root_finder;
+
+    von_Zeipel_cylinder_condition_wrapper_struct von_Zeipel_cylinder_condition_wrapper_params;
+
     Simulation_Context_type* p_Sim_Context{};
 
     double Disk_Velocity[4]{};
 
     ~Disk_model_type();
 
-    double get_disk_internal_energy(double density, double K, double Gamma) const;
+    double get_disk_gas_pressure(const double density) const;
+
+    double get_disk_mag_pressure(const double density, const double* const Local_State_Vector) const;
+
+    double get_disk_internal_energy(const double density) const;
 
     double get_disk_profile(const Disk_profile_parameters_type* const p_Profile_parameters,
                             Profile_enums e_Profile_type) const;
@@ -37,9 +47,17 @@ private:
 
     void get_numerical_mag_field(const double* const Local_State_Vector,
                                    const Metric_type* const p_Metric,
-                                   Emission_medium_state_type* const Emission_medium_state) const;
+                                   Emission_medium_state_type* const Emission_medium_state);
+
+    double get_Keplarian_ang_momentum_profile(double r_0) const;
+
+    double get_disk_eq_ang_momentum_profile(double r_0) const;
+
+    double get_disk_ang_momentum_profile(const double* const Local_State_Vector);
 
 public:
+
+    double get_von_Zeipel_cylinder_condition(const Metric_type Metric, double r_0) const;
 
     /* Holds all the model parameteres for the background accretion disk. */
     Disk_model_parameters_type s_Disk_params{};
@@ -54,7 +72,7 @@ public:
     
     void get_magnetic_field(const double* const Local_State_Vector,
                             const Metric_type* const p_Metric,
-                            Emission_medium_state_type* const Emission_medium_state) const ;
+                            Emission_medium_state_type* const Emission_medium_state);
 
     //! Computes the accretion disk density
     /*! Computes the accretion disk at the current photon position.

@@ -34,65 +34,6 @@ Gauss_Bonnet_class::Gauss_Bonnet_class(const Metric_parameters_type* const p_Met
 
 }
 
-double* Gauss_Bonnet_class::get_ISCO() {
-
-    /**************************************************************************
-    |                                                                         |
-    |   @ Description: Returns a pointer to the inner and outer ISCO radii.   |
-    |     * The outer ISCO is the solution to the equation:                   |
-    |       d2r_f(r) + 3 * dr_f(r) / r - 2 * dr_f(r)**2 / f(r) = 0            |
-    |     * GAUSS_BONNET_GAMMA is in the range [0, 1.5]                       |
-    |                                                                         |
-    |   @ Inputs: None                                                        |
-    |                                                                         |
-    |   @ Ouput: Pointer to the ISCO radii                                    |
-    |                                                                         |
-    **************************************************************************/
-
-    static double r_ISCO[2]{};
-
-    double fit_coeffs[11] = { 5.99998915, -0.61042681, -0.11593137,  0.07275861, -0.46946788,
-                              1.20693793, -1.99054947,  2.05041439, -1.29496979,  0.45787902, -0.07008574 };
-
-    double Gamma2  = this->Gamma * this->Gamma;
-    double Gamma4  = Gamma2 * Gamma2;
-    double Gamma8  = Gamma4 * Gamma4;
-    double Gamma10 = Gamma8 * Gamma2;
-
-    r_ISCO[Outer] = fit_coeffs[0]  + 
-                    fit_coeffs[1]  * this->Gamma +
-                    fit_coeffs[2]  * Gamma2 +
-                    fit_coeffs[3]  * Gamma2 * this->Gamma +
-                    fit_coeffs[4]  * Gamma4 +
-                    fit_coeffs[5]  * Gamma4 * this->Gamma +
-                    fit_coeffs[6]  * Gamma4 * Gamma2 + 
-                    fit_coeffs[7]  * Gamma8 / this->Gamma +
-                    fit_coeffs[8]  * Gamma8 + 
-                    fit_coeffs[9]  * Gamma8 * this->Gamma +
-                    fit_coeffs[10] * Gamma10;
-
-    r_ISCO[Inner] = pow(this->Gamma, 1.0 / 3);
-
-    return r_ISCO;
-
-};
-
-double* Gauss_Bonnet_class::get_Photon_Sphere() {
-
-    /* This expression is the root of a cubic equation */
-
-    double q =  8 * this->Mass * this->Gamma;
-    double p = -9 * this->Mass * this->Mass;
-
-    static double photon_orbits[2]{};
-
-    photon_orbits[Outer] = 2 * sqrt(-p / 3) * cos(1. / 3 * acos(3. / 2 * q / p * sqrt(-3. / p)));
-    photon_orbits[Inner] = 2 * sqrt(-p / 3) * cos(1. / 3 * acos(3. / 2 * q / p * sqrt(-3. / p)) + 2. * M_PI / 3);
-
-    return photon_orbits;
-
-};
-
 Metric_type Gauss_Bonnet_class::get_local_metric(const double* const Local_State_Vector) const {
 
     const double& M = this->Mass;

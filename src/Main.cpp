@@ -179,7 +179,7 @@ int main(int argument_count, char** cmd_line_args) {
         |============================== Run the simulation ==============================|
 
         */
-        gsl_set_error_handler_off();
+
         switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
 
         case Image_generation:

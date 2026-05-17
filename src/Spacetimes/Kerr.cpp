@@ -35,31 +35,6 @@ Kerr_class::Kerr_class(const Metric_parameters_type* const p_Metric_Parameters) 
 
 }
 
-double* Kerr_class::get_ISCO() {
-
-    double Z_1 = 1 + pow(1 - this->Spin_Param * this->Spin_Param / this->Mass / this->Mass, 1. / 3) * (pow(1 + this->Spin_Param / this->Mass, 1. / 3) + pow(1 - this->Spin_Param / this->Mass, 1. / 3));
-    double Z_2 = sqrt(3 * this->Spin_Param * this->Spin_Param / this->Mass / this->Mass + Z_1 * Z_1);
-
-    static double r_ISCO[2]{};
-
-    r_ISCO[Inner] = this->Mass * (3 + Z_2 - sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
-    r_ISCO[Outer] = this->Mass * (3 + Z_2 + sqrt((3 - Z_1) * (3 + Z_1 + 2 * Z_2)));
-
-    return r_ISCO;
-
-}
-
-double* Kerr_class::get_Photon_Sphere() {
-
-    static double photon_orbit[2]{};
-
-    photon_orbit[Inner] = 2 * this->Mass * (1 + cos(2.0 / 3 * acos(this->Spin_Param / this->Mass)));
-    photon_orbit[Outer] = 2 * this->Mass * (1 + cos(2.0 / 3 * acos(-this->Spin_Param / this->Mass)));
-
-    return photon_orbit;
-
-}
-
 Metric_type Kerr_class::get_local_metric(const double* const Local_State_Vector) const {
 
     const double& M = this->Mass;
