@@ -1,4 +1,4 @@
-#include "General_math_functions.h"
+﻿#include "General_math_functions.h"
 #include "General_GR_functions.h"
 #include "Emission_Models.h"
 #include "Spacetimes.h"
@@ -35,8 +35,8 @@ void Emission_models_class::get_thermal_synchrotron_emission_fit_functions(const
                             * (1 + (7. * p_Transfer_arags->T_electron_dim_to_24_25 + 35.) / (10. * p_Transfer_arags->T_electron_dim_to_24_25 + 75.) * TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X)
                             * exponent;
 
-    Emission_functions[V] = p_Transfer_arags->cos_pitch_angle / p_Transfer_arags->T_electron_dim
-                            * (M_PI / 3 + M_PI / 3 * p_Transfer_arags->cbrt_X + (2. / 300) * p_Transfer_arags->sqrt_X + (2 * M_PI / 19.) * p_Transfer_arags->cbrt_X * p_Transfer_arags->cbrt_X) * exponent;
+    //Emission_functions[V] = p_Transfer_arags->cos_pitch_angle / p_Transfer_arags->T_electron_dim
+    //                      * (M_PI / 3 + M_PI / 3 * p_Transfer_arags->cbrt_X + (2. / 300) * p_Transfer_arags->sqrt_X + (2 * M_PI / 19.) * p_Transfer_arags->cbrt_X * p_Transfer_arags->cbrt_X) * exponent;
 
 }
 
@@ -97,7 +97,7 @@ void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const 
 
     Faradey_functions[Q] = f_m * p_Transfer_args->sin_pitch_angle * p_Transfer_args->sin_pitch_angle * (K1_Bessel / K2_Bessel + 6 * p_Transfer_args->T_electron_dim);
 
-    Faradey_functions[V] = (K0_Bessel - 0 * delta_J_5) / K2_Bessel * p_Transfer_args->cos_pitch_angle;
+    //Faradey_functions[V] = (K0_Bessel - 0 * delta_J_5) / K2_Bessel * p_Transfer_args->cos_pitch_angle;
 
     if (std::abs(Faradey_functions[Q]) > 1e10 or std::abs(Faradey_functions[V]) > 1e10) {
 
@@ -165,7 +165,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
     Emission_functions_low[V] = Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1, 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
     Emission_functions_high[V] = Common_factor_high * (49.0 / 64 * pow(pow(p_Transfer_args->sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(p_Transfer_args->kappa, -11.0 / 25) / p_Transfer_args->T_electron_dim / p_Transfer_args->sqrt_X;
 
-    Emission_functions[V] = pow(pow(Emission_functions_low[V], -power_V) + pow(Emission_functions_high[V], -power_V), -1. / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
+    //Emission_functions[V] = pow(pow(Emission_functions_low[V], -power_V) + pow(Emission_functions_high[V], -power_V), -1. / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
 
 }
 
@@ -246,7 +246,7 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
     Absorbtion_functions_low[V]  = Common_factor_low * pow((pow(p_Transfer_args->sin_emission_angle, -114.0 / 50) - 1), 223.0 / 500) / p_Transfer_args->X_to_7_over_20 * pow(p_Transfer_args->kappa, -7.0 / 10);
     Absorbtion_functions_high[V] = Common_factor_high * 143.0 / 10 * pow(p_Transfer_args->T_electron_dim, -116.0 / 125) * sqrt(pow(p_Transfer_args->sin_emission_angle, -41.0 / 20) - 1) * (169 * pow(p_Transfer_args->kappa, -8) + 13.0 / 2500 * p_Transfer_args->kappa - 263. / 5000 + 47.0 / 200 / p_Transfer_args->kappa) / p_Transfer_args->sqrt_X;
     
-    Absorbtion_functions[V] = pow(pow(Absorbtion_functions_low[V], -power_V) + pow(Absorbtion_functions_high[V], -power_V), -1.0 / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
+    //Absorbtion_functions[V] = pow(pow(Absorbtion_functions_low[V], -power_V) + pow(Absorbtion_functions_high[V], -power_V), -1.0 / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
 
 }
 
@@ -257,7 +257,7 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
 
     /* Zero out the emission functions just in case. */
     memset(Faradey_functions, 0, e_Stokes_param_num * sizeof(double));
-
+    return;
     /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
 

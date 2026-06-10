@@ -103,7 +103,9 @@ class Geodesic_Integrator():
                  "min_upper_stepsize",
                  "max_step_b_coeff",
                  "dist_at_min_upper_stepsize",
-                 "Integrator_type")
+                 "Integrator_type",
+                 "Max_step_in_emission_medium",
+                 "Propagate_optical_depth")
     
 class Emission_Integrator():
 
@@ -323,7 +325,9 @@ class Simulation_configurator:
                                              min_upper_stepsize: dict[str, float | str] = {"Value": 95, "Unit": "[M]"},
                                              max_step_b_coeff: dict[str, float | str] = {"Value": 0.004, "Unit": "[-]"},
                                              dist_at_min_upper_stepsize: dict[str, float | str] = {"Value": 15, "Unit": "[M]"},
-                                             Integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"}):
+                                             Integrator_type: dict[str, str] = {"Value": "RK78_DP", "Unit": "[-]"},
+                                             Max_step_in_emission_medium: dict[str, float | str] = {"Value": 100, "Unit": "[-]"},
+                                             Propagate_optical_depth:  dict[str, int | str] = {"Value": 1, "Unit": "[-]"},):
 
         self.geodesic_integrator = Geodesic_Integrator()
 
@@ -357,6 +361,8 @@ class Simulation_configurator:
         self.geodesic_integrator.max_step_b_coeff = max_step_b_coeff
         self.geodesic_integrator.dist_at_min_upper_stepsize = dist_at_min_upper_stepsize
         self.geodesic_integrator.Integrator_type = Integrator_type
+        self.geodesic_integrator.Max_step_in_emission_medium = Max_step_in_emission_medium
+        self.geodesic_integrator.Propagate_optical_depth = Propagate_optical_depth
         
     def _configure_rad_transfer_integrator_settings(self,
                                                     Rad_Transfer_Integrator_type: dict[str, str] = {"Value": "RK78_Fehlberg", "Unit": "[-]"},
@@ -771,14 +777,19 @@ class Simulation_configurator:
 
         # ============ Generate the accretion disk XML section ============ #
         
-        Common_slots = ["Max_density",
-                        "Ensamble_type",
-                        "Disk_Model",
-                        "Velocity_profile",
-                        "Threshold_relative_density",
-                        "r_ISCO",
-                        "Ang_momentum_below_ISCO",
-                        "Ang_momentum_exponent"]
+        if self.disk_model.Disk_Model["Value"] != "Novikov-Thorne": 
+        
+            Common_slots = ["Max_density",
+                            "Ensamble_type",
+                            "Disk_Model",
+                            "Velocity_profile",
+                            "Threshold_relative_density",
+                            "r_ISCO",
+                            "Ang_momentum_below_ISCO",
+                            "Ang_momentum_exponent"]
+            
+        else:
+            Common_slots = ["Disk_Model"]
 
         Disk_subelement = ET.SubElement(XML_root_node, "Accretion_Disk", attrib = {"Enabled_Flag": "{}".format(self.disk_model.Enabled_flag["Value"])}) 
 

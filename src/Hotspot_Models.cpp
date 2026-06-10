@@ -151,8 +151,8 @@ void Hotspot_model_type::get_density_and_temperature(const double* const State_V
 
     Profile_prameters.Gaussian_variable = Distance_to_hotspot_center;
 
-    Profile_prameters.Gaussian_spread   = this->s_Hotspot_params.Profile_params.Density_gaussian_spread;
-    Profile_prameters.Gaussian_mean     = 0.0;
+    Profile_prameters.Gaussian_spread = this->s_Hotspot_params.Profile_params.Density_gaussian_spread;
+    Profile_prameters.Gaussian_mean   = 0.0;
 
     Profile_prameters.Sphere_radius = this->s_Hotspot_params.Profile_params.Radius;
     Profile_prameters.Distance_from_sphere_center = Distance_to_hotspot_center;
@@ -258,9 +258,9 @@ void Hotspot_model_type::get_magnetic_field(const double* const Local_State_Vect
 
     case Constant:
 
-        B_eulerian[e_r]     = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_r - 1];
-        B_eulerian[e_theta] = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_theta - 1];
-        B_eulerian[e_phi]   = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_phi - 1];
+        B_eulerian[e_r]     = this->s_Hotspot_params.Mag_field_geometry[e_r - 1];
+        B_eulerian[e_theta] = this->s_Hotspot_params.Mag_field_geometry[e_theta - 1];
+        B_eulerian[e_phi]   = this->s_Hotspot_params.Mag_field_geometry[e_phi - 1];
 
         break;
 

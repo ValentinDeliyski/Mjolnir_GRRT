@@ -1,6 +1,6 @@
 from numpy.typing import NDArray
 from numpy import float64, bool_
-from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes, argmax, log
+from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes, argmax, log, nan, isnan
 from math import ceil, floor
 
 from matplotlib.figure import Figure
@@ -203,7 +203,7 @@ class Sim_Visualizer():
             if Use_angular_coords:
                 X_Slice_tile: str = "Brightness temperature at " + r'$\delta_{\text{rel}} = 0$'
             else:
-                X_Slice_tile: str = "Brightness temperature at " + r'$X = 0$'
+                X_Slice_tile: str = "Brightness temperature at " + r'$Y = 0$'
                 
             X_Slice_y_label: str = r'$T_b\,\,[10^9\, K]$'
 
@@ -226,11 +226,14 @@ class Sim_Visualizer():
                 
             File_suffix = ""
                 
+            Colormap = colormaps[Colormap_str]
+            Colormap.set_bad("k")
+                
             match Radiation_Component:
             
                 case "Stokes I":
                     Data_to_plot: NDArray[float64] = self.Units.Spectral_density_to_T(I_Intensity / self.Units.W_M2_TO_JY, Obs_frequency) / self.Units.GIGA    
-                    
+
                     Cmap_max: float = max(abs(Data_to_plot.flatten()))
                     Cmap_min: float = 0
                                 
@@ -395,7 +398,7 @@ class Sim_Visualizer():
             # Create the plot of the Simulated Image
             # Colormap = colormaps[Colormap_str]
             # Colormap.set_bad("k")
-            Image: AxesImage = Image_Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = Colormap_str, extent = tuple(axes_limits), vmin = Cmap_min, vmax = Cmap_max, )
+            Image: AxesImage = Image_Subplot.imshow(Data_to_plot, interpolation = 'bilinear', cmap = Colormap, extent = tuple(axes_limits), vmin = Cmap_min, vmax = Cmap_max, )
 
             if Radiation_Component != "Pattern":
                 colorbar: Colorbar = Main_Figure.colorbar(Image, ax = Image_Subplot, fraction = 0.046 * abs(axes_limits[2] - axes_limits[3]) / abs(axes_limits[0] - axes_limits[1]), pad = 0.04)

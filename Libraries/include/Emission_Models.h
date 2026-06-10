@@ -23,6 +23,8 @@ private:
     /* Holds all the precomupted electron pitch angles for use in averaging. */
     Precomputed_e_pitch_angles_type s_Precomputed_e_pitch_angles{};
 
+    Simulation_Context_type* p_Sim_Context;
+
     /* The number of electron pitch angle values (in the range [0, pi]) to average over. */
     int Num_samples_to_avg{};
 
@@ -131,7 +133,6 @@ public:
      *   \return Nothing.
      */
     void get_radiative_transfer_functions(const double* const State_Vector,
-                                          const Simulation_Context_type* const p_Sim_Context,
                                           const Emission_medium_enums Emission_medium,
                                           Transfer_functions_type* const p_Transfer_functions);
     
@@ -140,13 +141,11 @@ public:
      *   synchrotron transfer functions, based on the current photon position.
      *
      *   \param [in] State_Vector - The current photon state vector in geometric units.
-     *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to access the initial conditions.
      *   \param [in] p_Emission_medium_state - Pointer to the struct that holds the emission medium state.
      *   \param [out] p_Transfer_functions - Pointer to the struct that holds the transfer functions.
      *   \return Nothing.
      */
     void get_thermal_synchrotron_transfer_functions(const double* const State_Vector,
-                                                    const Simulation_Context_type* const p_Sim_Context,
                                                     const Emission_medium_state_type* const p_Emission_medium_state,
                                                     Transfer_functions_type* const p_Transfer_functions);
     
@@ -155,13 +154,11 @@ public:
      *   synchrotron transfer functions, based on the current photon position.
      *
      *   \param [in] State_Vector - The current photon state vector in geometric units.
-     *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to access the initial conditions.
      *   \param [in] p_Emission_medium_state - Pointer to the struct that holds the emission medium state.
      *   \param [out] p_Transfer_functions - Pointer to the struct that holds the transfer functions.
      *   \return Nothing.
      */
     void get_kappa_synchrotron_transfer_functions(const double* const State_Vector,
-                                                  const Simulation_Context_type* const p_Sim_Context,
                                                   const Emission_medium_state_type* const p_Emission_medium_state,
                                                   Transfer_functions_type* const p_Transfer_functions);
     
@@ -169,13 +166,11 @@ public:
     /*! Evaluates the phonomenological synchrotron transfer functions.
      *
      *   \param [in] State_Vector - The current photon state vector in geometric units.
-     *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to access the initial conditions.
      *   \param [in] p_Emission_medium_state - Pointer to the struct that holds the emission medium state.
      *   \param [out] p_Transfer_functions - Pointer to the struct that holds the transfer functions.
      *   \return Nothing.
      */
     void get_phenomenological_synchrotron_functions(const double* const State_Vector,
-                                                    const Simulation_Context_type* const p_Sim_Context, 
                                                     const Emission_medium_state_type* const Emission_medium_state,
                                                     Transfer_functions_type* const p_Transfer_functions);
     
@@ -186,13 +181,11 @@ public:
      *   \param [in] B_field_coord_frame - The magnetic field in the coordinate frame.
      *   \param [in] Plasma_velocity - The plasma velocity 4-vector.
      *   \param [in] State_Vector - Current photon state vector - used to get the photon momentum 4-vector.
-     *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct - used to call the metric function for dot products.
      *   \return Cosine of the angle between the magnetic field and photon momentum 3-vectors in the plasma frame.
      */
     double get_electron_pitch_angle(const double* const B_field_coord_frame,
                                     const double* const Plasma_velocity,
-                                    const double* const State_Vector, 
-                                    const Simulation_Context_type* const p_Sim_Context);
+                                    const double* const State_Vector);
     
     //! Precomputes the electron pitch angles and their weird powers to use in averaging.
     /*! Precomputes the electron pitch angles and their weird powers to use in averaging.

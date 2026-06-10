@@ -31,9 +31,7 @@ class bcolors:
 class Simulation:
     
     def __init__(self, resolution, spin, inclination):
-        
-        """ These parameters correspond to the ones in table 1 of https://arxiv.org/pdf/2309.10053. """
-        
+ 
         self.Units = Units_class()
         self.Simulation_configurator = Simulation_configurator()
         
@@ -50,11 +48,11 @@ class Simulation:
         
         Kerr_instance = Kerr(self.Simulation_configurator.metric_parameters.Mass["Value"], self.Simulation_configurator.metric_parameters.Spin["Value"])
         
-        self.Simulation_configurator.disk_model.r_in_NT_disk = {"Value": Kerr_instance.get_ISCO()[0], "Unit": "[M]"} 
-        self.Simulation_configurator.disk_model.r_out_NT_disk = {"Value": 25 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"} 
+        self.Simulation_configurator.disk_model.NT_disk_params.r_in = {"Value": Kerr_instance.get_ISCO()[0], "Unit": "[M]"} 
+        self.Simulation_configurator.disk_model.NT_disk_params.r_out = {"Value": 25 * self.Simulation_configurator.metric_parameters.Mass["Value"], "Unit": "[M]"} 
          
         """ Kill the hotspot """
-        self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
+        self.Simulation_configurator.hotspot_model.Enabled_flag = {"Value": 0, "Unit": "[g/cm^3]"}
         
         """ Observer setup """
         self.Simulation_configurator.observer.Distance    = {"Value": 1e4,         "Unit":  "[M]" }
@@ -80,7 +78,7 @@ class Simulation:
         self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         
-        self.Simulation_configurator.geodesic_integrator.max_stepsize = {"Value": 100, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.max_upper_stepsize = {"Value": 100, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 2, "Unit": "[-]"}
 
         self.Simulation_configurator.simulation_name = {"Value": "Kerr_a_{}_inc_{}".format(spin, inclination), "Unit": "[-]"}
@@ -101,7 +99,7 @@ class Simulation:
                     self.Simulation_configurator.simulation_name["Value"] + 
                     "_input.XML")    
         
-        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 0"
+        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
         
         subprocess.call(args, shell = True)          
 
@@ -109,7 +107,7 @@ if __name__ == "__main__":
 
     Processses = []
 
-    for spin in [0, 0.98]:
+    for spin in [0]:
         
         for inc in [80]:
             

@@ -142,7 +142,6 @@ void Emission_Integrator_class::Run_Runge_Kutta_Stokes_Vector(const double Start
             Transfer_functions_type Temp_Transfer_functions{};
 
             this->p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(this->get_ray_Local_State_Vector(Temp_affine_param),
-                                                                                    this->p_Sim_Context,
                                                                                     static_cast<Emission_medium_enums>(emission_medium),
                                                                                     &Temp_Transfer_functions);
 
@@ -672,17 +671,20 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
     }
 
     /* Thesse are used in the "scaling factors" infront of the M matricies */
-    double const exp_I = exp(-alpha[I] * CGS_Step);
+    double exp_I = exp(-alpha[I] * CGS_Step);
 
-    double const cosh_term = cosh(Lambda[0] * CGS_Step);
+    /* At high optical depths, the exp * sinh and exp * cosh terms end up evaluating to 0 * inf, which breaks the code.
+       this problem is solved by substituting in the exponential definition of the hyberbaulic functions and analytically
+       multipling by the other exponential. */
+    double exp_sinh = (exp((-alpha[I] + Lambda[0]) * CGS_Step) - exp((-alpha[I] - Lambda[0]) * CGS_Step)) / 2;
+    double exp_cosh = (exp((-alpha[I] + Lambda[0]) * CGS_Step) + exp((-alpha[I] - Lambda[0]) * CGS_Step)) / 2;
+
     double const cos_term = cos(Lambda[1] * CGS_Step);
-
-    double const sinh_term = sinh(Lambda[0] * CGS_Step);
     double const sin_term = sin(Lambda[1] * CGS_Step);
 
     /* ========================== M_1 Matrix calculation ========================== */
 
-    double const M_1_scale_factor = exp_I * (cosh_term + cos_term) / 2;
+    double const M_1_scale_factor = (exp_cosh + exp_I * cos_term) / 2;
 
     double const M_1[4][4] = { {1.0, 0.0, 0.0, 0.0},
                                {0.0, 1.0, 0.0, 0.0},
@@ -691,7 +693,7 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
 
     /* ========================== M_2 Matrix calculation ========================== */
 
-    const double M_2_scale_factor = -exp_I * sin_term / Theta;
+    const double M_2_scale_factor = -exp_I * sin_term;
 
     if (isinf(M_2_scale_factor) or isnan(M_2_scale_factor)) {
 
@@ -699,14 +701,14 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
 
     }
 
-    double const M_2[4][4] = { {                         0,                          (Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]), (Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V])},
-                               {(Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]),                           0,                          (sigma * Lambda[0] * alpha[V] + Lambda[1] * rho[V]), (-sigma * Lambda[0] * alpha[U] - Lambda[1] * rho[U])},
-                               {(Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (-sigma * Lambda[0] * alpha[V] - Lambda[1] * rho[V]),                           0,                          (sigma * Lambda[0] * alpha[Q] + Lambda[1] * rho[Q])},
-                               {(Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V]), (sigma * Lambda[0] * alpha[U] + Lambda[1] * rho[U]), (-sigma * Lambda[0] * alpha[Q] - Lambda[1] * rho[Q]),                           0                         } };
+    double M_2[4][4] = { {                         0,                          (Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]),  ( Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), ( Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V])},
+                         {(Lambda[1] * alpha[Q] - sigma * Lambda[0] * rho[Q]),                           0,                          ( sigma * Lambda[0] * alpha[V] + Lambda[1] * rho[V]), (-sigma * Lambda[0] * alpha[U] - Lambda[1] * rho[U])},
+                         {(Lambda[1] * alpha[U] - sigma * Lambda[0] * rho[U]), (-sigma * Lambda[0] * alpha[V] - Lambda[1] * rho[V]),                           0,                          ( sigma * Lambda[0] * alpha[Q] + Lambda[1] * rho[Q])},
+                         {(Lambda[1] * alpha[V] - sigma * Lambda[0] * rho[V]), ( sigma * Lambda[0] * alpha[U] + Lambda[1] * rho[U]), (-sigma * Lambda[0] * alpha[Q] - Lambda[1] * rho[Q]),                           0                         } };
 
     /* ========================== M_3 Matrix calculation ========================== */
 
-    double const M_3_scale_factor = -exp_I * sinh_term / Theta;
+    double const M_3_scale_factor = -exp_sinh;
 
     if (isinf(M_3_scale_factor) or isnan(M_3_scale_factor)) {
 
@@ -714,14 +716,14 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
 
     }
 
-    double const M_3[4][4] = { {						 0,							 (Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]), (Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[Q]), (Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V])},
-                               {(Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]),	 		               0,                          (-sigma * Lambda[1] * alpha[V] + Lambda[0] * rho[V]), (sigma * Lambda[1] * alpha[U] - Lambda[0] * rho[U])},
-                               {(Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[U]), (sigma * Lambda[1] * alpha[V] - Lambda[0] * rho[V]),	                         0,	                         (-sigma * Lambda[1] * alpha[Q] + Lambda[0] * rho[Q])},
-                               {(Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V]), (-sigma * Lambda[1] * alpha[U] + Lambda[0] * rho[U]), (sigma * Lambda[1] * alpha[Q] - Lambda[0] * rho[Q]),                           0                         } };
+    double M_3[4][4] = { {						 0,							   ( Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]), ( Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[Q]),   ( Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V])},
+                         {(Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]),	 		               0,                            (-sigma * Lambda[1] * alpha[V] + Lambda[0] * rho[V]), ( sigma * Lambda[1] * alpha[U] - Lambda[0] * rho[U])},
+                         {(Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[U]), ( sigma * Lambda[1] * alpha[V] - Lambda[0] * rho[V]),	                         0,	                         (-sigma * Lambda[1] * alpha[Q] + Lambda[0] * rho[Q])},
+                         {(Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V]), (-sigma * Lambda[1] * alpha[U] + Lambda[0] * rho[U]), ( sigma * Lambda[1] * alpha[Q] - Lambda[0] * rho[Q]),                           0                         } };
 
     /* ========================== M_4 Matrix calculation ========================== */
 
-    double const M_4_scale_factor = exp_I * (cosh_term - cos_term) / Theta;
+    double const M_4_scale_factor = (exp_cosh - exp_I * cos_term) / 2;
 
     if (isinf(M_4_scale_factor) or isnan(M_4_scale_factor)) {
 
@@ -729,10 +731,22 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
 
     }
 
-    double const M_4[4][4] = { {   (alpha_squared + rho_squared) / 2,                      (alpha[V] * rho[U] - alpha[U] * rho[V]),                                     (alpha[Q] * rho[V] - alpha[V] * rho[Q]),                                     (alpha[U] * rho[Q] - alpha[Q] * rho[U])},
-                               {(alpha[U] * rho[V] - alpha[V] * rho[U]), (alpha[Q] * alpha[Q] + rho[Q] * rho[Q] - (alpha_squared + rho_squared) / 2),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                                     (alpha[V] * alpha[Q] + rho[V] * rho[Q])},
-                               {(alpha[V] * rho[Q] - alpha[Q] * rho[V]),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                   (alpha[U] * alpha[U] + rho[U] * rho[U] - (alpha_squared + rho_squared) / 2),                   (alpha[U] * alpha[V] + rho[U] * rho[V])},
-                               {(alpha[Q] * rho[U] - alpha[U] * rho[Q]),                   (alpha[V] * alpha[Q] + rho[V] * rho[Q]),                                     (alpha[U] * alpha[V] + rho[U] * rho[V]),                   (alpha[V] * alpha[V] + rho[V] * rho[V] - (alpha_squared + rho_squared) / 2)} };
+    double M_4[4][4] = { {   (alpha_squared + rho_squared) / 2,                      (alpha[V] * rho[U] - alpha[U] * rho[V]),                                     (alpha[Q] * rho[V] - alpha[V] * rho[Q]),                                     (alpha[U] * rho[Q] - alpha[Q] * rho[U])},
+                         {(alpha[U] * rho[V] - alpha[V] * rho[U]), (alpha[Q] * alpha[Q] + rho[Q] * rho[Q] - (alpha_squared + rho_squared) / 2),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                                     (alpha[V] * alpha[Q] + rho[V] * rho[Q])},
+                         {(alpha[V] * rho[Q] - alpha[Q] * rho[V]),                   (alpha[Q] * alpha[U] + rho[Q] * rho[U]),                   (alpha[U] * alpha[U] + rho[U] * rho[U] - (alpha_squared + rho_squared) / 2),                   (alpha[U] * alpha[V] + rho[U] * rho[V])},
+                         {(alpha[Q] * rho[U] - alpha[U] * rho[Q]),                   (alpha[V] * alpha[Q] + rho[V] * rho[Q]),                                     (alpha[U] * alpha[V] + rho[U] * rho[V]),                   (alpha[V] * alpha[V] + rho[V] * rho[V] - (alpha_squared + rho_squared) / 2)} };
+
+    for (int left_idx = 0; left_idx < 4; left_idx++) {
+
+        for (int right_idx = 0; right_idx < 4; right_idx++) {
+
+            M_2[left_idx][right_idx] /= Theta;
+            M_3[left_idx][right_idx] /= Theta;
+            M_4[left_idx][right_idx] /= Theta / 2;
+
+        }
+
+    }
 
     /* ========================== This is the formal operator O(s,s') - the solution to D1 ========================== */
 
@@ -769,10 +783,10 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
 
             Integrated_Transfer_Operator[row_idx][colum_idx] = -Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) +
                                                                 Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) -
-                                                                exp_I * ((-Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I]  * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * cosh_term +
-                                                                        ( -Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I]  * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * cos_term +
-                                                                        (  -alpha[I] * f_2 * M_2[row_idx][colum_idx] - Lambda[1] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * sin_term -
-                                                                        (   alpha[I] * f_1 * M_3[row_idx][colum_idx] - Lambda[0] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * sinh_term);
+                                                                ((-Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I]  * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * exp_cosh +
+                                                                 (-Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I]  * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * exp_I * cos_term +
+                                                                 ( -alpha[I] * f_2 * M_2[row_idx][colum_idx] - Lambda[1] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * exp_I * sin_term -
+                                                                 (  alpha[I] * f_1 * M_3[row_idx][colum_idx] - Lambda[0] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * exp_sinh);
 
         }
 
@@ -789,7 +803,6 @@ void Emission_Integrator_class::Run_Analytic_Stokes_Vector_Propagator(const doub
         Transfer_functions_type Temp_Transfer_functions{};
 
         this->p_Sim_Context->p_Emission_Model->get_radiative_transfer_functions(this->get_ray_Local_State_Vector(Start_Affine_Param),
-                                                                                this->p_Sim_Context,
                                                                                 static_cast<Emission_medium_enums>(emission_medium),
                                                                                 &Temp_Transfer_functions);
 

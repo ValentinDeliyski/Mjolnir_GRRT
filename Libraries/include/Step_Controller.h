@@ -15,7 +15,7 @@ public:
      *      2) Gustafsson controller
      *
      */
-    void update_step(Integrator_enums e_Active_integrator, const double r);
+    void update_step(Integrator_enums e_Active_integrator, const double r, const bool Is_inside_emission_medium);
 
     double get_max_step(const double r) const;
 

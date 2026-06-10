@@ -111,9 +111,6 @@ struct Magnetic_fields_type {
     /*! @brief The magnetic field 4-vector in the coordinate frame in units of [G]. */
     double B_field_eulerian_frame[4]{};
 
-    /*! @brief Unit vector that specifies the direction of the magnetic field in the plasma frame. */
-    double Mag_field_geometry_vector[3]{};
-
     /*! @brief The magnitude of the magnetic field in the plasma frame in units of [G]. */
     double B_field_plasma_frame_norm{};
 
@@ -642,6 +639,8 @@ struct Step_Controller_parameters_type {
 
     double Max_step_b_coeff{};
 
+    double Max_step_inisde_emission_medium{};
+
 };
 
 struct Integrator_parameters_type {
@@ -663,6 +662,8 @@ struct Integrator_parameters_type {
 
     /*! @brief Enum that selects which geodesic integrator to use by default. When that one fails to integrate a given geodesic, we switch to ESDIRK54. */
     Integrator_enums e_Default_geodesic_integrator{};
+
+    bool Propagate_optical_depth;
 
 };
 

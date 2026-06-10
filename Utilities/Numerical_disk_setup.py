@@ -1,8 +1,9 @@
 from Support_functions.Spacetimes_new import Kerr
 
 from enum import Enum
-from numpy import pi, array, flip, append, linspace, meshgrid, column_stack, isnan
-from scipy.interpolate import CloughTocher2DInterpolator
+from numpy import pi, array, flip, append, linspace, meshgrid, column_stack, isnan, log10
+from scipy.interpolate import CloughTocher2DInterpolator, LinearNDInterpolator
+from scipy.spatial import ConvexHull, convex_hull_plot_2d
 import matplotlib.pyplot as plt
 
 import xml.etree.cElementTree as ET
@@ -51,11 +52,13 @@ class Disk_model():
 
         self.rho_coord, self.z_coord = meshgrid(self.rho_coord_range, self.z_coord_range)
         
-        interp = CloughTocher2DInterpolator(column_stack((self.raw_rho_coord, self.raw_z_coord)), self.raw_Density)
+        interp = CloughTocher2DInterpolator(column_stack((self.raw_rho_coord, self.raw_z_coord)), self.raw_Density, fill_value = 0, tol = 1e-8, maxiter = 800)
         
         self.Density = interp(self.rho_coord, self.z_coord)
         self.Density[isnan(self.Density)] = 0.0
         self.Density[self.Density < 0.0] = 0.0
+        
+        test_points = ConvexHull(column_stack((self.raw_rho_coord, self.raw_z_coord)))
         
         # self.rho_coord = self.rho_coord.reshape(self.GRID_RHO_SIZE, self.GRID_Z_SIZE)
         # self.rho_coord = append(self.rho_coord[:-1], self.rho_coord, axis = 0)
@@ -67,11 +70,16 @@ class Disk_model():
         # self.Density = append(flip(self.Density, axis = 0)[:-1], self.Density, axis = 0)
         
         plt.figure(figsize=(8, 6))
-        cf = plt.contourf( self.rho_coord, self.z_coord, self.Density, levels=50)
+
+        # plt.plot(self.rho_coord[0], log10(self.Density))
+        plt.plot(test_points.points.T[0][test_points.vertices], test_points.points.T[1][test_points.vertices])
+    
+        cf = plt.contourf(self.rho_coord, self.z_coord, self.Density, levels=50)
+        plt.contour(self.rho_coord, self.z_coord, self.Density, [1e-5], colors = ["r"])
         # plt.scatter(r, z, c='k', s=3, alpha=0.3)
         plt.xlabel("r")
         plt.ylabel("z")
-        plt.colorbar(cf, label="rho")
+        # plt.colorbar(cf, label="rho")
         plt.tight_layout()
         plt.show()
         
@@ -144,6 +152,6 @@ class Disk_model():
 Disk_model_instance = Disk_model("Numerical_disks/BL_density.dat", 150, 150)
 Disk_model_instance.Parse_raw_density_file()
 Disk_model_instance.interpolate_raw_data()
-Disk_model_instance.Export_interpolated_data_to_XML("Test")
+# Disk_model_instance.Export_interpolated_data_to_XML("Test")
         
         

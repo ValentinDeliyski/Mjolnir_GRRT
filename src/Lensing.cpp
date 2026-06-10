@@ -86,6 +86,7 @@ Return_Values static Construct_Stokes_Tetrad(double Tetrad[4][4],
         /* We are outside the hotspot - we assume the dominant magnetic field here is due to the background accretion disk. */
 
         memcpy(Plasma_velocity_contravariant, p_Sim_Context->p_Emission_Model->p_Disk_Model->get_disk_velocity(State_Vector_Local), 4 * sizeof(double));
+        memcpy(s_Disk_state.Plasma_Velocity, Plasma_velocity_contravariant, 4 * sizeof(double));
 
         p_Sim_Context->p_Emission_Model->p_Disk_Model->get_density_and_temperature(State_Vector_Local, &s_Disk_state);
         p_Sim_Context->p_Emission_Model->p_Disk_Model->get_magnetic_field(State_Vector_Local, &s_Metric, &s_Disk_state);
@@ -337,8 +338,6 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                 }
             }
 
-            pol_frac = vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector() + 1, 3) / Radiative_transfer_integrator.get_current_Stokes_Vector()[I];
-
             /* ====================================== Propagate the radiative transfer equations ====================================== */
 
             if (Current_order >= p_Sim_Context->p_Init_Conditions->Min_order and Current_order <= p_Sim_Context->p_Init_Conditions->Max_order) {
@@ -346,8 +345,6 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
                 Radiative_transfer_integrator.Propagate_Stokes_Vector(Current_State_Global[e_ray_affine_param], Next_State_Global[e_ray_affine_param]);
 
             }
-
-            pol_frac = vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector() + 1, 3) / Radiative_transfer_integrator.get_current_Stokes_Vector()[I];
 
             /* ======================================================================================================================== */
 

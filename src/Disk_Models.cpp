@@ -58,6 +58,7 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
     this->Function_to_solve = { &von_Zeipel_cylinder_condition_wrapper,
                                 &this->von_Zeipel_cylinder_condition_wrapper_params };
 
+    this->Geometric_to_cgs_density_convertor = rho_0 / pow(this->p_Sim_Context->p_Init_Conditions->central_object_mass, 2) / M_PROTON_CGS;
 }
 
 Disk_model_type::~Disk_model_type() {
@@ -77,14 +78,18 @@ Disk_model_type::~Disk_model_type() {
 
 double Disk_model_type::get_disk_gas_pressure(const double density) const {
 
+    const double geometric_density = density / this->Geometric_to_cgs_density_convertor;
+
     const double& Gamma = this->s_Disk_params.Numerical_disk_params.Density_Polytrope_index;
     const double& K = this->s_Disk_params.Numerical_disk_params.Density_Polytrope_coeff;
 
-    return K * std::pow(density, Gamma);
+    return K * std::pow(geometric_density, Gamma);
 
 }
 
 double Disk_model_type::get_disk_mag_pressure(const double density, const double* const Local_State_Vector) const {
+
+    const double geometric_density = density / this->Geometric_to_cgs_density_convertor;
 
     const double K = 0.0001269061363;
     const double Gamma = 4. / 3;
@@ -99,11 +104,13 @@ double Disk_model_type::get_disk_mag_pressure(const double density, const double
     const Metric_type s_Metric = this->p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
     const double Metric_factor = s_Metric.Metric[e_t][e_phi] * s_Metric.Metric[e_t][e_phi] - s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_phi][e_phi];
 
-    return K * pow(Metric_factor, Gamma - 1) * pow(density * enthalpy, Gamma);
+    return K * pow(Metric_factor, Gamma - 1) * pow(geometric_density * enthalpy, Gamma);
 
 }
 
 double Disk_model_type::get_disk_internal_energy(const double density) const {
+
+    const double geometric_density = density / this->Geometric_to_cgs_density_convertor;
 
     /* This assumes a ideal fluid, which is undergoing an iso-entropic process (Rezzolla (2.248)).
        The polytropic index of the polytropic EOS (Gamma) is assumed to be equal to the adiabatic index,
@@ -112,7 +119,7 @@ double Disk_model_type::get_disk_internal_energy(const double density) const {
     const double& Gamma = this->s_Disk_params.Numerical_disk_params.Density_Polytrope_index;
     const double& K = this->s_Disk_params.Numerical_disk_params.Density_Polytrope_coeff;
 
-    return K / (Gamma - 1) * std::pow(density, Gamma - 1);
+    return K / (Gamma - 1) * std::pow(geometric_density, Gamma - 1);
 }
 
 double Disk_model_type::get_disk_profile(const Disk_profile_parameters_type* const p_Profile_parameters,
@@ -310,6 +317,10 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
         }
 
+
+        /* TODO: check this scaling */
+        p_Emission_medium_state->Density *= this->Geometric_to_cgs_density_convertor;
+
         /* ------------------------------------------------ Get the temperature profile ------------------------------------------------ */
 
         p_Emission_medium_state->Temperature = M_PROTON_CGS / BOLTZMANN_CONST_CGS * (Gamma - 1) * this->get_disk_internal_energy(p_Emission_medium_state->Density);
@@ -317,11 +328,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
         /* ---------------------------------------------------- Scale to CGS units ----------------------------------------------------- */
 
         /* TODO: check this scaling */
-        p_Emission_medium_state->Density *= rho_0 / pow(this->p_Sim_Context->p_Init_Conditions->central_object_mass, 2) / M_PROTON_CGS;
-
-        /* TODO: check this scaling */
         p_Emission_medium_state->Temperature *= P_0 / rho_0;
-
 
         break;
 
@@ -510,7 +517,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
 bool Disk_model_type::is_inside_disk(const double* const State_Vector, Emission_medium_state_type* const Disk_State) const {
 
-    if (!this->s_Disk_params.Enable_flag) { return false; }
+    if (!this->s_Disk_params.Enable_flag or e_Novikov_Thorne == this->s_Disk_params.e_Disk_model) { return false; }
 
     this->get_density_and_temperature(State_Vector, Disk_State);
 
@@ -617,9 +624,9 @@ void Disk_model_type::get_phenomenological_mag_field(const double* const Local_S
 
     case Magnetic_field_geometry_enums::Constant:
 
-        B_eulerian[e_r]     = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_r - 1];
-        B_eulerian[e_theta] = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_theta - 1];
-        B_eulerian[e_phi]   = Emission_medium_state->Magnetic_fields.Mag_field_geometry_vector[e_phi - 1];
+        B_eulerian[e_r]     = Mag_field_params.Mag_field_geometry[e_r - 1];
+        B_eulerian[e_theta] = Mag_field_params.Mag_field_geometry[e_theta - 1];
+        B_eulerian[e_phi]   = Mag_field_params.Mag_field_geometry[e_phi - 1];
 
         break;
 

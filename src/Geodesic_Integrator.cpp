@@ -34,7 +34,7 @@ double Step_controller_class::get_max_step(const double r) const {
 
 }
 
-void Step_controller_class::update_step(Integrator_enums e_Active_integrator, const double r) {
+void Step_controller_class::update_step(Integrator_enums e_Active_integrator, const double r, const bool Is_inside_emission_medium) {
 
     this->previous_step = this->step;
 
@@ -87,13 +87,15 @@ void Step_controller_class::update_step(Integrator_enums e_Active_integrator, co
 
     }
 
-    double max_stepsize = this->get_max_step(r);
+    const double max_stepsize = this->get_max_step(r);
 
     Rel_step_increase = std::min(this->Parameters.Max_rel_step_increase, std::max(this->Parameters.Min_rel_step_increase, Rel_step_increase));
 
     this->step *= Rel_step_increase;
 
     if (this->step > max_stepsize) { this->step = max_stepsize; };
+
+    if (Is_inside_emission_medium) { this->step = std::min(this->step, this->Parameters.Max_step_inisde_emission_medium); }
 
 }
 
@@ -107,32 +109,36 @@ static int implicit_method_system_wrapper_f(const gsl_vector* State_Vector, void
 
 Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results) {
 
-    this->Force_scatter = true;
-
-    this->continue_integration = true;
-    this->integration_complete = false;
-    this->Normal_termination_condition = false;
-    this->Max_affine_param_reached = false;
-    this->Max_integration_count_reached = false;
-    this->Step_too_small = false;
-
     this->e_Active_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Default_geodesic_integrator;
 
+    /* ---------------------------------------- Init the internal flags ---------------------------------------- */
+    this->propagate_optical_depth = p_Sim_Context->p_Init_Conditions->Integrator_params.Propagate_optical_depth;
+
+    this->continue_integration = true;
+    /* This currently exists because of the JNW naked singularity. 
+       TODO: figure out a more elegant solution */
+    this->Force_scatter = true;
+
+    /* --- Integration termination flags --- */
+    this->Step_too_small = false;
+    this->integration_complete = false;
+    this->Max_affine_param_reached = false;
+    this->Normal_termination_condition = false;
+    this->Max_integration_count_reached = false;
+
+    /* --------- Set the internal pointers to relevant classes / structs that the integrator uses --------- */
     this->p_Init_conditions = p_Sim_Context->p_Init_Conditions;
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
-
-    this->p_Step_controller = std::make_unique<Step_controller_class>(this->p_Init_conditions->Integrator_params.Geodesic_Step_Controller_Params);
-
+    this->p_Emission_Model = p_Sim_Context->p_Emission_Model;
     this->p_Ray_log_struct = &p_Ray_results->Ray_log_struct;
+
+    /* -------- This thing is a unique pointer so I dont have to delete it manually when the integrator goes out of scope -------- */
+    this->p_Step_controller = std::make_unique<Step_controller_class>(this->p_Init_conditions->Integrator_params.Geodesic_Step_Controller_Params);
 
     this->Max_affine_param = this->p_Init_conditions->Integrator_params.Max_affine_param;
     this->Max_integration_count = this->p_Init_conditions->Integrator_params.Max_integration_count;
 
-    /* ------------------------------ Construct the initial state vector ------------------------------ */ 
-
-    double*& Init_Global_State = this->p_Ray_log_struct->Ray_path_log_global;
-    double*& Init_Local_State = this->p_Ray_log_struct->Ray_path_log_local;
-
+    /* ----------------------------------------- Construct the initial state vector in global coords ----------------------------------------- */ 
     this->p_Ray_log_struct->Ray_path_log_global[e_t] = p_Sim_Context->p_Init_Conditions->Observer_params.init_time;
     this->p_Ray_log_struct->Ray_path_log_global[e_r] = p_Sim_Context->p_Init_Conditions->Observer_params.distance;
     this->p_Ray_log_struct->Ray_path_log_global[e_theta] = p_Sim_Context->p_Init_Conditions->Observer_params.inclination;
@@ -144,17 +150,24 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
     this->p_Ray_log_struct->Ray_path_log_global[e_step] = p_Sim_Context->p_Init_Conditions->Integrator_params.Geodesic_Step_Controller_Params.Init_stepzie;
     this->p_Ray_log_struct->Ray_path_log_global[e_ray_affine_param] = 0;
 
-    this->p_Spacetime->Convert_global_to_local_coords(Init_Global_State, Init_Global_State, Init_Local_State, e_Full_State_Vector);
+    /* ----------------------------------------- Construct the initial state vector in local coords ----------------------------------------- */
+    this->p_Spacetime->Convert_global_to_local_coords(this->p_Ray_log_struct->Ray_path_log_global, 
+                                                      this->p_Ray_log_struct->Ray_path_log_global, 
+                                                      this->p_Ray_log_struct->Ray_path_log_local, 
+                                                      e_Full_State_Vector);
 
+    /* -------------------------------------- Set the initial internal dynamic state to the global one -------------------------------------- */
     memcpy(this->Current_Dynamic_state, this->p_Ray_log_struct->Ray_path_log_global, e_Dynamic_state_size * sizeof(double));
 
+    /* -------------------------- Set the internal debug tracker pointers to point to the external results struct --------------------------- */
     this->RK_Integrator_debug_log.N_steps_rejected = p_Ray_results->RK_integrator_debug_log.N_steps_rejected;
     this->RK_Integrator_debug_log.State_error_history = p_Ray_results->RK_integrator_debug_log.State_error_history;
+
+    /* --- Init the per-step debug counters --- */
     this->N_steps_rejected = 0;
     this->NaN_checker_count = 0;
 
     /* --------------- Allocate space for the root finder, and its trial gsl_vector --------------- */
-
     this->Root_finder = gsl_multiroot_fsolver_alloc(gsl_multiroot_fsolver_hybrids, e_Dynamic_state_size);
     this->gsl_trial_State_Vector = gsl_vector_alloc(e_Dynamic_state_size);
 
@@ -274,30 +287,76 @@ void Geodesic_Integrator_class::Run_ESDIRK54() {
     if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
     this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
-    this->p_Step_controller->update_step(this->e_Active_integrator, New_State_vector_main[e_r]);
+
+    Emission_medium_state_type Disk_State{};
+    bool Is_inside_emission_medium = false;
+
+    if (this->propagate_optical_depth) {
+
+        Is_inside_emission_medium = this->p_Emission_Model->p_Disk_Model->is_inside_disk(New_State_vector_main, &Disk_State);
+
+    }
 
     if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step) {
 
-        this->continue_integration = true;
+        if (Is_inside_emission_medium and this->p_Step_controller->step > this->p_Step_controller->Parameters.Max_step_inisde_emission_medium) {
+
+            this->continue_integration = false;
+
+        }
+        else {
+
+            this->continue_integration = true;
+
+        }
 
     }
     else {
 
         this->continue_integration = false;
         this->N_steps_rejected++;
+
     }
+
+    this->p_Step_controller->update_step(this->e_Active_integrator, New_State_vector_main[e_r], Is_inside_emission_medium);
 
     if (this->continue_integration) {
 
         memcpy(this->Current_Dynamic_state, New_State_vector_main, e_Dynamic_state_size * sizeof(double));
+
         this->Update_ray_log(New_State_vector_main);
+        this->Update_optical_depth();
         this->Update_debug_log();
 
         this->N_steps_rejected = 0;
         this->NaN_checker_count = 0;
 
+
     }
 
+}
+
+void Geodesic_Integrator_class::Update_optical_depth() {
+
+    if (this->propagate_optical_depth and this->p_Ray_log_struct->Log_offset > 0) {
+
+        Transfer_functions_type Total_Transfer_Functions{};
+
+        for (int emission_medium = Disk; emission_medium < e_Emission_medium_number; emission_medium++) {
+
+            Transfer_functions_type Temp_Transfer_functions{};
+
+            this->p_Emission_Model->get_radiative_transfer_functions(this->get_previous_State_Vector_local(),
+                                                                     static_cast<Emission_medium_enums>(emission_medium),
+                                                                     &Temp_Transfer_functions);
+
+            add_vectors(Temp_Transfer_functions.Absorbtion_functions, Total_Transfer_Functions.Absorbtion_functions, e_Stokes_param_num, Total_Transfer_Functions.Absorbtion_functions);
+
+        }
+
+        this->Current_optical_depth += Total_Transfer_Functions.Absorbtion_functions[I] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass;
+
+    }
 }
 
 Return_Values Geodesic_Integrator_class::Run_NaN_checker(const double* const New_State, const double* const New_State_Embeded) {
@@ -394,11 +453,29 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta() {
     if (ERROR == this->Run_NaN_checker(New_State_vector_main, New_State_vector_embeded)) { return; }
 
     this->p_Step_controller->update_state_errors(New_State_vector_main, state_error, this->e_Active_integrator, e_Dynamic_state_size);
-    this->p_Step_controller->update_step(this->e_Active_integrator, New_State_vector_main[e_r]);
+
+    Emission_medium_state_type Disk_State{};
+    bool Is_inside_emission_medium = false;
+
+    if (this->propagate_optical_depth) {
+
+        Is_inside_emission_medium = this->p_Emission_Model->p_Disk_Model->is_inside_disk(New_State_vector_main, &Disk_State) or 
+                                    this->p_Emission_Model->p_Hotspot_Model->is_inside_hotspot(New_State_vector_main, &Disk_State);
+
+    }
 
     if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step){
 
-        this->continue_integration = true;
+        if (Is_inside_emission_medium and this->p_Step_controller->step > this->p_Step_controller->Parameters.Max_step_inisde_emission_medium) {
+
+            this->continue_integration = false;
+
+        }
+        else {
+
+            this->continue_integration = true;
+
+        }
 
     }
     else {
@@ -407,6 +484,8 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta() {
         this->N_steps_rejected++;
 
     }
+
+    this->p_Step_controller->update_step(this->e_Active_integrator, New_State_vector_main[e_r], Is_inside_emission_medium);
 
     if (this->p_Init_conditions->Metric_parameters.e_Spacetime == Janis_Newman_Winicour and this->p_Init_conditions->Metric_parameters.JNW_Gamma_Parameter < 0.5) {
 
@@ -422,7 +501,9 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta() {
     if (this->continue_integration) {
 
         memcpy(this->Current_Dynamic_state, New_State_vector_main, e_Dynamic_state_size * sizeof(double));
+
         this->Update_ray_log(New_State_vector_main);
+        this->Update_optical_depth();
         this->Update_debug_log();
         
         this->N_steps_rejected = 0;
@@ -653,11 +734,6 @@ void Geodesic_Integrator_class::Check_integration_complete_status() {
             break;
 
         }
-
-        this->integration_complete = true;
-
-        return;
-
     }
 
     if (this->Step_too_small) {
@@ -679,7 +755,7 @@ void Geodesic_Integrator_class::Check_integration_complete_status() {
         }
     }
 
-    this->integration_complete = this->Normal_termination_condition or this->Max_affine_param_reached;
+    this->integration_complete = this->Normal_termination_condition or this->Max_affine_param_reached or (this->Current_optical_depth > 100);
 
     if (ESDIRK54 == this->e_Active_integrator) {
 

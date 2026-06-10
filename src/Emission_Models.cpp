@@ -2,33 +2,16 @@
 
 double Emission_models_class::get_electron_pitch_angle(const double* const B_field_coord_frame, 
                                                        const double* const Plasma_velocity,
-                                                       const double* const Local_State_Vector, 
-                                                       const Simulation_Context_type* const p_Sim_Context) {
+                                                       const double* const Local_State_Vector) {
+
+    Metric_type s_Metric = this->p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
 
     double Wave_vec_dot_Plasma_vec = dot_product(Local_State_Vector + e_p_t, Plasma_velocity, 4);
+    double Wave_vec_dot_B_field    = dot_product(Local_State_Vector + e_p_t, B_field_coord_frame, 4);
 
-    Metric_type s_Metric = p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
-    double B_field_norm_squared{};
-    double B_field_dot_Plasma_vel{};
+    double B_field_norm_squared   = get_4vec_dot_product(B_field_coord_frame, B_field_coord_frame, s_Metric.Metric, Contravariant);
+    double B_field_dot_Plasma_vel = get_4vec_dot_product(B_field_coord_frame, Plasma_velocity, s_Metric.Metric, Contravariant);
 
-    /*
-    
-    TODO: Maybe make functions that do this, or functions that raise and lower indicies
-    
-    */
-
-    for (int left_idx = 0; left_idx <= 3; left_idx++) {
-
-        for (int right_idx = 0; right_idx <= 3; right_idx++) {
-
-            B_field_norm_squared   += s_Metric.Metric[left_idx][right_idx] * B_field_coord_frame[left_idx] * B_field_coord_frame[right_idx];
-            B_field_dot_Plasma_vel += s_Metric.Metric[left_idx][right_idx] * B_field_coord_frame[left_idx] * Plasma_velocity[right_idx];
-
-        }
-
-    }
-
-    double Wave_vec_dot_B_field = dot_product(Local_State_Vector + e_p_t, B_field_coord_frame, 4);
     double cos_angle = 1.0; 
 
     if (!isinf(1.0 / Wave_vec_dot_Plasma_vec) and !isinf(1.0 / B_field_norm_squared)) {
@@ -54,14 +37,13 @@ double Emission_models_class::get_electron_pitch_angle(const double* const B_fie
 /* =============================================== Thermal synchrotron Transfer Functions =============================================== */
 
 void Emission_models_class::get_thermal_synchrotron_transfer_functions(const double* const Local_State_Vector,
-                                                                       const Simulation_Context_type* const p_Sim_Context,
                                                                        const Emission_medium_state_type* const p_Emission_medium_state,
                                                                        Transfer_functions_type* const p_Transfer_functions) {
 
     /* === Zero out the transfer functions just in case === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-    double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context);
+    double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, this->p_Sim_Context);
 
     /* Check weather redshift is numerically OK to use in the transfer functions. */
     if (isinf(redshift) or isnan(redshift) or isinf(1.0 / redshift)) { return; }
@@ -82,7 +64,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
     Thermal_transfer_f_arguments_type Transfer_args_uncorrected{};
 
     /* Observation Frequency */
-    double const obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
+    double const obs_frequency = this->p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
     /* Compute all the wierd powers of X outside the pitch angle averaging loop. */
     Transfer_args_uncorrected.X      = obs_frequency / f_s_no_sin / redshift;
@@ -106,7 +88,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
         so they copy over the variables that don't depend on the pitch angle. The rest get corrected inside the averaging loop. */
     Thermal_transfer_f_arguments_type Transfer_args_corrected = Transfer_args_uncorrected;
 
-    if (p_Sim_Context->p_Init_Conditions->Average_electron_pitch_angle) {
+    if (this->p_Sim_Context->p_Init_Conditions->Average_electron_pitch_angle) {
 
         /* ============ This loop averages over the emission pitch angle, which it gets from a pre-computed table ============ */
 
@@ -149,7 +131,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
     else {
 
         /* The magnetic field is the one measured by a comoving with the plasma observer, but expressed in the cooridante frame */
-        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame, p_Emission_medium_state->Plasma_Velocity, Local_State_Vector, p_Sim_Context);
+        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame, p_Emission_medium_state->Plasma_Velocity, Local_State_Vector);
         double sin_pitch_angle = sin(pitch_angle);
 
         double one_over_sqrt_sin = 1.0 / sqrt(sin_pitch_angle);
@@ -185,14 +167,13 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
 /* ========================================== Kappa synchrotron Transfer Functions ========================================== */
 
 void Emission_models_class::get_kappa_synchrotron_transfer_functions(const double* const Local_State_Vector,
-                                                                           const Simulation_Context_type* const p_Sim_Context,
                                                                            const Emission_medium_state_type* const p_Emission_medium_state,
                                                                            Transfer_functions_type* const p_Transfer_functions){
 
     /* === Zero out the transfer functions just in case === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
-    const double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context);
+    const double redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, this->p_Sim_Context);
 
     if (isinf(redshift) or isnan(redshift) or isinf(1.0 / redshift)) { return; }
 
@@ -208,7 +189,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     if (isinf(f_k_no_sin) or isnan(f_k_no_sin) or isinf(1.0 / f_k_no_sin)) { return; }
 
     /* Observation frequency */
-    double& obs_frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
+    double& obs_frequency = this->p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency;
 
     Kappa_transfer_f_arguments_type Transfer_args_uncorrected{};
 
@@ -221,13 +202,13 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     Transfer_args_uncorrected.T_electron_dim = T_electron_dim;
     Transfer_args_uncorrected.frequency      = obs_frequency / redshift;
 
-    int& Num_Samples_to_avg = p_Sim_Context->p_Init_Conditions->Emission_pitch_angle_samples_to_average;
+    int& Num_Samples_to_avg = this->p_Sim_Context->p_Init_Conditions->Emission_pitch_angle_samples_to_average;
 
     /* This structcs holds the transfer function args, corrected for the electron pitch angle. I am setting it equal to the uncorrected one
         so they copy over the variables that don't depend on the pitch angle. The rest get corrected inside the averaging loop. */
     Kappa_transfer_f_arguments_type Transfer_args_corrected = Transfer_args_uncorrected;
 
-    if (p_Sim_Context->p_Init_Conditions->Average_electron_pitch_angle) {
+    if (this->p_Sim_Context->p_Init_Conditions->Average_electron_pitch_angle) {
 
         /* ============ This loop averages over the emission pitch angle, which it gets from a pre-computed table ============ */
 
@@ -266,7 +247,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     else {
 
         /* The magnetic field is the one measured by a comoving with the plasma observer, but expressed in the cooridante frame */
-        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame, p_Emission_medium_state->Plasma_Velocity, Local_State_Vector, p_Sim_Context);
+        double pitch_angle = get_electron_pitch_angle(p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame, p_Emission_medium_state->Plasma_Velocity, Local_State_Vector);
         double sin_pitch_angle = sin(pitch_angle);
 
         double one_over_sqrt_sin    = 1. / sqrt(sin_pitch_angle);
@@ -297,7 +278,6 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
 /* ========================================== Phenomenological synchrotron Transfer Functions ========================================== */
 
 void Emission_models_class::get_phenomenological_synchrotron_functions(const double* const Local_State_Vector,
-                                                                       const Simulation_Context_type* const p_Sim_Context, 
                                                                        const Emission_medium_state_type* const p_Emission_medium_state,
                                                                        Transfer_functions_type* const p_Transfer_functions) {
 
@@ -306,11 +286,11 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
 
     Phenomenological_transfer_f_arguments_type Transfer_args{};
 
-    Transfer_args.redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, p_Sim_Context);
+    Transfer_args.redshift = get_redshift(Local_State_Vector, p_Emission_medium_state->Plasma_Velocity, this->p_Sim_Context);
 
     if (isinf(Transfer_args.redshift) or isnan(Transfer_args.redshift) or isinf(1.0 / Transfer_args.redshift)) { return; }
 
-    Transfer_args.frequency = p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency / Transfer_args.redshift;
+    Transfer_args.frequency = this->p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency / Transfer_args.redshift;
     Transfer_args.f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
 
     this->get_synchrotron_transfer_fit_functions(e_Phenomenological_ensamble, p_Emission_medium_state, &Transfer_args, p_Transfer_functions);
@@ -327,19 +307,20 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
 /* ============================================ Main "Selector" For The Transfer Functions ============================================ */
 
 void Emission_models_class::get_radiative_transfer_functions(const double* const Local_State_Vector,
-                                                             const Simulation_Context_type* const p_Sim_Context,
                                                              const Emission_medium_enums Emission_medium,
                                                              Transfer_functions_type* const p_Transfer_functions) {
 
     /* === Zero out the transfer functions just in case. === */
     memset(p_Transfer_functions, 0, sizeof(Transfer_functions_type));
 
+    if (e_Novikov_Thorne == this->p_Disk_Model->s_Disk_params.e_Disk_model) { return; }
+
     Emission_medium_state_type Emission_medium_state{};
 
     /* This variable exist for the case where the hotspot and disk are in "Thermalized" mode. */
     Emission_medium_state_type Hotspot_state{};
 
-    Metric_type Metric = p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
+    Metric_type Metric = this->p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
 
     bool Is_inside_hotspot = false;
     bool Is_inside_disk = false;
@@ -398,12 +379,12 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     case(e_Phenomenological_ensamble):
 
-        this->get_phenomenological_synchrotron_functions(Local_State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
+        this->get_phenomenological_synchrotron_functions(Local_State_Vector, &Emission_medium_state, p_Transfer_functions);
         break;
 
     case(e_Kappa_ensamble):
 
-        this->get_kappa_synchrotron_transfer_functions(Local_State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
+        this->get_kappa_synchrotron_transfer_functions(Local_State_Vector, &Emission_medium_state, p_Transfer_functions);
         break;
 
     case(e_Debug_constant_functions):
@@ -413,7 +394,7 @@ void Emission_models_class::get_radiative_transfer_functions(const double* const
 
     default:
 
-        this->get_thermal_synchrotron_transfer_functions(Local_State_Vector, p_Sim_Context, &Emission_medium_state, p_Transfer_functions);
+        this->get_thermal_synchrotron_transfer_functions(Local_State_Vector, &Emission_medium_state, p_Transfer_functions);
         break;
     }
 
@@ -558,6 +539,8 @@ Emission_models_class::Emission_models_class(Simulation_Context_type* p_Sim_Cont
     this->Num_samples_to_avg = p_Sim_Context->p_Init_Conditions->Emission_pitch_angle_samples_to_average;
     this->Include_polarization = p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization;
 
+    this->p_Sim_Context = p_Sim_Context;
+
     this->p_Disk_Model = new Disk_model_type(p_Sim_Context);
     this->p_Hotspot_Model = new Hotspot_model_type(p_Sim_Context);
 
@@ -568,9 +551,8 @@ Emission_models_class::Emission_models_class(Simulation_Context_type* p_Sim_Cont
     }
     else {
 
-        std::cout << "Could not load the emission models parameter struct! \n";
-        exit(ERROR);
-
+        throw std::runtime_error("Could not load the emission models parameter struct! \n");
+        
     }
 
 }

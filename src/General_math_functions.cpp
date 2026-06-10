@@ -130,7 +130,7 @@ void interpolate_celestial_sphere_crossing(const double* const Current_State_Vec
 										  Current_State_Cartesian[e_y] - Old_State_Cartesian[e_y],
 										  Current_State_Cartesian[e_z] - Old_State_Cartesian[e_z] };
 
-	/* The expression for the intersection of a line with a sphere is given here https ://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+	/* The expression for the intersection of a line with a sphere is given here https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
 	   NOTE: In our case the sphere has its center point at (0, 0, 0). */
 
 	const double U_dot_O   = dot_product(Difference_Vector, Old_State_Cartesian, 3);

@@ -274,25 +274,6 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     tinyxml2::XMLElement* Common_paramaters_element = Accretion_disk_element->FirstChildElement("Common_parameters");
     if (Common_paramaters_element == nullptr) { std::cout << "Failed to find the common parameters element!" << "\n"; return ERROR; }
 
-    // -------------------- The maximum density
-    temp_param_var = Common_paramaters_element->FirstChildElement("Max_density");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk max density!" << "\n"; return ERROR; }
-    Disk_params->Max_disk_density = std::stod(temp_param_var->GetText());
-
-    // -------------------- r_ISCO
-    temp_param_var = Common_paramaters_element->FirstChildElement("r_ISCO");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse r_ISCO!" << "\n"; return ERROR; }
-    Disk_params->r_ISCO = std::stod(temp_param_var->GetText());
-
-    // -------------------- The angular momentum below ISCO
-    temp_param_var = Common_paramaters_element->FirstChildElement("Ang_momentum_below_ISCO");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the angular momentum below ISCO!" << "\n"; return ERROR; }
-    Disk_params->Ang_momentum_below_ISCO = std::stod(temp_param_var->GetText());
-
-    // -------------------- The angular momentum exponent
-    temp_param_var = Common_paramaters_element->FirstChildElement("Ang_momentum_exponent");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the angular momentum exponent!" << "\n"; return ERROR; }
-    Disk_params->Ang_momentum_exponent = std::stod(temp_param_var->GetText());
 
     // -------------------- The disk model
     temp_param_var = Common_paramaters_element->FirstChildElement("Disk_Model");
@@ -315,42 +296,65 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     else { std::cout << "Unsupported disk model!" << "\n"; return ERROR; }
 
-    // -------------------- The threshold relative density
-    temp_param_var = Common_paramaters_element->FirstChildElement("Threshold_relative_density");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk threshold relative density!" << "\n"; return ERROR; }
-    Disk_params->Threshold_relative_density = std::stod(temp_param_var->GetText());
+    if (Disk_params->e_Disk_model != e_Novikov_Thorne) {
 
-    // -------------------- The ensamble type
-    temp_param_var = Common_paramaters_element->FirstChildElement("Ensamble_type");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk ensamble type!" << "\n"; return ERROR; }
-    std::string Ensamble_type_string = temp_param_var->GetText();
+        // -------------------- The maximum density
+        temp_param_var = Common_paramaters_element->FirstChildElement("Max_density");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk max density!" << "\n"; return ERROR; }
+        Disk_params->Max_disk_density = std::stod(temp_param_var->GetText());
 
-    if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Kappa")) { Disk_params->Ensamble_type = e_Kappa_ensamble; }
+        // -------------------- r_ISCO
+        temp_param_var = Common_paramaters_element->FirstChildElement("r_ISCO");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse r_ISCO!" << "\n"; return ERROR; }
+        Disk_params->r_ISCO = std::stod(temp_param_var->GetText());
 
-    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Thermal")) { Disk_params->Ensamble_type = e_Thermal_ensamble; }
+        // -------------------- The angular momentum below ISCO
+        temp_param_var = Common_paramaters_element->FirstChildElement("Ang_momentum_below_ISCO");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the angular momentum below ISCO!" << "\n"; return ERROR; }
+        Disk_params->Ang_momentum_below_ISCO = std::stod(temp_param_var->GetText());
 
-    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Phenomenological")) { Disk_params->Ensamble_type = e_Phenomenological_ensamble; }
+        // -------------------- The angular momentum exponent
+        temp_param_var = Common_paramaters_element->FirstChildElement("Ang_momentum_exponent");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the angular momentum exponent!" << "\n"; return ERROR; }
+        Disk_params->Ang_momentum_exponent = std::stod(temp_param_var->GetText());
 
-    else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Debug_constant_functions")) { Disk_params->Ensamble_type = e_Debug_constant_functions; }
+        // -------------------- The threshold relative density
+        temp_param_var = Common_paramaters_element->FirstChildElement("Threshold_relative_density");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk threshold relative density!" << "\n"; return ERROR; }
+        Disk_params->Threshold_relative_density = std::stod(temp_param_var->GetText());
 
-    else { std::cout << "Unsupported ensamble type for the disk!" << "\n"; return ERROR; }
+        // -------------------- The ensamble type
+        temp_param_var = Common_paramaters_element->FirstChildElement("Ensamble_type");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk ensamble type!" << "\n"; return ERROR; }
+        std::string Ensamble_type_string = temp_param_var->GetText();
 
-    // -------------------- The velocity profile
-    temp_param_var = Common_paramaters_element->FirstChildElement("Velocity_profile");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk velocity profile node!" << "\n"; return ERROR; }
+        if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Kappa")) { Disk_params->Ensamble_type = e_Kappa_ensamble; }
 
-    temp_param_var = Common_paramaters_element->FirstChildElement("Velocity_profile")->FirstChildElement("Type");
-    if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk velocity profile type!" << "\n"; return ERROR; }
-    std::string Velocity_profile_string = temp_param_var->GetText();
+        else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Thermal")) { Disk_params->Ensamble_type = e_Thermal_ensamble; }
 
-    if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Theta Dependant")) { Disk_params->Velocity_profile_type = e_Theta_dependant; }
+        else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Phenomenological")) { Disk_params->Ensamble_type = e_Phenomenological_ensamble; }
 
-    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) { Disk_params->Velocity_profile_type = e_Keplarian; }
+        else if (0 == strcmp(static_cast<const char*>(Ensamble_type_string.c_str()), "Debug_constant_functions")) { Disk_params->Ensamble_type = e_Debug_constant_functions; }
 
-    else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "von_Zeipel_cylinder")) { Disk_params->Velocity_profile_type = e_von_Zeipel_cylinder; }
+        else { std::cout << "Unsupported ensamble type for the disk!" << "\n"; return ERROR; }
 
-    else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
+        // -------------------- The velocity profile
+        temp_param_var = Common_paramaters_element->FirstChildElement("Velocity_profile");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk velocity profile node!" << "\n"; return ERROR; }
 
+        temp_param_var = Common_paramaters_element->FirstChildElement("Velocity_profile")->FirstChildElement("Type");
+        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk velocity profile type!" << "\n"; return ERROR; }
+        std::string Velocity_profile_string = temp_param_var->GetText();
+
+        if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Theta Dependant")) { Disk_params->Velocity_profile_type = e_Theta_dependant; }
+
+        else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "Keplarian")) { Disk_params->Velocity_profile_type = e_Keplarian; }
+
+        else if (0 == strcmp(static_cast<const char*>(Velocity_profile_string.c_str()), "von_Zeipel_cylinder")) { Disk_params->Velocity_profile_type = e_von_Zeipel_cylinder; }
+
+        else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
+
+    }
     /* ====================================================== Parameters for the specific disk models ====================================================== */
 
     tinyxml2::XMLElement* Disk_data_element{};
@@ -900,6 +904,16 @@ Return_Values static parse_geodesic_integrator_params(tinyxml2::XMLElement* Inte
         Integrator_params->Geodesic_Step_Controller_Params.Min_upper_stepsize = 0.95 * Integrator_params->Geodesic_Step_Controller_Params.Max_upper_stepsize;
 
     }
+
+    // -------------------- The max step in emission medium
+    temp_param_var = Integrator_element->FirstChildElement("Max_step_in_emission_medium");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the max stepsize in the emission medium!" << "\n"; return ERROR; }
+    Integrator_params->Geodesic_Step_Controller_Params.Max_step_inisde_emission_medium = std::stod(temp_param_var->GetText());
+
+    // -------------------- The propagate optical depth flag
+    temp_param_var = Integrator_element->FirstChildElement("Propagate_optical_depth");
+    if (temp_param_var == nullptr) { std::cout << "Failed to parse the propagate optical depth flag!" << "\n"; return ERROR; }
+    Integrator_params->Propagate_optical_depth = std::stod(temp_param_var->GetText());
 
     // -------------------- The max step b coefficient
     temp_param_var = Integrator_element->FirstChildElement("max_step_b_coeff");

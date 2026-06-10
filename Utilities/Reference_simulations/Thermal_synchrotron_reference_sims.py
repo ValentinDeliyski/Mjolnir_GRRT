@@ -37,12 +37,11 @@ class Thermal_syhnchrotron_reference_sims:
         """ Central black hole setup"""
         self.Simulation_configurator.metric_parameters.Metric_type = {"Value": "Kerr", "Unit": "[-]"}
         self.Simulation_configurator.object_mass                   = {"Value": 6.2e9,  "Unit": "[M_sun]"}
-        
+    
         self.Object_distance = {"Value": 16.9e6, "Unit": "[Pc]"}
         
         """ Accretion disk setup """
         self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Temperature_scale_factor = {"Value": 1e11, "Unit": "[K]"}
-        
         self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Magnetization = {"Value": 0.01, "Unit": "[-]"}
         
         self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_cutoff_radius     = {"Value": 0, "Unit": "[-]"}
@@ -76,13 +75,14 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.hotspot_model.Density_scale_factor = {"Value": 0, "Unit": "[g/cm^3]"}
     
         self.Simulation_configurator.geodesic_integrator.Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        # self.Simulation_configurator.emission_integrator.Rad_Transfer_Integrator_type = {"Value": "Analytic", "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.RK_abs_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.RK_rel_accuracy = {"Value": 1e-12, "Unit": "[-]"}
         
         self.Simulation_configurator.geodesic_integrator.max_upper_stepsize = {"Value": 100, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.Max_rel_step_increase = {"Value": 10, "Unit": "[-]"}
         
-        self.Simulation_configurator.emission_integrator.Rad_Transfer_Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
+        # self.Simulation_configurator.emission_integrator.Rad_Transfer_Integrator_type = {"Value": "RK78_Fehlberg", "Unit": "[-]"}
         
         self.Simulation_configurator.observer.Include_polarization = {"Value": 0, "Unit": "[-]"}
         
@@ -99,7 +99,8 @@ class Thermal_syhnchrotron_reference_sims:
         self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_power_law_scale     = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
         self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Temperature_power_law_scale = {"Value": 1 + sqrt(1 - self.Simulation_configurator.metric_parameters.Spin["Value"]**2), "Unit": "[M]"}
         
-        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_scale_factor = {"Value": 1.5e6, "Unit": "[g/cm^3]"}
+        self.Simulation_configurator.disk_model.Common_RIAF_disk_params.Density_scale_factor = {"Value": 1.5e6, "Unit": "[1/cm^3]"}
+        self.Simulation_configurator.disk_model.Max_density = {"Value": 1.5e6 , "Unit": "[-]"}
         
         """ The simulation name and input file path """
         self.Simulation_configurator.simulation_name = {"Value": "Reference_Simulation_1", "Unit": "[-]"}
@@ -112,7 +113,7 @@ class Thermal_syhnchrotron_reference_sims:
         
         """ Run the simulation """
         filename = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Reference_simulations\\Reference_Simulation_1\\Reference_Simulation_1_input.xml"
-        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 0"
+        args = "C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\x64\\Release\\Mjolnir_GRRT.exe -in " + filename + " -print_to_console 1"
         subprocess.call(args, shell = True)
                 
         """ Evaluate the simulataion results """
@@ -180,4 +181,4 @@ Sim_2_thread = threading.Thread(target = Thermal_syhnchrotron_reference_sims_ins
 Sim_1_thread.start()
 time.sleep(1)
 
-Sim_2_thread.start()
+# Sim_2_thread.start()

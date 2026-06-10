@@ -2,6 +2,7 @@
 #include "Enumerations.h"
 #include "Spacetimes.h"
 #include "Structs.h"
+#include "Emission_Models.h"
 #include "Step_Controller.h"
 #include "gsl\gsl_multiroots.h"
 
@@ -121,15 +122,21 @@ private:
     double Intermediate_RHS_log[RK78_size * e_Dynamic_state_size]{};
     double Current_Dynamic_state[e_Dynamic_state_size];
 
+    double Current_optical_depth{};
+
     Integrator_enums e_Active_integrator;
-    Initial_conditions_type* p_Init_conditions;
 
     Ray_log_type* p_Ray_log_struct;
+    Initial_conditions_type* p_Init_conditions;
 
     Spacetime_Base_Class* p_Spacetime;
+    Emission_models_class* p_Emission_Model;
+
     std::unique_ptr<Step_controller_class> p_Step_controller;
 
     /* ----------- Root finder environment variables ----------- */
+
+    RHS_wrapper_struct RHS_Wrapper_params;
 
     gsl_vector* gsl_trial_State_Vector;
     gsl_multiroot_fsolver* Root_finder;
@@ -146,24 +153,25 @@ private:
     void Check_integration_complete_status();
 
     void Update_ray_log(const double* const New_State_vector);
+    void Update_optical_depth();
     void Update_debug_log();
+
+    const double get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const;
 
 public:
 
     Geodesic_Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results);
     ~Geodesic_Integrator_class();
 
-    RHS_wrapper_struct RHS_Wrapper_params;
-
     /* ------ This gets filled only in simulation mode 3 ----- */
     Adaptive_RK_Integrator_debug_type RK_Integrator_debug_log;
 
     bool continue_integration;
     bool integration_complete;
+    bool propagate_optical_depth;
 
     bool Locate_event(Event_detection_enums e_Event, double* const State_at_Event_Global, double* const State_at_Event_Local);
 
-    const double get_dense_output(const double Param, const State_enums idx, bool Is_current_RHS_evaluated) const;
     const double* const get_current_State_Vector_global() const;
     const double* const get_current_State_Vector_local() const;
 

@@ -37,6 +37,12 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
     this->Flux_integral_array = new double[Flux_integral_interpolat_size];
     this->Flux_r_coords = new double[Flux_integral_interpolat_size];
 
+    if (std::abs(this->r_in - this->r_out) < std::numeric_limits<double>::min()) {
+
+        throw std::runtime_error("Inner and outer Novikov-Thorne disk radii coincide!");
+
+    }
+
     for (int idx = 0; idx < Flux_integral_interpolat_size; idx++) {
 
         this->Flux_r_coords[idx] = this->r_in * (1 - double(idx) / (Flux_integral_interpolat_size - 1)) + double(idx) / (Flux_integral_interpolat_size - 1) * this->r_out;

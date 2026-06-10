@@ -30,6 +30,8 @@ private:
 
     double Disk_Velocity[4]{};
 
+    double Geometric_to_cgs_density_convertor{};
+
     ~Disk_model_type();
 
     double get_disk_gas_pressure(const double density) const;

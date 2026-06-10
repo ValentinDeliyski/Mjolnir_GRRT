@@ -12,10 +12,10 @@ if __name__ == "__main__":
         
         for gamma in [5]:
                        
-            fig_title = rf"Numerical disk at $i = 80^\circ$"
+            fig_title = rf"Numerical disk at $i = 20^\circ$"
                     
             EHT_Array           = ["ngEHT"]
-            Sim_path            = f"C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Numerical_disks\\Numerical_disk_Kerr_a_0.5_inc_80\\"
+            Sim_path            = f"C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Numerical_disk_runs\\M87_mass_20_deg\\Numerical_results\\"
             Sim_Frequency_Bins  = ["230"] # In units of [GHz]
 
             Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
@@ -23,7 +23,7 @@ if __name__ == "__main__":
                                         Array              = EHT_Array,
                                         Font_size          = 32, 
                                         Label_Pad          = 8, 
-                                        Common_file_name   = "Kerr",
+                                        Common_file_name   = "All_Segments_Results",
                                         Respect_folder_structure = False)
 
             for Radiation_Component in ["Stokes I"]:
