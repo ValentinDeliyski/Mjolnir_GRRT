@@ -1,4 +1,4 @@
-#include "Emission_integrator.h"
+﻿#include "Emission_integrator.h"
 #include "Emission_Models.h"
 
 Emission_Integrator_class::Emission_Integrator_class(const Simulation_Context_type* p_Sim_Context, Results_type* const p_Ray_results) {
@@ -133,6 +133,19 @@ void Emission_Integrator_class::Run_Runge_Kutta_Stokes_Vector(const double Start
 
         Temp_affine_param = this->Current_Affine_Param + Affine_param_coeff[RK_stage] * Geometric_Step;
 
+        /* -------------------------------------------------------- Propagate the intermediate Stokes Vector -------------------------------------------------------- */
+
+        memcpy(this->Temp_Stokes_Vector, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
+
+        for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
+
+            for (int derivative_idx = 0; derivative_idx < RK_stage; derivative_idx++) {
+
+                this->Temp_Stokes_Vector[state_idx] += CGS_Step * Stage_coeff[RK_stage][derivative_idx] * this->Rad_Transfer_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
+
+            }
+        }
+
         /* ------------------------------------------------------------ Get the radiative transfer RHS ------------------------------------------------------------ */
 
         Transfer_functions_type Total_Transfer_Functions{};
@@ -147,28 +160,15 @@ void Emission_Integrator_class::Run_Runge_Kutta_Stokes_Vector(const double Start
 
             add_vectors(Temp_Transfer_functions.Absorbtion_functions, Total_Transfer_Functions.Absorbtion_functions, e_Stokes_param_num, Total_Transfer_Functions.Absorbtion_functions);
             add_vectors(Temp_Transfer_functions.Emission_functions, Total_Transfer_Functions.Emission_functions, e_Stokes_param_num, Total_Transfer_Functions.Emission_functions);
-            add_vectors(Temp_Transfer_functions.Faradey_functions, Total_Transfer_Functions.Faradey_functions, e_Stokes_param_num, Total_Transfer_Functions.Faradey_functions);
+            add_vectors(Temp_Transfer_functions.Faraday_functions, Total_Transfer_Functions.Faraday_functions, e_Stokes_param_num, Total_Transfer_Functions.Faraday_functions);
 
         }
 
         this->get_Radiative_transfer_RHS(Total_Transfer_Functions.Emission_functions,
                                          Total_Transfer_Functions.Absorbtion_functions,
-                                         Total_Transfer_Functions.Faradey_functions,
+                                         Total_Transfer_Functions.Faraday_functions,
                                          this->Temp_Stokes_Vector,
                                          this->Rad_Transfer_RHS_log + RK_stage * e_Stokes_param_num);
-
-        /* -------------------------------------------------------- Propagate the intermediate Stokes Vector -------------------------------------------------------- */
-
-        memcpy(this->Temp_Stokes_Vector, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
-
-        for (int state_idx = 0; state_idx < e_Stokes_param_num; state_idx++) {
-
-            for (int derivative_idx = 0; derivative_idx < RK_stage; derivative_idx++) {
-
-                this->Temp_Stokes_Vector[state_idx] += CGS_Step * Stage_coeff[RK_stage][derivative_idx] * this->Rad_Transfer_RHS_log[state_idx + derivative_idx * e_Stokes_param_num];
-
-            }
-        }
 
         /* ---------------------------------------------------------------------------------------------------------------------------------------------------------- */
 
@@ -237,7 +237,7 @@ void Emission_Integrator_class::get_Parallel_Transport_RHS(const double* const G
 
 void Emission_Integrator_class::get_Radiative_transfer_RHS(const double* const Emission_Functions,
                                                            const double* const Absorbtion_Functions,
-                                                           const double* const Faradey_Functions,
+                                                           const double* const Faraday_Functions,
                                                            const double* const Stokes_Vector,
                                                            double* const RHS) {
 
@@ -247,12 +247,12 @@ void Emission_Integrator_class::get_Radiative_transfer_RHS(const double* const E
     M_matrix[0][1] = M_matrix[1][0] = Absorbtion_Functions[Q];
     M_matrix[0][2] = M_matrix[2][0] = Absorbtion_Functions[U];
     M_matrix[0][3] = M_matrix[3][0] = Absorbtion_Functions[V];
-    M_matrix[1][2] = Faradey_Functions[V];
-    M_matrix[2][1] = -Faradey_Functions[V];
-    M_matrix[1][3] = -Faradey_Functions[U];
-    M_matrix[3][1] = Faradey_Functions[U];
-    M_matrix[2][3] = Faradey_Functions[Q];
-    M_matrix[3][2] = -Faradey_Functions[Q];
+    M_matrix[1][2] = Faraday_Functions[V];
+    M_matrix[2][1] = -Faraday_Functions[V];
+    M_matrix[1][3] = -Faraday_Functions[U];
+    M_matrix[3][1] = Faraday_Functions[U];
+    M_matrix[2][3] = Faraday_Functions[Q];
+    M_matrix[3][2] = -Faraday_Functions[Q];
 
     double M_dot_Stokes[4]{};
     mat_vec_multiply_4D(M_matrix, Stokes_Vector, M_dot_Stokes);
@@ -574,7 +574,6 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affin
     case Rad_Analytic:
 
         this->Run_Analytic_Stokes_Vector_Propagator(Start_Affine_Param, End_Affine_Param);
-
         break;
 
     default:
@@ -587,7 +586,7 @@ void Emission_Integrator_class::Propagate_Stokes_Vector(const double Start_Affin
 }
 
 void Emission_Integrator_class::Get_radiative_transfer_operators(const double* const Absorbtion_functions,
-                                                                 const double* const Faradey_functions,
+                                                                 const double* const Faraday_functions,
                                                                  double const CGS_Step,
                                                                  double Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num],
                                                                  double Integrated_Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num]) {
@@ -599,7 +598,7 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
 
     // Here I define a bunch of references, because its going to get hairy if I don't...
     auto& alpha = Absorbtion_functions;
-    auto& rho = Faradey_functions;
+    auto& rho = Faraday_functions;
 
     /* These are the variables defined in D8 - D13, used in calculating the M matricies */
     double const alpha_squared = alpha[Q] * alpha[Q] +
@@ -623,46 +622,9 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
 
     if (isnan(Theta)) { throw std::runtime_error("Inavlid value for the Theta coefficient in Get_radiative_transfer_operators()! \n"); }
 
-    if (isinf(1 / Theta)) { 
-
-        /* We only end up in here when absorbtion and faradey rotation are negligable. */
-
-        double const M_1[4][4] = { {1.0, 0.0, 0.0, 0.0},
-                                   {0.0, 1.0, 0.0, 0.0},
-                                   {0.0, 0.0, 1.0, 0.0},
-                                   {0.0, 0.0, 0.0, 1.0} };
-        
-        const double exp_term = exp(-alpha[I] * CGS_Step);
-
-        for (int row_idx = 0; row_idx < e_Stokes_param_num; row_idx++) {
-
-            for (int colum_idx = 0; colum_idx < e_Stokes_param_num; colum_idx++) {
-
-                Transfer_Operator[row_idx][colum_idx] = M_1[row_idx][colum_idx] * exp_term;
-
-                if (not isnan(1 / alpha[I]) and not isinf(1 / alpha[I])) {
-
-                    Integrated_Transfer_Operator[row_idx][colum_idx] = M_1[row_idx][colum_idx] / alpha[I] * (1. - exp_term);
-
-                }
-                else {
-
-                    /* ------- This is the zero absorbtion case ------- */
-
-                    Integrated_Transfer_Operator[row_idx][colum_idx] = M_1[row_idx][colum_idx] * CGS_Step;
-
-                }
-
-            }
-
-        }
-        
-        return; 
-    
-    }
-
-    double const Lambda[2] = { std::sqrt((Theta / 2 + (alpha_squared - rho_squared) / 2)),
-                               std::sqrt((Theta / 2 - (alpha_squared - rho_squared) / 2)) };
+    double Lambda[2]{};
+    Lambda[0] = std::sqrt((Theta / 2 + (alpha_squared - rho_squared) / 2));
+    Lambda[1] = std::sqrt((Theta / 2 - (alpha_squared - rho_squared) / 2));
 
     if (isnan(Lambda[0]) or isnan(Lambda[1])) {
 
@@ -716,7 +678,7 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
 
     }
 
-    double M_3[4][4] = { {						 0,							   ( Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]), ( Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[Q]),   ( Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V])},
+    double M_3[4][4] = { {						 0,							   ( Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]), ( Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[U]),   ( Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V])},
                          {(Lambda[0] * alpha[Q] + sigma * Lambda[1] * rho[Q]),	 		               0,                            (-sigma * Lambda[1] * alpha[V] + Lambda[0] * rho[V]), ( sigma * Lambda[1] * alpha[U] - Lambda[0] * rho[U])},
                          {(Lambda[0] * alpha[U] + sigma * Lambda[1] * rho[U]), ( sigma * Lambda[1] * alpha[V] - Lambda[0] * rho[V]),	                         0,	                         (-sigma * Lambda[1] * alpha[Q] + Lambda[0] * rho[Q])},
                          {(Lambda[0] * alpha[V] + sigma * Lambda[1] * rho[V]), (-sigma * Lambda[1] * alpha[U] + Lambda[0] * rho[U]), ( sigma * Lambda[1] * alpha[Q] - Lambda[0] * rho[Q]),                           0                         } };
@@ -770,19 +732,21 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
     double const f_1 = 1.0 / (alpha[I] * alpha[I] - Lambda[0] * Lambda[0]);
     double const f_2 = 1.0 / (alpha[I] * alpha[I] + Lambda[1] * Lambda[1]);
 
+
     if (isinf(f_1) or isnan(f_1) or isinf(f_2) or isnan(f_2)) {
 
         throw std::runtime_error("Inavlid values for f_1 and f_2 in Get_radiative_transfer_operators()!");
 
     }
 
+    // NOTE: The reference has a typo - the sign of Lambda[1] * f_2 * M_2[row_idx][colum_idx] on the second row is "-", not a "+" (I checked their code...)
+
     for (int row_idx = 0; row_idx < e_Stokes_param_num; row_idx++) {
 
         for (int colum_idx = 0; colum_idx < e_Stokes_param_num; colum_idx++) {
 
-
             Integrated_Transfer_Operator[row_idx][colum_idx] = -Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I] * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx]) +
-                                                                Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) -
+                                                               -Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx]) -
                                                                 ((-Lambda[0] * f_1 * M_3[row_idx][colum_idx] + alpha[I]  * f_1 / 2 * (M_1[row_idx][colum_idx] + M_4[row_idx][colum_idx])) * exp_cosh +
                                                                  (-Lambda[1] * f_2 * M_2[row_idx][colum_idx] + alpha[I]  * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * exp_I * cos_term +
                                                                  ( -alpha[I] * f_2 * M_2[row_idx][colum_idx] - Lambda[1] * f_2 / 2 * (M_1[row_idx][colum_idx] - M_4[row_idx][colum_idx])) * exp_I * sin_term -
@@ -791,6 +755,114 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
         }
 
     }
+
+}
+
+void Emission_Integrator_class::__Run_Analytic_No_Faraday_conversion_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions){
+
+    /* The reference for this implementation are expressions A14 - A16 in https://arxiv.org/pdf/1712.03057.
+       NOTE: They appear to contain typos - in A14 exp(-alpha_p * CGS_Step) should be exp_I, and the Long_common_factor variable has a flipped sign. 
+             Otherwise they do not agree with the Runge-Kutta integrators. */
+
+    /* ---------- Some references for the sake of readability ---------- */
+    auto& abs_coeff = p_Transfer_Functions->Absorbtion_functions;
+    auto& emiss_coeff = p_Transfer_Functions->Emission_functions;
+
+    const double alpha_p = sqrt(dot_product(abs_coeff + 1, abs_coeff + 1, 3));
+    const double alpha_j = dot_product(emiss_coeff + 1, abs_coeff + 1, 3);
+
+    double Init_Stokes_Vec[4]{};
+    memcpy(Init_Stokes_Vec, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
+
+    const double alpha_S = dot_product(Init_Stokes_Vec + 1, abs_coeff + 1, 3);
+
+    const double cosh_p = cosh(alpha_p * CGS_Step);
+    const double sinh_p = sinh(alpha_p * CGS_Step);
+
+    const double exp_I = exp(-abs_coeff[I] * CGS_Step);
+
+    // This thing appears often, so I compute it seperately
+    const double alpha_delta = abs_coeff[I] * abs_coeff[I] - alpha_p * alpha_p;
+
+    this->Current_Stokes_Vector[I] = (Init_Stokes_Vec[I] * cosh_p - alpha_S / alpha_p * sinh_p) * exp_I;
+    this->Current_Stokes_Vector[I] += alpha_j / alpha_delta * (-1 + (abs_coeff[I] * sinh_p + alpha_p * cosh_p) * exp_I / alpha_p);
+    this->Current_Stokes_Vector[I] += abs_coeff[I] * emiss_coeff[I] / alpha_delta * (1 - (abs_coeff[I] * cosh_p + alpha_p * sinh_p) * exp_I / abs_coeff[I]);
+
+    const double Long_common_factor = 1 - abs_coeff[I] * abs_coeff[I] / (alpha_p * alpha_p) + abs_coeff[I] / (alpha_p * alpha_p) * (abs_coeff[I] * cosh_p + alpha_p * sinh_p);
+
+    this->Current_Stokes_Vector[Q] = (Init_Stokes_Vec[Q] + abs_coeff[Q] * alpha_S / (alpha_p * alpha_p) * (cosh_p - 1) - Init_Stokes_Vec[I] * abs_coeff[Q] / alpha_p * sinh_p) * exp_I;
+    this->Current_Stokes_Vector[Q] += emiss_coeff[Q] * (1 - exp_I) / abs_coeff[I];
+    this->Current_Stokes_Vector[Q] += alpha_j * abs_coeff[Q] / (abs_coeff[I] * alpha_delta) * (1 - Long_common_factor * exp_I);
+    this->Current_Stokes_Vector[Q] += emiss_coeff[I] * abs_coeff[Q] / (alpha_p * alpha_delta) * (-alpha_p + (alpha_p * cosh_p + abs_coeff[I] * sinh_p) * exp_I);
+
+    this->Current_Stokes_Vector[U] = (Init_Stokes_Vec[U] + abs_coeff[U] * alpha_S / (alpha_p * alpha_p) * (cosh_p - 1) - Init_Stokes_Vec[I] * abs_coeff[U] / alpha_p * sinh_p) * exp_I;
+    this->Current_Stokes_Vector[U] += emiss_coeff[U] * (1 - exp_I) / abs_coeff[I];
+    this->Current_Stokes_Vector[U] += alpha_j * abs_coeff[U] / (abs_coeff[I] * alpha_delta) * (1 - Long_common_factor * exp_I);
+    this->Current_Stokes_Vector[U] += emiss_coeff[I] * abs_coeff[U] / (alpha_p * alpha_delta) * (-alpha_p + (alpha_p * cosh_p + abs_coeff[I] * sinh_p) * exp_I);
+    
+    this->Current_Stokes_Vector[V] = (Init_Stokes_Vec[V] + abs_coeff[V] * alpha_S / (alpha_p * alpha_p) * (cosh_p - 1) - Init_Stokes_Vec[I] * abs_coeff[V] / alpha_p * sinh_p) * exp_I;
+    this->Current_Stokes_Vector[V] += emiss_coeff[V] * (1 - exp_I) / abs_coeff[I];
+    this->Current_Stokes_Vector[V] += alpha_j * abs_coeff[V] / (abs_coeff[I] * alpha_delta) * (1 - Long_common_factor * exp_I);
+    this->Current_Stokes_Vector[V] += emiss_coeff[I] * abs_coeff[V] / (alpha_p * alpha_delta) * (-alpha_p + (alpha_p * cosh_p + abs_coeff[I] * sinh_p) * exp_I);
+
+}
+
+void Emission_Integrator_class::__Run_Analytic_Pure_Emission_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions) {
+
+    /* ---------- Some references for the sake of readability ---------- */
+    auto& emiss_coeff = p_Transfer_Functions->Emission_functions;
+
+    this->Current_Stokes_Vector[I] += emiss_coeff[I] * CGS_Step;
+    this->Current_Stokes_Vector[U] += emiss_coeff[Q] * CGS_Step;
+    this->Current_Stokes_Vector[Q] += emiss_coeff[U] * CGS_Step;
+    this->Current_Stokes_Vector[V] += emiss_coeff[V] * CGS_Step;
+
+}
+
+
+void Emission_Integrator_class::__Run_Analytic_No_Absorbtion_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions) {
+
+    /* Thеse are annoying to derive, so I got Цецо to crunch them in mathematica. */
+
+    /* ---------- Some references for the sake of readability ---------- */
+    auto& j = p_Transfer_Functions->Emission_functions;
+    auto& rho = p_Transfer_Functions->Faraday_functions;
+
+    double Init_Stokes_Vec[4]{};
+    memcpy(Init_Stokes_Vec, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
+
+    const double rho_mag = sqrt(dot_product(rho, rho, 4));
+    const double rho_dot_S = dot_product(Init_Stokes_Vec + 1, rho + 1, 3);
+    const double rho_dot_j = dot_product(j + 1, rho + 1, 3);
+
+    const double sin_term = sin(rho_mag * CGS_Step);
+    const double cos_term = cos(rho_mag * CGS_Step);
+
+    this->Current_Stokes_Vector[I] += j[I] * CGS_Step;
+
+    const double Init_conditions_Q_term = Init_Stokes_Vec[Q] * cos_term + rho[Q] * rho_dot_S * (1 - cos_term) / rho_mag / rho_mag
+                                        + (Init_Stokes_Vec[V] * rho[U] - Init_Stokes_Vec[U] * rho[V]) * sin_term / rho_mag;
+
+    const double Source_Q_term = (rho[Q] * (rho_dot_j) * CGS_Step + (j[V] * rho[U] - j[U] * rho[V]) * (1 - cos_term)) / rho_mag / rho_mag
+                                -(rho[Q] * rho_dot_j / rho_mag / rho_mag / rho_mag - j[Q] / rho_mag ) * sin_term;
+
+    this->Current_Stokes_Vector[Q] = Init_conditions_Q_term + Source_Q_term;
+
+    const double Init_conditions_U_term = Init_Stokes_Vec[U] * cos_term + rho[U] * rho_dot_S * (1 - cos_term) / rho_mag / rho_mag
+                                        + (Init_Stokes_Vec[Q] * rho[V] - Init_Stokes_Vec[V] * rho[Q]) * sin_term / rho_mag;
+
+    const double Source_U_term = (rho[U] * rho_dot_j * CGS_Step + (j[Q] * rho[V] - j[V] * rho[Q]) * (1 - cos_term)) / rho_mag / rho_mag
+                                + (j[U] / rho_mag - rho[U] * rho_dot_j / rho_mag / rho_mag / rho_mag) * sin_term;
+
+    this->Current_Stokes_Vector[U] = Init_conditions_U_term + Source_U_term;
+
+    const double Init_conditions_V_term = Init_Stokes_Vec[V] * cos_term + rho[V] * rho_dot_S * (1 - cos_term) / rho_mag / rho_mag
+                                        + (Init_Stokes_Vec[U] * rho[Q] - Init_Stokes_Vec[Q] * rho[U]) * sin_term / rho_mag;
+
+    const double Source_V_term = (rho[V] * (rho_dot_j) * CGS_Step + (j[U] * rho[Q] - j[Q] * rho[U]) * (1 - cos_term)) / rho_mag / rho_mag
+                                -(rho[V] * rho_dot_j / rho_mag / rho_mag / rho_mag - j[V] / rho_mag ) * sin_term;
+
+    this->Current_Stokes_Vector[V] = Init_conditions_V_term + Source_V_term;
 
 }
 
@@ -808,30 +880,69 @@ void Emission_Integrator_class::Run_Analytic_Stokes_Vector_Propagator(const doub
 
         add_vectors(Temp_Transfer_functions.Absorbtion_functions, Total_Transfer_Functions.Absorbtion_functions, e_Stokes_param_num, Total_Transfer_Functions.Absorbtion_functions);
         add_vectors(Temp_Transfer_functions.Emission_functions, Total_Transfer_Functions.Emission_functions, e_Stokes_param_num, Total_Transfer_Functions.Emission_functions);
-        add_vectors(Temp_Transfer_functions.Faradey_functions, Total_Transfer_Functions.Faradey_functions, e_Stokes_param_num, Total_Transfer_Functions.Faradey_functions);
+        add_vectors(Temp_Transfer_functions.Faraday_functions, Total_Transfer_Functions.Faraday_functions, e_Stokes_param_num, Total_Transfer_Functions.Faraday_functions);
 
     }
 
     const double Geometric_Step = std::abs(End_Affine_Param - Start_Affine_Param);
     const double CGS_Step = Geometric_Step * MASS_TO_CM * this->p_Sim_Context->p_Init_Conditions->central_object_mass;
 
-    double Transfer_operator[4][4]{};
-    double Integrated_transfer_operator[4][4];
+    /* ---------- Some references for the sake of readability ---------- */
 
-    this->Get_radiative_transfer_operators(Total_Transfer_Functions.Absorbtion_functions, Total_Transfer_Functions.Faradey_functions, CGS_Step, Transfer_operator, Integrated_transfer_operator);
+    auto& alpha = Total_Transfer_Functions.Absorbtion_functions;
+    auto& rho = Total_Transfer_Functions.Faraday_functions;
 
-    double Transfered_emission_vector[e_Stokes_param_num]{};
+    const double Polarized_absorbtion_coeff = dot_product(alpha + 1, alpha + 1, 3);
+    const double Faraday_coeff = dot_product(rho + 1, rho + 1, 3);
 
-    // Placeholder vector for use in the mat_vec_multiply_4D() function
-    double Temp_Intensity[e_Stokes_param_num]{};
-    memcpy(Temp_Intensity, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
+    if (Faraday_coeff < Polarized_absorbtion_coeff * std::numeric_limits<double>::epsilon() / 2) {
 
-    mat_vec_multiply_4D(Integrated_transfer_operator, Total_Transfer_Functions.Emission_functions, Transfered_emission_vector);
-    mat_vec_multiply_4D(Transfer_operator, Temp_Intensity, this->Current_Stokes_Vector);
+        const double Alpha_divisor = alpha[I] * alpha[I] - Polarized_absorbtion_coeff;
 
-    for (int index = 0; index < e_Stokes_param_num; index++) {
+        if (!isnan(1 / Alpha_divisor)) {
 
-        this->Current_Stokes_Vector[index] += Transfered_emission_vector[index];
+            /* ======================== Faraday conversion is negligable, run the absorbtion only propagator ======================== */
+            this->__Run_Analytic_No_Faraday_conversion_propagator(CGS_Step, &Total_Transfer_Functions);
+
+        }
+        else {
+
+            /* ================= Absorbtion and Faraday conversion are negligable, run the emission only propagator ================= */
+            this->__Run_Analytic_Pure_Emission_propagator(CGS_Step, &Total_Transfer_Functions);
+
+        }
+
+    }
+    else if (Polarized_absorbtion_coeff  * Polarized_absorbtion_coeff < Faraday_coeff * Faraday_coeff * std::numeric_limits<double>::epsilon() / 2) {
+
+        /* ================= Absorbtion is negligable, run the emission and Faraday rotation only propagator ================= */
+        __Run_Analytic_No_Absorbtion_propagator(CGS_Step, &Total_Transfer_Functions);
+
+    } 
+    else {
+
+      /* ============================================ Run the full polarized transport propagator ============================================ */
+        
+      double Transfer_operator[4][4]{};
+      double Integrated_transfer_operator[4][4];
+
+       this->Get_radiative_transfer_operators(Total_Transfer_Functions.Absorbtion_functions, Total_Transfer_Functions.Faraday_functions, CGS_Step, Transfer_operator, Integrated_transfer_operator);
+
+       double Transfered_emission_vector[e_Stokes_param_num]{};
+
+       // Placeholder vector for use in the mat_vec_multiply_4D() function
+       double Temp_Intensity[e_Stokes_param_num]{};
+       memcpy(Temp_Intensity, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
+
+       mat_vec_multiply_4D(Integrated_transfer_operator, Total_Transfer_Functions.Emission_functions, Transfered_emission_vector);
+
+       mat_vec_multiply_4D(Transfer_operator, Temp_Intensity, this->Current_Stokes_Vector);
+
+       for (int index = 0; index < e_Stokes_param_num; index++) {
+
+           this->Current_Stokes_Vector[index] += Transfered_emission_vector[index];
+
+       }
 
     }
 

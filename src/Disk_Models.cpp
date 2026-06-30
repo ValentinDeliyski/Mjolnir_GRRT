@@ -91,15 +91,15 @@ double Disk_model_type::get_disk_mag_pressure(const double density, const double
 
     const double geometric_density = density / this->Geometric_to_cgs_density_convertor;
 
-    const double K = 0.0001269061363;
-    const double Gamma = 4. / 3;
+    const double& K = this->s_Disk_params.Numerical_disk_params.Mag_pressure_Polytrope_coeff;
+    const double& Gamma = this->s_Disk_params.Numerical_disk_params.Mag_pressure_Polytrope_index;
 
     const double gas_pressure = this->get_disk_gas_pressure(density);
     const double internal_energy = this->get_disk_internal_energy(density);
 
     if (isinf(gas_pressure / density)) { return 0.0; }
 
-    const double enthalpy = 1.0 + internal_energy + gas_pressure / density;
+    const double enthalpy = 1.0 + internal_energy + gas_pressure / geometric_density;
 
     const Metric_type s_Metric = this->p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
     const double Metric_factor = s_Metric.Metric[e_t][e_phi] * s_Metric.Metric[e_t][e_phi] - s_Metric.Metric[e_t][e_t] * s_Metric.Metric[e_phi][e_phi];
@@ -567,10 +567,16 @@ void Disk_model_type::get_numerical_mag_field(const double* const Local_State_Ve
     Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_phi] = sqrt(2 * Mag_pressure / Normalization);
     Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] = Ang_momentum * Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_phi];
 
-    /* TODO: Scale this thing so it gomes out in Gauss */
+    double B_vec_norm = sqrt(get_4vec_dot_product(Emission_medium_state->Magnetic_fields.B_field_plasma_frame, 
+                                                  Emission_medium_state->Magnetic_fields.B_field_plasma_frame, 
+                                                  p_Metric->Metric, 
+                                                  Contravariant));
+
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_phi] /= B_vec_norm;
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] /= B_vec_norm;
+
 
     Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm = sqrt(2 * Mag_pressure * P_0) / this->p_Sim_Context->p_Init_Conditions->central_object_mass;
-    //Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm = 1;
 
 }
 

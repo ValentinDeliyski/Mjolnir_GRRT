@@ -21,6 +21,9 @@ class Simulation_Parser():
         self.Q_Intensity: NDArray[float64] = zeros(Array_size)
         self.U_Intensity: NDArray[float64] = zeros(Array_size)
         self.V_Intensity: NDArray[float64] = zeros(Array_size)
+        self.Faraday_Q_Depth: NDArray[float64] = zeros(Array_size)
+        self.Faraday_V_Depth: NDArray[float64] = zeros(Array_size)
+        self.Optical_Depth: NDArray[float64] = zeros(Array_size)
         
         self.Final_t_coord: NDArray[float64] = zeros(Array_size)
         
@@ -68,7 +71,11 @@ class Simulation_Parser():
                     self.I_Intensity[index]  = float(row["Synchotron Intensity I [Jy/sRad]"])
                     self.Q_Intensity[index]  = float(row["Synchotron Intensity Q [Jy/sRad]"])
                     self.U_Intensity[index]  = float(row["Synchotron Intensity U [Jy/sRad]"])
-                    self.V_Intensity[index]  = float(row["Synchotron Intensity V [Jy/sRad]"])       
+                    self.V_Intensity[index]  = float(row["Synchotron Intensity V [Jy/sRad]"])   
+                      
+                    self.Faraday_Q_Depth[index]  = float(row["Total Faraday Q Depth [-]"])
+                    self.Faraday_V_Depth[index] = float(row["Total Faraday V Depth [-]"])
+                    self.Optical_Depth[index] = float(row["Total Optical Depth [-]"])  
                     
                     # self.Final_t_coord[index] = float(row["Final t Coordinate [M]"])  
                     
@@ -136,6 +143,10 @@ class Simulation_Parser():
                 self.Q_Intensity_log: list[float] = []
                 self.U_Intensity_log: list[float] = []
                 self.V_Intensity_log: list[float] = []
+                self.Optical_Depth_log: list[float] = []
+                self.Faradey_Q_Depth_log: list[float] = []
+                self.Faradey_V_Depth_log: list[float] = []
+                
                 self.State_error_log: list[float] = []
                 self.Rejected_steps_log: list[int] = []
                 self.Polarization_log_x: list[float] = []
@@ -275,8 +286,20 @@ class Simulation_Parser():
         
         Pol_vec_y = self.Polarization_vec_Y.reshape(Y_resolution, X_resolution)
         Pol_vec_y = flip(Pol_vec_y, axis =  0)
+        
+        Faraday_V_Depth = self.Faraday_V_Depth.reshape(Y_resolution, X_resolution)
+        Faradey_V_Depth = flip(Faraday_V_Depth, axis =  0)
 
-        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, Pol_vec_x, Pol_vec_y, Celestial_theta, Celestial_phi
+        Faraday_Q_Depth = self.Faraday_Q_Depth.reshape(Y_resolution, X_resolution)
+        Faradey_Q_Depth = flip(Faraday_Q_Depth, axis =  0)
+        
+        X_coords = self.X_coords.reshape(Y_resolution, X_resolution)
+        X_coords = flip(X_coords, axis =  0)
+        
+        Y_coords = self.Y_coords.reshape(Y_resolution, X_resolution)
+        Y_coords = flip(Y_coords, axis =  0)
+        
+        return I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, Pol_vec_x, Pol_vec_y, Celestial_theta, Celestial_phi, Faradey_Q_Depth, Faradey_V_Depth, X_coords, Y_coords
     
     def get_photon_log(self) -> tuple[tuple, tuple, tuple, list, list, tuple, tuple, tuple]:
         

@@ -23,7 +23,7 @@ class NT_disk_params_class():
 
 class Numerical_disk_params_class():
     
-    __slots__ = ("Numerical_XML_path", "Density_Polytrope_Coeff", "Density_Polytrope_Power", "Spline_type")
+    __slots__ = ("Numerical_XML_path", "Spline_type")
 
 class Colab_test_1_disk_params_class():
     
@@ -535,9 +535,7 @@ class Simulation_configurator:
                                     Ang_momentum_exponent: dict[str, float | str] = {"Value": 1, "Unit": "[M]"},
                                     
                                     Numerical_XML_path: str = "",
-                                    Numerical_spline_type: dict[str, str] = {"Value": "GSL_cubic", "Unit": "[-]"},
-                                    Density_Polytrope_Coeff: dict[str, float | str] = {"Value": 0., "Unit": "[-]"},
-                                    Density_Polytrope_Power: dict[str, float | str] = {"Value": 4. / 3., "Unit": "[-]"}):
+                                    Numerical_spline_type: dict[str, str] = {"Value": "GSL_cubic", "Unit": "[-]"},):
         
         self.disk_model = Disk_model()
         
@@ -563,8 +561,6 @@ class Simulation_configurator:
         
         self.disk_model.Numerical_disk_params = Numerical_disk_params_class()
         self.disk_model.Numerical_disk_params.Numerical_XML_path = Numerical_XML_path
-        self.disk_model.Numerical_disk_params.Density_Polytrope_Coeff = Density_Polytrope_Coeff
-        self.disk_model.Numerical_disk_params.Density_Polytrope_Power = Density_Polytrope_Power
         self.disk_model.Numerical_disk_params.Spline_type = Numerical_spline_type
         
         self.disk_model.Colab_test_1_disk_params = Colab_test_1_disk_params_class()

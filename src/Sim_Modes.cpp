@@ -94,6 +94,9 @@ void static Zero_results_struct(Results_type* const p_Ray_results) {
     memset(&p_Ray_results->Celestial_sphere_crossing_coords, 0, 4 * sizeof(double));
 
     p_Ray_results->NT_Disk_found = false;
+    p_Ray_results->Faraday_Q_Depth = 0;
+    p_Ray_results->Faraday_V_Depth = 0;
+    p_Ray_results->Optical_Depth = 0;
 
 }
 
@@ -302,8 +305,10 @@ void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Resul
     double& Y_init = p_Sim_Context->p_Init_Conditions->Sim_mode_2_Y_init;
 
     get_initial_conditions_from_image_coords(p_Sim_Context->p_Init_Conditions, X_init, Y_init);
-
+    
     Propagate_ray(p_Sim_Context, p_Ray_results);
+
+    p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge = p_Ray_results->Ray_log_struct.Log_length;
 
     File_manager.create_output_file();
     File_manager.open_output_file();

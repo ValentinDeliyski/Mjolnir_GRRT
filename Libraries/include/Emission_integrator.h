@@ -139,7 +139,7 @@ private:
 
     void get_Radiative_transfer_RHS(const double* const Emission_Functions,
                                     const double* const Absorbtion_Functions,
-                                    const double* const Faradey_Functions,
+                                    const double* const Faraday_Functions,
                                     const double* const Stokes_Vector,
                                     double* const RHS);
 
@@ -149,12 +149,18 @@ private:
                                     std::complex<double>* const RHS);
 
     void Get_radiative_transfer_operators(const double* const Absorbtion_functions,
-                                          const double* const Faradey_functions,
+                                          const double* const Faraday_functions,
                                           double const CGS_Step,
                                           double Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num],
                                           double Integrated_Transfer_Operator[e_Stokes_param_num][e_Stokes_param_num]);
 
     void Run_Analytic_Stokes_Vector_Propagator(const double Start_Affine_Param, const double End_Affine_Param);
+
+    void __Run_Analytic_No_Faraday_conversion_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions);
+
+    void __Run_Analytic_Pure_Emission_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions);
+
+    void __Run_Analytic_No_Absorbtion_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions);
 
     void Run_Runge_Kutta_Stokes_Vector(const double Start_Affine_Param, const double End_Affine_Param);
 

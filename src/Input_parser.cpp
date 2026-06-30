@@ -274,7 +274,6 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
     tinyxml2::XMLElement* Common_paramaters_element = Accretion_disk_element->FirstChildElement("Common_parameters");
     if (Common_paramaters_element == nullptr) { std::cout << "Failed to find the common parameters element!" << "\n"; return ERROR; }
 
-
     // -------------------- The disk model
     temp_param_var = Common_paramaters_element->FirstChildElement("Disk_Model");
     if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk model!" << "\n"; return ERROR; }
@@ -298,10 +297,15 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
 
     if (Disk_params->e_Disk_model != e_Novikov_Thorne) {
 
-        // -------------------- The maximum density
-        temp_param_var = Common_paramaters_element->FirstChildElement("Max_density");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk max density!" << "\n"; return ERROR; }
-        Disk_params->Max_disk_density = std::stod(temp_param_var->GetText());
+        if (Disk_params->e_Disk_model != e_Numerical) {
+
+            // -------------------- The maximum density
+            // In the case of a numerical disk this is read from the density XML file
+            temp_param_var = Common_paramaters_element->FirstChildElement("Max_density");
+            if (temp_param_var == nullptr) { std::cout << "Failed to parse the disk max density!" << "\n"; return ERROR; }
+            Disk_params->Max_disk_density = std::stod(temp_param_var->GetText());
+
+        }
 
         // -------------------- r_ISCO
         temp_param_var = Common_paramaters_element->FirstChildElement("r_ISCO");
@@ -355,9 +359,11 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
         else { std::cout << "Unsupported velocity profile type for the disk!" << "\n"; return ERROR; }
 
     }
+
     /* ====================================================== Parameters for the specific disk models ====================================================== */
 
     tinyxml2::XMLElement* Disk_data_element{};
+    tinyxml2::XMLElement* Parameters_element{};
     tinyxml2::XMLElement* Density_data_element{};
     tinyxml2::XMLElement* Radial_grid_element{};
     tinyxml2::XMLElement* Z_coord_grid_element{};
@@ -412,16 +418,6 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
         Disk_model_element = Accretion_disk_element->FirstChildElement("Numerical_disk_profile");
         if (Disk_model_element == nullptr) { std::cout << "Failed to find the numerical disk model element!" << "\n"; return ERROR; }
 
-        // -------------------- The density polytrope coefficient
-        temp_param_var = Disk_model_element->FirstChildElement("Density_Polytrope_Coeff");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope coefficient!" << "\n"; return ERROR; }
-        Disk_params->Numerical_disk_params.Density_Polytrope_coeff = std::stod(temp_param_var->GetText());
-
-        // --------------------  The density polytrope index
-        temp_param_var = Disk_model_element->FirstChildElement("Density_Polytrope_Power");
-        if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope index!" << "\n"; return ERROR; }
-        Disk_params->Numerical_disk_params.Density_Polytrope_index = std::stod(temp_param_var->GetText());
-
         // --------------------  The density spline type
         Density_spline_type = Disk_model_element->FirstChildElement("Spline_type")->GetText();
 
@@ -453,8 +449,35 @@ Return_Values static parse_disk_params(tinyxml2::XMLElement* Accretion_disk_elem
         Disk_data_element = Density_XML.FirstChildElement("Numerical_disk_data");
         if (Disk_data_element == nullptr) { std::cout << "Failed to parse the numerical disk data node!" << "\n"; return ERROR; }
 
-        // -------------------- The Raw density data
+        Parameters_element = Disk_data_element->FirstChildElement("Parameters");
+        if (Parameters_element == nullptr) { std::cout << "Failed to parse the numerical disk parameters node!" << "\n"; return ERROR; }
 
+            // -------------------- The density polytrope coefficient
+            temp_param_var = Parameters_element->FirstChildElement("Geometric_K_rho");
+            if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope coefficient!" << "\n"; return ERROR; }
+            Disk_params->Numerical_disk_params.Density_Polytrope_coeff = std::stod(temp_param_var->GetText());
+
+            // --------------------  The density polytrope index
+            temp_param_var = Parameters_element->FirstChildElement("Gamma_rho");
+            if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope index!" << "\n"; return ERROR; }
+            Disk_params->Numerical_disk_params.Density_Polytrope_index = std::stod(temp_param_var->GetText());
+
+            // -------------------- The magnetic polytrope coefficient
+            temp_param_var = Parameters_element->FirstChildElement("Geometric_K_mag");
+            if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope coefficient!" << "\n"; return ERROR; }
+            Disk_params->Numerical_disk_params.Mag_pressure_Polytrope_coeff = std::stod(temp_param_var->GetText());
+
+            // --------------------  The magnetic polytrope index
+            temp_param_var = Parameters_element->FirstChildElement("Gamma_mag");
+            if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope index!" << "\n"; return ERROR; }
+            Disk_params->Numerical_disk_params.Mag_pressure_Polytrope_index = std::stod(temp_param_var->GetText());
+
+            // --------------------  The central disk density
+            temp_param_var = Parameters_element->FirstChildElement("Geometric_Central_Density");
+            if (temp_param_var == nullptr) { std::cout << "Failed to parse the numerical disk polytrope index!" << "\n"; return ERROR; }
+            Disk_params->Max_disk_density = std::stod(temp_param_var->GetText());
+
+        // -------------------- The Raw density data
         Density_data_element = Disk_data_element->FirstChildElement("Density");
         if (Density_data_element == nullptr) { std::cout << "Failed to parse the numerical disk density data!" << "\n"; return ERROR; }
 
@@ -1840,6 +1863,12 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, Init
     temp_param_var = Root_node->FirstChildElement("Accretion_Disk");
     if (temp_param_var == nullptr) { std::cout << "Failed to find the Accretion Disk node!" << "\n"; return ERROR; }
     if (OK != parse_disk_params(temp_param_var, &p_Initial_conditions->Disk_params)) { return ERROR; };
+
+    if (p_Initial_conditions->Disk_params.e_Disk_model == e_Numerical) {
+
+        p_Initial_conditions->Disk_params.Max_disk_density *= rho_0 / pow(p_Initial_conditions->central_object_mass, 2) / M_PROTON_CGS;
+
+    }
 
     /* ====================================== Parse the hotspot parameters ====================================== */
 

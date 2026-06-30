@@ -122,7 +122,9 @@ private:
     double Intermediate_RHS_log[RK78_size * e_Dynamic_state_size]{};
     double Current_Dynamic_state[e_Dynamic_state_size];
 
-    double Current_optical_depth{};
+    double *Current_Optical_Depth;
+    double *Current_Faraday_Q_Depth;
+    double *Current_Faraday_V_Depth;
 
     Integrator_enums e_Active_integrator;
 

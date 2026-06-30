@@ -50,16 +50,16 @@ private:
                                                           const double* const Emission_function,
                                                           double* const Absorbtion_function) const;
 
-    //! Evaluates the thermal sychrotron Faradey fit functions.
-    /*! Evaluates the thermal sychrotron Faradey fit functions, based on this source: https://arxiv.org/pdf/1602.03184.pdf
+    //! Evaluates the thermal sychrotron Faraday fit functions.
+    /*! Evaluates the thermal sychrotron Faraday fit functions, based on this source: https://arxiv.org/pdf/1602.03184.pdf
      *
      *   \param [in] Transfer_arags - Pointer to the struct containing the dimensionless parameter that the fit functions depend on, its weird fractional powers,
      *                                the dimentionless electron temperature, its weird powers, and the pitch angle.
-     *   \param [out] Faradey_fucntions - Pointer to the array that holds the evaluated Faradey functions.
+     *   \param [out] Faraday_fucntions - Pointer to the array that holds the evaluated Faraday functions.
      *   \return Nothing
      */
-    void get_thermal_synchrotron_faradey_fit_functions(const Thermal_transfer_f_arguments_type* const Transfer_arags,
-                                                       double* const Faradey_fucntions) const;
+    void get_thermal_synchrotron_Faraday_fit_functions(const Thermal_transfer_f_arguments_type* const Transfer_arags,
+                                                       double* const Faraday_fucntions) const;
 
     // ====================== Kappa Distributed synchrotron Fit Functions ====================== //
 
@@ -87,8 +87,8 @@ private:
     void get_kappa_synchrotron_absorbtion_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
                                                         double* const Absorbtion_functions) const;
 
-    void get_kappa_synchrotron_faradey_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
-                                                     double* const Faradey_functions) const;
+    void get_kappa_synchrotron_Faraday_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
+                                                     double* const Faraday_functions) const;
 
     // ====================== Phenomenologically Distributed synchrotron Fit Functions ====================== //
 
@@ -102,8 +102,8 @@ private:
     
     void get_debug_synchrotron_functions(Transfer_functions_type* p_Transfer_functions) const;
 
-    //! Evaluates the kappa ensamble polarized synchrotron emission, absorbtion and Faradey functions.
-    /*! Evaluates the kappa ensamble polarized synchrotron emission, absorbtion and Faradey functions.
+    //! Evaluates the kappa ensamble polarized synchrotron emission, absorbtion and Faraday functions.
+    /*! Evaluates the kappa ensamble polarized synchrotron emission, absorbtion and Faraday functions.
      *
      *   \param [in] e_Ensamble_type - Enum that specifies the ensamble type.
      *   \param [in] p_Emission_medium_state - Pointer to the struct that holds the emmission medium state.

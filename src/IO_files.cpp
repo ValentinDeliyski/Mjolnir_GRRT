@@ -618,7 +618,10 @@ void File_manager_class::write_simulation_metadata() {
                               << "Synchotron Intensity Q [Jy/sRad],"
                               << "Synchotron Intensity U [Jy/sRad],"
                               << "Synchotron Intensity V [Jy/sRad],"
-                              << "Final t Coordinate [M],";
+                              << "Final t Coordinate [M],"
+                              << "Total Optical Depth [-],"
+                              << "Total Faraday Q Depth [-],"
+                              << "Total Faraday V Depth [-],";
         }
         else {
 
@@ -843,6 +846,12 @@ void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
                                 << s_Ray_results->Intensity[V] * CGS_TO_JANSKY
                                 << ","
                                 << s_Ray_results->Final_State_Vector[e_t]
+                                << ","
+                                << s_Ray_results->Optical_Depth
+                                << ","
+                                << s_Ray_results->Faraday_Q_Depth
+                                << ","
+                                << s_Ray_results->Faraday_V_Depth
                                 << ",";
     }
 
@@ -870,22 +879,22 @@ void File_manager_class::log_photon_path(Results_type* p_Ray_results) {
 
     *this->Output_File << std::setprecision(15);
 
-    for (int log_index = 0; log_index < p_Ray_results->Ray_log_struct.Log_length; log_index++) {
+    for (int log_index = 1; log_index < p_Ray_results->Ray_log_struct.Log_length - 1; log_index++) {
 
         for (int state_index = 0; state_index < e_Full_state_size; state_index++) {
 
-            *this->Output_File << p_Ray_results->Ray_log_struct.Ray_path_log_global[state_index + (p_Ray_results->Ray_log_struct.Log_length - 1 - log_index) * e_Full_state_size] << ",";
+            *this->Output_File << p_Ray_results->Ray_log_struct.Ray_path_log_global[state_index + log_index * e_Full_state_size] << ",";
 
         }
 
         *this->Output_File << p_Ray_results->RK_integrator_debug_log.State_error_history[log_index] << ",";
         *this->Output_File << p_Ray_results->RK_integrator_debug_log.N_steps_rejected[log_index] << ",";
 
-        if (log_index < p_Ray_results->Ray_log_struct.Log_length - p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge) {
+        if (1) {
 
             for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
 
-                *this->Output_File << 0.0 << ",";
+                *this->Output_File << p_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][log_index - 1] << ",";
 
             }
 

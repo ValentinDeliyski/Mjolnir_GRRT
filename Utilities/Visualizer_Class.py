@@ -1,6 +1,6 @@
 from numpy.typing import NDArray
 from numpy import float64, bool_
-from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes, argmax, log, nan, isnan
+from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes, argmax, log, nan, isnan, inf
 from math import ceil, floor
 
 from matplotlib.figure import Figure
@@ -159,16 +159,67 @@ class Sim_Visualizer():
                         
         return swapaxes(Celestial_sphere_pattern, 0, 1)
         
+    def __plot_polarization_ticks(self, I_Intensity, Q_Intensity, U_Intensity,  X_coords, Y_coords, Subplot):
+             
+        Subplot.minorticks_on()
+        Subplot.tick_params(axis = "both", direction = "out")
+        Subplot.tick_params(which = 'minor', length = 4, labelsize = 6)
+        Subplot.tick_params(which = 'major', length = 8, labelsize = 6)
+
+        Pol_tick_scale = sqrt(Q_Intensity**2 + U_Intensity**2) / max(I_Intensity.flatten())
+        
+        Pol_vec_x = sqrt((1 + Q_Intensity / (I_Intensity +  + 1e-12)) / 2)
+        Pol_vec_y = U_Intensity / (2 * I_Intensity * Pol_vec_x + 1e-12)
+
+        X_coords_to_plot = []
+        Y_coords_to_plot = []
+            
+        Pol_vec_x_to_plot = []
+        Pol_vec_y_to_plot = []
+            
+        X_resolution: int = int(self.Sim_Parsers[0].Simulation_metadata["Simulation Resolution"].split(" ")[0])
+        Y_resolution: int = int(self.Sim_Parsers[0].Simulation_metadata["Simulation Resolution"].split(" ")[-1])
+               
+        for x_idx in range(0, X_resolution, int(X_resolution / 32)):
+            
+            for y_idx in range(0, Y_resolution, int(Y_resolution / 32)):
+                
+                if (Pol_vec_x[x_idx][y_idx] != Pol_vec_x[x_idx][y_idx]):
+                    
+                    Pol_vec_x[x_idx][y_idx] = 1 / sqrt(2)
+                    Pol_vec_y[x_idx][y_idx] = 0
+                    
+                X_coords_to_plot.append(X_coords[x_idx][y_idx] - Pol_tick_scale[x_idx][y_idx] * Pol_vec_x[x_idx][y_idx] / 2)
+                Y_coords_to_plot.append(Y_coords[x_idx][y_idx] - Pol_tick_scale[x_idx][y_idx] * Pol_vec_y[x_idx][y_idx] / 2)
+                    
+                Pol_vec_x_to_plot.append(Pol_tick_scale[x_idx][y_idx] * Pol_vec_x[x_idx][y_idx])
+                Pol_vec_y_to_plot.append(Pol_tick_scale[x_idx][y_idx] * Pol_vec_y[x_idx][y_idx])
+                
+        Subplot.quiver(X_coords_to_plot,
+                       Y_coords_to_plot,
+                       Pol_vec_x_to_plot,
+                       Pol_vec_y_to_plot,
+                       headwidth = 0,
+                       headlength = 0,
+                       headaxislength = 0,
+                       angles = 'xy', 
+                       scale_units = 'xy',
+                       scale = 1,
+                       color = "gray",
+                       width = 0.005)
+        
     def plot_ray_tracer_results(self, 
-                                Export_data_for_Ehtim: bool, 
                                 Radiation_Component: str,
                                 Save_Figures: bool,
                                 Custom_fig_title: str,
                                 Obs_effective_distance: float,
                                 Use_angular_coords: bool,
-                                Power: float,
                                 Add_Intensity_Slice: bool,
-                                Colormap_str: str = "seismic") -> None:
+                                Colormap_str: str = "seismic",
+                                Figure_Path: str = "",
+                                Power: float = 1,
+                                Plot_polarization_ticks_from_Stokes: bool = False,
+                                Export_data_for_Ehtim: bool = False) -> None:
 
         Frequency_str_addon: str = ""
 
@@ -191,7 +242,7 @@ class Sim_Visualizer():
             
             Obs_frequency: float = float(self.Sim_Parsers[Sim_number].Simulation_metadata["Observation Frequency [Hz]"])
             
-            I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, _, _, Celestial_theta, Celestial_phi = self.Sim_Parsers[Sim_number].get_plottable_sim_data()
+            I_Intensity, Q_Intensity, U_Intensity, V_Intensity, Disk_redshift, Disk_flux, _, _, Celestial_theta, Celestial_phi, Faradey_Q_Depth, Faradey_V_Depth, X_coords, Y_coords = self.Sim_Parsers[Sim_number].get_plottable_sim_data()
 
             # =============== PLot the Simulated Image =============== #
             
@@ -216,8 +267,8 @@ class Sim_Visualizer():
             
             # The literature (for some reason) has the X axis going positive to negative, 
             # so I invert the X axis limits
-            axes_limits[0] = -axes_limits[0]
-            axes_limits[1] = -axes_limits[1]
+            # axes_limits[0] = -axes_limits[0]
+            # axes_limits[1] = -axes_limits[1]
             
             if Add_Intensity_Slice:   
                 Image_Subplot: Axes = Main_Figure.add_subplot(100 * len(self.Frequency_Bins) + 20 + (2 * Sim_number + 1))
@@ -232,7 +283,7 @@ class Sim_Visualizer():
             match Radiation_Component:
             
                 case "Stokes I":
-                    Data_to_plot: NDArray[float64] = self.Units.Spectral_density_to_T(I_Intensity / self.Units.W_M2_TO_JY, Obs_frequency) / self.Units.GIGA    
+                    Data_to_plot: NDArray[float64] = self.Units.Spectral_density_to_T(I_Intensity / self.Units.W_M2_TO_JY, Obs_frequency) / self.Units.GIGA      
 
                     Cmap_max: float = max(abs(Data_to_plot.flatten()))
                     Cmap_min: float = 0
@@ -274,6 +325,9 @@ class Sim_Visualizer():
                 case "LP Fraction":
                     Data_to_plot: NDArray[float64] = sqrt(U_Intensity**2 + Q_Intensity**2) / max(abs(I_Intensity.flatten())) * 100
  
+                    Data_to_plot[Data_to_plot == inf] = 0
+                    Data_to_plot[Data_to_plot != Data_to_plot] = 0
+ 
                     Cmap_max: float = max(Data_to_plot.flatten())
                     Cmap_min: float = 0
               
@@ -281,6 +335,38 @@ class Sim_Visualizer():
                     
                     File_suffix = "LP_Fraction"
                     
+                case "Faraday V Depth":
+                    
+                    Data_to_plot: NDArray[float64] = Faradey_V_Depth
+                    
+                    Cmap_max: float = max(abs(Data_to_plot.flatten()))
+                    Cmap_min: float = -Cmap_max
+                    
+                    Cbar_label: str = r"Faraday V Depth [-]"
+                    File_suffix = "Faraday_V_Depth"
+                    X_Slice_y_label = ""
+                    
+                    if Use_angular_coords:
+                        X_Slice_tile: str = "Faraday V Depth at " + r'$\delta_{\text{rel}} = 0$'
+                    else:
+                        X_Slice_tile: str = "Faraday V Depth at " + r'$Y = 0$'
+                    
+                case "Faraday Q Depth":
+                    
+                    Data_to_plot: NDArray[float64] = Faradey_Q_Depth
+                    
+                    Cmap_max: float = max(abs(Data_to_plot.flatten()))
+                    Cmap_min: float = -Cmap_max
+                    
+                    Cbar_label: str = r"Faraday Q Depth [-]"
+                    File_suffix = "Faraday_Q_Depth"
+                    X_Slice_y_label = ""
+                    
+                    if Use_angular_coords:
+                        X_Slice_tile: str = "Faraday Q Depth at " + r'$\delta_{\text{rel}} = 0$'
+                    else:
+                        X_Slice_tile: str = "Faraday Q Depth at " + r'$Y = 0$'
+                
                 case "NT Flux":
                     Data_to_plot: NDArray[float64] = Disk_redshift**4 * Disk_flux / 1e-6
                     
@@ -390,6 +476,9 @@ class Sim_Visualizer():
                     print("Incorrect Radiation Component!")
                     return
 
+            if Plot_polarization_ticks_from_Stokes:
+                self.__plot_polarization_ticks(I_Intensity, Q_Intensity, U_Intensity, X_coords, Y_coords, Image_Subplot)
+
             if Export_data_for_Ehtim:
                 self.Sim_Parsers[Sim_number].export_ehtim_data(Spacetime = self.Sim_Parsers[Sim_number].Simulation_metadata["Spacetime [-]"], 
                                                                data = I_Intensity,
@@ -437,7 +526,7 @@ class Sim_Visualizer():
 
                 # Create the plot of "T_b(alpha) | y = 0"
                 T_Brightness_Subplot.plot(x_coords, T_Brightness)
-                T_Brightness_Subplot.invert_xaxis()
+                # T_Brightness_Subplot.invert_xaxis()
                 T_Brightness_Subplot.set_ylim(T_Brightness_min_norm, T_Brightness_norm + Limit_pad)
                 T_Brightness_Subplot.set_title(X_Slice_tile, fontsize = self.Font_size)
                 
@@ -457,8 +546,10 @@ class Sim_Visualizer():
             
             if self.Respect_folder_structure:
                 Figures_folder_path = self.Sim_path + "Figures\\"
+            elif Figure_Path == "":
+                Figures_folder_path = os.path.abspath('...') +  "Figures\\" + self.Sim_path.split("\\")[-2] + "\\"
             else:
-                Figures_folder_path = os.path.abspath('...') +  "\\Figures\\" + self.Sim_path.split("\\")[-2] + "\\"
+                Figures_folder_path = Figure_Path
 
             if not os.path.exists(Figures_folder_path):
                 os.makedirs(Figures_folder_path)

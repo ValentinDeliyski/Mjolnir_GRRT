@@ -35,8 +35,8 @@ void Emission_models_class::get_thermal_synchrotron_emission_fit_functions(const
                             * (1 + (7. * p_Transfer_arags->T_electron_dim_to_24_25 + 35.) / (10. * p_Transfer_arags->T_electron_dim_to_24_25 + 75.) * TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X)
                             * exponent;
 
-    //Emission_functions[V] = p_Transfer_arags->cos_pitch_angle / p_Transfer_arags->T_electron_dim
-    //                      * (M_PI / 3 + M_PI / 3 * p_Transfer_arags->cbrt_X + (2. / 300) * p_Transfer_arags->sqrt_X + (2 * M_PI / 19.) * p_Transfer_arags->cbrt_X * p_Transfer_arags->cbrt_X) * exponent;
+    Emission_functions[V] = p_Transfer_arags->cos_pitch_angle / p_Transfer_arags->T_electron_dim
+                          * (M_PI / 3 + M_PI / 3 * p_Transfer_arags->cbrt_X + (2. / 300) * p_Transfer_arags->sqrt_X + (2 * M_PI / 19.) * p_Transfer_arags->cbrt_X * p_Transfer_arags->cbrt_X) * exponent;
 
 }
 
@@ -65,13 +65,13 @@ void Emission_models_class::get_thermal_synchrotron_absorbtion_fit_functions(con
 
 }
 
-void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const Thermal_transfer_f_arguments_type* const p_Transfer_args,
-                                                                          double* const Faradey_functions) const {
+void Emission_models_class::get_thermal_synchrotron_Faraday_fit_functions(const Thermal_transfer_f_arguments_type* const p_Transfer_args,
+                                                                          double* const Faraday_functions) const {
 
     /* The reference for this implementation is from Appendix B2 of https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf, expressions (33) to (37). */
 
-    /* Zero out the Faradey functions just in case. */
-    memset(Faradey_functions, 0, e_Stokes_param_num * sizeof(double));
+    /* Zero out the Faraday functions just in case. */
+    memset(Faraday_functions, 0, e_Stokes_param_num * sizeof(double));
 
     /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
@@ -95,18 +95,9 @@ void Emission_models_class::get_thermal_synchrotron_faradey_fit_functions(const 
     // TODO: This term blows up the raditive transfer for large X. Figure out how to fix it
     double const delta_J_5 = 0.4379 * log(1 + 1.3414 / p_Transfer_args->X_to_0_p_7515);
 
-    Faradey_functions[Q] = f_m * p_Transfer_args->sin_pitch_angle * p_Transfer_args->sin_pitch_angle * (K1_Bessel / K2_Bessel + 6 * p_Transfer_args->T_electron_dim);
+    Faraday_functions[Q] = f_m * p_Transfer_args->sin_pitch_angle * p_Transfer_args->sin_pitch_angle * (K1_Bessel / K2_Bessel + 6 * p_Transfer_args->T_electron_dim);
 
-    //Faradey_functions[V] = (K0_Bessel - 0 * delta_J_5) / K2_Bessel * p_Transfer_args->cos_pitch_angle;
-
-    if (std::abs(Faradey_functions[Q]) > 1e10 or std::abs(Faradey_functions[V]) > 1e10) {
-
-        Faradey_functions[Q] = 0.0;
-        Faradey_functions[V] = 0.0;
-
-        return;
-
-    }
+    Faraday_functions[V] = (K0_Bessel -  delta_J_5) / K2_Bessel * p_Transfer_args->cos_pitch_angle;
 
 }
 
@@ -165,7 +156,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
     Emission_functions_low[V] = Common_factor_low * (9.0 / 16 * pow(pow(p_Transfer_args->sin_emission_angle, -12.0 / 5) - 1, 12.0 / 25)) * pow(p_Transfer_args->kappa, -66.0 / 125) / p_Transfer_args->T_electron_dim / p_Transfer_args->X_to_7_over_20;
     Emission_functions_high[V] = Common_factor_high * (49.0 / 64 * pow(pow(p_Transfer_args->sin_emission_angle, -5.0 / 2) - 1, 11.0 / 25)) * pow(p_Transfer_args->kappa, -11.0 / 25) / p_Transfer_args->T_electron_dim / p_Transfer_args->sqrt_X;
 
-    //Emission_functions[V] = pow(pow(Emission_functions_low[V], -power_V) + pow(Emission_functions_high[V], -power_V), -1. / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
+    Emission_functions[V] = pow(pow(Emission_functions_low[V], -power_V) + pow(Emission_functions_high[V], -power_V), -1. / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
 
 }
 
@@ -213,7 +204,7 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
     }
 
     double Absorbtion_functions_low[e_Stokes_param_num]{};
-    double Common_factor_low = 1.0 / p_Transfer_args->cbrt_X / p_Transfer_args->cbrt_X * THREE_TO_1_OVER_6 * 10.0 / 41 * 2 * M_PI / pow(p_Transfer_args->T_electron_dim * p_Transfer_args->kappa, 10.0 / 3 - p_Transfer_args->kappa) * (p_Transfer_args->kappa - 2) * (p_Transfer_args->kappa - 1) * p_Transfer_args->kappa / (3 * p_Transfer_args->kappa - 1)
+    double Common_factor_low = 1.0 / p_Transfer_args->cbrt_X / p_Transfer_args->cbrt_X * THREE_TO_1_OVER_6 * 10.0 / 41 * 2 * std::numbers::pi / pow(p_Transfer_args->T_electron_dim * p_Transfer_args->kappa, 10.0 / 3 - p_Transfer_args->kappa) * (p_Transfer_args->kappa - 2) * (p_Transfer_args->kappa - 1) * p_Transfer_args->kappa / (3 * p_Transfer_args->kappa - 1)
                              * GAMMA_OF_5_OVER_3 * _2F1;
 
     // ----------------------------------------------------------------------- High frequency fit coefficients ------------------------------------------------------------------------ //
@@ -246,18 +237,18 @@ void Emission_models_class::get_kappa_synchrotron_absorbtion_fit_functions(const
     Absorbtion_functions_low[V]  = Common_factor_low * pow((pow(p_Transfer_args->sin_emission_angle, -114.0 / 50) - 1), 223.0 / 500) / p_Transfer_args->X_to_7_over_20 * pow(p_Transfer_args->kappa, -7.0 / 10);
     Absorbtion_functions_high[V] = Common_factor_high * 143.0 / 10 * pow(p_Transfer_args->T_electron_dim, -116.0 / 125) * sqrt(pow(p_Transfer_args->sin_emission_angle, -41.0 / 20) - 1) * (169 * pow(p_Transfer_args->kappa, -8) + 13.0 / 2500 * p_Transfer_args->kappa - 263. / 5000 + 47.0 / 200 / p_Transfer_args->kappa) / p_Transfer_args->sqrt_X;
     
-    //Absorbtion_functions[V] = pow(pow(Absorbtion_functions_low[V], -power_V) + pow(Absorbtion_functions_high[V], -power_V), -1.0 / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
+    Absorbtion_functions[V] = pow(pow(Absorbtion_functions_low[V], -power_V) + pow(Absorbtion_functions_high[V], -power_V), -1.0 / power_V) * copysign(1.0, p_Transfer_args->cos_emission_angle);
 
 }
 
-void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
-                                                                        double* const Faradey_functions) const{
+void Emission_models_class::get_kappa_synchrotron_Faraday_fit_functions(const Kappa_transfer_f_arguments_type* const p_Transfer_args,
+                                                                        double* const Faraday_functions) const{
 
     // The reference for these expressions is https://iopscience.iop.org/article/10.3847/1538-4357/ac1b28/pdf, equations (51), (52), (53) and (54).
 
     /* Zero out the emission functions just in case. */
-    memset(Faradey_functions, 0, e_Stokes_param_num * sizeof(double));
-    return;
+    memset(Faraday_functions, 0, e_Stokes_param_num * sizeof(double));
+
     /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
 
@@ -293,8 +284,8 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
         Q_coeff = 1 - exp(-pow(p_Transfer_args->X, 0.84) / 30.) - sin(p_Transfer_args->X / 10.) * exp(-1.5 * pow(p_Transfer_args->X, 0.471));
         V_coeff = 1 - 0.17 * log(1 + 0.447 / p_Transfer_args->sqrt_X);
 
-        Faradey_functions[Q] = (17. * T_dim - 3. * sqrt_T_dim + 7. * sqrt_T_dim * exp_T_dim) * Q_coeff * sin_emission_angle * sin_emission_angle;
-        Faradey_functions[V] = (T_dim * T_dim + 2. * T_dim + 1) / (25. / 8 * T_dim * T_dim + 4. * T_dim + 1) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
+        Faraday_functions[Q] = (17. * T_dim - 3. * sqrt_T_dim + 7. * sqrt_T_dim * exp_T_dim) * Q_coeff * sin_emission_angle * sin_emission_angle;
+        Faraday_functions[V] = (T_dim * T_dim + 2. * T_dim + 1) / (25. / 8 * T_dim * T_dim + 4. * T_dim + 1) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
 
     }
     else if (fabs(p_Transfer_args->kappa - 4.0) < 0.01) {
@@ -302,8 +293,8 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
         Q_coeff = 1 - exp(-pow(p_Transfer_args->X, 0.84) / 18.) - sin(p_Transfer_args->X / 6.) * exp(-7. / 4 * pow(p_Transfer_args->X, 0.5));
         V_coeff = 1 - 0.17 * log(1 + 0.391 / p_Transfer_args->sqrt_X);
 
-        Faradey_functions[Q] = (46. / 3 * T_dim - 5. / 3 * sqrt_T_dim + 17. / 3 * sqrt_T_dim * exp_T_dim) * Q_coeff * sin_emission_angle * sin_emission_angle;
-        Faradey_functions[V] = (T_dim * T_dim + 54. * T_dim + 50) / (30. / 11 * T_dim * T_dim + 134. * T_dim + 50) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
+        Faraday_functions[Q] = (46. / 3 * T_dim - 5. / 3 * sqrt_T_dim + 17. / 3 * sqrt_T_dim * exp_T_dim) * Q_coeff * sin_emission_angle * sin_emission_angle;
+        Faraday_functions[V] = (T_dim * T_dim + 54. * T_dim + 50) / (30. / 11 * T_dim * T_dim + 134. * T_dim + 50) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
 
     }
     else if (fabs(p_Transfer_args->kappa - 4.5) < 0.01) {
@@ -311,8 +302,8 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
         Q_coeff = 1 - exp(-pow(p_Transfer_args->X, 0.84) / 12.) - sin(p_Transfer_args->X / 4.) * exp(-2. * pow(p_Transfer_args->X, 0.525));
         V_coeff = 1 - 0.17 * log(1 + 0.348 / p_Transfer_args->sqrt_X);
 
-        Faradey_functions[Q] = (14. * T_dim - 13. / 8 * sqrt_T_dim + 2. / 9 * sqrt_T_dim * exp_T_dim)* Q_coeff* sin_emission_angle * sin_emission_angle;
-        Faradey_functions[V] = (T_dim * T_dim + 43. * T_dim + 38) / (7. / 3 * T_dim * T_dim + 185. / 2 * T_dim + 38) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
+        Faraday_functions[Q] = (14. * T_dim - 13. / 8 * sqrt_T_dim + 2. / 9 * sqrt_T_dim * exp_T_dim)* Q_coeff* sin_emission_angle * sin_emission_angle;
+        Faraday_functions[V] = (T_dim * T_dim + 43. * T_dim + 38) / (7. / 3 * T_dim * T_dim + 185. / 2 * T_dim + 38) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
 
     }
     else if (fabs(p_Transfer_args->kappa - 5.0) < 0.01) {
@@ -320,15 +311,15 @@ void Emission_models_class::get_kappa_synchrotron_faradey_fit_functions(const Ka
         Q_coeff = 1 - exp(-pow(p_Transfer_args->X, 0.84) / 8.) - sin( 3. * p_Transfer_args->X / 8.) * exp(-9. / 4 * pow(p_Transfer_args->X, 0.541));
         V_coeff = 1 - 0.17 * log(1 + 0.313 / p_Transfer_args->sqrt_X);
 
-        Faradey_functions[Q] = (25. / 2 * T_dim - sqrt_T_dim + 5. * sqrt_T_dim * exp_T_dim) * Q_coeff * sin_emission_angle * sin_emission_angle;
-        Faradey_functions[V] = (T_dim + 13. / 14) / (2. * T_dim + 13. / 14) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
+        Faraday_functions[Q] = (25. / 2 * T_dim - sqrt_T_dim + 5. * sqrt_T_dim * exp_T_dim) * Q_coeff * sin_emission_angle * sin_emission_angle;
+        Faraday_functions[V] = (T_dim + 13. / 14) / (2. * T_dim + 13. / 14) * K0_Bessel / K2_Bessel * V_coeff * cos_emission_angle;
 
     }
 
-    if (std::abs(Faradey_functions[Q]) > 1e10 or std::abs(Faradey_functions[V]) > 1e10) {
+    if (std::abs(Faraday_functions[Q]) > 1e10 or std::abs(Faraday_functions[V]) > 1e10) {
 
-        Faradey_functions[Q] = 0.0;
-        Faradey_functions[V] = 0.0;
+        Faraday_functions[Q] = 0.0;
+        Faraday_functions[V] = 0.0;
 
     }
 

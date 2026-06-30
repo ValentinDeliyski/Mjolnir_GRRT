@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include "Enumerations.h"
+#include "Constants.h"
 #include "Structs.h"
 #include <filesystem>
 #include <string>

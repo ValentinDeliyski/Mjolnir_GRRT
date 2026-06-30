@@ -38,6 +38,8 @@ void Step_controller_class::update_step(Integrator_enums e_Active_integrator, co
 
     this->previous_step = this->step;
 
+    if (!this->Parameters.Use_adaptive_step) { return; }
+
     double PID_gain_I{}, PID_gain_P{}, PID_gain_D{}, Gustafsson_k1{}, Gustafsson_k2{};
 
     switch (e_Active_integrator) {
@@ -63,8 +65,6 @@ void Step_controller_class::update_step(Integrator_enums e_Active_integrator, co
         Gustafsson_k2 = this->Parameters.ESDIRK54_Gustafsson_k2;
 
     }
-
-    if (!this->Parameters.Use_adaptive_step) { return; }
 
     double Rel_step_increase{};
 
@@ -131,6 +131,9 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
     this->p_Emission_Model = p_Sim_Context->p_Emission_Model;
     this->p_Ray_log_struct = &p_Ray_results->Ray_log_struct;
+    this->Current_Optical_Depth = &p_Ray_results->Optical_Depth;
+    this->Current_Faraday_Q_Depth = &p_Ray_results->Faraday_Q_Depth;
+    this->Current_Faraday_V_Depth = &p_Ray_results->Faraday_V_Depth;
 
     /* -------- This thing is a unique pointer so I dont have to delete it manually when the integrator goes out of scope -------- */
     this->p_Step_controller = std::make_unique<Step_controller_class>(this->p_Init_conditions->Integrator_params.Geodesic_Step_Controller_Params);
@@ -291,13 +294,13 @@ void Geodesic_Integrator_class::Run_ESDIRK54() {
     Emission_medium_state_type Disk_State{};
     bool Is_inside_emission_medium = false;
 
-    if (this->propagate_optical_depth) {
-
-        Is_inside_emission_medium = this->p_Emission_Model->p_Disk_Model->is_inside_disk(New_State_vector_main, &Disk_State);
-
-    }
-
     if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step) {
+
+        if (this->propagate_optical_depth) {
+
+            Is_inside_emission_medium = this->p_Emission_Model->p_Disk_Model->is_inside_disk(New_State_vector_main, &Disk_State);
+
+        }
 
         if (Is_inside_emission_medium and this->p_Step_controller->step > this->p_Step_controller->Parameters.Max_step_inisde_emission_medium) {
 
@@ -350,11 +353,13 @@ void Geodesic_Integrator_class::Update_optical_depth() {
                                                                      static_cast<Emission_medium_enums>(emission_medium),
                                                                      &Temp_Transfer_functions);
 
-            add_vectors(Temp_Transfer_functions.Absorbtion_functions, Total_Transfer_Functions.Absorbtion_functions, e_Stokes_param_num, Total_Transfer_Functions.Absorbtion_functions);
+            add_vectors(Temp_Transfer_functions.Faraday_functions, Total_Transfer_Functions.Faraday_functions, e_Stokes_param_num, Total_Transfer_Functions.Faraday_functions);
 
         }
 
-        this->Current_optical_depth += Total_Transfer_Functions.Absorbtion_functions[I] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass;
+        *this->Current_Optical_Depth += Total_Transfer_Functions.Absorbtion_functions[I] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass * MASS_TO_CM;
+        *this->Current_Faraday_Q_Depth += Total_Transfer_Functions.Faraday_functions[Q] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass * MASS_TO_CM;
+        *this->Current_Faraday_V_Depth += Total_Transfer_Functions.Faraday_functions[V] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass * MASS_TO_CM;
 
     }
 }
@@ -457,14 +462,14 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta() {
     Emission_medium_state_type Disk_State{};
     bool Is_inside_emission_medium = false;
 
-    if (this->propagate_optical_depth) {
-
-        Is_inside_emission_medium = this->p_Emission_Model->p_Disk_Model->is_inside_disk(New_State_vector_main, &Disk_State) or 
-                                    this->p_Emission_Model->p_Hotspot_Model->is_inside_hotspot(New_State_vector_main, &Disk_State);
-
-    }
-
     if (this->p_Step_controller->current_err < 1.0 or !this->p_Step_controller->Parameters.Use_adaptive_step){
+
+        if (this->propagate_optical_depth) {
+
+            Is_inside_emission_medium = this->p_Emission_Model->p_Disk_Model->is_inside_disk(New_State_vector_main, &Disk_State) or
+                                        this->p_Emission_Model->p_Hotspot_Model->is_inside_hotspot(New_State_vector_main, &Disk_State);
+
+        }
 
         if (Is_inside_emission_medium and this->p_Step_controller->step > this->p_Step_controller->Parameters.Max_step_inisde_emission_medium) {
 
@@ -483,7 +488,8 @@ void Geodesic_Integrator_class::Run_Explicit_Runge_Kutta() {
         this->continue_integration = false;
         this->N_steps_rejected++;
 
-    }
+    }    
+
 
     this->p_Step_controller->update_step(this->e_Active_integrator, New_State_vector_main[e_r], Is_inside_emission_medium);
 
@@ -754,8 +760,8 @@ void Geodesic_Integrator_class::Check_integration_complete_status() {
 
         }
     }
-
-    this->integration_complete = this->Normal_termination_condition or this->Max_affine_param_reached or (this->Current_optical_depth > 100);
+    
+    this->integration_complete = this->Normal_termination_condition or this->Max_affine_param_reached or (*this->Current_Optical_Depth > 100);
 
     if (ESDIRK54 == this->e_Active_integrator) {
 

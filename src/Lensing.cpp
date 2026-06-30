@@ -320,8 +320,6 @@ void static Propagate_forward_emission(const Simulation_Context_type* const p_Si
             double Tetrad[4][4]{};
             double inv_Tetrad[4][4]{};
 
-            double pol_frac = vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector() + 1, 3) / Radiative_transfer_integrator.get_current_Stokes_Vector()[I];
-
             if (p_Sim_Context->p_Init_Conditions->Observer_params.include_polarization and vector_norm(Radiative_transfer_integrator.get_current_Stokes_Vector(), e_Stokes_param_num) > MIN_INTENSITY_THRESHOLD) {
 
                 switch (Construct_Stokes_Tetrad(Tetrad, inv_Tetrad, p_Sim_Context, false, Current_State_Global, Current_State_Local)) {

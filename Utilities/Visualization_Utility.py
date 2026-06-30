@@ -8,16 +8,16 @@ if __name__ == "__main__":
     plt.rcParams['text.usetex'] = True
     plt.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
-    for a in [0]:
-        
-        for gamma in [5]:
-                       
-            fig_title = rf"Numerical disk at $i = 20^\circ$"
+    for sin_run in ["Scale_fac_1"]:
+
+        for inc in [20]:
+                
+            fig_title = rf"Numerical disk at $i = {inc}^\circ$"
                     
             EHT_Array           = ["ngEHT"]
-            Sim_path            = f"C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Numerical_disk_runs\\M87_mass_20_deg\\Numerical_results\\"
+            Sim_path            = f"C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Numerical_disk_runs\\{sin_run}\\M87_mass_{inc}_deg\\Numerical_results\\"
             Sim_Frequency_Bins  = ["230"] # In units of [GHz]
-
+            
             Visualizer = Sim_Visualizer(Sim_path           = Sim_path, 
                                         Sim_Frequency_Bins = Sim_Frequency_Bins,
                                         Array              = EHT_Array,
@@ -25,19 +25,18 @@ if __name__ == "__main__":
                                         Label_Pad          = 8, 
                                         Common_file_name   = "All_Segments_Results",
                                         Respect_folder_structure = False)
-
-            for Radiation_Component in ["Stokes I"]:
-
-                Visualizer.plot_ray_tracer_results(Export_data_for_Ehtim = False, 
-                                                   Save_Figures          = False, 
-                                                   Radiation_Component   = Radiation_Component,
-                                                   Custom_fig_title      = fig_title,
-                                                   Use_angular_coords    = False,
+            
+            for Radiation_Component in ["LP Fraction"]:
+                
+                Visualizer.plot_ray_tracer_results(Save_Figures        = True, 
+                                                   Radiation_Component = Radiation_Component,
+                                                   Custom_fig_title    = fig_title,
+                                                   Use_angular_coords  = False,
                                                    Obs_effective_distance = Visualizer.Units.M87_DISTANCE_GEOMETRICAL,
-                                                   Power = 10,
                                                    Add_Intensity_Slice = True,
-                                                   Colormap_str = "hot")
-
+                                                   Figure_Path = f"C:\\Users\\Valur\\Documents\\Repos\\Mjolnir_GRRT\\Utilities\\Numerical_disk_runs\\Figures\\{sin_run}\\M87_mass_{inc}_deg\\",
+                                                   Colormap_str = "hot",
+                                                   Plot_polarization_ticks_from_Stokes = True)
         # plt.close()
 
     # Visualizer.plot_EHTIM_results(Make_contour_plots = False,                                                      

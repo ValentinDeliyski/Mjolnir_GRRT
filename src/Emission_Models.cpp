@@ -123,8 +123,8 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
             p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
             // The I and U components are 0 by definition
-            p_Transfer_functions->Faradey_functions[Q] += temp_Transfer_functions.Faradey_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Faradey_functions[V] += temp_Transfer_functions.Faradey_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faraday_functions[Q] += temp_Transfer_functions.Faraday_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faraday_functions[V] += temp_Transfer_functions.Faraday_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
         }
     }
@@ -158,7 +158,7 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Transfer_functions->Emission_functions[stokes_idx] *= redshift * redshift;
-        p_Transfer_functions->Faradey_functions[stokes_idx] /= redshift;
+        p_Transfer_functions->Faraday_functions[stokes_idx] /= redshift;
         p_Transfer_functions->Absorbtion_functions[stokes_idx] /= redshift;
     }
 
@@ -239,8 +239,8 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
             p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
             // The I and U components are 0 by definition
-            p_Transfer_functions->Faradey_functions[Q] += temp_Transfer_functions.Faradey_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Faradey_functions[V] += temp_Transfer_functions.Faradey_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faraday_functions[Q] += temp_Transfer_functions.Faraday_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faraday_functions[V] += temp_Transfer_functions.Faraday_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
 
         }
     }
@@ -269,7 +269,7 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Transfer_functions->Emission_functions[stokes_idx] *= redshift * redshift;
-        p_Transfer_functions->Faradey_functions[stokes_idx]  /= redshift;
+        p_Transfer_functions->Faraday_functions[stokes_idx]  /= redshift;
         p_Transfer_functions->Absorbtion_functions[stokes_idx] /= redshift;
     }
 
@@ -299,7 +299,7 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
     for (int stokes_idx = 0; stokes_idx < e_Stokes_param_num; stokes_idx++) {
 
         p_Transfer_functions->Emission_functions[stokes_idx] *= Transfer_args.redshift * Transfer_args.redshift;
-        p_Transfer_functions->Faradey_functions[stokes_idx] /= Transfer_args.redshift;
+        p_Transfer_functions->Faraday_functions[stokes_idx] /= Transfer_args.redshift;
         p_Transfer_functions->Absorbtion_functions[stokes_idx] /= Transfer_args.redshift;
     }
 }
@@ -412,10 +412,10 @@ void Emission_models_class::get_debug_synchrotron_functions(Transfer_functions_t
     p_Transfer_functions->Absorbtion_functions[U] = this->s_Emission_params.Debug_alpha_U_value;
     p_Transfer_functions->Absorbtion_functions[V] = this->s_Emission_params.Debug_alpha_V_value;
 
-    p_Transfer_functions->Faradey_functions[I] = this->s_Emission_params.Debug_rho_I_value;
-    p_Transfer_functions->Faradey_functions[Q] = this->s_Emission_params.Debug_rho_Q_value;
-    p_Transfer_functions->Faradey_functions[U] = this->s_Emission_params.Debug_rho_U_value;
-    p_Transfer_functions->Faradey_functions[V] = this->s_Emission_params.Debug_rho_V_value;
+    p_Transfer_functions->Faraday_functions[I] = this->s_Emission_params.Debug_rho_I_value;
+    p_Transfer_functions->Faraday_functions[Q] = this->s_Emission_params.Debug_rho_Q_value;
+    p_Transfer_functions->Faraday_functions[U] = this->s_Emission_params.Debug_rho_U_value;
+    p_Transfer_functions->Faraday_functions[V] = this->s_Emission_params.Debug_rho_V_value;
 
 }
 
@@ -434,7 +434,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
         this->get_thermal_synchrotron_emission_fit_functions(static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Emission_functions);
         this->get_thermal_synchrotron_absorbtion_fit_functions(static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args), p_Emission_medium_state, p_Transfer_functions->Emission_functions, p_Transfer_functions->Absorbtion_functions);
-        this->get_thermal_synchrotron_faradey_fit_functions(static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Faradey_functions);
+        this->get_thermal_synchrotron_Faraday_fit_functions(static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Faraday_functions);
 
         frequency = static_cast<const Thermal_transfer_f_arguments_type*>(p_Transfer_args)->frequency;
 
@@ -444,7 +444,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
         this->get_kappa_synchrotron_emission_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Emission_functions);
         this->get_kappa_synchrotron_absorbtion_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Absorbtion_functions);
-        this->get_kappa_synchrotron_faradey_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Faradey_functions);
+        this->get_kappa_synchrotron_Faraday_fit_functions(static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args), p_Transfer_functions->Faraday_functions);
 
         frequency = static_cast<const Kappa_transfer_f_arguments_type*>(p_Transfer_args)->frequency;
 
@@ -479,11 +479,11 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
     p_Transfer_functions->Absorbtion_functions[Q] *= p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / frequency / M_ELECTRON_CGS / C_LIGHT_CGS;
     p_Transfer_functions->Absorbtion_functions[V] *= p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / frequency / M_ELECTRON_CGS / C_LIGHT_CGS;
 
-    /* ================================================ The faradey functions ================================================ */
+    /* ================================================ The Faraday functions ================================================ */
     /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33. */
 
-    p_Transfer_functions->Faradey_functions[Q] *= -p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS * f_cyclo * f_cyclo / M_ELECTRON_CGS / C_LIGHT_CGS / frequency / frequency / frequency;
-    p_Transfer_functions->Faradey_functions[V] *= 2 * p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS * f_cyclo / M_ELECTRON_CGS / C_LIGHT_CGS / frequency / frequency;
+    p_Transfer_functions->Faraday_functions[Q] *= -p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS * f_cyclo * f_cyclo / M_ELECTRON_CGS / C_LIGHT_CGS / frequency / frequency / frequency;
+    p_Transfer_functions->Faraday_functions[V] *= 2 * p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS * f_cyclo / M_ELECTRON_CGS / C_LIGHT_CGS / frequency / frequency;
 
 }
 
@@ -520,7 +520,7 @@ void Emission_models_class::precompute_electron_pitch_angles(Initial_conditions_
             this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin[index] = 1. / sqrt(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index]);
             this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin[index] = 1. / cbrt(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index]);
 
-            // Used in the thermal synchrotron Faradey functions.
+            // Used in the thermal synchrotron Faraday functions.
 
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_5175[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 0.5175);
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_6[index]    = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 0.6);

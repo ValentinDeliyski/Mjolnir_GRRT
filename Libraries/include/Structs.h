@@ -438,7 +438,7 @@ struct Precomputed_e_pitch_angles_type {
     /*! @brief 1. / cbrt(sin) */
     double* one_over_cbrt_sin{};
 
-    // === Used in the thermal synchotron Faradey functions === //
+    // === Used in the thermal synchotron Faraday functions === //
 
      /*! @brief 1. / pow(sin, 0.5175) */
     double* one_over_sin_to_0_p_5175{};
@@ -542,8 +542,8 @@ struct Transfer_functions_type {
     /*! @brief Array that holds the current emission functions for all polarizations. */
     double Emission_functions[e_Stokes_param_num]{};
 
-    /*! @brief Array that holds the current Faradey functions for all polarizations. */
-    double Faradey_functions[e_Stokes_param_num]{};
+    /*! @brief Array that holds the current Faraday functions for all polarizations. */
+    double Faraday_functions[e_Stokes_param_num]{};
 
     /*! @brief Array that holds the current absorbtion functions for all polarizations. */
     double Absorbtion_functions[e_Stokes_param_num]{};
@@ -939,13 +939,16 @@ struct Results_type {
     /*! @brief Array that holds the Novikov-Thorne disk redshift. */
     double Redshift_NT{};
 
-    /*! @brief Placeholder for an array that will hold the integrated optical depth. */
     double Optical_Depth{};
+
+    double Faraday_Q_Depth{};
+
+    double Faraday_V_Depth{};
 
     /*! @brief Array that holds the coordinates of the image on the observer plane.
         NOTE: These get affected by the cam_rotation_angle parameter of the observer. */
     double Image_Coords[2]{};
-
+    
 };
 
 struct Debug_mode_struct {
