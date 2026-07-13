@@ -53,7 +53,7 @@ class Simulation:
         self.Simulation_configurator.observer.Cam_rotation_angle = {"Value": 0, "Unit": "[-]"}
         self.Simulation_configurator.observer.Use_angular_coords = {"Value": 1, "Unit": "[-]"}
         
-        self.Simulation_configurator.disk_model.Threshold_relative_density = {"Value": 1e-6, "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Threshold_relative_density = {"Value": 1e-5, "Unit": "[-]"}
         
         self.Simulation_configurator.observer.Include_polarization = {"Value": 1, "Unit": "[-]"}
         
@@ -65,7 +65,7 @@ class Simulation:
         self.Simulation_configurator.disk_model.Disk_Model = {"Value": "Numerical", "Unit": "[-]"}
         self.Simulation_configurator.disk_model.Ensamble_type = {"Value": "Thermal", "Unit": "[-]"}
         
-        self.Simulation_configurator.disk_model.Numerical_disk_params.Spline_type = {"Value": "GSL_cubic", "Unit": "[-]"}
+        self.Simulation_configurator.disk_model.Numerical_disk_params.Spline_type = {"Value": "GSL_linear", "Unit": "[-]"}
         
         self.Simulation_configurator.disk_model.r_ISCO = {"Value": 4.233, "Unit": "[M]"}
         self.Simulation_configurator.disk_model.Ang_momentum_below_ISCO = {"Value": 3.414213760169089, "Unit": "[-]"}
@@ -108,7 +108,7 @@ class Simulation:
          
         self.Simulation_configurator.geodesic_integrator.min_upper_stepsize = {"Value": 1, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.max_step_b_coeff = {"Value": 0.0001, "Unit": "[-]"}
-        self.Simulation_configurator.geodesic_integrator.Max_step_in_emission_medium = {"Value": 0.01, "Unit": "[-]"}
+        self.Simulation_configurator.geodesic_integrator.Max_step_in_emission_medium = {"Value": 0.1, "Unit": "[-]"}
         self.Simulation_configurator.geodesic_integrator.dist_at_min_upper_stepsize = {"Value": 25, "Unit": "[-]"}
         
         self.Simulation_configurator.geodesic_integrator.max_integration_count = {"Value": 10000000, "Unit": "[-]"}
@@ -309,7 +309,7 @@ def init_global_lock(lock):
     
 if __name__ == "__main__":
     
-    for inc in [20]:
+    for inc in [20, 70]:
         
         Sim_instance = Simulation(inclination = inc, resolution = 256)
         

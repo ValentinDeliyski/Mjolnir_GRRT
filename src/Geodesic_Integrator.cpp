@@ -328,7 +328,7 @@ void Geodesic_Integrator_class::Run_ESDIRK54() {
         memcpy(this->Current_Dynamic_state, New_State_vector_main, e_Dynamic_state_size * sizeof(double));
 
         this->Update_ray_log(New_State_vector_main);
-        this->Update_optical_depth();
+        //this->Update_optical_depth();
         this->Update_debug_log();
 
         this->N_steps_rejected = 0;

@@ -166,9 +166,9 @@ class Sim_Visualizer():
         Subplot.tick_params(which = 'minor', length = 4, labelsize = 6)
         Subplot.tick_params(which = 'major', length = 8, labelsize = 6)
 
-        Pol_tick_scale = sqrt(Q_Intensity**2 + U_Intensity**2) / max(I_Intensity.flatten())
+        Pol_tick_scale = 1 * sqrt(Q_Intensity**2 + U_Intensity**2) / max(I_Intensity.flatten())
         
-        Pol_vec_x = sqrt((1 + Q_Intensity / (I_Intensity +  + 1e-12)) / 2)
+        Pol_vec_x = sqrt((1 + Q_Intensity / (I_Intensity + 1e-12)) / 2)
         Pol_vec_y = U_Intensity / (2 * I_Intensity * Pol_vec_x + 1e-12)
 
         X_coords_to_plot = []
@@ -301,6 +301,13 @@ class Sim_Visualizer():
                     Cbar_label: str = r"Q Fractional Intensity [\%]"
                     
                     File_suffix = "Stokes_Q"
+                    
+                    if Use_angular_coords:
+                        X_Slice_tile: str = "Stokes Q at " + r'$\delta_{\text{rel}} = 0$'
+                    else:
+                        X_Slice_tile: str = "Stokes Q at " + r'$Y = 0$'
+                        
+                    X_Slice_y_label = ""
 
                 case "Stokes U":
                     Data_to_plot = U_Intensity / max(I_Intensity.flatten()) * 100
@@ -310,7 +317,14 @@ class Sim_Visualizer():
 
                     Cbar_label: str = r"U Fractional Intensity [\%]"
 
-                    File_suffix = "Stokes_U"
+                    File_suffix = "Stokes_U"   
+                    
+                    if Use_angular_coords:
+                        X_Slice_tile: str = "Stokes U at " + r'$\delta_{\text{rel}} = 0$'
+                    else:
+                        X_Slice_tile: str = "Stokes U at " + r'$Y = 0$'
+                        
+                    X_Slice_y_label = ""
                     
                 case "Stokes V":
                     Data_to_plot: NDArray[float64] = V_Intensity / max(I_Intensity.flatten()) * 100
@@ -320,7 +334,14 @@ class Sim_Visualizer():
                     
                     Cbar_label: str = r"V Fractional Intensity [\%]"
                     
-                    File_suffix = "Stokes_V"
+                    File_suffix = "Stokes_V"  
+                    
+                    if Use_angular_coords:
+                        X_Slice_tile: str = "Stokes V at " + r'$\delta_{\text{rel}} = 0$'
+                    else:
+                        X_Slice_tile: str = "Stokes V at " + r'$Y = 0$'
+                        
+                    X_Slice_y_label = ""
 
                 case "LP Fraction":
                     Data_to_plot: NDArray[float64] = sqrt(U_Intensity**2 + Q_Intensity**2) / max(abs(I_Intensity.flatten())) * 100
@@ -334,6 +355,13 @@ class Sim_Visualizer():
                     Cbar_label: str = r"LP fraction [\%]"
                     
                     File_suffix = "LP_Fraction"
+                    
+                    if Use_angular_coords:
+                        X_Slice_tile: str = "LP Fraction at " + r'$\delta_{\text{rel}} = 0$'
+                    else:
+                        X_Slice_tile: str = "LP Fraction at " + r'$Y = 0$'
+                    X_Slice_y_label = ""
+                    
                     
                 case "Faraday V Depth":
                     

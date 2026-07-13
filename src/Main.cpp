@@ -107,7 +107,7 @@ int main(int argument_count, char** cmd_line_args) {
 
         s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
 
-        if (ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)) { throw std::runtime_error("Could not parse input file!"); }
+        if (Return_Values::ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)) { throw std::runtime_error("Could not parse input file!"); }
 
         s_Sim_Context.p_Init_Conditions->Print_to_console = print_to_console;
         s_Sim_Context.p_Init_Conditions->Hotspot_params.Profile_params.Coord_time_offset += s_Sim_Context.p_Init_Conditions->Observer_params.distance;
@@ -132,7 +132,7 @@ int main(int argument_count, char** cmd_line_args) {
         s_Sim_Context.p_Emission_Model->precompute_electron_pitch_angles(s_Sim_Context.p_Init_Conditions);
 
 
-        if (s_Sim_Context.p_Init_Conditions->Disk_params.e_Disk_model == e_Novikov_Thorne) {
+        if (Disk_model_enums::e_Novikov_Thorne == s_Sim_Context.p_Init_Conditions->Disk_params.e_Disk_model) {
 
             // Allocate the Novikov-Thorne Model class
             s_Sim_Context.p_NT_model = new Novikov_Thorne_Model_class(&s_Sim_Context);
@@ -204,13 +204,13 @@ int main(int argument_count, char** cmd_line_args) {
 
         }
 
-        return OK;
+        return Return_Values::OK;
 
     }
     catch (const std::exception& error) {
 
         std::cout << std::endl << "Mjolnir ERROR: " << error.what() << std::endl << std::endl;
-        return ERROR;
+        return Return_Values::ERROR;
 
     }
 

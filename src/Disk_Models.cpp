@@ -174,7 +174,7 @@ double Disk_model_type::get_von_Zeipel_cylinder_condition(const Metric_type Metr
     const auto& g = Metric.Metric;
     const auto& g_target = s_Target_Metric.Metric;
 
-    const double quadratic_coeff = g[e_t][e_t] * g_target[e_t][e_phi] - g_target[e_t][e_t] - g[e_t][e_phi];
+    const double quadratic_coeff = g[e_t][e_t] * g_target[e_t][e_phi] - g_target[e_t][e_t] * g[e_t][e_phi];
     const double linear_coeff = g[e_t][e_t] * g_target[e_phi][e_phi] - g_target[e_t][e_t] * g[e_phi][e_phi];
     const double free_coeff = g[e_t][e_phi] * g_target[e_phi][e_phi] - g_target[e_t][e_phi] * g[e_phi][e_phi];
 
@@ -221,7 +221,7 @@ double Disk_model_type::get_disk_eq_ang_momentum_profile(double r_0) const {
 double Disk_model_type::get_disk_ang_momentum_profile(const double* const Local_State_Vector) {
 
     this->von_Zeipel_cylinder_condition_wrapper_params.Metric = this->p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
-   
+
     const double rho_coord = Local_State_Vector[e_r] * sin(Local_State_Vector[e_theta]);
 
     double offset_1 = 0.5;
@@ -233,9 +233,11 @@ double Disk_model_type::get_disk_ang_momentum_profile(const double* const Local_
     double root_finder_lo_lim_test = this->get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, rho_coord - offset_1);
     double root_finder_hi_lim_test = this->get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, rho_coord + offset_2);
 
-    while (root_finder_lo_lim_test * root_finder_hi_lim_test > 0 and iteration_num < 20) {
+    const double& Upper_r_limit = this->s_Disk_params.Numerical_disk_params.R_coord_grid[this->s_Disk_params.Numerical_disk_params.R_coord_grid_size - 1];
 
-        if (std::abs(root_finder_lo_lim_test) > std::abs(root_finder_hi_lim_test)) {
+    while (root_finder_lo_lim_test * root_finder_hi_lim_test > 0 and rho_coord + offset_2 < Upper_r_limit) {
+
+        if (std::abs(root_finder_lo_lim_test) > std::abs(root_finder_hi_lim_test) or rho_coord - offset_1 < 1) {
 
             offset_2 += 1;
 
@@ -245,12 +247,6 @@ double Disk_model_type::get_disk_ang_momentum_profile(const double* const Local_
         else {
 
             offset_1 += 1;
-
-            if (rho_coord - offset_1 < 0) {
-
-                throw std::runtime_error("Could not find an approprite interval for the root finder in get_disk_velocity!");
-
-            }
 
             root_finder_lo_lim_test = this->get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, rho_coord - offset_1);
 
@@ -302,7 +298,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
         /* ------------------------------------------------ Get the density profile ------------------------------------------------ */
 
-        if (State_Vector[e_r] > Upper_r_limit or State_Vector[e_r] < Lower_r_limit or std::abs(State_Vector[e_r] * cos(State_Vector[e_theta])) > Upper_z_limit) {
+        if (State_Vector[e_r] > Upper_r_limit or State_Vector[e_r] < Lower_r_limit or std::abs(cos(State_Vector[e_theta])) > Upper_z_limit) {
 
             p_Emission_medium_state->Density = 0.0;
 
@@ -311,12 +307,11 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
             
             p_Emission_medium_state->Density = std::abs(gsl_spline2d_eval(this->Spline_instance_density,
                                                                           State_Vector[e_r],
-                                                                          std::abs(State_Vector[e_r] * cos(State_Vector[e_theta])),
+                                                                          abs(cos(State_Vector[e_theta])),
                                                                           this->Radial_interp_accelerator,
                                                                           this->Theta_interp_accelerator));
 
         }
-
 
         /* TODO: check this scaling */
         p_Emission_medium_state->Density *= this->Geometric_to_cgs_density_convertor;
@@ -517,7 +512,7 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
 bool Disk_model_type::is_inside_disk(const double* const State_Vector, Emission_medium_state_type* const Disk_State) const {
 
-    if (!this->s_Disk_params.Enable_flag or e_Novikov_Thorne == this->s_Disk_params.e_Disk_model) { return false; }
+    if (!this->s_Disk_params.Enable_flag or Disk_model_enums::e_Novikov_Thorne == this->s_Disk_params.e_Disk_model) { return false; }
 
     this->get_density_and_temperature(State_Vector, Disk_State);
 
@@ -570,7 +565,7 @@ void Disk_model_type::get_numerical_mag_field(const double* const Local_State_Ve
     double B_vec_norm = sqrt(get_4vec_dot_product(Emission_medium_state->Magnetic_fields.B_field_plasma_frame, 
                                                   Emission_medium_state->Magnetic_fields.B_field_plasma_frame, 
                                                   p_Metric->Metric, 
-                                                  Contravariant));
+                                                  Tensor_type_enums::Contravariant));
 
     Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_phi] /= B_vec_norm;
     Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] /= B_vec_norm;
@@ -734,7 +729,7 @@ const double* const Disk_model_type::get_disk_velocity(const double* const Local
 
     switch (this->s_Disk_params.Velocity_profile_type) {
 
-    case e_Keplarian:
+    case Velocity_enums::e_Keplarian:
 
         /* This velocity profile is defined only for orbit radii > ISCO. */
         if (fabs(r_source) < this->s_Disk_params.r_ISCO) { throw std::runtime_error("Disk with a Keplarian velocity profile extends below the ISCO orbit!"); }
@@ -749,7 +744,7 @@ const double* const Disk_model_type::get_disk_velocity(const double* const Local
 
         break;
 
-    case e_von_Zeipel_cylinder:
+    case Velocity_enums::e_von_Zeipel_cylinder:
 
         ell = this->get_disk_ang_momentum_profile(Local_State_Vector);
 
@@ -801,7 +796,10 @@ const double* const Disk_model_type::get_disk_velocity(const double* const Local
         isnan(this->Disk_Velocity[e_phi]) or
         isinf(this->Disk_Velocity[e_phi])) {
 
+        std::cout << ell << " " << r_source << " "<< theta_source << " " << r_source * sin(theta_source) << "\n";
+
         throw std::runtime_error("Invalid disk velocity!");
+
 
     }
 
