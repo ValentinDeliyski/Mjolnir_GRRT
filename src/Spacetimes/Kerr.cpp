@@ -311,4 +311,12 @@ void Kerr_class::Convert_local_to_global_coords(const double* const, const doubl
 
     }
 
+
+
+}
+
+double Kerr_class::get_object_characteristic_size() {
+
+    return this->Horizon_radius;
+
 }

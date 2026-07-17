@@ -222,43 +222,10 @@ double Disk_model_type::get_disk_ang_momentum_profile(const double* const Local_
 
     this->von_Zeipel_cylinder_condition_wrapper_params.Metric = this->p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
 
-    const double rho_coord = Local_State_Vector[e_r] * sin(Local_State_Vector[e_theta]);
-
-    double offset_1 = 0.5;
-    double offset_2 = 0.5;
-
-    int iteration_num = 0;
     int root_finder_status = GSL_CONTINUE;
 
-    double root_finder_lo_lim_test = this->get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, rho_coord - offset_1);
-    double root_finder_hi_lim_test = this->get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, rho_coord + offset_2);
-
     const double& Upper_r_limit = this->s_Disk_params.Numerical_disk_params.R_coord_grid[this->s_Disk_params.Numerical_disk_params.R_coord_grid_size - 1];
-
-    while (root_finder_lo_lim_test * root_finder_hi_lim_test > 0 and rho_coord + offset_2 < Upper_r_limit) {
-
-        if (std::abs(root_finder_lo_lim_test) > std::abs(root_finder_hi_lim_test) or rho_coord - offset_1 < 1) {
-
-            offset_2 += 1;
-
-            root_finder_hi_lim_test = this->get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, rho_coord + offset_2);
-
-        }
-        else {
-
-            offset_1 += 1;
-
-            root_finder_lo_lim_test = this->get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, rho_coord - offset_1);
-
-        };
-
-        iteration_num++;
-
-    }
-
-    /* The roots of this equation are expected to be rather close to r * sin(theta), so I give it an interval around that.
-       That interval annoyingly enough can't be static, so the above logic finds an approprite one (the function at the endpoins has opposite signs). */
-    gsl_root_fsolver_set(this->Root_finder, &this->Function_to_solve, rho_coord - offset_1, rho_coord + offset_2);
+    gsl_root_fsolver_set(this->Root_finder, &this->Function_to_solve, this->p_Sim_Context->p_Spacetime->get_object_characteristic_size(), Upper_r_limit);
 
     while (root_finder_status == GSL_CONTINUE) {
 
