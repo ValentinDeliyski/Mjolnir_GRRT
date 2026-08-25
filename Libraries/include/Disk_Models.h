@@ -64,7 +64,6 @@ public:
     /* Holds all the model parameteres for the background accretion disk. */
     Disk_model_parameters_type s_Disk_params{};
 
-    //! Copies over the initial data from the Simulation Context struct to internal variables for the sake of convenience
     /*! Copies over the initial data from the Simulation Context struct to internal variables for the sake of convenience
      *
      *   \param [in] p_Sim_Context - Pointer to the Simulation Context struct.
@@ -76,7 +75,6 @@ public:
                             const Metric_type* const p_Metric,
                             Emission_medium_state_type* const Emission_medium_state);
 
-    //! Computes the accretion disk density
     /*! Computes the accretion disk at the current photon position.
      *
      *   \param [in] State_Vector - Pointer to the current photon state vector.

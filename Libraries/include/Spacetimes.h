@@ -44,7 +44,7 @@ public:
 
     virtual void Convert_local_to_global_coords(const double* const, const double* const, double*, Coord_conversion_enums) { throw std::runtime_error("Using Base Spacetime Class. Something Broke in Convert_global_to_local_coords!"); };
 
-    virtual double get_object_characteristic_size() { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_object_characteristic_size!"); };
+    virtual double get_object_characteristic_size() const { throw std::runtime_error("Using Base Spacetime Class. Something Broke in get_object_characteristic_size!"); };
 
 };
 
@@ -85,7 +85,7 @@ public:
 
     void Convert_local_to_global_coords(const double* const State_Vector_Local, const double* const Local_Vec_to_Convert, double* Global_Vec_to_Convert, Coord_conversion_enums Entry_to_convert) override;
 
-    double get_object_characteristic_size();
+    double get_object_characteristic_size() const override;
 
 };
 

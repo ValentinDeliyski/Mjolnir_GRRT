@@ -312,10 +312,10 @@ class Simulation_Parser():
         
         return Position_tuple, Momentum_tuple, Emission_tuple, self.integration_step, self.affine_param, Debug_tuple, Polarization_tuple, PW_Constant_tuple
         
-    def export_ehtim_data(self, Spacetime: str, data: NDArray, path: str) -> None:
+    def export_ehtim_data(self, Spacetime: str, I_data: NDArray, Q_data: NDArray, U_data: NDArray, V_data: NDArray, path: str) -> None:
 
-        ehtim_x_fov = 2 * 5.000000e-05
-        ehtim_y_fov = 2 * 5.000000e-05
+        ehtim_x_fov = 2 * 5.500000e-05
+        ehtim_y_fov = 2 * 5.500000e-05
         
         Window_limits = self.Simulation_metadata["Observation Window Dimentions (-X,+X,-Y,+Y) [M]"].split(",")
         Window_limits = [float(Limit) for Limit in Window_limits]
@@ -327,7 +327,10 @@ class Simulation_Parser():
         
         Pixel_area = abs(Window_limits[1] - Window_limits[0]) * abs(Window_limits[3] - Window_limits[2]) / X_resolution / Y_resolution
 
-        formatted_sim_data = data.reshape(1, X_resolution * Y_resolution).flatten()
+        formatted_I_data = I_data.reshape(1, X_resolution * Y_resolution).flatten()
+        formatted_Q_data = Q_data.reshape(1, X_resolution * Y_resolution).flatten()
+        formatted_U_data = U_data.reshape(1, X_resolution * Y_resolution).flatten()
+        formatted_V_data = V_data.reshape(1, X_resolution * Y_resolution).flatten()
 
         X_coords = linspace(-1, 1, X_resolution) * ehtim_x_fov / 2
         X_coords = vstack([X_coords] * Y_resolution).flatten()
@@ -337,7 +340,10 @@ class Simulation_Parser():
 
         array_to_export = array([X_coords, 
                                  Y_coords, 
-                                 formatted_sim_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2]).T
+                                 formatted_I_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2,
+                                 formatted_Q_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2,
+                                 formatted_U_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2,
+                                 formatted_V_data * Pixel_area / Units.M87_DISTANCE_GEOMETRICAL**2,]).T
 
         Obs_frequency: float = float(self.Simulation_metadata["Observation Frequency [Hz]"])
 
@@ -346,10 +352,10 @@ class Simulation_Parser():
                   "DEC: 12 deg 23 m 27.9600 s \n" +
                   "MJD: 58211.000000 \n"          + 
                   "RF: {} GHz \n".format(Obs_frequency / 1e9)    +
-                  "FOVX: {} pix 0.000100 as \n".format(X_resolution) +
-                  "FOVY: {} pix 0.000100 as \n".format(Y_resolution) +
+                  "FOVX: {} pix 0.000110 as \n".format(X_resolution) +
+                  "FOVY: {} pix 0.000110 as \n".format(Y_resolution) +
                   "------------------------------------ \n" +
-                  "x (as)     y (as)       I (Jy/pixel)")
+                  "x (as)     y (as)       I (Jy/pixel)  Q (Jy/pixel)  U (Jy/pixel)  V (Jy/pixel)")
 
         with open(path + '{}_data_for_ehtim_{}.csv'.format(Spacetime, int(Obs_frequency / 1e9)), 'w') as my_file:
                   savetxt(my_file, array_to_export, fmt = '%0.4e', header = header)

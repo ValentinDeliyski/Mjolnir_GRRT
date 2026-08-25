@@ -1,6 +1,6 @@
 from numpy.typing import NDArray
 from numpy import float64, bool_
-from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes, argmax, log, nan, isnan, inf
+from numpy import array, arctan, zeros, abs, linspace, sqrt, pi, full, ma, logical_and, logical_not, absolute, ones, swapaxes, argmax, log, nan, isnan, inf, sin, cos, arctan2
 from math import ceil, floor
 
 from matplotlib.figure import Figure
@@ -166,11 +166,13 @@ class Sim_Visualizer():
         Subplot.tick_params(which = 'minor', length = 4, labelsize = 6)
         Subplot.tick_params(which = 'major', length = 8, labelsize = 6)
 
-        Pol_tick_scale = 1 * sqrt(Q_Intensity**2 + U_Intensity**2) / max(I_Intensity.flatten())
+        Pol_tick_scale = 5 * 5* sqrt(Q_Intensity**2 + U_Intensity**2) / max(I_Intensity.flatten())
         
-        Pol_vec_x = sqrt((1 + Q_Intensity / (I_Intensity + 1e-12)) / 2)
-        Pol_vec_y = U_Intensity / (2 * I_Intensity * Pol_vec_x + 1e-12)
-
+        pol_angle = 0.5 * arctan2(U_Intensity , Q_Intensity)
+        
+        Pol_vec_x = -sin(pol_angle)
+        Pol_vec_y = cos(pol_angle)
+        
         X_coords_to_plot = []
         Y_coords_to_plot = []
             
@@ -183,11 +185,6 @@ class Sim_Visualizer():
         for x_idx in range(0, X_resolution, int(X_resolution / 32)):
             
             for y_idx in range(0, Y_resolution, int(Y_resolution / 32)):
-                
-                if (Pol_vec_x[x_idx][y_idx] != Pol_vec_x[x_idx][y_idx]):
-                    
-                    Pol_vec_x[x_idx][y_idx] = 1 / sqrt(2)
-                    Pol_vec_y[x_idx][y_idx] = 0
                     
                 X_coords_to_plot.append(X_coords[x_idx][y_idx] - Pol_tick_scale[x_idx][y_idx] * Pol_vec_x[x_idx][y_idx] / 2)
                 Y_coords_to_plot.append(Y_coords[x_idx][y_idx] - Pol_tick_scale[x_idx][y_idx] * Pol_vec_y[x_idx][y_idx] / 2)
@@ -344,7 +341,7 @@ class Sim_Visualizer():
                     X_Slice_y_label = ""
 
                 case "LP Fraction":
-                    Data_to_plot: NDArray[float64] = sqrt(U_Intensity**2 + Q_Intensity**2) / max(abs(I_Intensity.flatten())) * 100
+                    Data_to_plot: NDArray[float64] = sqrt(U_Intensity**2 + Q_Intensity**2) / max(I_Intensity.flatten()) * 100
  
                     Data_to_plot[Data_to_plot == inf] = 0
                     Data_to_plot[Data_to_plot != Data_to_plot] = 0
@@ -505,11 +502,21 @@ class Sim_Visualizer():
                     return
 
             if Plot_polarization_ticks_from_Stokes:
-                self.__plot_polarization_ticks(I_Intensity, Q_Intensity, U_Intensity, X_coords, Y_coords, Image_Subplot)
+                
+                if Use_angular_coords:
+                    X_coords_ang = arctan(X_coords / Obs_effective_distance) * self.Units.RAD_TO_MICRO_AS
+                    Y_coords_ang = arctan(Y_coords / Obs_effective_distance) * self.Units.RAD_TO_MICRO_AS
+                    self.__plot_polarization_ticks(I_Intensity, Q_Intensity, U_Intensity, X_coords_ang, Y_coords_ang, Image_Subplot)
+                    
+                else:
+                    self.__plot_polarization_ticks(I_Intensity, Q_Intensity, U_Intensity, X_coords, Y_coords, Image_Subplot)
 
             if Export_data_for_Ehtim:
                 self.Sim_Parsers[Sim_number].export_ehtim_data(Spacetime = self.Sim_Parsers[Sim_number].Simulation_metadata["Spacetime [-]"], 
-                                                               data = I_Intensity,
+                                                               I_data = I_Intensity,
+                                                               Q_data = Q_Intensity,
+                                                               U_data = U_Intensity,
+                                                               V_data = V_Intensity,
                                                                path = self.Sim_path)
 
             # Create the plot of the Simulated Image

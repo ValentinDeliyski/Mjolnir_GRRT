@@ -222,11 +222,22 @@ double Disk_model_type::get_disk_ang_momentum_profile(const double* const Local_
 
     this->von_Zeipel_cylinder_condition_wrapper_params.Metric = this->p_Sim_Context->p_Spacetime->get_local_metric(Local_State_Vector);
 
-    int root_finder_status = GSL_CONTINUE;
-
     const double& Upper_r_limit = this->s_Disk_params.Numerical_disk_params.R_coord_grid[this->s_Disk_params.Numerical_disk_params.R_coord_grid_size - 1];
-    gsl_root_fsolver_set(this->Root_finder, &this->Function_to_solve, this->p_Sim_Context->p_Spacetime->get_object_characteristic_size(), Upper_r_limit);
+    double Lower_r_limit = this->p_Sim_Context->p_Spacetime->get_object_characteristic_size();
 
+    double Lower_limit_condition = get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, Lower_r_limit);
+    double Upper_limit_condition = get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, Upper_r_limit);
+
+    while (Lower_limit_condition * Upper_limit_condition > 0 and Lower_r_limit < Upper_r_limit) {
+
+        Lower_r_limit += 0.01;
+        Lower_limit_condition = get_von_Zeipel_cylinder_condition(this->von_Zeipel_cylinder_condition_wrapper_params.Metric, Lower_r_limit);
+
+    }
+
+    gsl_root_fsolver_set(this->Root_finder, &this->Function_to_solve, Lower_r_limit, Upper_r_limit);
+
+    int root_finder_status = GSL_CONTINUE;
     while (root_finder_status == GSL_CONTINUE) {
 
         root_finder_status = gsl_root_fsolver_iterate(this->Root_finder);
@@ -718,7 +729,7 @@ const double* const Disk_model_type::get_disk_velocity(const double* const Local
         u_t = -1.0 / sqrt(-(inv_metric[e_t][e_t] - 2 * inv_metric[e_t][e_phi] * ell + inv_metric[e_phi][e_phi] * ell * ell));
         u_phi = -u_t * ell;
 
-        /* Convert U_source to contravariant components to compute the circular velocity profile */
+        /* Convert to contravariant components to compute the circular velocity profile */
         this->Disk_Velocity[e_t] = inv_metric[e_t][e_t] * u_t + inv_metric[e_t][e_phi] * u_phi;
         this->Disk_Velocity[e_r] = 0.0;
         this->Disk_Velocity[e_theta] = 0.0;

@@ -24,7 +24,7 @@ Kerr_class::Kerr_class(const Metric_parameters_type* const p_Metric_Parameters) 
     this->Spin_Param = p_Metric_Parameters->Spin;
     this->Horizon_radius = 0;
 
-    if (this->Spin_Param * this->Spin_Param < 1) {
+    if (this->Spin_Param * this->Spin_Param < this->Mass * this->Mass) {
 
         this->Horizon_radius = this->Mass * (1 + sqrt(1 - pow(this->Spin_Param / this->Mass, 2)));
 
@@ -315,7 +315,7 @@ void Kerr_class::Convert_local_to_global_coords(const double* const, const doubl
 
 }
 
-double Kerr_class::get_object_characteristic_size() {
+double Kerr_class::get_object_characteristic_size() const {
 
     return this->Horizon_radius;
 
