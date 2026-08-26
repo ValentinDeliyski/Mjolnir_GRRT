@@ -32,7 +32,7 @@ public:
 
     static std::string get_file_contents(const char* filename, std::string file_type);
     
-    void OpenGL_init(Initial_conditions_type* p_Init_conditions);
+    void OpenGL_init(std::shared_ptr<Initial_conditions_type> p_Init_conditions);
     
     void update_rendering_window() const;
     

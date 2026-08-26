@@ -88,7 +88,7 @@ void ZAMO_to_Contravariant_coord(const Metric_type* const p_Metric, const Vec_ty
  *   \param [in] H_angle_cam - Horizontal direction angle.
  *   \return Nothing.
  */
-void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Conditions, double V_angle, double H_angle);
+void get_intitial_conditions_from_angles(std::shared_ptr<Initial_conditions_type> p_Initial_Conditions, double V_angle, double H_angle);
 
 /*! @brief Computes the coordinates of the image on the observation plane, and stores them in the Initial Conditions struct.
  *
@@ -96,7 +96,7 @@ void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Cond
  *   \param [out] Image_coords - Pointer to the array that hold the image coordinates on the observation plane.
  *   \return Nothing.
  */
-void get_image_coordinates(Initial_conditions_type* p_Initial_Conditions, double* const Image_coords);
+void get_image_coordinates(std::shared_ptr<Initial_conditions_type> p_Initial_Conditions, double* const Image_coords);
 
 /*! @brief Computes redshift for for a ray, emitted by a source with 4-velocity "U_source", at a point specified by "State_Vector",
  *  for an observer, specified by the "Observer" class instance.
@@ -133,7 +133,7 @@ bool Check_for_equatorial_crossing(const double* const State_Vector, const doubl
  *   \param [in] p_Initial_Conditions - Pointer to the Initial Contitions struct.
  *   \return The order of the ray
  */
-int compute_image_order(const int N_theta_turning_points, const int N_equatorial_crossings, Initial_conditions_type* const p_Initial_Conditions);
+int compute_image_order(const int N_theta_turning_points, const int N_equatorial_crossings, std::shared_ptr<Initial_conditions_type> const p_Initial_Conditions);
 
 /*! @brief Computes the connection coefficients, given the metric and its radial and theta derivatives, then stores it in the 3D array "Connectrion_Coeffs"
  *
@@ -151,6 +151,6 @@ double get_real_4vec_norm(const double* const Vector, const double Metric[4][4],
 
 void Normalize_real_vector(double* const Vector, const double Metric[4][4], Tensor_type_enums Vector_type);
 
-void get_initial_conditions_from_image_coords(Initial_conditions_type* p_Initial_Conditions, double Image_X_coord, double Image_Y_coord);
+void get_initial_conditions_from_image_coords(std::shared_ptr<Initial_conditions_type> p_Initial_Conditions, double Image_X_coord, double Image_Y_coord);
 
 std::complex<double> get_Penrose_Walker_constant(const double* const State_Vector, const Simulation_Context_type* const p_Sim_Context, const std::complex<double>* const Polarization_Vector);

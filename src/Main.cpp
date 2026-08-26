@@ -105,7 +105,7 @@ int main(int argument_count, char** cmd_line_args) {
 
         Simulation_Context_type s_Sim_Context{};
 
-        s_Sim_Context.p_Init_Conditions = new Initial_conditions_type();
+        s_Sim_Context.p_Init_Conditions = std::make_shared<Initial_conditions_type>(Initial_conditions_type());
 
         if (Return_Values::ERROR == parse_simulation_input_XML(Input_file_path, s_Sim_Context.p_Init_Conditions)) { throw std::runtime_error("Could not parse input file!"); }
 

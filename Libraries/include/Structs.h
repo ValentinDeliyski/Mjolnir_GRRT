@@ -842,7 +842,7 @@ struct Initial_conditions_type {
 struct Simulation_Context_type {
 
     /*! @brief Pointer to the struct that holds the initial conditions. */
-    Initial_conditions_type* p_Init_Conditions{};
+    std::shared_ptr<Initial_conditions_type> p_Init_Conditions{};
 
     /*! @brief Pointer to the class that holds all the spacetime related functions. */
     Spacetime_Base_Class* p_Spacetime{};

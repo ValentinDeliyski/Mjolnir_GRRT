@@ -129,7 +129,7 @@ private:
     Integrator_enums e_Active_integrator;
 
     Ray_log_type* p_Ray_log_struct;
-    Initial_conditions_type* p_Init_conditions;
+    std::shared_ptr<Initial_conditions_type> p_Init_conditions;
 
     Spacetime_Base_Class* p_Spacetime;
     Emission_models_class* p_Emission_Model;

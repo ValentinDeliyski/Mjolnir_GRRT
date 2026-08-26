@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <iostream>
 
-File_manager_class::File_manager_class(Initial_conditions_type *p_Initial_Conditions) {
+File_manager_class::File_manager_class(std::shared_ptr<Initial_conditions_type> p_Initial_Conditions) {
 
     this->p_Initial_Conditions  = p_Initial_Conditions;
     this->Truncate_files        = p_Initial_Conditions->File_manager_params.Truncate_files;

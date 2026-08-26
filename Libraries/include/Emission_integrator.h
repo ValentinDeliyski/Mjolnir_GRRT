@@ -158,9 +158,11 @@ private:
 
     void __Run_Analytic_No_Faraday_conversion_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions);
 
-    void __Run_Analytic_Pure_Emission_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions);
+    void __Run_Analytic_Pure_Polarized_Emission_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions);
 
     void __Run_Analytic_No_Absorbtion_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions);
+
+    void __Run_Analytic_Unpolarized_Emission_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions);
 
     void Run_Runge_Kutta_Stokes_Vector(const double Start_Affine_Param, const double End_Affine_Param);
 

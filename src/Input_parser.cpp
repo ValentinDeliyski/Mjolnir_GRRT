@@ -1054,7 +1054,7 @@ Return_Values static parse_emission_integrator_params(tinyxml2::XMLElement* Inte
 
 }
 
-Return_Values static parse_emission_model_params(tinyxml2::XMLElement* Emission_model_element, Initial_conditions_type* p_Init_conditions) {
+Return_Values static parse_emission_model_params(tinyxml2::XMLElement* Emission_model_element, std::shared_ptr<Initial_conditions_type> p_Init_conditions) {
 
     tinyxml2::XMLElement* temp_param_var;
 
@@ -1758,7 +1758,7 @@ Return_Values static parse_file_manager_params(tinyxml2::XMLElement* File_manage
 
 }
 
-Return_Values parse_simulation_input_XML(const std::string input_file_path, Initial_conditions_type* const p_Initial_conditions) {
+Return_Values parse_simulation_input_XML(const std::string input_file_path, std::shared_ptr<Initial_conditions_type> const p_Initial_conditions) {
 
     tinyxml2::XMLDocument xml_doc;
 

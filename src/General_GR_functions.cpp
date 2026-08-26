@@ -248,7 +248,7 @@ void Normalize_real_vector(double* const Vector, const double Metric[4][4], Tens
 
 }
 
-void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Conditions, double V_angle_cam, double H_angle_cam) {
+void get_intitial_conditions_from_angles(std::shared_ptr<Initial_conditions_type> p_Initial_Conditions, double V_angle_cam, double H_angle_cam) {
 
     /*
     
@@ -286,7 +286,7 @@ void get_intitial_conditions_from_angles(Initial_conditions_type* p_Initial_Cond
 
 }
 
-void get_image_coordinates(Initial_conditions_type* p_Initial_Conditions, double* const Image_coords) {
+void get_image_coordinates(std::shared_ptr<Initial_conditions_type> p_Initial_Conditions, double* const Image_coords) {
 
     double(*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
 
@@ -367,7 +367,7 @@ bool Check_for_equatorial_crossing(const double* const State_Vector, const doubl
 
 }
 
-int compute_image_order(const int N_theta_turning_points, const int N_equatorial_crossings, Initial_conditions_type* const p_Initial_Conditions) {
+int compute_image_order(const int N_theta_turning_points, const int N_equatorial_crossings, std::shared_ptr<Initial_conditions_type> const p_Initial_Conditions) {
 
     if (p_Initial_Conditions->e_Order_counting_scheme == e_Equatorial_crossing_based) { return N_equatorial_crossings; }
 
@@ -553,7 +553,7 @@ void get_connection_coefficients(const Metric_type s_Metric, const Metric_type s
 
 }
 
-void get_initial_conditions_from_image_coords(Initial_conditions_type* p_Initial_Conditions, double Image_X_coord, double Image_Y_coord) {
+void get_initial_conditions_from_image_coords(std::shared_ptr<Initial_conditions_type> p_Initial_Conditions, double Image_X_coord, double Image_Y_coord) {
 
     double (*metric)[4] = p_Initial_Conditions->Init_metric.Metric;
 

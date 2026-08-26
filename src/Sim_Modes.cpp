@@ -39,7 +39,7 @@ void static print_progress(int current, int max, bool lens_from_file) {
 
 }
 
-void static Rendering_function(std::stop_token stop_token, Rendering_engine* Renderer, Initial_conditions_type* p_Init_conditions) {
+void static Rendering_function(std::stop_token stop_token, Rendering_engine* Renderer, std::shared_ptr<Initial_conditions_type> p_Init_conditions) {
 
     Renderer->OpenGL_init(p_Init_conditions);
     glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);

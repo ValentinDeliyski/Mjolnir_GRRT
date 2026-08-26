@@ -489,7 +489,7 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
 /* ========================================================== Misc Functions ========================================================== */
 
-void Emission_models_class::precompute_electron_pitch_angles(Initial_conditions_type* p_Init_Conditions) {
+void Emission_models_class::precompute_electron_pitch_angles(std::shared_ptr<Initial_conditions_type> p_Init_Conditions) {
 
     // ====================================================== Allocate memory for the arrays ====================================================== //
 

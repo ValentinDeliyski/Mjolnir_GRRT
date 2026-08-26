@@ -6,7 +6,7 @@
 #include "Sim_Modes.h"
 #include <iostream>
 
-void Rendering_engine::OpenGL_init(Initial_conditions_type* p_Init_Conditions) {
+void Rendering_engine::OpenGL_init(std::shared_ptr<Initial_conditions_type> p_Init_Conditions) {
 
     // Allocate the intensity and texture buffers
 

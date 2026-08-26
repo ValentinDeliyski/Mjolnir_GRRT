@@ -27,7 +27,7 @@ private:
 	std::ofstream* Output_File;
 	std::filesystem::path Output_File_Path;
 
-	Initial_conditions_type *p_Initial_Conditions;
+	std::shared_ptr<Initial_conditions_type> p_Initial_Conditions;
 
 	bool Truncate_files{};
 
@@ -45,7 +45,7 @@ private:
 
 		int sim_mode_1_ray_number;
 
-		File_manager_class(Initial_conditions_type* p_Initial_Conditions);
+		File_manager_class(std::shared_ptr<Initial_conditions_type> p_Initial_Conditions);
 
 		void create_output_file();
 

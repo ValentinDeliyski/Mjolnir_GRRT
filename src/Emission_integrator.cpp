@@ -807,14 +807,14 @@ void Emission_Integrator_class::__Run_Analytic_No_Faraday_conversion_propagator(
 
 }
 
-void Emission_Integrator_class::__Run_Analytic_Pure_Emission_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions) {
+void Emission_Integrator_class::__Run_Analytic_Pure_Polarized_Emission_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions) {
 
     /* ---------- Some references for the sake of readability ---------- */
     auto& emiss_coeff = p_Transfer_Functions->Emission_functions;
 
     this->Current_Stokes_Vector[I] += emiss_coeff[I] * CGS_Step;
-    this->Current_Stokes_Vector[U] += emiss_coeff[Q] * CGS_Step;
-    this->Current_Stokes_Vector[Q] += emiss_coeff[U] * CGS_Step;
+    this->Current_Stokes_Vector[Q] += emiss_coeff[Q] * CGS_Step;
+    this->Current_Stokes_Vector[U] += emiss_coeff[U] * CGS_Step;
     this->Current_Stokes_Vector[V] += emiss_coeff[V] * CGS_Step;
 
 }
@@ -831,12 +831,15 @@ void Emission_Integrator_class::__Run_Analytic_No_Absorbtion_propagator(const do
     double Init_Stokes_Vec[4]{};
     memcpy(Init_Stokes_Vec, this->Current_Stokes_Vector, e_Stokes_param_num * sizeof(double));
 
-    const double rho_mag = sqrt(dot_product(rho, rho, 4));
+    const double rho_mag = sqrt(dot_product(rho + 1, rho + 1, 3));
     const double rho_dot_S = dot_product(Init_Stokes_Vec + 1, rho + 1, 3);
     const double rho_dot_j = dot_product(j + 1, rho + 1, 3);
 
     const double sin_term = sin(rho_mag * CGS_Step);
     const double cos_term = cos(rho_mag * CGS_Step);
+
+    // NOTE: In theory this should never pass because of the if contition when entering this functions
+    if (isinf(1 / rho_mag) or isnan(1 / rho_mag)) { return; }
 
     this->Current_Stokes_Vector[I] += j[I] * CGS_Step;
 
@@ -866,6 +869,19 @@ void Emission_Integrator_class::__Run_Analytic_No_Absorbtion_propagator(const do
 
 }
 
+void Emission_Integrator_class::__Run_Analytic_Unpolarized_Emission_propagator(const double CGS_Step, const Transfer_functions_type* p_Transfer_Functions) {
+
+    /* ---------- Some references for the sake of readability ---------- */
+    auto& emiss_coeff = p_Transfer_Functions->Emission_functions;
+    auto& absorbtion_coeff = p_Transfer_Functions->Absorbtion_functions;
+
+    const double I_0 = this->Current_Stokes_Vector[I];
+    const double exp_term = std::exp(-absorbtion_coeff[I] * CGS_Step);
+
+    this->Current_Stokes_Vector[I] = I_0 * exp_term + emiss_coeff[I] / absorbtion_coeff[I] * (1 - exp_term);
+
+}
+
 void Emission_Integrator_class::Run_Analytic_Stokes_Vector_Propagator(const double Start_Affine_Param, const double End_Affine_Param) {
 
     Transfer_functions_type Total_Transfer_Functions{};
@@ -888,40 +904,58 @@ void Emission_Integrator_class::Run_Analytic_Stokes_Vector_Propagator(const doub
     const double CGS_Step = Geometric_Step * MASS_TO_CM * this->p_Sim_Context->p_Init_Conditions->central_object_mass;
 
     /* ---------- Some references for the sake of readability ---------- */
-
     auto& alpha = Total_Transfer_Functions.Absorbtion_functions;
     auto& rho = Total_Transfer_Functions.Faraday_functions;
+    /* ----------------------------------------------------------------- */
 
-    const double Polarized_absorbtion_coeff = dot_product(alpha + 1, alpha + 1, 3);
+    const double Unpolarized_abs_coeff = alpha[I];
+    const double Polarized_abs_coeff = dot_product(alpha + 1, alpha + 1, 3);
     const double Faraday_coeff = dot_product(rho + 1, rho + 1, 3);
 
-    if (Faraday_coeff < Polarized_absorbtion_coeff * std::numeric_limits<double>::epsilon() / 2) {
+    if (Faraday_coeff <= Polarized_abs_coeff * std::numeric_limits<double>::epsilon() / 2) {
 
-        const double Alpha_divisor = alpha[I] * alpha[I] - Polarized_absorbtion_coeff;
+        /* ======================== Faraday conversion is negligable ======================== */
 
-        if (!isnan(1 / Alpha_divisor)) {
+        if (!isinf(1 / Polarized_abs_coeff) and !isnan(1 / Polarized_abs_coeff)) {
 
-            /* ======================== Faraday conversion is negligable, run the absorbtion only propagator ======================== */
+            /* ------------------ Run the polarized emission / absorbtion propagator ------------------ */
             this->__Run_Analytic_No_Faraday_conversion_propagator(CGS_Step, &Total_Transfer_Functions);
 
         }
         else {
 
-            /* ================= Absorbtion and Faraday conversion are negligable, run the emission only propagator ================= */
-            this->__Run_Analytic_Pure_Emission_propagator(CGS_Step, &Total_Transfer_Functions);
+            /* ======================== Polarized absorbtion AND Faraday conversion are negligable ======================== */
 
+            if (!isinf(1 / Unpolarized_abs_coeff) and !isnan(1 / Unpolarized_abs_coeff)) {
+
+                /* ------------------ Run the unpolarized propagator with absorbtion ------------------ */
+                this->__Run_Analytic_Unpolarized_Emission_propagator(CGS_Step, &Total_Transfer_Functions);
+
+            }
+            else {
+
+                /* ======================== All absorbtion AND Faraday conversion are negligable ======================== */
+
+                this->__Run_Analytic_Pure_Polarized_Emission_propagator(CGS_Step, &Total_Transfer_Functions);
+
+            }
+             
         }
 
     }
-    else if (Polarized_absorbtion_coeff  * Polarized_absorbtion_coeff < Faraday_coeff * Faraday_coeff * std::numeric_limits<double>::epsilon() / 2) {
+    else if (Unpolarized_abs_coeff * Unpolarized_abs_coeff < Faraday_coeff * Faraday_coeff * std::numeric_limits<double>::epsilon() / 2) {
 
-        /* ================= Absorbtion is negligable, run the emission and Faraday rotation only propagator ================= */
-        __Run_Analytic_No_Absorbtion_propagator(CGS_Step, &Total_Transfer_Functions);
+        /* ================= Absorbtion is negligable ================= */ 
+
+        /* ------------------ Run the Emission + Faraday conversion propagator ------------------ */
+        this->__Run_Analytic_No_Absorbtion_propagator(CGS_Step, &Total_Transfer_Functions);
+
+        // NOTE: The "emission + unpolarized absorbtion + Faraday conversion" edge case is handled by the general propagator
 
     } 
     else {
 
-      /* ============================================ Run the full polarized transport propagator ============================================ */
+      /* ============================================ Run the general polarized transport propagator ============================================ */
         
       double Transfer_operator[4][4]{};
       double Integrated_transfer_operator[4][4];

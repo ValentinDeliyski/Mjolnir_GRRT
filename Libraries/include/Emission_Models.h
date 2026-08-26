@@ -193,6 +193,6 @@ public:
      *   \param [in] p_Init_Conditions - Pointer to the struct that holds the initial conditions - used to determine how much memory to allocate.
      *   \return Nothing.
      */
-    void precompute_electron_pitch_angles(Initial_conditions_type* p_Init_Conditions);
+    void precompute_electron_pitch_angles(std::shared_ptr<Initial_conditions_type> p_Init_Conditions);
     
 };
