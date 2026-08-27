@@ -43,35 +43,35 @@ void static Allocate_Spacetime_Class(Simulation_Context_type* p_Sim_context) {
     switch (p_Sim_context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
     case Kerr:
-        p_Sim_context->p_Spacetime = new Kerr_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
+        p_Sim_context->p_Spacetime = std::make_shared<Kerr_class>(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Wormhole:      
-        p_Sim_context->p_Spacetime = new Wormhole_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
+        p_Sim_context->p_Spacetime = std::make_shared<Wormhole_class>(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Reg_Black_Hole:       
-        p_Sim_context->p_Spacetime = new RBH_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
+        p_Sim_context->p_Spacetime = std::make_shared<RBH_class>(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Janis_Newman_Winicour:       
-        p_Sim_context->p_Spacetime = new JNW_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
+        p_Sim_context->p_Spacetime = std::make_shared<JNW_class>(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Einstein_Gauss_Bonnet:       
-        p_Sim_context->p_Spacetime = new Gauss_Bonnet_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
+        p_Sim_context->p_Spacetime = std::make_shared<Gauss_Bonnet_class>(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case BH_w_Dark_Matter:      
-        p_Sim_context->p_Spacetime = new Black_Hole_w_Dark_Matter_Halo_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
+        p_Sim_context->p_Spacetime = std::make_shared<Black_Hole_w_Dark_Matter_Halo_class>(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Numerical:
-        p_Sim_context->p_Spacetime = new Numerical_metric(&p_Sim_context->p_Init_Conditions->Metric_parameters);
+        p_Sim_context->p_Spacetime = std::make_shared<Numerical_metric>(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     case Minkowski:
-        p_Sim_context->p_Spacetime = new Minkowski_class(&p_Sim_context->p_Init_Conditions->Metric_parameters);
+        p_Sim_context->p_Spacetime = std::make_shared<Minkowski_class>(&p_Sim_context->p_Init_Conditions->Metric_parameters);
         break;
 
     }
@@ -116,7 +116,7 @@ int main(int argument_count, char** cmd_line_args) {
         Allocate_Spacetime_Class(&s_Sim_Context);
 
         // Get the observer position and populate the Observer class instance.
-        s_Sim_Context.p_Observer = new Observer_class(&s_Sim_Context);
+        s_Sim_Context.p_Observer = std::make_shared<Observer_class>(&s_Sim_Context);
 
         double init_state[4] = { s_Sim_Context.p_Init_Conditions->Observer_params.init_time,
                                  s_Sim_Context.p_Init_Conditions->Observer_params.distance,
@@ -124,18 +124,17 @@ int main(int argument_count, char** cmd_line_args) {
                                  s_Sim_Context.p_Init_Conditions->Observer_params.azimuth };
 
         Metric_type s_init_Metric = s_Sim_Context.p_Spacetime->get_global_metric(init_state);
-
         memcpy(&s_Sim_Context.p_Init_Conditions->Init_metric, &s_init_Metric, sizeof(Metric_type));
 
         // Populate the Emission Model class instances
-        s_Sim_Context.p_Emission_Model = new Emission_models_class(&s_Sim_Context);
+        s_Sim_Context.p_Emission_Model = std::make_shared<Emission_models_class>(&s_Sim_Context);
         s_Sim_Context.p_Emission_Model->precompute_electron_pitch_angles(s_Sim_Context.p_Init_Conditions);
-
 
         if (Disk_model_enums::e_Novikov_Thorne == s_Sim_Context.p_Init_Conditions->Disk_params.e_Disk_model) {
 
-            // Allocate the Novikov-Thorne Model class
-            s_Sim_Context.p_NT_model = new Novikov_Thorne_Model_class(&s_Sim_Context);
+            /* ---- Allocate the Novikov - Thorne Model class
+                    NOTE: This is a unique pointer because it does not get copied anywhere ---- */
+            s_Sim_Context.p_NT_model = std::make_unique<Novikov_Thorne_Model_class>(&s_Sim_Context);
             
         }
         else {
@@ -144,27 +143,32 @@ int main(int argument_count, char** cmd_line_args) {
 
         }
 
-        // Initialize the struct that holds the ray results (as static in order to not blow up the stack -> this must always be passed around as a pointer!)
-        static Results_type s_Ray_results{};
+        /* --- Initialize the struct that holds the ray results --- */
+        std::unique_ptr<Results_type> s_Ray_results = std::make_unique<Results_type>();
 
-        s_Ray_results.Ray_log_struct.Ray_path_log_local = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size] {};
-        s_Ray_results.Ray_log_struct.Ray_path_log_global = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count * e_Full_state_size] {};
+        /* --- The ray log struct will need to be accessed by the geodesic and emission integrators, so I create it as a shared pointer --- */
+        s_Ray_results->Ray_log_struct = std::make_shared<Ray_log_type>();
 
-        s_Ray_results.RK_integrator_debug_log.N_steps_rejected = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
-        s_Ray_results.RK_integrator_debug_log.State_error_history = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
+        /* -------------------------- Reference for the sake of readability -------------------------- */
+        size_t& Max_log_size = s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count;
 
-        s_Ray_results.Polarization_debug_log.PW_constant[0] = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
-        s_Ray_results.Polarization_debug_log.PW_constant[1] = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count] {};
+        /* --- The logs themselves should only exist in one point in memory, so I create them as unique pointers --- */
+        s_Ray_results->Ray_log_struct->Ray_path_log_local = std::make_unique<double[]>(Max_log_size * e_Full_state_size);
+        s_Ray_results->Ray_log_struct->Ray_path_log_global = std::make_unique<double[]>(Max_log_size * e_Full_state_size);
+
+        s_Ray_results->RK_integrator_debug_log.N_steps_rejected = std::make_unique<double[]>(Max_log_size * e_Full_state_size);;
+        s_Ray_results->RK_integrator_debug_log.State_error_history = std::make_unique<double[]>(Max_log_size * e_Full_state_size);;
 
         for (int index = I; index < e_Stokes_param_num; index++) {
 
-            s_Ray_results.Ray_log_struct.Ray_emission_log[index] = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
+            s_Ray_results->Ray_log_struct->Ray_emission_log[index] = std::make_unique<double[]>(Max_log_size);
 
         }
 
         for (int index = e_x; index <= e_y; index++) {
 
-            s_Ray_results.Ray_log_struct.Ray_polarization_log[index] = new double[s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count]();
+            s_Ray_results->Ray_log_struct->Ray_polarization_log[index] = std::make_unique<double[]>(Max_log_size);
+            s_Ray_results->Polarization_debug_log.PW_constant[index] = new double[Max_log_size] {};
 
         }
 
@@ -174,24 +178,20 @@ int main(int argument_count, char** cmd_line_args) {
 
         }
 
-        /*
-
-        |============================== Run the simulation ==============================|
-
-        */
+        /* ============================== Run the simulation ============================== */
 
         switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
 
         case Image_generation:
-            run_image_generation(&s_Sim_Context, &s_Ray_results);
+            run_image_generation(&s_Sim_Context, s_Ray_results.get());
             break;
 
         case Make_geodesic_sweep:
-            run_geodesic_sweep(&s_Sim_Context, &s_Ray_results);
+            run_geodesic_sweep(&s_Sim_Context, s_Ray_results.get());
             break;
 
         case Make_geodesic_log:
-            make_geodesic_log(&s_Sim_Context, &s_Ray_results);
+            make_geodesic_log(&s_Sim_Context, s_Ray_results.get());
             break;
 
         case Debug_mode:

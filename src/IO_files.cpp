@@ -879,11 +879,11 @@ void File_manager_class::log_photon_path(Results_type* p_Ray_results) {
 
     *this->Output_File << std::setprecision(15);
 
-    for (int log_index = 1; log_index < p_Ray_results->Ray_log_struct.Log_length - 1; log_index++) {
+    for (int log_index = 1; log_index < p_Ray_results->Ray_log_struct->Log_length - 1; log_index++) {
 
         for (int state_index = 0; state_index < e_Full_state_size; state_index++) {
 
-            *this->Output_File << p_Ray_results->Ray_log_struct.Ray_path_log_global[state_index + log_index * e_Full_state_size] << ",";
+            *this->Output_File << p_Ray_results->Ray_log_struct->Ray_path_log_global[state_index + log_index * e_Full_state_size] << ",";
 
         }
 
@@ -894,7 +894,7 @@ void File_manager_class::log_photon_path(Results_type* p_Ray_results) {
 
             for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
 
-                *this->Output_File << p_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][log_index - 1] << ",";
+                *this->Output_File << p_Ray_results->Ray_log_struct->Ray_emission_log[stokes_index][log_index - 1] << ",";
 
             }
 
@@ -918,17 +918,17 @@ void File_manager_class::log_photon_path(Results_type* p_Ray_results) {
         }
         else {
 
-            size_t idx = log_index - (p_Ray_results->Ray_log_struct.Log_length - p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge);
+            size_t idx = log_index - (p_Ray_results->Ray_log_struct->Log_length - p_Ray_results->Ray_log_struct->Log_offet_at_disk_edge);
 
             for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
 
-                *this->Output_File << p_Ray_results->Ray_log_struct.Ray_emission_log[stokes_index][idx] << ",";
+                *this->Output_File << p_Ray_results->Ray_log_struct->Ray_emission_log[stokes_index][idx] << ",";
 
             }
 
             for (int Pol_component = 0; Pol_component < 2; Pol_component++) {
 
-                *this->Output_File << p_Ray_results->Ray_log_struct.Ray_polarization_log[Pol_component][idx] << ",";
+                *this->Output_File << p_Ray_results->Ray_log_struct->Ray_polarization_log[Pol_component][idx] << ",";
 
             }
 

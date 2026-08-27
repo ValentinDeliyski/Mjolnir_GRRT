@@ -39,16 +39,16 @@ void static print_progress(int current, int max, bool lens_from_file) {
 
 }
 
-void static Rendering_function(std::stop_token stop_token, Rendering_engine* Renderer, std::shared_ptr<Initial_conditions_type> p_Init_conditions) {
+void static Rendering_function(std::stop_token stop_token, Rendering_engine& Renderer, std::shared_ptr<Initial_conditions_type> p_Init_conditions) {
 
-    Renderer->OpenGL_init(p_Init_conditions);
-    glfwSetKeyCallback(Renderer->window, Rendering_engine::Window_Callbacks::define_button_callbacks);
+    Renderer.OpenGL_init(p_Init_conditions);
+    glfwSetKeyCallback(Renderer.window, Rendering_engine::Window_Callbacks::define_button_callbacks);
 
-    while (!glfwWindowShouldClose(Renderer->window) and !stop_token.stop_requested()) {
+    while (!glfwWindowShouldClose(Renderer.window) and !stop_token.stop_requested()) {
 
-        Renderer->renormalize_colormap();
+        Renderer.renormalize_colormap();
 
-        Renderer->update_rendering_window();
+        Renderer.update_rendering_window();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
@@ -56,20 +56,20 @@ void static Rendering_function(std::stop_token stop_token, Rendering_engine* Ren
 
 }
 
-void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray_results, Rendering_engine* const Renderer) {
+void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray_results, Rendering_engine& Renderer) {
 
     if (e_Novikov_Thorne == Disk_model) {
 
-        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = float(p_Ray_results->Flux_NT * pow(p_Ray_results->Redshift_NT, 4));
+        Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = float(p_Ray_results->Flux_NT * pow(p_Ray_results->Redshift_NT, 4));
 
     }
     else {
 
-        Renderer->Intensity_buffer[int(Renderer->texture_indexer / 3)] = float(p_Ray_results->Intensity[I]);
+        Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = float(p_Ray_results->Intensity[I]);
 
     }
 
-    Renderer->texture_indexer += 3;
+    Renderer.texture_indexer += 3;
 
 }
 
@@ -86,8 +86,8 @@ void static Zero_results_struct(Results_type* const p_Ray_results) {
 
     memset(&p_Ray_results->Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));
 
-    p_Ray_results->Ray_log_struct.Log_length = 0;
-    p_Ray_results->Ray_log_struct.Log_offset = 0;
+    p_Ray_results->Ray_log_struct->Log_length = 0;
+    p_Ray_results->Ray_log_struct->Log_offset = 0;
 
     memset(&p_Ray_results->Image_Coords, 0, 2 * sizeof(double));
 
@@ -100,7 +100,7 @@ void static Zero_results_struct(Results_type* const p_Ray_results) {
 
 }
 
-void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, Rendering_engine* const Renderer, Results_type* const p_Ray_results) {
+void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, Rendering_engine& Renderer, Results_type* const p_Ray_results) {
 
         int& X_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_x;
         int& Y_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_y;
@@ -213,8 +213,8 @@ void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Re
 
         */
 
-        static Rendering_engine Renderer = Rendering_engine();
-        std::jthread GUI_Thread(Rendering_function, &Renderer, p_Sim_Context->p_Init_Conditions);
+        std::unique_ptr<Rendering_engine> Renderer = std::make_unique<Rendering_engine>();
+        std::jthread GUI_Thread(Rendering_function, std::ref(*Renderer), p_Sim_Context->p_Init_Conditions);
 
         /*
         
@@ -222,13 +222,13 @@ void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Re
         
         */
 
-        Generate_Image(p_Sim_Context, &Renderer, p_Ray_results);
+        Generate_Image(p_Sim_Context, std::ref(*Renderer), p_Ray_results);
 
         GUI_Thread.request_stop();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        Renderer.Free_memory();
+        Renderer->Free_memory();
 
 }
 
@@ -308,7 +308,7 @@ void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Resul
     
     Propagate_ray(p_Sim_Context, p_Ray_results);
 
-    p_Ray_results->Ray_log_struct.Log_offet_at_disk_edge = p_Ray_results->Ray_log_struct.Log_length;
+    p_Ray_results->Ray_log_struct->Log_offet_at_disk_edge = p_Ray_results->Ray_log_struct->Log_length;
 
     File_manager.create_output_file();
     File_manager.open_output_file();
@@ -333,8 +333,11 @@ void run_debug_simulation(const Simulation_Context_type* const p_Sim_Context) {
     Debug_mode_struct Debug_struct{};
 
     Debug_struct.Array_length = 1500;
-    Debug_struct.NT_Flux_integral_array = p_Sim_Context->p_NT_model->Flux_integral_array;
-    Debug_struct.NT_Flux_r_coord_array = p_Sim_Context->p_NT_model->Flux_r_coords;
+
+    Debug_struct.NT_Flux_integral_array = std::make_unique<double[]>(1500);
+    Debug_struct.NT_Flux_integral_array = std::move(p_Sim_Context->p_NT_model->Flux_integral_array);
+    Debug_struct.NT_Flux_r_coord_array = std::make_unique<double[]>(1500);
+    Debug_struct.NT_Flux_r_coord_array = std::move(p_Sim_Context->p_NT_model->Flux_r_coords);
 
     File_manager.open_output_file();
     File_manager.write_debug_data_to_file(&Debug_struct);

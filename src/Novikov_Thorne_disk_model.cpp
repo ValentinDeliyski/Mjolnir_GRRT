@@ -3,7 +3,7 @@
 static double NT_flux_integrand_wrapper(double r, void* params) {
 
     /* This is a substitute for the actual state vector - only the radial coordinate is relevant - the functions that are called do not index anything else. */
-    double Local_State_Vector[3] = { 0, r, M_PI / 2 };
+    double Local_State_Vector[3] = { 0, r, std::numbers::pi / 2 };
 
     double Disk_Energy = static_cast<Novikov_Thorne_Model_class*>(params)->get_Disk_Energy(Local_State_Vector);
     double Disk_Ang_Velocity = static_cast<Novikov_Thorne_Model_class*>(params)->get_Disk_Angular_Velocity(Local_State_Vector);
@@ -34,8 +34,8 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
     this->Flux_integral_spline_instance = gsl_spline_alloc(gsl_interp_cspline, Flux_integral_interpolat_size);
     this->Flux_integral_accelerator = gsl_interp_accel_alloc();
 
-    this->Flux_integral_array = new double[Flux_integral_interpolat_size];
-    this->Flux_r_coords = new double[Flux_integral_interpolat_size];
+    this->Flux_integral_array = std::make_unique<double[]>(Flux_integral_interpolat_size);
+    this->Flux_r_coords = std::make_unique<double[]>(Flux_integral_interpolat_size);
 
     if (std::abs(this->r_in - this->r_out) < std::numeric_limits<double>::min()) {
 
@@ -49,13 +49,13 @@ Novikov_Thorne_Model_class::Novikov_Thorne_Model_class(Simulation_Context_type* 
 
         double Local_State_Vector[e_Full_state_size]{};
         Local_State_Vector[e_r] = this->Flux_r_coords[idx];
-        Local_State_Vector[e_theta] = M_PI_2;
+        Local_State_Vector[e_theta] = std::numbers::pi / 2;
 
         this->Flux_integral_array[idx] = this->get_Flux(Local_State_Vector);
 
     }
 
-    gsl_spline_init(this->Flux_integral_spline_instance, this->Flux_r_coords, Flux_integral_array, Flux_integral_interpolat_size);
+    gsl_spline_init(this->Flux_integral_spline_instance, this->Flux_r_coords.get(), this->Flux_integral_array.get(), Flux_integral_interpolat_size);
 
 }
 
@@ -64,9 +64,6 @@ Novikov_Thorne_Model_class::~Novikov_Thorne_Model_class(){
     gsl_integration_cquad_workspace_free(this->Flux_integral_workspace);
     gsl_spline_free(this->Flux_integral_spline_instance);
     gsl_interp_accel_free(this->Flux_integral_accelerator);
-
-    free(this->Flux_integral_array);
-    free(this->Flux_r_coords);
 
 }
 

@@ -7,17 +7,10 @@ Emission_Integrator_class::Emission_Integrator_class(const Simulation_Context_ty
     this->e_Active_parallel_transport_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Parallel_transport_integrator;
 
     this->p_Sim_Context = p_Sim_Context;
-    this->Ray_log_length = p_Ray_results->Ray_log_struct.Log_length;
-
-    for (int idx = I; idx < e_Stokes_param_num; idx ++) {
-
-        this->Emission_log[idx] = p_Ray_results->Ray_log_struct.Ray_emission_log[idx];
-
-    }
+    this->p_Ray_log_struct = p_Ray_results->Ray_log_struct;
 
     for (int idx = e_x; idx <= e_y; idx++) {
 
-        this->Polarization_log[idx] = p_Ray_results->Ray_log_struct.Ray_polarization_log[idx];
         this->PW_Constant_log[idx] = p_Ray_results->Polarization_debug_log.PW_constant[idx];
     }
 
@@ -28,49 +21,48 @@ Emission_Integrator_class::Emission_Integrator_class(const Simulation_Context_ty
 
     /* ------------------------------------------ Construct the geodesic ray splines ------------------------------------------ */
 
-    std::unique_ptr<double[]> Affine_param_log = std::make_unique<double[]>(p_Ray_results->Ray_log_struct.Log_length);
+    std::unique_ptr<double[]> Affine_param_log = std::make_unique<double[]>(p_Ray_results->Ray_log_struct->Log_length);
 
     std::unique_ptr<double[]> Ray_Log[e_Dynamic_state_size];
     std::unique_ptr<double[]> Radial_Ray_log_global[2];
+
+    Radial_Ray_log_global[0] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct->Log_length);
+    Radial_Ray_log_global[1] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct->Log_length);
     
     for (size_t idx = 0; idx < e_Dynamic_state_size; idx++) {
 
-        Ray_Log[idx] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct.Log_length);
+        Ray_Log[idx] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct->Log_length);
 
     }
 
-    Radial_Ray_log_global[0] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct.Log_length);
-    Radial_Ray_log_global[1] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct.Log_length);
-
-
-    for (size_t log_idx = 0; log_idx < p_Ray_results->Ray_log_struct.Log_length; log_idx++) {
+    for (size_t log_idx = 0; log_idx < p_Ray_results->Ray_log_struct->Log_length; log_idx++) {
 
         for (int component_idx = 0; component_idx < e_Dynamic_state_size; component_idx++) {
 
-            Ray_Log[component_idx][p_Ray_results->Ray_log_struct.Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_local[component_idx + log_idx * e_Full_state_size];
+            Ray_Log[component_idx][this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct->Ray_path_log_local[component_idx + log_idx * e_Full_state_size];
 
         }
 
-        Radial_Ray_log_global[0][p_Ray_results->Ray_log_struct.Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_global[e_r + log_idx * e_Full_state_size];
-        Radial_Ray_log_global[1][p_Ray_results->Ray_log_struct.Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_global[e_p_r + log_idx * e_Full_state_size];
+        Radial_Ray_log_global[0][this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct->Ray_path_log_global[e_r + log_idx * e_Full_state_size];
+        Radial_Ray_log_global[1][this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct->Ray_path_log_global[e_p_r + log_idx * e_Full_state_size];
 
-        Affine_param_log[p_Ray_results->Ray_log_struct.Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct.Ray_path_log_local[e_ray_affine_param + log_idx * e_Full_state_size];
+        Affine_param_log[this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct->Ray_path_log_local[e_ray_affine_param + log_idx * e_Full_state_size];
     }
 
     for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
 
-        this->p_Ray_spline_instance[idx] = gsl_spline_alloc(gsl_interp_cspline, p_Ray_results->Ray_log_struct.Log_length);
-        gsl_spline_init(this->p_Ray_spline_instance[idx], Affine_param_log.get(), Ray_Log[idx].get(), p_Ray_results->Ray_log_struct.Log_length);
+        this->p_Ray_spline_instance[idx] = gsl_spline_alloc(gsl_interp_cspline, this->p_Ray_log_struct->Log_length);
+        gsl_spline_init(this->p_Ray_spline_instance[idx], Affine_param_log.get(), Ray_Log[idx].get(), this->p_Ray_log_struct->Log_length);
 
     }
 
     /* ---------------------------------------- Radial spline in global coordinates ---------------------------------------- */
 
-    this->p_Ray_spline_instance[e_Dynamic_state_size + 0] = gsl_spline_alloc(gsl_interp_cspline, p_Ray_results->Ray_log_struct.Log_length);
-    gsl_spline_init(this->p_Ray_spline_instance[e_Dynamic_state_size + 0], Affine_param_log.get(), Radial_Ray_log_global[0].get(), p_Ray_results->Ray_log_struct.Log_length);
+    this->p_Ray_spline_instance[e_Dynamic_state_size + 0] = gsl_spline_alloc(gsl_interp_cspline, this->p_Ray_log_struct->Log_length);
+    gsl_spline_init(this->p_Ray_spline_instance[e_Dynamic_state_size + 0], Affine_param_log.get(), Radial_Ray_log_global[0].get(), this->p_Ray_log_struct->Log_length);
 
-    this->p_Ray_spline_instance[e_Dynamic_state_size + 1] = gsl_spline_alloc(gsl_interp_cspline, p_Ray_results->Ray_log_struct.Log_length);
-    gsl_spline_init(this->p_Ray_spline_instance[e_Dynamic_state_size + 1], Affine_param_log.get(), Radial_Ray_log_global[1].get(), p_Ray_results->Ray_log_struct.Log_length);
+    this->p_Ray_spline_instance[e_Dynamic_state_size + 1] = gsl_spline_alloc(gsl_interp_cspline, this->p_Ray_log_struct->Log_length);
+    gsl_spline_init(this->p_Ray_spline_instance[e_Dynamic_state_size + 1], Affine_param_log.get(), Radial_Ray_log_global[1].get(), this->p_Ray_log_struct->Log_length);
 
     this->p_Spline_accelerator = gsl_interp_accel_alloc();
 
@@ -269,7 +261,7 @@ void Emission_Integrator_class::Update_emission_log() {
 
     for (int idx = 0; idx < e_Stokes_param_num; idx++) {
 
-        this->Emission_log[idx][this->Current_emission_log_idx] = this->Current_Stokes_Vector[idx];
+        this->p_Ray_log_struct->Ray_emission_log[idx][this->Current_emission_log_idx] = this->Current_Stokes_Vector[idx];
 
     }
 
@@ -519,8 +511,8 @@ void Emission_Integrator_class::Update_polarization_log() {
 
     Contravariant_coord_to_ZAMO(&s_Metric, this->Current_Pol_Vector, Polarization_vector_ZAMO);
 
-    this->Polarization_log[e_x][this->Current_polarization_log_idx] = Polarization_vector_ZAMO[e_phi].real();
-    this->Polarization_log[e_y][this->Current_polarization_log_idx] = Polarization_vector_ZAMO[e_theta].real();
+    this->p_Ray_log_struct->Ray_polarization_log[e_x][this->Current_polarization_log_idx] = Polarization_vector_ZAMO[e_phi].real();
+    this->p_Ray_log_struct->Ray_polarization_log[e_y][this->Current_polarization_log_idx] = Polarization_vector_ZAMO[e_theta].real();
 
     if (Spacetime_enums::Kerr == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 

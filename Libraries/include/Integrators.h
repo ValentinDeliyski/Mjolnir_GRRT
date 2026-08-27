@@ -103,7 +103,7 @@ private:
     bool Force_scatter;
 
     double Max_affine_param;
-    double Max_integration_count;
+    size_t Max_integration_count;
 
     /* ---------------------- Debug flags ---------------------- */
 
@@ -128,11 +128,10 @@ private:
 
     Integrator_enums e_Active_integrator;
 
-    Ray_log_type* p_Ray_log_struct;
+    std::shared_ptr<Ray_log_type> p_Ray_log_struct;
+    std::shared_ptr<Spacetime_Base_Class> p_Spacetime;
+    std::shared_ptr<Emission_models_class> p_Emission_Model;
     std::shared_ptr<Initial_conditions_type> p_Init_conditions;
-
-    Spacetime_Base_Class* p_Spacetime;
-    Emission_models_class* p_Emission_Model;
 
     std::unique_ptr<Step_controller_class> p_Step_controller;
 
@@ -166,7 +165,7 @@ public:
     ~Geodesic_Integrator_class();
 
     /* ------ This gets filled only in simulation mode 3 ----- */
-    Adaptive_RK_Integrator_debug_type RK_Integrator_debug_log;
+    Adaptive_RK_Integrator_debug_type* RK_Integrator_debug_log;
 
     bool continue_integration;
     bool integration_complete;

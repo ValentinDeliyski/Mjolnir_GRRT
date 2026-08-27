@@ -48,11 +48,11 @@ class Novikov_Thorne_Model_class {
 
     public:
      
-        double* Flux_integral_array;
-        double* Flux_r_coords;
+        std::unique_ptr<double[]> Flux_integral_array;
+        std::unique_ptr<double[]> Flux_r_coords;
 
         /* @brief Pointer to the spacetime class. Stored in here so one does not have to pass it in as arguments to the functions.*/
-        Spacetime_Base_Class* p_Spacetime;
+        std::shared_ptr<Spacetime_Base_Class> p_Spacetime;
 
         /*! @brief Copies over initial conditions from the Simulation Context struct to internal class variables for the sake of convenicence.
          *

@@ -17,7 +17,7 @@ struct Hotspot_model_type {
     /* Holds all the model parameteres for hotspot. */
     Hotspot_model_parameters_type s_Hotspot_params;
 
-    Spacetime_Base_Class* p_Spacetime;
+    std::shared_ptr<Spacetime_Base_Class> p_Spacetime;
 
     //! Copies over the initial data from the Simulation Context struct to internal variables for the sake of convenience
     /*! Copies over the initial data from the Simulation Context struct to internal variables for the sake of convenience

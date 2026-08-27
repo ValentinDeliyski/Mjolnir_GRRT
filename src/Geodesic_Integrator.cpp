@@ -128,9 +128,10 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
 
     /* --------- Set the internal pointers to relevant classes / structs that the integrator uses --------- */
     this->p_Init_conditions = p_Sim_Context->p_Init_Conditions;
-    this->p_Spacetime = p_Sim_Context->p_Spacetime;
     this->p_Emission_Model = p_Sim_Context->p_Emission_Model;
-    this->p_Ray_log_struct = &p_Ray_results->Ray_log_struct;
+    this->p_Ray_log_struct = p_Ray_results->Ray_log_struct;
+    this->p_Spacetime = p_Sim_Context->p_Spacetime;
+
     this->Current_Optical_Depth = &p_Ray_results->Optical_Depth;
     this->Current_Faraday_Q_Depth = &p_Ray_results->Faraday_Q_Depth;
     this->Current_Faraday_V_Depth = &p_Ray_results->Faraday_V_Depth;
@@ -154,17 +155,16 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
     this->p_Ray_log_struct->Ray_path_log_global[e_ray_affine_param] = 0;
 
     /* ----------------------------------------- Construct the initial state vector in local coords ----------------------------------------- */
-    this->p_Spacetime->Convert_global_to_local_coords(this->p_Ray_log_struct->Ray_path_log_global, 
-                                                      this->p_Ray_log_struct->Ray_path_log_global, 
-                                                      this->p_Ray_log_struct->Ray_path_log_local, 
+    this->p_Spacetime->Convert_global_to_local_coords(this->p_Ray_log_struct->Ray_path_log_global.get(), 
+                                                      this->p_Ray_log_struct->Ray_path_log_global.get(), 
+                                                      this->p_Ray_log_struct->Ray_path_log_local.get(),
                                                       e_Full_State_Vector);
 
     /* -------------------------------------- Set the initial internal dynamic state to the global one -------------------------------------- */
-    memcpy(this->Current_Dynamic_state, this->p_Ray_log_struct->Ray_path_log_global, e_Dynamic_state_size * sizeof(double));
+    memcpy(this->Current_Dynamic_state, this->p_Ray_log_struct->Ray_path_log_global.get(), e_Dynamic_state_size * sizeof(double));
 
     /* -------------------------- Set the internal debug tracker pointers to point to the external results struct --------------------------- */
-    this->RK_Integrator_debug_log.N_steps_rejected = p_Ray_results->RK_integrator_debug_log.N_steps_rejected;
-    this->RK_Integrator_debug_log.State_error_history = p_Ray_results->RK_integrator_debug_log.State_error_history;
+    this->RK_Integrator_debug_log = &p_Ray_results->RK_integrator_debug_log;
 
     /* --- Init the per-step debug counters --- */
     this->N_steps_rejected = 0;
@@ -531,15 +531,15 @@ void Geodesic_Integrator_class::Update_ray_log(const double* const New_State_vec
     
     this->p_Spacetime->Convert_global_to_local_coords(&this->p_Ray_log_struct->Ray_path_log_global[log_offset * e_Full_state_size],
                                                       &this->p_Ray_log_struct->Ray_path_log_global[log_offset * e_Full_state_size],
-                                                      &this->p_Ray_log_struct->Ray_path_log_local[log_offset * e_Full_state_size],
+                                                      &this->p_Ray_log_struct->Ray_path_log_local.get()[log_offset * e_Full_state_size],
                                                       e_Full_State_Vector);
 
 }
 
 void Geodesic_Integrator_class::Update_debug_log() {
 
-    this->RK_Integrator_debug_log.N_steps_rejected[this->p_Ray_log_struct->Log_offset] = this->N_steps_rejected;
-    this->RK_Integrator_debug_log.State_error_history[this->p_Ray_log_struct->Log_offset] = this->p_Step_controller->current_err;
+    this->RK_Integrator_debug_log->N_steps_rejected[this->p_Ray_log_struct->Log_offset] = this->N_steps_rejected;
+    this->RK_Integrator_debug_log->State_error_history[this->p_Ray_log_struct->Log_offset] = this->p_Step_controller->current_err;
 
 }
 
@@ -793,7 +793,7 @@ const double* const Geodesic_Integrator_class::get_previous_State_Vector_global(
 
 const double* const Geodesic_Integrator_class::get_current_State_Vector_local() const {
 
-    return &this->p_Ray_log_struct->Ray_path_log_local[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
+    return &this->p_Ray_log_struct->Ray_path_log_local.get()[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
 
 }
 
@@ -801,11 +801,11 @@ const double* const Geodesic_Integrator_class::get_previous_State_Vector_local()
 
     if (this->p_Ray_log_struct->Log_offset > 0) {
 
-        return &this->p_Ray_log_struct->Ray_path_log_local[(this->p_Ray_log_struct->Log_offset - 1) * e_Full_state_size];
+        return &this->p_Ray_log_struct->Ray_path_log_local.get()[(this->p_Ray_log_struct->Log_offset - 1) * e_Full_state_size];
     }
     else {
 
-        return &this->p_Ray_log_struct->Ray_path_log_local[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
+        return &this->p_Ray_log_struct->Ray_path_log_local.get()[this->p_Ray_log_struct->Log_offset * e_Full_state_size];
 
     }
 

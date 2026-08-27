@@ -652,7 +652,7 @@ struct Integrator_parameters_type {
     double Max_affine_param{};
 
     /*! @brief The maximum allowed (accepted) integration steps. */
-    int Max_integration_count{};
+    size_t Max_integration_count{};
 
     /*! @brief Enum that selects which radiative transfer integrator to use. */
     Integrator_enums e_Radiative_transfer_integrator{};
@@ -842,55 +842,58 @@ struct Initial_conditions_type {
 struct Simulation_Context_type {
 
     /*! @brief Pointer to the struct that holds the initial conditions. */
-    std::shared_ptr<Initial_conditions_type> p_Init_Conditions{};
+    std::shared_ptr<Initial_conditions_type> p_Init_Conditions;
 
     /*! @brief Pointer to the class that holds all the spacetime related functions. */
-    Spacetime_Base_Class* p_Spacetime{};
+    std::shared_ptr<Spacetime_Base_Class> p_Spacetime;
 
     /*! @brief Pointer to the class that holds all the observer related functions. */
-    Observer_class* p_Observer{};
+    std::shared_ptr<Observer_class> p_Observer;
 
     /*! @brief Pointer to the class that holds all the emission medium related functions. */
-    Emission_models_class* p_Emission_Model{};
+    std::shared_ptr<Emission_models_class> p_Emission_Model;
 
     /*! @brief Pointer to the class that holds all the Novikov-Thorne related functions. */
-    Novikov_Thorne_Model_class* p_NT_model{};
+    std::unique_ptr<Novikov_Thorne_Model_class> p_NT_model;
 
 };
 
 struct Ray_log_type {
 
     /* Pointer to the arrays that hold the Stokes vector along the photon trajectory. */
-    double* Ray_emission_log[e_Stokes_param_num];
+    std::unique_ptr<double[]> Ray_emission_log[e_Stokes_param_num];
 
-    double* Ray_polarization_log[2];
+    /* Pointer to the arrays that hold the projected polarization vector in the ZAMO basis. */
+    std::unique_ptr<double[]> Ray_polarization_log[2];
 
     /* Pointer to the array that holds the entire photon trajectory in local coordinates. */
-    double* Ray_path_log_local;
+    std::unique_ptr<double[]> Ray_path_log_local;
 
     /* Pointer to the array that holds the entire photon trajectory in global coordinates. */
-    double* Ray_path_log_global;
+    std::unique_ptr<double[]> Ray_path_log_global;
 
-    size_t Log_offet_at_disk_edge;
+    size_t Log_offet_at_disk_edge{};
 
     /* Int that specifies where in the log to write.
        This exists for the sole purpose of minimizing the number of arguments in the functions that write to the photon log. */
-    size_t Log_offset;
+    size_t Log_offset{};
 
     /* The length of the photon log. */
-    size_t Log_length;
+    size_t Log_length{};
 
 };
 
 struct Adaptive_RK_Integrator_debug_type {
 
     /*! @brief Pointer to the log of the state error. Used only in sim mode Make_geodesic_log. */
-    double* State_error_history{};
+    std::unique_ptr<double[]> State_error_history;
 
     /*! @brief Pointer to the log of the number of rejected steps. Used only in sim mode Make_geodesic_log. */
-    double* N_steps_rejected{};
+    std::unique_ptr<double[]> N_steps_rejected;
 
 };
+
+// TODO - implement these properly
 
 struct Polarization_debug_type {
 
@@ -902,16 +905,16 @@ struct Polarization_debug_type {
 
 struct Results_type {
 
+    /*! @brief Shared pointer to the struct that holds the photon logs. */
+    std::shared_ptr<Ray_log_type> Ray_log_struct;
+
     /*! @brief The struct that tholds the metric parameters. */
     Metric_parameters_type Metric_parameters{};
 
-    /*! @brief The struct that holds the photon log. */
-    Ray_log_type Ray_log_struct{};
+    Polarization_debug_type Polarization_debug_log{};
 
     /*! @brief The struct that holds the adaptive integrator debug parameters log. */
     Adaptive_RK_Integrator_debug_type RK_integrator_debug_log{};
-
-    Polarization_debug_type Polarization_debug_log{};
 
     /*! @brief Array that holds the integrated intensity for each polarization component. */
     double Intensity[e_Stokes_param_num]{};
@@ -933,7 +936,9 @@ struct Results_type {
     /*! @brief Array that holds the Novikov-Thorne disk flux. */
     double Flux_NT{};
 
-    /*! @brief Array that holds the Novikov-Thorne disk polariation vector (transported to the observer) in the ZAMO frame. */
+    /*! @brief Array that holds the Novikov-Thorne disk polariation vector (transported to the observer) in the ZAMO frame. 
+        NOTE: For thick disks the "primitive" results are the Stokes parameters, rather than a polarization vector. 
+              This is why this variable is only used for the thin disks. */
     double Projected_polarization_vector[2]{};
 
     /*! @brief Array that holds the Novikov-Thorne disk redshift. */
@@ -955,8 +960,8 @@ struct Debug_mode_struct {
 
     int Array_length;
 
-    double* NT_Flux_integral_array;
-    double* NT_Flux_r_coord_array;
+    std::unique_ptr<double[]> NT_Flux_integral_array;
+    std::unique_ptr<double[]> NT_Flux_r_coord_array;
 
 
 };

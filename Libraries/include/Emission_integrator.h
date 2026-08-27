@@ -92,18 +92,16 @@ private:
 
     /* ---------------------- Counters ---------------------- */
 
-    int Current_emission_log_idx;
-    int Current_polarization_log_idx;
+    size_t Current_emission_log_idx;
+    size_t Current_polarization_log_idx;
 
-    /* --------------- This holds the emission along the ray for the geodesic log sim mode --------------- */
-    // The + 1 is because I also log the affine parameter, which CAN be different from the one in the geodesic log because of the adaptive step
-    double* Emission_log[e_Stokes_param_num + 1];
+    /* ------ Holds a shared pointer to the log struct ------ */
+    std::shared_ptr<Ray_log_type> p_Ray_log_struct;
 
-    double* Polarization_log[3];
+    /* ------ Holds a shared pointer to the sim context ----- */
+    const Simulation_Context_type* p_Sim_Context;
 
     double* PW_Constant_log[2];
-
-    size_t Ray_log_length;
 
     /* ---------------------------- Pointers to the geodesic spline instance ----------------------------- */
 
@@ -124,9 +122,6 @@ private:
     std::complex<double> Temp_Pol_Vector[e_Stokes_param_num]{};
     double Temp_Stokes_Vector[e_Stokes_param_num]{};
 
-    /* --------------- Pointers to a bunch of functions that the radiative transfer needs ---------------- */
-
-    const Simulation_Context_type* p_Sim_Context;
 
     /* --------------------------------- Internal functions --------------------------------- */
 
