@@ -148,6 +148,7 @@ int main(int argument_count, char** cmd_line_args) {
 
         /* --- The ray log struct will need to be accessed by the geodesic and emission integrators, so I create it as a shared pointer --- */
         s_Ray_results->Ray_log_struct = std::make_shared<Ray_log_type>();
+        s_Ray_results->Polarization_debug_log = std::make_shared<Polarization_debug_type>();
 
         /* -------------------------- Reference for the sake of readability -------------------------- */
         size_t& Max_log_size = s_Sim_Context.p_Init_Conditions->Integrator_params.Max_integration_count;
@@ -159,16 +160,17 @@ int main(int argument_count, char** cmd_line_args) {
         s_Ray_results->RK_integrator_debug_log.N_steps_rejected = std::make_unique<double[]>(Max_log_size * e_Full_state_size);;
         s_Ray_results->RK_integrator_debug_log.State_error_history = std::make_unique<double[]>(Max_log_size * e_Full_state_size);;
 
-        for (int index = I; index < e_Stokes_param_num; index++) {
+        for (int index = 0; index < e_Stokes_param_num; index++) {
 
             s_Ray_results->Ray_log_struct->Ray_emission_log[index] = std::make_unique<double[]>(Max_log_size);
+            s_Ray_results->Polarization_debug_log->Polarization_fourvec[index] = std::make_unique<double[]>(Max_log_size);
 
         }
 
         for (int index = e_x; index <= e_y; index++) {
 
             s_Ray_results->Ray_log_struct->Ray_polarization_log[index] = std::make_unique<double[]>(Max_log_size);
-            s_Ray_results->Polarization_debug_log.PW_constant[index] = new double[Max_log_size] {};
+            s_Ray_results->Polarization_debug_log->PW_constant[index] = std::make_unique<double[]>(Max_log_size);
 
         }
 
@@ -183,15 +185,15 @@ int main(int argument_count, char** cmd_line_args) {
         switch (s_Sim_Context.p_Init_Conditions->Simulation_mode) {
 
         case Image_generation:
-            run_image_generation(&s_Sim_Context, s_Ray_results.get());
+            run_image_generation(&s_Sim_Context, std::ref(*s_Ray_results));
             break;
 
         case Make_geodesic_sweep:
-            run_geodesic_sweep(&s_Sim_Context, s_Ray_results.get());
+            run_geodesic_sweep(&s_Sim_Context, std::ref(*s_Ray_results));
             break;
 
         case Make_geodesic_log:
-            make_geodesic_log(&s_Sim_Context, s_Ray_results.get());
+            make_geodesic_log(&s_Sim_Context, std::ref(*s_Ray_results));
             break;
 
         case Debug_mode:

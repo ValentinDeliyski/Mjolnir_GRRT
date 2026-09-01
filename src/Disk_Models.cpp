@@ -58,7 +58,7 @@ Disk_model_type::Disk_model_type(Simulation_Context_type* p_Sim_Context) {
     this->Function_to_solve = { &von_Zeipel_cylinder_condition_wrapper,
                                 &this->von_Zeipel_cylinder_condition_wrapper_params };
 
-    this->Geometric_to_cgs_density_convertor = rho_0 / pow(this->p_Sim_Context->p_Init_Conditions->central_object_mass, 2) / M_PROTON_CGS;
+    this->Geometric_to_cgs_density_convertor = Constants::conversions::density_geom_to_cgs / pow(this->p_Sim_Context->p_Init_Conditions->central_object_mass, 2) / Constants::cgs::m_proton;
 }
 
 Disk_model_type::~Disk_model_type() {
@@ -296,12 +296,12 @@ void Disk_model_type::get_density_and_temperature(const double* const State_Vect
 
         /* ------------------------------------------------ Get the temperature profile ------------------------------------------------ */
 
-        p_Emission_medium_state->Temperature = M_PROTON_CGS / BOLTZMANN_CONST_CGS * (Gamma - 1) * this->get_disk_internal_energy(p_Emission_medium_state->Density);
+        p_Emission_medium_state->Temperature = Constants::cgs::m_proton / Constants::cgs::k_Boltzmann * (Gamma - 1) * this->get_disk_internal_energy(p_Emission_medium_state->Density);
 
         /* ---------------------------------------------------- Scale to CGS units ----------------------------------------------------- */
 
         /* TODO: check this scaling */
-        p_Emission_medium_state->Temperature *= P_0 / rho_0;
+        p_Emission_medium_state->Temperature *= Constants::conversions::pressure_geom_to_cgs / Constants::conversions::density_geom_to_cgs;
 
         break;
 
@@ -549,7 +549,7 @@ void Disk_model_type::get_numerical_mag_field(const double* const Local_State_Ve
     Emission_medium_state->Magnetic_fields.B_field_plasma_frame[e_t] /= B_vec_norm;
 
 
-    Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm = sqrt(2 * Mag_pressure * P_0) / this->p_Sim_Context->p_Init_Conditions->central_object_mass;
+    Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm = sqrt(2 * Mag_pressure * Constants::conversions::pressure_geom_to_cgs) / this->p_Sim_Context->p_Init_Conditions->central_object_mass;
 
 }
 
@@ -667,7 +667,7 @@ void Disk_model_type::get_phenomenological_mag_field(const double* const Local_S
 
     case Magnetic_field_magnitude_enums::Magnetization_based:
 
-        B_plasma_norm = sqrt(Mag_field_params.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Emission_medium_state->Density * M_PROTON_CGS * 4 * std::numbers::pi);
+        B_plasma_norm = sqrt(Mag_field_params.Magnetization * Constants::cgs::c_light * Constants::cgs::c_light * Emission_medium_state->Density * Constants::cgs::m_proton * 4 * std::numbers::pi);
         break;
 
     case Magnetic_field_magnitude_enums::Power_law_based:

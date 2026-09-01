@@ -95,13 +95,15 @@ private:
     size_t Current_emission_log_idx;
     size_t Current_polarization_log_idx;
 
-    /* ------ Holds a shared pointer to the log struct ------ */
+    /* ------ Holds a shared pointer to the main results log struct ------ */
     std::shared_ptr<Ray_log_type> p_Ray_log_struct;
+
+    /* ------ Holds a shared pointer to the polarization debug log struct ------ */
+    std::shared_ptr<Polarization_debug_type> p_Polarization_debug_struct;
 
     /* ------ Holds a shared pointer to the sim context ----- */
     const Simulation_Context_type* p_Sim_Context;
 
-    double* PW_Constant_log[2];
 
     /* ---------------------------- Pointers to the geodesic spline instance ----------------------------- */
 
@@ -163,7 +165,7 @@ private:
 
 public:
 
-    Emission_Integrator_class(const Simulation_Context_type* p_Sim_Context, Results_type* const p_Ray_results);
+    Emission_Integrator_class(const Simulation_Context_type* p_Sim_Context, Results_type &p_Ray_results);
     ~Emission_Integrator_class();
 
     template<typename Vec_type>

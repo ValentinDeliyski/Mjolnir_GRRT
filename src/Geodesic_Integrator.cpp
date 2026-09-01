@@ -107,7 +107,7 @@ static int implicit_method_system_wrapper_f(const gsl_vector* State_Vector, void
 
 }
 
-Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results) {
+Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type &p_Ray_results) {
 
     this->e_Active_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Default_geodesic_integrator;
 
@@ -129,12 +129,12 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
     /* --------- Set the internal pointers to relevant classes / structs that the integrator uses --------- */
     this->p_Init_conditions = p_Sim_Context->p_Init_Conditions;
     this->p_Emission_Model = p_Sim_Context->p_Emission_Model;
-    this->p_Ray_log_struct = p_Ray_results->Ray_log_struct;
+    this->p_Ray_log_struct = p_Ray_results.Ray_log_struct;
     this->p_Spacetime = p_Sim_Context->p_Spacetime;
 
-    this->Current_Optical_Depth = &p_Ray_results->Optical_Depth;
-    this->Current_Faraday_Q_Depth = &p_Ray_results->Faraday_Q_Depth;
-    this->Current_Faraday_V_Depth = &p_Ray_results->Faraday_V_Depth;
+    this->Current_Optical_Depth = &p_Ray_results.Optical_Depth;
+    this->Current_Faraday_Q_Depth = &p_Ray_results.Faraday_Q_Depth;
+    this->Current_Faraday_V_Depth = &p_Ray_results.Faraday_V_Depth;
 
     /* -------- This thing is a unique pointer so I dont have to delete it manually when the integrator goes out of scope -------- */
     this->p_Step_controller = std::make_unique<Step_controller_class>(this->p_Init_conditions->Integrator_params.Geodesic_Step_Controller_Params);
@@ -164,7 +164,7 @@ Geodesic_Integrator_class::Geodesic_Integrator_class(const Simulation_Context_ty
     memcpy(this->Current_Dynamic_state, this->p_Ray_log_struct->Ray_path_log_global.get(), e_Dynamic_state_size * sizeof(double));
 
     /* -------------------------- Set the internal debug tracker pointers to point to the external results struct --------------------------- */
-    this->RK_Integrator_debug_log = &p_Ray_results->RK_integrator_debug_log;
+    this->RK_Integrator_debug_log = &p_Ray_results.RK_integrator_debug_log;
 
     /* --- Init the per-step debug counters --- */
     this->N_steps_rejected = 0;
@@ -357,9 +357,9 @@ void Geodesic_Integrator_class::Update_optical_depth() {
 
         }
 
-        *this->Current_Optical_Depth += Total_Transfer_Functions.Absorbtion_functions[I] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass * MASS_TO_CM;
-        *this->Current_Faraday_Q_Depth += Total_Transfer_Functions.Faraday_functions[Q] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass * MASS_TO_CM;
-        *this->Current_Faraday_V_Depth += Total_Transfer_Functions.Faraday_functions[V] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass * MASS_TO_CM;
+        *this->Current_Optical_Depth += Total_Transfer_Functions.Absorbtion_functions[I] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass * Constants::conversions::mass_to_cm;
+        *this->Current_Faraday_Q_Depth += Total_Transfer_Functions.Faraday_functions[Q] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass * Constants::conversions::mass_to_cm;
+        *this->Current_Faraday_V_Depth += Total_Transfer_Functions.Faraday_functions[V] * this->p_Step_controller->previous_step * this->p_Init_conditions->central_object_mass * Constants::conversions::mass_to_cm;
 
     }
 }

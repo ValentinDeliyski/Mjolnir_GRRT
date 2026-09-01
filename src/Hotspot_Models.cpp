@@ -325,7 +325,7 @@ void Hotspot_model_type::get_magnetic_field(const double* const Local_State_Vect
 
     case Magnetization_based:
 
-        B_plasma_norm = sqrt(this->s_Hotspot_params.Magnetization * C_LIGHT_CGS * C_LIGHT_CGS * Emission_medium_state->Density * M_PROTON_CGS * 4 * std::numbers::pi);
+        B_plasma_norm = sqrt(this->s_Hotspot_params.Magnetization * Constants::cgs::c_light * Constants::cgs::c_light * Emission_medium_state->Density * Constants::cgs::m_proton * 4 * std::numbers::pi);
         break;
 
     case Power_law_based:

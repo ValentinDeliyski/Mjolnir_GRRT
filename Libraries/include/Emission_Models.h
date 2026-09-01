@@ -26,7 +26,7 @@ private:
     Simulation_Context_type* p_Sim_Context;
 
     /* The number of electron pitch angle values (in the range [0, pi]) to average over. */
-    int Num_samples_to_avg{};
+    size_t Num_samples_to_avg{};
 
     /* Flag that controls weather to include the polarization calculations. */
     bool Include_polarization{};

@@ -25,18 +25,18 @@ void Emission_models_class::get_thermal_synchrotron_emission_fit_functions(const
     /* The common exponential factor for each polarization component. */
     double exponent = exp(-p_Transfer_arags->cbrt_X);
 
-    Emission_functions[I] = M_SQRT2 * M_PI / 27.0 * p_Transfer_arags->sin_pitch_angle * p_Transfer_arags->X * (1 + TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X) * (1 + TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X) * exponent;
+    Emission_functions[I] = std::numbers::sqrt2 * std::numbers::pi / 27.0 * p_Transfer_arags->sin_pitch_angle * p_Transfer_arags->X * (1 + TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X) * (1 + TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X) * exponent;
 
     /* Return if the simulataion does not include polarization components */
     if (!this->Include_polarization) { return; }
 
-    Emission_functions[Q] = -M_SQRT2 * M_PI / 27.0 * p_Transfer_arags->sin_pitch_angle * p_Transfer_arags->X
+    Emission_functions[Q] = -std::numbers::sqrt2 * std::numbers::pi / 27.0 * p_Transfer_arags->sin_pitch_angle * p_Transfer_arags->X
                             * (1 + (7. * p_Transfer_arags->T_electron_dim_to_24_25 + 35.) / (10. * p_Transfer_arags->T_electron_dim_to_24_25 + 75.) * TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X)
                             * (1 + (7. * p_Transfer_arags->T_electron_dim_to_24_25 + 35.) / (10. * p_Transfer_arags->T_electron_dim_to_24_25 + 75.) * TWO_TO_11_OVER_12 / p_Transfer_arags->cbrt_X)
                             * exponent;
 
     Emission_functions[V] = p_Transfer_arags->cos_pitch_angle / p_Transfer_arags->T_electron_dim
-                          * (M_PI / 3 + M_PI / 3 * p_Transfer_arags->cbrt_X + (2. / 300) * p_Transfer_arags->sqrt_X + (2 * M_PI / 19.) * p_Transfer_arags->cbrt_X * p_Transfer_arags->cbrt_X) * exponent;
+                          * (std::numbers::pi / 3 + std::numbers::pi / 3 * p_Transfer_arags->cbrt_X + (2. / 300) * p_Transfer_arags->sqrt_X + (2 * std::numbers::pi / 19.) * p_Transfer_arags->cbrt_X * p_Transfer_arags->cbrt_X) * exponent;
 
 }
 
@@ -51,15 +51,15 @@ void Emission_models_class::get_thermal_synchrotron_absorbtion_fit_functions(con
     memset(Absorbtion_function, 0, e_Stokes_param_num * sizeof(double));
 
     const double& frequency   = Transfer_arags->frequency;
-    const double exp_argument = PLANCK_CONSTANT_SI * frequency / (BOLTZMANN_CONST_SI * p_Emission_medium_state->Temperature);
-    const double f_cyclo      = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    const double exp_argument = Constants::si::h_Planck * frequency / (Constants::si::k_Boltzmann * p_Emission_medium_state->Temperature);
+    const double f_cyclo      = Constants::cgs::q_electron * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * std::numbers::pi * Constants::cgs::m_electron * Constants::cgs::c_light);
 
     /* Check weather the exponent argument is numerically OK to use in the fit functions. */
     if (isnan(exp_argument) or isinf(exp_argument)) { return; }
     
     for (int stokes_idx = 0; stokes_idx <= e_Stokes_param_num - 1; stokes_idx++) {
 
-        Absorbtion_function[stokes_idx] = Emission_function[stokes_idx] * M_ELECTRON_CGS * C_LIGHT_CGS * C_LIGHT_CGS / 2 / PLANCK_CONSTANT_CGS / frequency / frequency * f_cyclo * (exp(exp_argument) - 1);
+        Absorbtion_function[stokes_idx] = Emission_function[stokes_idx] * Constants::cgs::m_electron * Constants::cgs::c_light * Constants::cgs::c_light / 2 / Constants::cgs::h_Planck / frequency / frequency * f_cyclo * (exp(exp_argument) - 1);
 
     }
 
@@ -124,7 +124,7 @@ void Emission_models_class::get_kappa_synchrotron_emission_fit_functions(const K
     constexpr double THREE_TO_7_OVER_3 = 12.980246132766677;
 
     double Emission_functions_low[e_Stokes_param_num]{};
-    double Common_factor_low = p_Transfer_args->cbrt_X * p_Transfer_args->sin_emission_angle * (4. * M_PI / THREE_TO_7_OVER_3) * std::tgamma(p_Transfer_args->kappa - 4.0 / 3) / std::tgamma(p_Transfer_args->kappa - 2.0);
+    double Common_factor_low = p_Transfer_args->cbrt_X * p_Transfer_args->sin_emission_angle * (4. * std::numbers::pi / THREE_TO_7_OVER_3) * std::tgamma(p_Transfer_args->kappa - 4.0 / 3) / std::tgamma(p_Transfer_args->kappa - 2.0);
 
     // ----------------------------------------------------------------------- High frequency fit coefficient ------------------------------------------------------------------------ //
 
@@ -340,10 +340,10 @@ void Emission_models_class::get_phenomenological_synchrotron_fit_functions(const
        This phenomenological model does not have this factor included for the sake of simplicity (unlike the other models). For this reason I divide by it
        in this function, while the caller multiplies by it afterwards. This amounts to multiplying by one, but it allows me to have only one function (the caller)
        that adds on the units to the transfer functions. */
-    double common_factor_emission = Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS * p_Transfer_args->f_cyclo;
+    double common_factor_emission = Constants::cgs::q_electron * Constants::cgs::q_electron / Constants::cgs::c_light * p_Transfer_args->f_cyclo;
 
     /* The common factor for the absorbtion function is different, but it serves the same purpose. */
-    double common_factor_absorbtion = Q_ELECTRON_CGS * Q_ELECTRON_CGS / M_ELECTRON_CGS / C_LIGHT_CGS / p_Transfer_args->frequency;
+    double common_factor_absorbtion = Constants::cgs::q_electron * Constants::cgs::q_electron / Constants::cgs::m_electron / Constants::cgs::c_light / p_Transfer_args->frequency;
 
     /* References for the sake of readability. */
     const double& emission_power_law = this->s_Emission_params.Phenomenological_emission_power_law;

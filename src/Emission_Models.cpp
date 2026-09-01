@@ -49,10 +49,10 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
     if (isinf(redshift) or isnan(redshift) or isinf(1.0 / redshift)) { return; }
 
     /* The dimensionless electron temperature. */
-    double const T_electron_dim = BOLTZMANN_CONST_CGS * p_Emission_medium_state->Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
+    double const T_electron_dim = Constants::cgs::k_Boltzmann * p_Emission_medium_state->Temperature / Constants::cgs::m_electron / Constants::cgs::c_light / Constants::cgs::c_light;
 
     /* The cyclotron frequency. */
-    double const f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    double const f_cyclo = Constants::cgs::q_electron * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * std::numbers::pi * Constants::cgs::m_electron * Constants::cgs::c_light);
 
     /* The "averaged" rescaled (by a factor of 27 / 4) critical frequency (without the sin(theta) term.
        That gets added on later from a pre-computed table). */
@@ -113,18 +113,18 @@ void Emission_models_class::get_thermal_synchrotron_transfer_functions(const dou
             this->get_synchrotron_transfer_fit_functions(e_Thermal_ensamble, p_Emission_medium_state, &Transfer_args_corrected, &temp_Transfer_functions);
 
             // The U component is 0 by definition
-            p_Transfer_functions->Emission_functions[I] += temp_Transfer_functions.Emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Emission_functions[Q] += temp_Transfer_functions.Emission_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Emission_functions[V] += temp_Transfer_functions.Emission_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Emission_functions[I] += temp_Transfer_functions.Emission_functions[I] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Emission_functions[Q] += temp_Transfer_functions.Emission_functions[Q] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Emission_functions[V] += temp_Transfer_functions.Emission_functions[V] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
 
             // The U component is 0 by definition
-            p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
 
             // The I and U components are 0 by definition
-            p_Transfer_functions->Faraday_functions[Q] += temp_Transfer_functions.Faraday_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Faraday_functions[V] += temp_Transfer_functions.Faraday_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faraday_functions[Q] += temp_Transfer_functions.Faraday_functions[Q] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Faraday_functions[V] += temp_Transfer_functions.Faraday_functions[V] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
 
         }
     }
@@ -178,10 +178,10 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
     if (isinf(redshift) or isnan(redshift) or isinf(1.0 / redshift)) { return; }
 
     /* Dimensionless Electron Temperature */
-    double T_electron_dim = BOLTZMANN_CONST_CGS * p_Emission_medium_state->Temperature / M_ELECTRON_CGS / C_LIGHT_CGS / C_LIGHT_CGS;
+    double T_electron_dim = Constants::cgs::k_Boltzmann * p_Emission_medium_state->Temperature / Constants::cgs::m_electron / Constants::cgs::c_light / Constants::cgs::c_light;
 
     /* Cyclotron Frequency */
-    double f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    double f_cyclo = Constants::cgs::q_electron * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * std::numbers::pi * Constants::cgs::m_electron * Constants::cgs::c_light);
 
     /* The "averaged" critical frequency (without the sin(theta) term - that gets added on later from a pre-computed table) */
     double f_k_no_sin = f_cyclo * (this->s_Emission_params.Kappa * T_electron_dim) * (this->s_Emission_params.Kappa * T_electron_dim);
@@ -229,18 +229,18 @@ void Emission_models_class::get_kappa_synchrotron_transfer_functions(const doubl
             this->get_synchrotron_transfer_fit_functions(e_Kappa_ensamble, p_Emission_medium_state, &Transfer_args_corrected, &temp_Transfer_functions);
 
             // The U component is 0 by definition
-            p_Transfer_functions->Emission_functions[I] += temp_Transfer_functions.Emission_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Emission_functions[Q] += temp_Transfer_functions.Emission_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Emission_functions[V] += temp_Transfer_functions.Emission_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Emission_functions[I] += temp_Transfer_functions.Emission_functions[I] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Emission_functions[Q] += temp_Transfer_functions.Emission_functions[Q] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Emission_functions[V] += temp_Transfer_functions.Emission_functions[V] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
 
             // The U component is 0 by definition
-            p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Absorbtion_functions[I] += temp_Transfer_functions.Absorbtion_functions[I] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Absorbtion_functions[Q] += temp_Transfer_functions.Absorbtion_functions[Q] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Absorbtion_functions[V] += temp_Transfer_functions.Absorbtion_functions[V] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
 
             // The I and U components are 0 by definition
-            p_Transfer_functions->Faraday_functions[Q] += temp_Transfer_functions.Faraday_functions[Q] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
-            p_Transfer_functions->Faraday_functions[V] += temp_Transfer_functions.Faraday_functions[V] * sin_pitch_angle * M_PI / Num_Samples_to_avg / 2;
+            p_Transfer_functions->Faraday_functions[Q] += temp_Transfer_functions.Faraday_functions[Q] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
+            p_Transfer_functions->Faraday_functions[V] += temp_Transfer_functions.Faraday_functions[V] * sin_pitch_angle * std::numbers::pi / (Num_Samples_to_avg - 1) / 2;
 
         }
     }
@@ -291,7 +291,7 @@ void Emission_models_class::get_phenomenological_synchrotron_functions(const dou
     if (isinf(Transfer_args.redshift) or isnan(Transfer_args.redshift) or isinf(1.0 / Transfer_args.redshift)) { return; }
 
     Transfer_args.frequency = this->p_Sim_Context->p_Init_Conditions->Observer_params.obs_frequency / Transfer_args.redshift;
-    Transfer_args.f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    Transfer_args.f_cyclo = Constants::cgs::q_electron * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * std::numbers::pi * Constants::cgs::m_electron * Constants::cgs::c_light);
 
     this->get_synchrotron_transfer_fit_functions(e_Phenomenological_ensamble, p_Emission_medium_state, &Transfer_args, p_Transfer_functions);
 
@@ -465,25 +465,25 @@ void Emission_models_class::get_synchrotron_transfer_fit_functions(const Ensambl
 
     }
 
-    const double f_cyclo = Q_ELECTRON_CGS * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * M_PI * M_ELECTRON_CGS * C_LIGHT_CGS);
+    const double f_cyclo = Constants::cgs::q_electron * p_Emission_medium_state->Magnetic_fields.B_field_plasma_frame_norm / (2 * std::numbers::pi * Constants::cgs::m_electron * Constants::cgs::c_light);
 
     /* ================================================ The emission functions ================================================ */
 
-    p_Transfer_functions->Emission_functions[I] *= p_Emission_medium_state->Density * f_cyclo * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS;
-    p_Transfer_functions->Emission_functions[Q] *= p_Emission_medium_state->Density * f_cyclo * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS;
-    p_Transfer_functions->Emission_functions[V] *= p_Emission_medium_state->Density * f_cyclo * Q_ELECTRON_CGS * Q_ELECTRON_CGS / C_LIGHT_CGS;
+    p_Transfer_functions->Emission_functions[I] *= p_Emission_medium_state->Density * f_cyclo * Constants::cgs::q_electron * Constants::cgs::q_electron / Constants::cgs::c_light;
+    p_Transfer_functions->Emission_functions[Q] *= p_Emission_medium_state->Density * f_cyclo * Constants::cgs::q_electron * Constants::cgs::q_electron / Constants::cgs::c_light;
+    p_Transfer_functions->Emission_functions[V] *= p_Emission_medium_state->Density * f_cyclo * Constants::cgs::q_electron * Constants::cgs::q_electron / Constants::cgs::c_light;
 
     /* ================================================ The absorbtion functions ================================================ */
 
-    p_Transfer_functions->Absorbtion_functions[I] *= p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / frequency / M_ELECTRON_CGS / C_LIGHT_CGS;
-    p_Transfer_functions->Absorbtion_functions[Q] *= p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / frequency / M_ELECTRON_CGS / C_LIGHT_CGS;
-    p_Transfer_functions->Absorbtion_functions[V] *= p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS / frequency / M_ELECTRON_CGS / C_LIGHT_CGS;
+    p_Transfer_functions->Absorbtion_functions[I] *= p_Emission_medium_state->Density * Constants::cgs::q_electron * Constants::cgs::q_electron / frequency / Constants::cgs::m_electron / Constants::cgs::c_light;
+    p_Transfer_functions->Absorbtion_functions[Q] *= p_Emission_medium_state->Density * Constants::cgs::q_electron * Constants::cgs::q_electron / frequency / Constants::cgs::m_electron / Constants::cgs::c_light;
+    p_Transfer_functions->Absorbtion_functions[V] *= p_Emission_medium_state->Density * Constants::cgs::q_electron * Constants::cgs::q_electron / frequency / Constants::cgs::m_electron / Constants::cgs::c_light;
 
     /* ================================================ The Faraday functions ================================================ */
     /* Originally derived in https://iopscience.iop.org/article/10.1086/592326/pdf - expressions 25, 26 and 33. */
 
-    p_Transfer_functions->Faraday_functions[Q] *= -p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS * f_cyclo * f_cyclo / M_ELECTRON_CGS / C_LIGHT_CGS / frequency / frequency / frequency;
-    p_Transfer_functions->Faraday_functions[V] *= 2 * p_Emission_medium_state->Density * Q_ELECTRON_CGS * Q_ELECTRON_CGS * f_cyclo / M_ELECTRON_CGS / C_LIGHT_CGS / frequency / frequency;
+    p_Transfer_functions->Faraday_functions[Q] *= -p_Emission_medium_state->Density * Constants::cgs::q_electron * Constants::cgs::q_electron * f_cyclo * f_cyclo / Constants::cgs::m_electron / Constants::cgs::c_light / frequency / frequency / frequency;
+    p_Transfer_functions->Faraday_functions[V] *= 2 * p_Emission_medium_state->Density * Constants::cgs::q_electron * Constants::cgs::q_electron * f_cyclo / Constants::cgs::m_electron / Constants::cgs::c_light / frequency / frequency;
 
 }
 
@@ -493,27 +493,31 @@ void Emission_models_class::precompute_electron_pitch_angles(std::shared_ptr<Ini
 
     // ====================================================== Allocate memory for the arrays ====================================================== //
 
-    this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
-    this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
+    this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles = std::make_unique<double[]>(p_Init_Conditions->Emission_pitch_angle_samples_to_average);
+    this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles = std::make_unique<double[]>(p_Init_Conditions->Emission_pitch_angle_samples_to_average);
 
-    this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
-    this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
+    this->s_Precomputed_e_pitch_angles.one_over_sqrt_sin = std::make_unique<double[]>(p_Init_Conditions->Emission_pitch_angle_samples_to_average);
+    this->s_Precomputed_e_pitch_angles.one_over_cbrt_sin = std::make_unique<double[]>(p_Init_Conditions->Emission_pitch_angle_samples_to_average);
 
-    this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_5175 = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
-    this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_6    = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
-    this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_7515 = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
+    this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_5175 = std::make_unique<double[]>(p_Init_Conditions->Emission_pitch_angle_samples_to_average);
+    this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_6    = std::make_unique<double[]>(p_Init_Conditions->Emission_pitch_angle_samples_to_average);
+    this->s_Precomputed_e_pitch_angles.one_over_sin_to_0_p_7515 = std::make_unique<double[]>(p_Init_Conditions->Emission_pitch_angle_samples_to_average);
 
-    this->s_Precomputed_e_pitch_angles.one_over_sin_to_7_over_20 = new double[p_Init_Conditions->Emission_pitch_angle_samples_to_average];
+    this->s_Precomputed_e_pitch_angles.one_over_sin_to_7_over_20 = std::make_unique<double[]>(p_Init_Conditions->Emission_pitch_angle_samples_to_average);
 
     // =========================================================================================================================================== //
 
     for (int index = 0; index < p_Init_Conditions->Emission_pitch_angle_samples_to_average; index++) {
 
-        double pitch_angle = double(index) / p_Init_Conditions->Emission_pitch_angle_samples_to_average * M_PI;
+        double pitch_angle = double(index) / (p_Init_Conditions->Emission_pitch_angle_samples_to_average - 1) * std::numbers::pi;
+
         this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index] = sin(pitch_angle);
         this->s_Precomputed_e_pitch_angles.cos_electron_pitch_angles[index] = cos(pitch_angle);
 
-        if (this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index] != 0) {
+        /* NOTE: This "if" only fails to pass for index = 0 (sin(0)), which is a case I don't even bother using in the averaging loops,
+           because synchrotron emission colinear to the magnetic field is exactly zero anyway. */
+        if (!isinf(1. / this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index]) and 
+            !isnan(1. / this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index])) {
 
             // Used in the thermal and kappa synchrotron emission functions.
 
@@ -531,6 +535,7 @@ void Emission_models_class::precompute_electron_pitch_angles(std::shared_ptr<Ini
             this->s_Precomputed_e_pitch_angles.one_over_sin_to_7_over_20[index] = 1. / pow(this->s_Precomputed_e_pitch_angles.sin_electron_pitch_angles[index], 7. / 20);
 
         }
+
     }
 }
 

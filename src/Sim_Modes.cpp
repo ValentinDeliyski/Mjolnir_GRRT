@@ -56,16 +56,16 @@ void static Rendering_function(std::stop_token stop_token, Rendering_engine& Ren
 
 }
 
-void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray_results, Rendering_engine& Renderer) {
+void static Update_render(Disk_model_enums Disk_model, Results_type &Ray_results, Rendering_engine& Renderer) {
 
     if (e_Novikov_Thorne == Disk_model) {
 
-        Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = float(p_Ray_results->Flux_NT * pow(p_Ray_results->Redshift_NT, 4));
+        Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = float(Ray_results.Flux_NT * pow(Ray_results.Redshift_NT, 4));
 
     }
     else {
 
-        Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = float(p_Ray_results->Intensity[I]);
+        Renderer.Intensity_buffer[int(Renderer.texture_indexer / 3)] = float(Ray_results.Intensity[I]);
 
     }
 
@@ -73,34 +73,34 @@ void static Update_render(Disk_model_enums Disk_model, Results_type* const p_Ray
 
 }
 
-void static Zero_results_struct(Results_type* const p_Ray_results) {
+void static Zero_results_struct(Results_type& Ray_results) {
 
-    memset(p_Ray_results->Intensity, 0, e_Stokes_param_num * sizeof(double));
+    memset(Ray_results.Intensity, 0, e_Stokes_param_num * sizeof(double));
 
-    memset(p_Ray_results->Final_State_Vector, 0, e_Full_state_size * sizeof(double));
-    memset(p_Ray_results->Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));
+    memset(Ray_results.Final_State_Vector, 0, e_Full_state_size * sizeof(double));
+    memset(Ray_results.Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));
 
-    memset(&p_Ray_results->Flux_NT, 0, sizeof(double));
-    memset(&p_Ray_results->Redshift_NT, 0, sizeof(double));
-    memset(&p_Ray_results->Projected_polarization_vector, 0, 2 * sizeof(double));
+    memset(&Ray_results.Flux_NT, 0, sizeof(double));
+    memset(&Ray_results.Redshift_NT, 0, sizeof(double));
+    memset(&Ray_results.Projected_polarization_vector, 0, 2 * sizeof(double));
 
-    memset(&p_Ray_results->Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));
+    memset(&Ray_results.Thin_Disk_State_Vector, 0, e_Dynamic_state_size * sizeof(double));
 
-    p_Ray_results->Ray_log_struct->Log_length = 0;
-    p_Ray_results->Ray_log_struct->Log_offset = 0;
+    Ray_results.Ray_log_struct->Log_length = 0;
+    Ray_results.Ray_log_struct->Log_offset = 0;
 
-    memset(&p_Ray_results->Image_Coords, 0, 2 * sizeof(double));
+    memset(&Ray_results.Image_Coords, 0, 2 * sizeof(double));
 
-    memset(&p_Ray_results->Celestial_sphere_crossing_coords, 0, 4 * sizeof(double));
+    memset(&Ray_results.Celestial_sphere_crossing_coords, 0, 4 * sizeof(double));
 
-    p_Ray_results->NT_Disk_found = false;
-    p_Ray_results->Faraday_Q_Depth = 0;
-    p_Ray_results->Faraday_V_Depth = 0;
-    p_Ray_results->Optical_Depth = 0;
+    Ray_results.NT_Disk_found = false;
+    Ray_results.Faraday_Q_Depth = 0;
+    Ray_results.Faraday_V_Depth = 0;
+    Ray_results.Optical_Depth = 0;
 
 }
 
-void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, Rendering_engine& Renderer, Results_type* const p_Ray_results) {
+void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, Rendering_engine& Renderer, Results_type &Ray_results) {
 
         int& X_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_x;
         int& Y_resolution = p_Sim_Context->p_Init_Conditions->Observer_params.resolution_y;
@@ -179,18 +179,18 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
                                                     X_angle_max - H_pixel_num * X_scan_step);
                 
                 /* ------------------  Ray propagation happens here ------------------ */
-                Propagate_ray(p_Sim_Context, p_Ray_results);
+                Propagate_ray(p_Sim_Context, Ray_results);
                 
                 /* ------------------ Updating the visualization happens here ------------------ */
-                Update_render(p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model, p_Ray_results, Renderer);
+                Update_render(p_Sim_Context->p_Init_Conditions->Disk_params.e_Disk_model, Ray_results, Renderer);
 
                 /* ------------------ Results logging happens here ------------------ */
 
-                File_manager.write_image_data_to_file(p_Ray_results);
+                File_manager.write_image_data_to_file(Ray_results);
 
                 /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope), 
                    and therefore not automatically reinitialized to 0s. I have to manually do it. */
-                Zero_results_struct(p_Ray_results);
+                Zero_results_struct(Ray_results);
 
             }
 
@@ -205,7 +205,7 @@ void static Generate_Image(const Simulation_Context_type* const p_Sim_Context, R
 
 }
 
-void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
+void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Results_type &Ray_results) {
        
         /*
 
@@ -222,7 +222,7 @@ void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Re
         
         */
 
-        Generate_Image(p_Sim_Context, std::ref(*Renderer), p_Ray_results);
+        Generate_Image(p_Sim_Context, std::ref(*Renderer), Ray_results);
 
         GUI_Thread.request_stop();
 
@@ -232,7 +232,7 @@ void run_image_generation(const Simulation_Context_type* const p_Sim_Context, Re
 
 }
 
-void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
+void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Results_type &Ray_results) {
 
     // Populate the File Manager class instance
     File_manager_class File_manager = File_manager_class(p_Sim_Context->p_Init_Conditions);
@@ -272,7 +272,7 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
 
         */
 
-        Propagate_ray(p_Sim_Context, p_Ray_results);
+        Propagate_ray(p_Sim_Context, Ray_results);
 
         /*
         
@@ -280,11 +280,11 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
         
         */
 
-        File_manager.write_image_data_to_file(p_Ray_results);
+        File_manager.write_image_data_to_file(Ray_results);
 
         /* The final results must be manually set to 0s because the Ray_results struct is STATIC (and in an outer scope),
            and therefore not automatically reinitialized to 0s. I have to manually do it. */
-        Zero_results_struct(p_Ray_results);
+        Zero_results_struct(Ray_results);
 
         print_progress(photon_idx, File_manager.sim_mode_1_ray_number - 1, true);
 
@@ -296,7 +296,7 @@ void run_geodesic_sweep(const Simulation_Context_type* const p_Sim_Context, Resu
 
 }
 
-void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Results_type* const p_Ray_results) {
+void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Results_type &Ray_results) {
 
     // Populate the File Manager class instance
     File_manager_class File_manager = File_manager_class(p_Sim_Context->p_Init_Conditions);
@@ -306,13 +306,11 @@ void make_geodesic_log(const Simulation_Context_type* const p_Sim_Context, Resul
 
     get_initial_conditions_from_image_coords(p_Sim_Context->p_Init_Conditions, X_init, Y_init);
     
-    Propagate_ray(p_Sim_Context, p_Ray_results);
-
-    p_Ray_results->Ray_log_struct->Log_offet_at_disk_edge = p_Ray_results->Ray_log_struct->Log_length;
+    Propagate_ray(p_Sim_Context, Ray_results);
 
     File_manager.create_output_file();
     File_manager.open_output_file();
-    File_manager.log_photon_path(p_Ray_results);
+    File_manager.log_photon_path(Ray_results);
     File_manager.close_output_file();
 
 }

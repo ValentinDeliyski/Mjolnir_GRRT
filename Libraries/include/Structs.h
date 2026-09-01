@@ -427,32 +427,32 @@ struct Metric_parameters_type {
 
 struct Precomputed_e_pitch_angles_type {
 
-    double* sin_electron_pitch_angles{};
-    double* cos_electron_pitch_angles{};
+    std::unique_ptr<double[]> sin_electron_pitch_angles;
+    std::unique_ptr<double[]> cos_electron_pitch_angles;
 
     // === Used in the thermal synchotron emission functions === //
 
     /*! @brief 1. / sqrt(sin) */
-    double* one_over_sqrt_sin{};
+    std::unique_ptr<double[]> one_over_sqrt_sin;
 
     /*! @brief 1. / cbrt(sin) */
-    double* one_over_cbrt_sin{};
+    std::unique_ptr<double[]> one_over_cbrt_sin;
 
     // === Used in the thermal synchotron Faraday functions === //
 
      /*! @brief 1. / pow(sin, 0.5175) */
-    double* one_over_sin_to_0_p_5175{};
+    std::unique_ptr<double[]> one_over_sin_to_0_p_5175;
 
     /*! @brief 1. / pow(sin, 0.6) */
-    double* one_over_sin_to_0_p_6{};
+    std::unique_ptr<double[]> one_over_sin_to_0_p_6;
 
     /*! @brief 1. / pow(sin, 0.7515) */
-    double* one_over_sin_to_0_p_7515{};
+    std::unique_ptr<double[]> one_over_sin_to_0_p_7515;
 
     // === Used in the kappa synchotron emission functions === //
 
     /*! @brief 1. / pow(sin, 7. / 20) */
-    double* one_over_sin_to_7_over_20{};
+    std::unique_ptr<double[]> one_over_sin_to_7_over_20;
 
 };
 
@@ -872,8 +872,7 @@ struct Ray_log_type {
     /* Pointer to the array that holds the entire photon trajectory in global coordinates. */
     std::unique_ptr<double[]> Ray_path_log_global;
 
-    size_t Log_offet_at_disk_edge{};
-
+    // TODO: I think I can get rid of this...
     /* Int that specifies where in the log to write.
        This exists for the sole purpose of minimizing the number of arguments in the functions that write to the photon log. */
     size_t Log_offset{};
@@ -897,9 +896,9 @@ struct Adaptive_RK_Integrator_debug_type {
 
 struct Polarization_debug_type {
 
-    double* Polarization_fourvec[4];
+    std::unique_ptr<double[]> Polarization_fourvec[4];
 
-    double* PW_constant[2];
+    std::unique_ptr<double[]> PW_constant[2];
 
 };
 
@@ -911,7 +910,7 @@ struct Results_type {
     /*! @brief The struct that tholds the metric parameters. */
     Metric_parameters_type Metric_parameters{};
 
-    Polarization_debug_type Polarization_debug_log{};
+    std::shared_ptr<Polarization_debug_type> Polarization_debug_log;
 
     /*! @brief The struct that holds the adaptive integrator debug parameters log. */
     Adaptive_RK_Integrator_debug_type RK_integrator_debug_log{};

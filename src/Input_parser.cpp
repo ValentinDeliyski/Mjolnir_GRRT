@@ -1866,7 +1866,7 @@ Return_Values parse_simulation_input_XML(const std::string input_file_path, std:
 
     if (p_Initial_conditions->Disk_params.e_Disk_model == e_Numerical) {
 
-        p_Initial_conditions->Disk_params.Max_disk_density *= rho_0 / pow(p_Initial_conditions->central_object_mass, 2) / M_PROTON_CGS;
+        p_Initial_conditions->Disk_params.Max_disk_density *= Constants::conversions::density_geom_to_cgs / pow(p_Initial_conditions->central_object_mass, 2) / Constants::cgs::m_proton;
 
     }
 

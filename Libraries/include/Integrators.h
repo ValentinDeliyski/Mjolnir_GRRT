@@ -161,7 +161,7 @@ private:
 
 public:
 
-    Geodesic_Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type* p_Ray_results);
+    Geodesic_Integrator_class(const Simulation_Context_type* const p_Sim_Context, Results_type &p_Ray_results);
     ~Geodesic_Integrator_class();
 
     /* ------ This gets filled only in simulation mode 3 ----- */

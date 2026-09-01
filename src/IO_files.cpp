@@ -804,60 +804,60 @@ void File_manager_class::create_output_file() {
 
 }
 
-void File_manager_class::write_image_data_to_file(Results_type* s_Ray_results) {
+void File_manager_class::write_image_data_to_file(Results_type &s_Ray_results) {
 
-    *this->Output_File << s_Ray_results->Image_Coords[e_x]
+    *this->Output_File << s_Ray_results.Image_Coords[e_x]
                             << ","
-                            << s_Ray_results->Image_Coords[e_y]
+                            << s_Ray_results.Image_Coords[e_y]
                             << "," 
                             << std::setprecision(15);
 
     if (e_Novikov_Thorne == this->p_Initial_Conditions->Disk_params.e_Disk_model) {
 
-        *this->Output_File << s_Ray_results->Redshift_NT
-                                << ","
-                                << s_Ray_results->Flux_NT
-                                << ","
-                                << s_Ray_results->Projected_polarization_vector[e_x]
-                                << ","
-                                << s_Ray_results->Projected_polarization_vector[e_y]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_t]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_r]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_phi]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_p_r]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_p_theta]
-                                << ","
-                                << s_Ray_results->Thin_Disk_State_Vector[e_p_phi]
-                                << ",";
+        *this->Output_File << s_Ray_results.Redshift_NT
+                           << ","
+                           << s_Ray_results.Flux_NT
+                           << ","
+                           << s_Ray_results.Projected_polarization_vector[e_x]
+                           << ","
+                           << s_Ray_results.Projected_polarization_vector[e_y]
+                           << ","
+                           << s_Ray_results.Thin_Disk_State_Vector[e_t]
+                           << ","
+                           << s_Ray_results.Thin_Disk_State_Vector[e_r]
+                           << ","
+                           << s_Ray_results.Thin_Disk_State_Vector[e_phi]
+                           << ","
+                           << s_Ray_results.Thin_Disk_State_Vector[e_p_r]
+                           << ","
+                           << s_Ray_results.Thin_Disk_State_Vector[e_p_theta]
+                           << ","
+                           << s_Ray_results.Thin_Disk_State_Vector[e_p_phi]
+                           << ",";
     }
     else {
 
-        *this->Output_File << s_Ray_results->Intensity[I] * CGS_TO_JANSKY
-                                << ","
-                                << s_Ray_results->Intensity[Q] * CGS_TO_JANSKY
-                                << ","
-                                << s_Ray_results->Intensity[U] * CGS_TO_JANSKY
-                                << ","
-                                << s_Ray_results->Intensity[V] * CGS_TO_JANSKY
-                                << ","
-                                << s_Ray_results->Final_State_Vector[e_t]
-                                << ","
-                                << s_Ray_results->Optical_Depth
-                                << ","
-                                << s_Ray_results->Faraday_Q_Depth
-                                << ","
-                                << s_Ray_results->Faraday_V_Depth
-                                << ",";
+        *this->Output_File << s_Ray_results.Intensity[I] * Constants::conversions::cgs_to_jansky
+                           << ","
+                           << s_Ray_results.Intensity[Q] * Constants::conversions::cgs_to_jansky
+                           << ","
+                           << s_Ray_results.Intensity[U] * Constants::conversions::cgs_to_jansky
+                           << ","
+                           << s_Ray_results.Intensity[V] * Constants::conversions::cgs_to_jansky
+                           << ","
+                           << s_Ray_results.Final_State_Vector[e_t]
+                           << ","
+                           << s_Ray_results.Optical_Depth
+                           << ","
+                           << s_Ray_results.Faraday_Q_Depth
+                           << ","
+                           << s_Ray_results.Faraday_V_Depth
+                           << ",";
     }
 
-    *this->Output_File << s_Ray_results->Celestial_sphere_crossing_coords[e_theta]
-                            << ","
-                            << s_Ray_results->Celestial_sphere_crossing_coords[e_phi];
+    *this->Output_File << s_Ray_results.Celestial_sphere_crossing_coords[e_theta]
+                       << ","
+                       << s_Ray_results.Celestial_sphere_crossing_coords[e_phi];
 
     *this->Output_File << '\n';
 
@@ -875,70 +875,38 @@ void File_manager_class::write_debug_data_to_file(Debug_mode_struct* Debug_resul
 
 }
 
-void File_manager_class::log_photon_path(Results_type* p_Ray_results) {
+void File_manager_class::log_photon_path(Results_type &p_Ray_results) {
 
     *this->Output_File << std::setprecision(15);
 
-    for (int log_index = 1; log_index < p_Ray_results->Ray_log_struct->Log_length - 1; log_index++) {
+    for (size_t log_index = 1; log_index < p_Ray_results.Ray_log_struct->Log_length - 1; log_index++) {
 
-        for (int state_index = 0; state_index < e_Full_state_size; state_index++) {
+        for (size_t state_index = 0; state_index < e_Full_state_size; state_index++) {
 
-            *this->Output_File << p_Ray_results->Ray_log_struct->Ray_path_log_global[state_index + log_index * e_Full_state_size] << ",";
+            *this->Output_File << p_Ray_results.Ray_log_struct->Ray_path_log_global[state_index + log_index * e_Full_state_size] << ",";
+
+        }
+
+        *this->Output_File << p_Ray_results.RK_integrator_debug_log.State_error_history[log_index] << ",";
+        *this->Output_File << p_Ray_results.RK_integrator_debug_log.N_steps_rejected[log_index] << ",";
+
+        for (size_t stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
+
+            *this->Output_File << p_Ray_results.Ray_log_struct->Ray_emission_log[stokes_index][log_index] << ",";
 
         }
 
-        *this->Output_File << p_Ray_results->RK_integrator_debug_log.State_error_history[log_index] << ",";
-        *this->Output_File << p_Ray_results->RK_integrator_debug_log.N_steps_rejected[log_index] << ",";
+        for (size_t Pol_component = 0; Pol_component < 2; Pol_component++) {
 
-        if (1) {
-
-            for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
-
-                *this->Output_File << p_Ray_results->Ray_log_struct->Ray_emission_log[stokes_index][log_index - 1] << ",";
-
-            }
-
-            for (int Pol_component = 0; Pol_component < 2; Pol_component++) {
-
-                *this->Output_File << 0.0 << ",";
-
-            }
-
-
-            if (Spacetime_enums::Kerr == this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
-
-                for (int Pol_component = 0; Pol_component < 2; Pol_component++) {
-
-                    *this->Output_File << 0.0 << ",";
-
-                }
-
-            }
+            *this->Output_File << p_Ray_results.Ray_log_struct->Ray_polarization_log[Pol_component][log_index] << ",";
 
         }
-        else {
 
-            size_t idx = log_index - (p_Ray_results->Ray_log_struct->Log_length - p_Ray_results->Ray_log_struct->Log_offet_at_disk_edge);
+        if (Spacetime_enums::Kerr == this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
 
-            for (int stokes_index = I; stokes_index < e_Stokes_param_num; stokes_index++) {
+            for (size_t Pol_component = 0; Pol_component < 2; Pol_component++) {
 
-                *this->Output_File << p_Ray_results->Ray_log_struct->Ray_emission_log[stokes_index][idx] << ",";
-
-            }
-
-            for (int Pol_component = 0; Pol_component < 2; Pol_component++) {
-
-                *this->Output_File << p_Ray_results->Ray_log_struct->Ray_polarization_log[Pol_component][idx] << ",";
-
-            }
-
-            if (Spacetime_enums::Kerr == this->p_Initial_Conditions->Metric_parameters.e_Spacetime) {
-
-                for (int Pol_component = 0; Pol_component < 2; Pol_component++) {
-
-                    *this->Output_File << p_Ray_results->Polarization_debug_log.PW_constant[Pol_component][idx] << ",";
-
-                }
+                *this->Output_File << p_Ray_results.Polarization_debug_log->PW_constant[Pol_component][log_index] << ",";
 
             }
 

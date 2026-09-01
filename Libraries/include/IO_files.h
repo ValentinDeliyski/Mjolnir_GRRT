@@ -49,11 +49,11 @@ private:
 
 		void create_output_file();
 
-		void write_image_data_to_file(Results_type* Ray_results);
+		void write_image_data_to_file(Results_type &Ray_results);
 
 		void write_debug_data_to_file(Debug_mode_struct* Debug_results);
 
-		void log_photon_path(Results_type* s_Ray_results);
+		void log_photon_path(Results_type &s_Ray_results);
 
 		void close_output_file();
 

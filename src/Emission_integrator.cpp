@@ -1,52 +1,48 @@
 ﻿#include "Emission_integrator.h"
 #include "Emission_Models.h"
 
-Emission_Integrator_class::Emission_Integrator_class(const Simulation_Context_type* p_Sim_Context, Results_type* const p_Ray_results) {
+Emission_Integrator_class::Emission_Integrator_class(const Simulation_Context_type* p_Sim_Context, Results_type &p_Ray_results) {
 
     this->e_Active_rad_transfer_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Radiative_transfer_integrator;
     this->e_Active_parallel_transport_integrator = p_Sim_Context->p_Init_Conditions->Integrator_params.e_Parallel_transport_integrator;
 
     this->p_Sim_Context = p_Sim_Context;
-    this->p_Ray_log_struct = p_Ray_results->Ray_log_struct;
-
-    for (int idx = e_x; idx <= e_y; idx++) {
-
-        this->PW_Constant_log[idx] = p_Ray_results->Polarization_debug_log.PW_constant[idx];
-    }
+    this->p_Ray_log_struct = p_Ray_results.Ray_log_struct;
+    this->p_Polarization_debug_struct = p_Ray_results.Polarization_debug_log;
 
     /* --------------------------------------------------- Init the counters -------------------------------------------------- */
 
-    this->Current_emission_log_idx = 0;
-    this->Current_polarization_log_idx = 0;
+    this->Current_emission_log_idx = p_Ray_results.Ray_log_struct->Log_length - 1;
+    this->Current_polarization_log_idx = p_Ray_results.Ray_log_struct->Log_length - 1;
 
     /* ------------------------------------------ Construct the geodesic ray splines ------------------------------------------ */
 
-    std::unique_ptr<double[]> Affine_param_log = std::make_unique<double[]>(p_Ray_results->Ray_log_struct->Log_length);
+    std::unique_ptr<double[]> Affine_param_log = std::make_unique<double[]>(p_Ray_results.Ray_log_struct->Log_length);
 
     std::unique_ptr<double[]> Ray_Log[e_Dynamic_state_size];
     std::unique_ptr<double[]> Radial_Ray_log_global[2];
 
-    Radial_Ray_log_global[0] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct->Log_length);
-    Radial_Ray_log_global[1] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct->Log_length);
+    Radial_Ray_log_global[0] = std::make_unique<double[]>(p_Ray_results.Ray_log_struct->Log_length);
+    Radial_Ray_log_global[1] = std::make_unique<double[]>(p_Ray_results.Ray_log_struct->Log_length);
     
     for (size_t idx = 0; idx < e_Dynamic_state_size; idx++) {
 
-        Ray_Log[idx] = std::make_unique<double[]>(p_Ray_results->Ray_log_struct->Log_length);
+        Ray_Log[idx] = std::make_unique<double[]>(p_Ray_results.Ray_log_struct->Log_length);
 
     }
 
-    for (size_t log_idx = 0; log_idx < p_Ray_results->Ray_log_struct->Log_length; log_idx++) {
+    for (size_t log_idx = 0; log_idx < p_Ray_results.Ray_log_struct->Log_length; log_idx++) {
 
         for (int component_idx = 0; component_idx < e_Dynamic_state_size; component_idx++) {
 
-            Ray_Log[component_idx][this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct->Ray_path_log_local[component_idx + log_idx * e_Full_state_size];
+            Ray_Log[component_idx][this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results.Ray_log_struct->Ray_path_log_local[component_idx + log_idx * e_Full_state_size];
 
         }
 
-        Radial_Ray_log_global[0][this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct->Ray_path_log_global[e_r + log_idx * e_Full_state_size];
-        Radial_Ray_log_global[1][this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct->Ray_path_log_global[e_p_r + log_idx * e_Full_state_size];
+        Radial_Ray_log_global[0][this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results.Ray_log_struct->Ray_path_log_global[e_r + log_idx * e_Full_state_size];
+        Radial_Ray_log_global[1][this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results.Ray_log_struct->Ray_path_log_global[e_p_r + log_idx * e_Full_state_size];
 
-        Affine_param_log[this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results->Ray_log_struct->Ray_path_log_local[e_ray_affine_param + log_idx * e_Full_state_size];
+        Affine_param_log[this->p_Ray_log_struct->Log_length - 1 - log_idx] = p_Ray_results.Ray_log_struct->Ray_path_log_local[e_ray_affine_param + log_idx * e_Full_state_size];
     }
 
     for (int idx = 0; idx < e_Dynamic_state_size; idx++) {
@@ -118,7 +114,7 @@ void Emission_Integrator_class::Run_Runge_Kutta_Stokes_Vector(const double Start
     double Temp_affine_param{};
 
     const double Geometric_Step = End_Affine_Param - Start_Affine_Param;
-    const double CGS_Step = Geometric_Step * MASS_TO_CM * this->p_Sim_Context->p_Init_Conditions->central_object_mass;
+    const double CGS_Step = Geometric_Step * Constants::conversions::mass_to_cm * this->p_Sim_Context->p_Init_Conditions->central_object_mass;
     this->Current_Affine_Param = Start_Affine_Param;
 
     for (int RK_stage = 0; RK_stage < RK_size; RK_stage++) {
@@ -265,7 +261,7 @@ void Emission_Integrator_class::Update_emission_log() {
 
     }
 
-    this->Current_emission_log_idx += 1;
+    this->Current_emission_log_idx -= 1;
 
 }
 
@@ -422,17 +418,17 @@ void Emission_Integrator_class::Map_Stokes_to_Polarization_Vector(const double S
 
     const double Polarized_Intensity = vector_norm(Stokes_Vector_to_map + 1, 3);
 
-    if (Polarized_Intensity < std::numeric_limits<double>::min()) { return; }
+    if (Polarized_Intensity < std::numeric_limits<double>::min() or Stokes_Vector_to_map[I] < Constants::thresholds::min_intensity) { return; }
 
     const double Normalized_Q = Stokes_Vector_to_map[Q] / Polarized_Intensity;
     const double Normalized_U = Stokes_Vector_to_map[U] / Polarized_Intensity;
     const double Normalized_V = Stokes_Vector_to_map[V] / Polarized_Intensity;
 
-    if (std::abs(Normalized_Q) > 1 or std::abs(Normalized_V) > 1) {
+    //if (Polarized_Intensity / Stokes_Vector_to_map[I] > 1) {
 
-        throw std::runtime_error("Normalized polarization components > 1 in Map_Stokes_to_Polarization_Vector()!");
+    //    throw std::runtime_error("Fractional polarization > 1 in Map_Stokes_to_Polarization_Vector()!");
 
-    }
+    //}
 
     Stokes_Basis_Pol_vec[1] = sqrt((1 + Normalized_Q) / 2);
 
@@ -516,12 +512,12 @@ void Emission_Integrator_class::Update_polarization_log() {
 
     if (Spacetime_enums::Kerr == p_Sim_Context->p_Init_Conditions->Metric_parameters.e_Spacetime) {
 
-        this->PW_Constant_log[e_x][this->Current_polarization_log_idx] = get_Penrose_Walker_constant(this->get_ray_Global_State_Vector(this->Current_Affine_Param), this->p_Sim_Context, this->Current_Pol_Vector).real();
-        this->PW_Constant_log[e_y][this->Current_polarization_log_idx] = get_Penrose_Walker_constant(this->get_ray_Global_State_Vector(this->Current_Affine_Param), this->p_Sim_Context, this->Current_Pol_Vector).imag();
+        this->p_Polarization_debug_struct->PW_constant[e_x][this->Current_polarization_log_idx] = get_Penrose_Walker_constant(this->get_ray_Global_State_Vector(this->Current_Affine_Param), this->p_Sim_Context, this->Current_Pol_Vector).real();
+        this->p_Polarization_debug_struct->PW_constant[e_y][this->Current_polarization_log_idx] = get_Penrose_Walker_constant(this->get_ray_Global_State_Vector(this->Current_Affine_Param), this->p_Sim_Context, this->Current_Pol_Vector).imag();
 
     }
 
-    this->Current_polarization_log_idx += 1;
+    this->Current_polarization_log_idx -= 1;
 
 }
 
@@ -731,7 +727,7 @@ void Emission_Integrator_class::Get_radiative_transfer_operators(const double* c
 
     }
 
-    // NOTE: The reference has a typo - the sign of Lambda[1] * f_2 * M_2[row_idx][colum_idx] on the second row is "-", not a "+" (I checked their code...)
+    // NOTE: The reference has a typo - the sign of Lambda[1] * f_2 * M_2[row_idx][colum_idx] on the second row is "-", not a "+" (I checked their code... ipole-v2.0 branch)
 
     for (int row_idx = 0; row_idx < e_Stokes_param_num; row_idx++) {
 
@@ -893,7 +889,7 @@ void Emission_Integrator_class::Run_Analytic_Stokes_Vector_Propagator(const doub
     }
 
     const double Geometric_Step = std::abs(End_Affine_Param - Start_Affine_Param);
-    const double CGS_Step = Geometric_Step * MASS_TO_CM * this->p_Sim_Context->p_Init_Conditions->central_object_mass;
+    const double CGS_Step = Geometric_Step * Constants::conversions::mass_to_cm * this->p_Sim_Context->p_Init_Conditions->central_object_mass;
 
     /* ---------- Some references for the sake of readability ---------- */
     auto& alpha = Total_Transfer_Functions.Absorbtion_functions;
